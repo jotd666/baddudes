@@ -1,0 +1,8 @@
+dev 1 set 0: sprites:
+pal 0: player 1, white ninja
+pal 1: player 2, green ninja
+pal 2: blue ninjas
+pal 3: gray ninjas
+pal F: red ninjas
+			 
+dev 1 set 1/2: 16x16 tiles
