@@ -119,7 +119,6 @@ tiles = load_tileset(blue_ninja_tiles,16,"ninjas","dumps")
 nb_blocks = result[1]
 block_size = 8
 
-sprite_image = Image.new("RGB",(32,64))
 
 blocks = result[2:]
 
@@ -132,15 +131,17 @@ class SpritePtr:
         self.code = [0]*h
         pass
 
+sprite_objects = []
+spritelist = []
+
 for idx,i in enumerate(range(0,block_size*nb_blocks,block_size)):
     offs = 0
+    priority = False
     pri_mask = 0
-    block = blocks[i:i+block_size]
-    spriteram = [(b[i+j]<<8)+b[i+j+1] for j in range(0,block_size,2)]
+    spriteram = [(blocks[i+j]<<8)+blocks[i+j+1] for j in range(0,block_size,2)]
 
-    spritelist = []
 
-    data0 = spriteram[offs];
+    data0 = spriteram[offs]
     data2 = spriteram[offs + 2]
     colour = data2 >> 12
 ##        if (priority)
@@ -162,66 +163,57 @@ for idx,i in enumerate(range(0,block_size*nb_blocks,block_size)):
     sx = 240 - sx
     sy = 240 - sy
 
-    if (m_flip_screen):
 
-            sy = 240 - sy;
-            sx = 240 - sx;
-            flipx = not flipx
-            flipy = not flipy
-            mult = 16
+    mult = -16
 
-        else:
-            mult = -16
-
-        if (!(spriteram[offs] & 0x8000)):
-        {
+    if (not (spriteram[offs] & 0x8000)):
             offs += 4
             FUCK
-        }
-
-        for x in range(w):
-
-            if (offs < size):
-
-                # maybe, birdie try appears to specify the base code for each part..
-                code = spriteram[offs + 1] & 0x1fff
-
-                code &= ~(h - 1)
-
-                # not affected by flipscreen
-                if (parentFlipY): # in the case of multi-width sprites the y flip bit is set by the parent
-                    incy = -1
-                else:
-
-                    code += h - 1
-                    incy = 1
 
 
-                sprite_ptr = SpritePtr(h)
-                if True: # (not flash or (screen.frame_number() & 1))
+    for x in range(w):
+
+        # maybe, birdie try appears to specify the base code for each part..
+        code = spriteram[offs + 1] & 0x1fff
+
+        code &= ~(h - 1)
+
+        # not affected by flipscreen
+        if (parentFlipY): # in the case of multi-width sprites the y flip bit is set by the parent
+            incy = -1
+        else:
+
+            code += h - 1
+            incy = 1
 
 
-                    sprite_ptr.colour = colour;
-                    sprite_ptr.flipx = flipx;
-                    sprite_ptr.flipy = flipy;
-                    if (priority):
+        sprite_ptr = SpritePtr(h)
+        if True: # (not flash or (screen.frame_number() & 1))
 
-                        sprite_ptr.pri_mask = pri_mask
-                        for y in range(h):
 
-                            sprite_ptr.code[y] = code - y * incy
-                            sprite_ptr.x[y] = sx + (mult * x)
-                            sprite_ptr.y[y] = sy + (mult * y)
+            sprite_ptr.colour = colour;
+            sprite_ptr.flipx = flipx;
+            sprite_ptr.flipy = flipy;
+            if (priority):
 
-                        spritelist.append(sprite_ptr)
+                sprite_ptr.pri_mask = pri_mask
+                for y in range(h):
 
-                    else:
+                    sprite_ptr.code[y] = code - y * incy
+                    sprite_ptr.x[y] = sx + (mult * x)
+                    sprite_ptr.y[y] = sy + (mult * y)
 
-                        for y in range(h):
+                spritelist.append(sprite_ptr)
 
-                            sprite_ptr.code[y] = code - y * incy
-                            sprite_ptr.x[y] = sx + (mult * x)
-                            sprite_ptr.y[y] = sy + (mult * y)
+            else:
+
+                for y in range(h):
+
+                    sprite_ptr.code[y] = code - y * incy
+                    sprite_ptr.x[y] = sx + (mult * x)
+                    sprite_ptr.y[y] = sy + (mult * y)
+
+                sprite_objects.append(sprite_ptr)
 ##                            gfx(0)->transpen(bitmap, cliprect,
 ##                                sprite_ptr->code[y],
 ##                                sprite_ptr->colour,
@@ -249,23 +241,22 @@ for idx,i in enumerate(range(0,block_size*nb_blocks,block_size)):
 ##        }
 
 
-    h = (1 << ((data0 & 0x1800) >> 11))   # 1x, 2x, 4x, 8x height */
-    w = (1 << ((data0 & 0x0600) >>  9))   # 1x, 2x, 4x, 8x width */
-    img = tiles[tile]
-    print(hex(tile),h,w)
-    yo = data0 & 0xFF
-    if yo==0x11:
-        y = 0
-    elif yo==0xE1:
-        y = 32
-    else:
-        y = 16
 
-    x = 4
-    if data2 == 0xEC:
-        x += 16
+sprite_image = Image.new("RGB",(128,128))
 
-    sprite_image.paste(img,(x,y))
+for so in sprite_objects:
+    for i in range(so.height):
+        img = tiles[so.code[i]]
+        x = so.x[i]
+        y = so.y[i]
+        if y == 223:
+            y = -33
+        print(hex(so.code[i]),x,y)
+
+        x += 60
+        y += 60
+
+        sprite_image.paste(img,(x,y))
 
 sprite_image = ImageOps.scale(sprite_image,5,resample=Image.Resampling.NEAREST)
 
