@@ -64,64 +64,22 @@ this_dir = os.path.dirname(os.path.abspath(__file__))
 
 tilesdir = os.path.join(this_dir,os.pardir,"mame","baddudes")
 
-data ="""
-    dc.w    $0506    ;53c0e
-
-    dc.w    $80e1    ;53c10
-    dc.w    $020c    ;53c12
-    dc.w    $00fc    ;53c14
-    dc.w    $0000    ;53c16
-
-    dc.w    $88f1    ;53c18
-    dc.w    $0208    ;53c1a
-    dc.w    $00fc    ;53c1c
-    dc.w    $0000    ;53c1e
-
-    dc.w    $8011    ;53c20
-    dc.w    $0200    ;53c22
-    dc.w    $00fc    ;53c24
-    dc.w    $0000    ;53c26
-
-    dc.w    $80e1    ;53c28
-    dc.w    $020d    ;53c2a
-    dc.w    $00ec    ;53c2c
-    dc.w    $0000    ;53c2e
-
-    dc.w    $88f1    ;53c30
-    dc.w    $020a    ;53c32
-    dc.w    $00ec    ;53c34
-    dc.w    $0000    ;53c36
-
-    dc.w    $8011    ;53c38
-    dc.w    $0201    ;53c3a
-    dc.w    $00ec    ;53c3c
-    dc.w    $0000    ;53c3e
-"""
-
-result = []
-for line in data.splitlines():
-    toks = line.split()
-    if len(toks)>1 and toks[0]=="dc.w":
-        word = int(toks[1].strip("$"),16)
-        result.append(word>>8)
-        result.append(word&0xFF)
-
-result = bytearray(result)
 
 dev = 1
 st = 0
 pal = 2
 
+with open(r"K:\jff\AmigaHD\PROJETS\GameRelocs\BadDudes\bad_dudes_ref","rb") as f:
+    prog = f.read()
+
+table_address = 0x5219c
+table_address_end = 0x52f54
+
+assembled_sprites = {struct.unpack_from(">I",prog,offset)[0] for offset in range(table_address,table_address_end,4)}
+
 blue_ninja_tiles = Image.open(os.path.join(tilesdir,name_template.format(dev=dev,st=st,pal=pal)))
 
 tiles = load_tileset(blue_ninja_tiles,16,"ninjas","dumps")
-
-nb_blocks = result[1]
-block_size = 8
-
-
-blocks = result[2:]
-
 
 class SpritePtr:
     def __init__(self,h):
@@ -131,133 +89,148 @@ class SpritePtr:
         self.code = [0]*h
         pass
 
-sprite_objects = []
-spritelist = []
 
-for idx,i in enumerate(range(0,block_size*nb_blocks,block_size)):
-    offs = 0
-    priority = False
-    pri_mask = 0
-    spriteram = [(blocks[i+j]<<8)+blocks[i+j+1] for j in range(0,block_size,2)]
+def decode_sprite(offset):
+    nb_blocks = prog[offset+1]
+    block_size = 8
 
+    result = prog[offset:offset+nb_blocks*block_size+2]
 
-    data0 = spriteram[offs]
-    data2 = spriteram[offs + 2]
-    colour = data2 >> 12
-##        if (priority)
-##            m_colpri_cb(colour, pri_mask);
-
-    flash = data2 & 0x800
-
-    flipx = data0 & 0x2000
-    parentFlipY = flipy = data0 & 0x4000
-    h = (1 << ((data0 & 0x1800) >> 11))
-    w = (1 << ((data0 & 0x0600) >>  9))
-
-    sx = data2 & 0x01ff;
-    sy = data0 & 0x01ff;
-    if (sx >= 256):
-        sx -= 512
-    if (sy >= 256):
-        sy -= 512
-    sx = 240 - sx
-    sy = 240 - sy
+    blocks = result[2:]
 
 
-    mult = -16
 
-    if (not (spriteram[offs] & 0x8000)):
-            offs += 4
-            FUCK
+    sprite_objects = []
+    spritelist = []
 
-
-    for x in range(w):
-
-        # maybe, birdie try appears to specify the base code for each part..
-        code = spriteram[offs + 1] & 0x1fff
-
-        code &= ~(h - 1)
-
-        # not affected by flipscreen
-        if (parentFlipY): # in the case of multi-width sprites the y flip bit is set by the parent
-            incy = -1
-        else:
-
-            code += h - 1
-            incy = 1
+    for idx,i in enumerate(range(0,block_size*nb_blocks,block_size)):
+        offs = 0
+        priority = False
+        pri_mask = 0
+        spriteram = [(blocks[i+j]<<8)+blocks[i+j+1] for j in range(0,block_size,2)]
 
 
-        sprite_ptr = SpritePtr(h)
-        if True: # (not flash or (screen.frame_number() & 1))
+        data0 = spriteram[offs]
+        data2 = spriteram[offs + 2]
+        colour = data2 >> 12
+    ##        if (priority)
+    ##            m_colpri_cb(colour, pri_mask);
+
+        flash = data2 & 0x800
+
+        flipx = data0 & 0x2000
+        parentFlipY = flipy = data0 & 0x4000
+        h = (1 << ((data0 & 0x1800) >> 11))
+        w = (1 << ((data0 & 0x0600) >>  9))
+
+        sx = data2 & 0x01ff;
+        sy = data0 & 0x01ff;
+        if (sx >= 256):
+            sx -= 512
+        if (sy >= 256):
+            sy -= 512
+        sx = 240 - sx
+        sy = 240 - sy
 
 
-            sprite_ptr.colour = colour;
-            sprite_ptr.flipx = flipx;
-            sprite_ptr.flipy = flipy;
-            if (priority):
+        mult = -16
 
-                sprite_ptr.pri_mask = pri_mask
-                for y in range(h):
+        if (not (spriteram[offs] & 0x8000)):
+                offs += 4
+                FUCK
 
-                    sprite_ptr.code[y] = code - y * incy
-                    sprite_ptr.x[y] = sx + (mult * x)
-                    sprite_ptr.y[y] = sy + (mult * y)
 
-                spritelist.append(sprite_ptr)
+        for x in range(w):
 
+            # maybe, birdie try appears to specify the base code for each part..
+            code = spriteram[offs + 1] & 0x1fff
+
+            code &= ~(h - 1)
+
+            # not affected by flipscreen
+            if (parentFlipY): # in the case of multi-width sprites the y flip bit is set by the parent
+                incy = -1
             else:
 
-                for y in range(h):
-
-                    sprite_ptr.code[y] = code - y * incy
-                    sprite_ptr.x[y] = sx + (mult * x)
-                    sprite_ptr.y[y] = sy + (mult * y)
-
-                sprite_objects.append(sprite_ptr)
-##                            gfx(0)->transpen(bitmap, cliprect,
-##                                sprite_ptr->code[y],
-##                                sprite_ptr->colour,
-##                                sprite_ptr->flipx, sprite_ptr->flipy,
-##                                sprite_ptr->x[y], sprite_ptr->y[y], 0);
+                code += h - 1
+                incy = 1
 
 
+            sprite_ptr = SpritePtr(h)
+            if True: # (not flash or (screen.frame_number() & 1))
+
+
+                sprite_ptr.colour = colour;
+                sprite_ptr.flipx = flipx;
+                sprite_ptr.flipy = flipy;
+                if (priority):
+
+                    sprite_ptr.pri_mask = pri_mask
+                    for y in range(h):
+
+                        sprite_ptr.code[y] = code - y * incy
+                        sprite_ptr.x[y] = sx + (mult * x)
+                        sprite_ptr.y[y] = sy + (mult * y)
+
+                    spritelist.append(sprite_ptr)
+
+                else:
+
+                    for y in range(h):
+
+                        sprite_ptr.code[y] = code - y * incy
+                        sprite_ptr.x[y] = sx + (mult * x)
+                        sprite_ptr.y[y] = sy + (mult * y)
+
+                    sprite_objects.append(sprite_ptr)
+    ##                            gfx(0)->transpen(bitmap, cliprect,
+    ##                                sprite_ptr->code[y],
+    ##                                sprite_ptr->colour,
+    ##                                sprite_ptr->flipx, sprite_ptr->flipy,
+    ##                                sprite_ptr->x[y], sprite_ptr->y[y], 0);
 
 
 
-##    if priority!
-##    {
-##        while (sprite_ptr != m_spritelist.get())
-##        {
-##            sprite_ptr--;
-##
-##            for (int y = 0; y < sprite_ptr->height; y++)
-##            {
-##                gfx(0)->prio_transpen(bitmap, cliprect,
-##                        sprite_ptr->code[y],
-##                        sprite_ptr->colour,
-##                        sprite_ptr->flipx, sprite_ptr->flipy,
-##                        sprite_ptr->x[y], sprite_ptr->y[y], screen.priority(), sprite_ptr->pri_mask, 0);
-##            };
-##        }
+
+
+    ##    if priority!
+    ##    {
+    ##        while (sprite_ptr != m_spritelist.get())
+    ##        {
+    ##            sprite_ptr--;
+    ##
+    ##            for (int y = 0; y < sprite_ptr->height; y++)
+    ##            {
+    ##                gfx(0)->prio_transpen(bitmap, cliprect,
+    ##                        sprite_ptr->code[y],
+    ##                        sprite_ptr->colour,
+    ##                        sprite_ptr->flipx, sprite_ptr->flipy,
+    ##                        sprite_ptr->x[y], sprite_ptr->y[y], screen.priority(), sprite_ptr->pri_mask, 0);
+    ##            };
+    ##        }
 
 
 
-sprite_image = Image.new("RGB",(128,128))
+    sprite_image = Image.new("RGB",(128,128))
 
-for so in sprite_objects:
-    for i in range(so.height):
-        img = tiles[so.code[i]]
-        x = so.x[i]
-        y = so.y[i]
-        if y == 223:
-            y = -33
-        print(hex(so.code[i]),x,y)
+    for so in sprite_objects:
+        for i in range(so.height):
+            img = tiles[so.code[i]]
+            x = so.x[i]
+            y = so.y[i]
+            if y == 223:
+                y = -33
+            print(hex(so.code[i]),x,y)
 
-        x += 60
-        y += 60
+            x += 60
+            y += 60
 
-        sprite_image.paste(img,(x,y))
+            sprite_image.paste(img,(x,y))
 
-sprite_image = ImageOps.scale(sprite_image,5,resample=Image.Resampling.NEAREST)
+    sprite_image = ImageOps.scale(sprite_image,5,resample=Image.Resampling.NEAREST)
 
-sprite_image.save("ninja.png")
+    sprite_image.save(f"dumps/image_{offset:x}.png")
+
+
+for offset in assembled_sprites:
+    decode_sprite(offset)
