@@ -247,9 +247,9 @@ sprite_info = {
  0x543dc: {'name':'climbing_ninja'},
  0x543fe: {'name':'climbing_ninja'},
  0x54430: {'name':'climbing_ninja'},
- 0x544c0: {'name':'unknown'},
- 0x544d2: {'name':'unknown'},
- 0x544e4: {'name':'unknown'},
+ 0x544c0: {'name':'ninja_appearing'},
+ 0x544d2: {'name':'ninja_appearing'},
+ 0x544e4: {'name':'ninja_appearing'},
  0x544f6: {'name':'praying_ninja'},
  0x54518: {'name':'unknown'},
  0x5452a: {'name':'unknown'},
@@ -469,11 +469,11 @@ sprite_info = {
  0x57076: {'name':'unknown'},
  0x57088: {'name':'unknown'},
  0x5709a: {'name':'unknown'},
- 0x570ac: {'name':'unknown'},
- 0x570be: {'name':'unknown'},
- 0x570d0: {'name':'unknown'},
- 0x570e2: {'name':'unknown'},
- 0x570f4: {'name':'unknown'},
+ 0x570ac: {'name':'nunchuk'},
+ 0x570be: {'name':'nunchuk'},
+ 0x570d0: {'name':'nunchuk'},
+ 0x570e2: {'name':'nunchuk'},
+ 0x570f4: {'name':'nunchuk'},
  0x57106: {'name':'unknown'},
  0x57118: {'name':'unknown'},
  0x5712a: {'name':'unknown'},
@@ -510,8 +510,8 @@ sprite_info = {
  0x572c8: {'name':'unknown'},
  0x572d2: {'name':'unknown'},
  0x572dc: {'name':'unknown'},
- 0x572e6: {'name':'unknown'},
- 0x572f0: {'name':'unknown'},
+ 0x572e6: {'name':'nunchuk'},
+ 0x572f0: {'name':'nunchuk'},
  0x572fa: {'name':'unknown'},
  0x57304: {'name':'unknown'},
  0x5730e: {'name':'unknown'},
@@ -527,19 +527,19 @@ sprite_info = {
  0x57372: {'name':'unknown'},
  0x5737c: {'name':'unknown'},
  0x57386: {'name':'unknown'},
- 0x57390: {'name':'unknown'},
+ 0x57390: {'name':'grappling'},
  0x573a2: {'name':'unknown'},
  0x573bc: {'name':'unknown'},
  0x573ce: {'name':'unknown'},
  0x573d8: {'name':'unknown'},
  0x573ea: {'name':'unknown'},
- 0x57404: {'name':'unknown'},
- 0x57416: {'name':'unknown'},
+ 0x57404: {'name':'grappling'},
+ 0x57416: {'name':'grappling'},
  0x57420: {'name':'unknown'},
  0x5743a: {'name':'unknown'},
  0x57454: {'name':'unknown'},
  0x5745e: {'name':'unknown'},
- 0x57470: {'name':'unknown'},
+ 0x57470: {'name':'flame'},
  0x5748a: {'name':'unknown'},
  0x574a4: {'name':'unknown'},
  0x574be: {'name':'unknown'},
@@ -558,13 +558,13 @@ sprite_info = {
  0x576a8: {'name':'unknown'},
  0x576ea: {'name':'unknown'},
  0x576fc: {'name':'unknown'},
- 0x5770e: {'name':'unknown'},
+ 0x5770e: {'name':'elevator_door'},
  0x57790: {'name':'unknown'},
  0x57844: {'name':'unknown'},
  0x578d6: {'name':'unknown'},
  0x578f8: {'name':'unknown'},
- 0x5792a: {'name':'unknown'},
- 0x5793c: {'name':'unknown'},
+ 0x5792a: {'name':'elevator_door'},
+ 0x5793c: {'name':'elevator_door'},
  0x57978: {'name':'unknown'},
  0x5798a: {'name':'unknown'},
  0x57994: {'name':'heli_door'},
@@ -657,6 +657,8 @@ def decode_sprite(offset):
         h = (1 << ((data0 & 0x1800) >> 11))
         w = (1 << ((data0 & 0x0600) >>  9))
 
+        if h!=1 or w!=1:
+            print(h,w)
         sx = data2 & 0x01ff;
         sy = data0 & 0x01ff;
         if (sx >= 256):
@@ -755,7 +757,7 @@ def decode_sprite(offset):
                 y -= 256
             if x > 128:
                 x -= 256
-            print(hex(so.code[i]),x,y)
+
 
             x += 60
             y += 60
