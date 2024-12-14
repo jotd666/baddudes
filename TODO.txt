@@ -1,0 +1,3 @@
+- recode patchlist macros system (compatible with nonwhdl: generates code)
+- generate patchlist from source to correct RAM locations
+- generate patchlist from source to patch screen tile writes

@@ -6,7 +6,6 @@
 
 
 
-*.include "../src/elevator_action.inc"
 .include "custom.i"
 .include "exec_lvos.i"
 .include "dos_lvos.i"
@@ -184,21 +183,6 @@ start:
 	.global		_dosbase
 	.global		cheat_used
 * osd layer		
-		.global osd_disable_interrupts
-		.global osd_enable_interrupts
-		.global osd_ack_vblank_interrupt
-		.global osd_break		| for debug	
-		.global osd_blitz		| for debug
-		.global osd_w_videoram
-		.global osd_update_sprites
-		.global osd_set_main_scroll
-		.global osd_read_dsw1
-		.global osd_read_dsw2
-		.global osd_read_dsw3
-		.global osd_read_inputs_1
-		.global osd_read_inputs_2
-		.global	osd_set_gfx_bank
-		.global	osd_set_column_scroll
 	
 	.include	"ReadJoypad.i"
 	.include	"whdload_funcs.i"
@@ -225,6 +209,12 @@ _user:
 	move.l	a0,a2
 	lea	(_tag,pc),a0
 	jsr	(resload_Control,a2)
+	
+	* load game ROM in 0 (this is temporary)
+	lea		rom_file(pc),a0
+	sub.l	a1,a1			| ATM in 0
+	move.l	a1,rom_base
+	jsr	(resload_LoadFileDecrunch,a2)
 	
     bra		.no_forbid
 .standard:
@@ -332,6 +322,8 @@ _user:
 	move.l	#-1,184(A0)	| pr_WindowPtr: no more system requesters (insert volume, write protected...)
 
 .no_forbid:
+	bsr		patch_rom
+	
 	* align bitplanes
 	lea		fg_screen_buffer_1,a0
 	bsr		align_for_fmode
@@ -2670,6 +2662,8 @@ host_sprites:
 keyboard_table:
 	ds.b	0x100
 
+rom_base:
+	.long	0
 interrupt_mode:
 	.word	0
 	
