@@ -1,4 +1,8 @@
+import os,pathlib
 import ira_asm_tools
+
+this_dir = pathlib.Path(os.path.abspath(__file__)).parent
+src_dir = this_dir / os.pardir / "src"
 
 asmfile = r"K:\jff\AmigaHD\PROJETS\GameRelocs\BadDudes\bad_dudes.s"
 
@@ -28,7 +32,7 @@ for line in af.lines:
                         reloc_address = inst_info["address"]
                         relocated_ram_offsets[(reloc_address,offset)] = arg
 
-with open("patchlist.68k","w") as f:
+with open(src_dir / "patchlist.68k","w") as f:
     f.write("ram_relocs:\n")
     for (reloc,offset),v in sorted(relocated_ram_offsets.items()):
         f.write(f"\t.long\t0x{reloc:06x}+{offset}\t| {v}\n")

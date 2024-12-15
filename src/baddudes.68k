@@ -1,0 +1,24 @@
+	.include	"patchlist.68k"
+	
+	.global		baddudes_reset
+	.global		baddudes_irq
+	.ifdef		__amiga__
+	.include	"baddudes_ram.68k"
+	.endif
+	.align	2
+
+baddudes_reset:
+	move.l	rom_base,a0
+	move.l	ram_base,a1
+	
+	lea		ram_relocs(pc),a2
+	
+	* jump to rom start
+	jbsr	osd_flush_caches
+	move.l	rom_base,-(a7)
+	add.l	#0x13dc,(a7)
+	rts
+	
+baddudes_irq:
+	rts
+	

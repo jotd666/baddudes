@@ -1,5 +1,5 @@
 *
-*	Amiga-specific portions of Elevator Action (AGA version)
+*	Amiga-specific portions of baddudes Action (AGA version)
 *
 * (c) JOTD 2024
 *
@@ -111,19 +111,12 @@ SPRITE_CODE = 2
 SPRITE_CLUT = 3
 SPRITE_SIZEOF = 4
 
-_STRUCT  | sprite_table
-  _DS  _chip_data                        4
-  _DS  _previous_y_position              2
-  _DS  _saved_control_word_address       4
-  _DS  _saved_end_word_address           4
-  _DS  _control_word_row_save            1<<(SPRITE_POWER_OF_2+1)      
-  _DS  _end_word_row_save                1<<(SPRITE_POWER_OF_2+1)      
 
 .macro	GET_RAM_START_IN_A6	
 	.ifdef	RELEASE
 	lea		ram_buffer,a6
 	.else
-	move.l		ram_start_8000,a6
+	move.l		ram_start_ff8000,a6
 	.endif
 	.endm
 	
@@ -183,6 +176,7 @@ start:
 	.global		_dosbase
 	.global		cheat_used
 * osd layer		
+	.global		osd_flush_caches
 	
 	.include	"ReadJoypad.i"
 	.include	"whdload_funcs.i"
@@ -322,8 +316,6 @@ _user:
 	move.l	#-1,184(A0)	| pr_WindowPtr: no more system requesters (insert volume, write protected...)
 
 .no_forbid:
-	bsr		patch_rom
-	
 	* align bitplanes
 	lea		fg_screen_buffer_1,a0
 	bsr		align_for_fmode
@@ -592,10 +584,11 @@ demo_game:
 	clr.w	d0
 	add.l	#0x18000,d0
 	move.l	d0,a6
-	move.l	a6,ram_start_8000
+	move.l	a6,ram_start_ff8000
 	.endif
 
-	jmp			elevator_reset					| pass control to the mpatrol core
+	move.l	a6,ram_base
+	jmp			baddudes_reset					| pass control to the mpatrol core
 		
 	
 * just in case some hardware calls nmi
@@ -610,8 +603,6 @@ _vblank:
 	move.w	(intreqr,a5),d0
 	btst	#5,d0
 	beq.b		1f
-
-	clr.b	vbl_sync_flag
 	
 	move.l	_joypad_state(pc),d1
 	moveq	#1,d0
@@ -666,7 +657,7 @@ _vblank:
 	* declare that we're in interrupt mode so osd_disable_interrupts/osd_enable_interrupts
 	* also set SR accordingly
 	st.b	interrupt_mode
-	jbsr		elevator_irq
+	jbsr		baddudes_irq
 	move.w	#0x2300,SR
 	clr.b	interrupt_mode	
 	clr.b	d0
@@ -686,7 +677,7 @@ _vblank:
 	* declare that we're in interrupt mode so osd_disable_interrupts/osd_enable_interrupts
 	* also set SR accordingly
 	st.b	interrupt_mode
-	jbsr		elevator_irq
+	jbsr		baddudes_irq
 
 	* re-set SR to 0x2300, game calls osd_enable_interrupts from here and if
 	* something is too slow, then game crashes/trashes display because of re-entering
@@ -716,6 +707,16 @@ _vblank:
     movem.l (a7)+,d0-d7/a0-a6
     rte
 	
+osd_flush_caches:
+	tst.l	_resload
+	jeq		0f
+	move.l	_resload,a2
+	jsr		(resload_FlushCache,a2)
+	rts
+0:
+	move.l	4,a6
+	jsr	(_LVOCacheClearU,a6)
+	rts
 	
 osd_blitz:
 	blitz
@@ -785,8 +786,8 @@ osd_wait:
 	
 osd_update_sprites:
 	movem.l	a0-a6/d0-d7,-(a7)
-	lea		sprite_ram_d100,a0
-	bsr		update_bobs
+*	lea		sprite_ram_d100,a0
+*	bsr		update_bobs
 
 	movem.l	(a7)+,a0-a6/d0-d7
 	rts
@@ -794,16 +795,15 @@ osd_update_sprites:
 
 
 really_update_sprites:
-	lea		sprite_ram_d100,a0
-	bsr		update_bobs
+*	lea		sprite_ram_d100,a0
+*	bsr		update_bobs
 
 	rts
 	
 is_game_playing:
 	movem.l	d0/a6,-(a7)
 	GET_RAM_START_IN_A6
-	move.b	game_in_play_flag_823B(a6),d0
-	not.b	d0
+
 	movem.l	(a7)+,d0/a6
 	rts
 	
@@ -844,7 +844,7 @@ update_bobs:
 	
     lea _custom,A5
 	move.l	bob_previous_drawed_sprites(pc),a6
-	lea		bob_table,a4
+	**lea		bob_table,a4
 	*add.w	#(NB_TARGET_SPRITES-1)*4,a0		| start by the end (drawing priority)
 	moveq	#NB_TARGET_SPRITES-1,d7
 1:
@@ -1341,21 +1341,21 @@ quit_to_os:
 * set sprite pointers on chipmem zone
 
 init_sprite_bank:
-	move.w	#sprpt,d0
-	move.w	#NB_HOST_SPRITES-1,d2		| 7
-0:
-	move.l	(_chip_data,a1),d1
-	move.w	d0,(a0)+
-	swap	d1
-	move.w	d1,(a0)+
-	swap	d1
-	addq	#2,d0
-	move.w	d0,(a0)+
-	move.w	d1,(a0)+
-	
-	add.w	#SPRITE_STRUCT_SIZE,a1
-	addq	#2,d0
-	dbf		d2,0b
+*	move.w	#sprpt,d0
+*	move.w	#NB_HOST_SPRITES-1,d2		| 7
+*0:
+*	move.l	(_chip_data,a1),d1
+*	move.w	d0,(a0)+
+*	swap	d1
+*	move.w	d1,(a0)+
+*	swap	d1
+*	addq	#2,d0
+*	move.w	d0,(a0)+
+*	move.w	d1,(a0)+
+*	
+*	add.w	#SPRITE_STRUCT_SIZE,a1
+*	addq	#2,d0
+*	dbf		d2,0b
 	rts
 	
 platform_init:
@@ -1395,16 +1395,7 @@ platform_init:
     move.w d0,bpl2mod(a5)
 
 	
-	lea		sprite_buffer,a0
-	bsr		align_for_fmode
-	lea		sprite_table,a1
-	moveq	#7,d0
-0:
-	move.l	a0,(_chip_data,a1)
-	st.b	(_previous_y_position,a1)	| invalidate
-	add.w	#SPRITE_STRUCT_SIZE,a1
-	add.w	#SPRITE_SIZE,a0
-	dbf		d0,0b
+
 	
 	* set sprite registers in copperlist
 	lea		game_sprites,a0
@@ -1433,7 +1424,7 @@ platform_init:
 	lea		game_sprite_colors+2,a1
 	moveq	#7,d0
 0:
-	move.l		elevators_palette,a0
+	*move.l		baddudess_palette,a0
 	moveq	#3,d1
 1:
 	move.w	(a0)+,d2
@@ -1443,15 +1434,7 @@ platform_init:
 	
 	dbf		d0,0b
 	
-	* set bank 0: title screen mode
-	moveq	#0,d0
-	jbsr	osd_set_gfx_bank
-	* all column scrolls at 0
-	moveq	#0,d0
-	moveq	#7,d1
-0:
-	jbsr	osd_set_column_scroll
-	dbf		d1,0b
+
 
 	* wait 300 lines
 	move.w	#100,d0
@@ -1547,121 +1530,6 @@ osd_disable_interrupts:
 
 
 
-osd_set_gfx_bank:
-	movem.l	d0-a6,-(a7)
-	cmp.b	current_gfx_bank,d0
-	jeq		100f
-	move.b	d0,current_gfx_bank
-	
-	lea		_custom,a5
-	
-	tst.b	d0
-	bne		10f
-	* title gfx bank, set title palette
-    move.w #0x200+(NB_PLAYFIELD_PLANES<<12)+BORDERBLANK,bplcon0(a5)
-	
-	lea		update_bg_tile_title(pc),a0
-	move.l	a0,update_tile_function
-	
-	lea		title_palette(pc),a0
-
-	move.w	#TOTAL_NB_COLORS,d0
-	lea		panel_tiles_colors,a1
-	bsr		load_palette
-		
-	* set copperlist
-	move.l	#title_copperlist,cop1lc(a5)
-
-	* set palette
-	lea		title_palette,a0
-	move.w	#TOTAL_NB_COLORS,d0
-	lea		title_colors,a1
-	bsr		load_palette
-	lea		sprites_palette,a0
-	move.w	#TOTAL_NB_COLORS,d0
-	lea		bob_colors,a1
-	bsr		load_palette
-	
-	* set bitplanes (non-dual)
-    moveq #NB_PLAYFIELD_PLANES-1,d1
-0:
-    move.l	bg_screen_ptr(pc),a0
-	move.l	a0,d0
-    lea	title_bitplanes+2,a0
-	moveq	#0,d2
-	move.w	#BG_SCREEN_PLANE_SIZE,d2
-1:
-    swap d0
-    move.w d0,(a0)
-    swap d0
-    move.w d0,(4,a0)    
-    addq.w  #8,a0
-    add.l d2,d0		| LONG!
-    dbf d1,1b
-
-	jra		100f
-10:
-	*****************
-	* game gfx bank *
-	*****************
-    move.w #0x0610+BORDERBLANK,bplcon0(a5) | 8 bitplanes, dual playfield, borderblank
-
-	* set copperlist
-	move.l	#game_copperlist,cop1lc(a5)
-
-	lea		update_bg_tile_game(pc),a0
-	move.l	a0,update_tile_function
-
-
-	* set panel palette (top & bottom)
-	move.l		level_palettes,a0
-	move.w	#TOTAL_NB_COLORS,d0
-	lea		panel_tiles_colors,a1
-	bsr		load_palette
-	move.l		level_palettes,a0
-	move.w	#TOTAL_NB_COLORS,d0
-	lea		panel_end_tiles_colors,a1
-	bsr		load_palette
-
-
-	lea		level_palettes,a0
-	* TODO which level ATM 1
-	moveq	#0,d0
-	move.l	(a0,d0.w*4),a0
-	move.w	#TOTAL_NB_COLORS,d0
-	lea		playfield_tiles_colors,a1
-	bsr		load_palette
-	
-	* BOB palettes already set at startup
-	
-    moveq #NB_PLAYFIELD_PLANES-1,d1
-    move.l	panel_screen_ptr(pc),a0
-	move.l	a0,d0
-    lea	panel_bitplanes+2,a0
-	move.l	#FG_SCREEN_PLANE_SIZE,d2
-	bsr		20f
-
-	bsr		set_playfield_bitplanes
-	
-    moveq #NB_PLAYFIELD_PLANES-1,d1
-    move.l	fg_drawed_screen_ptr(pc),a0
-	move.l	a0,d0
-    lea	bobs_bitplanes+2,a0
-	move.l	#FG_SCREEN_PLANE_SIZE,d2
-	bsr		20f
-
-	
-    moveq #NB_PLAYFIELD_PLANES-1,d1
-    move.l	panel_screen_ptr(pc),a0
-	add.w	#NB_BYTES_PER_ROW*PANEL_Y_GAP,a0
-	move.l	a0,d0
-    lea	panel_end_bitplanes+2,a0
-	move.l	#FG_SCREEN_PLANE_SIZE,d2
-	bsr		20f
-	
-100:
-	movem.l	(a7)+,d0-a6
-	rts
 
 set_playfield_bitplanes:
 	* set bitplanes
@@ -1687,119 +1555,6 @@ set_playfield_bitplanes:
     dbf d1,20b
     rts
 		
-	.macro	COPY_SPRITE_ROW
-	.rept	(_end_word_row_save-_control_word_row_save)/4
-	move.l	(a3)+,(a4)+
-	.endr	
-	.endm
-* D0: scroll value
-* D1: column index 0-xx
-*
-* depends on gfx bank
-* if title gfx bank, index is letter index
-* if game gfx bank, index is elevator index
-osd_set_column_scroll:
-	movem.l	d0-d3/a0-a4,-(a7)
-	and.w	#0x7,d1
-	and.w	#0xFF,d0
-	
-	move.w	d1,d2
-	lsl.w	#SPRITE_POWER_OF_2+3,d1		| times 32: SPRITE_STRUCT_SIZE
-	lea		sprite_table,a0
-	lea		(a0,d1.w),a2		| select proper sprite struct
-	cmp.w	(_previous_y_position,a2),d0
-	jeq		100f		| no need to do anything: column scroll did not change
-	move.w	d0,(_previous_y_position,a2)  | store for later
-
-	move.w	#48,d3
-	moveq	#4,d4
-	lea		title_sprites+2,a0
-	tst.b	current_gfx_bank
-	jeq		10f
-	lea		game_sprites+2,a0
-	and.w	#0xFF,d0
-	move.w	#16,d3
-	moveq	#5,d4
-	jra		10f
-100:
-	movem.l	(a7)+,d0-d3/a0-a4
-	rts
-    
-
-10:
-	* Y start is always the same, but sprite is more or
-	* less clipped depending on D0 value
-
-	* first restore data where control word/end word were written
-	* unless no save data is available (first time, no clipping...)
-	move.l	(_saved_control_word_address,a2),d1
-	jeq		11f         | nothing to restore
-	move.l	d1,a4
-	lea		(_control_word_row_save,a2),a3
-	COPY_SPRITE_ROW
-	move.l	(_saved_end_word_address,a2),a4
-	lea		(_end_word_row_save,a2),a3
-	COPY_SPRITE_ROW
-11:
-	
-	* now compute where the control word / end word will be
-	* depending on scroll value
-	move.l	(_chip_data,a2),a3
-	
-	lsl.w	#SPRITE_POWER_OF_2+1,d0	| times 16 for fmode=3
-	add.w	d0,a3
-	move.l	a3,(_saved_control_word_address,a2)
-	* now save the rows
-	lea		(_control_word_row_save,a2),a4
-	COPY_SPRITE_ROW
-	move.l	(_saved_control_word_address,a2),a3
-	add.w	#(SPRITE_DISPLAYED_HEIGHT+1)*(_end_word_row_save-_control_word_row_save),a3
-	move.l	a3,(_saved_end_word_address,a2)
-	lea		(_end_word_row_save,a2),a4
-	COPY_SPRITE_ROW
-	move.l	(_saved_control_word_address,a2),a3
-
-	
-	* now compute the control word
-	move.w	d2,d0		| X
-	lsl.w	d4,d0		| column times 16 (2 chars per column)
-	add.w	d3,d0		| add X offset
-
-
-	bsr		store_column_sprite_pos
-	
-	move.w	d0,(NB_BYTES_PER_SPRITE_ROW,a3)   | fmode=3
-	swap	d0
-	move.w	d0,(a3)
-	moveq	#0,d0
-	* clear remaining data
-	move.w	d0,(2,a3)
-	move.w	d0,(NB_BYTES_PER_SPRITE_ROW+2,a3)
-	.ifeq	SPRITE_FMODE-3
-	move.l	d0,(4,a3)
-	move.l	d0,(NB_BYTES_PER_SPRITE_ROW+4,a3)
-	.endif
-	
-	* mark sprite columns (debug), d2 is the column
-	*lea		 pattern_debug_table(pc),A1
-	*move.l	(a1,d2.w*4),(NB_BYTES_PER_SPRITE_ROW*2,a3)
-	*move.l	(a1,d2.w*4),(NB_BYTES_PER_SPRITE_ROW*3,a3)
-	*move.l	(a1,d2.w*4),(NB_BYTES_PER_SPRITE_ROW*4,a3)
-
-	
-	move.l	(_saved_end_word_address,a2),a4
-	
-	* end word
-	.rept	NB_BYTES_PER_SPRITE_ROW/2
-	clr.l	(a4)+
-	.endr
-	
-	move.l	a3,d1
-	lsl.w	#3,d2		| nb col * 8 (copperlist entry)
-	move.w	d1,(4,a0,d2.w)
-	swap	d1
-	move.w	d1,(a0,d2.w)
-	jra		100b
 
 
 * a0=screen address (preserved), d0=tile (preserved)
@@ -1807,19 +1562,18 @@ osd_set_column_scroll:
 * should preserve all registers
 
 osd_w_videoram:
-    .ifeq OPT_DISABLE_BG_LAYER
 	movem.l	d0-d7/a0-a3,-(a7)
 	move.l	a0,d7		| save address
 	sub.l	a6,d7
 	jcs		0f
-	sub.w	#SCREEN_ADDRESS-0x8000,d7
+	sub.l	#SCREEN_ADDRESS-0x8000,d7
 	bcs.b	0f
 	.ifndef	RELEASE
-	cmp.w	#0x400*3,d7
+	cmp.w	#0x800*3,d7
 	bcs.b	1f
 0:
 	* should not happen
-	add.w	#SCREEN_ADDRESS-0x8000,d7
+	add.l	#SCREEN_ADDRESS-0x8000,d7
 	lea		write_videoram_out_of_range_error(pc),a0
 	jbsr	osd_break
 	nop	
@@ -1831,22 +1585,12 @@ osd_w_videoram:
 3:
 	move.b	d0,(a0)	| update logical grid
 
-	move.l	update_tile_function(pc),a1
-	jsr		(a1)
+	* TODO mark as dirty
 0:
 	movem.l	(a7)+,d0-d7/a0-a3
-    .endif | OPT_DISABLE_BG_LAYER
 	rts
 
-pattern_debug_table:
-	.long	3   | I
-	.long	51	| II
-	.long	819 | III
-	.long	13107 | IIII
-	.long	209715 | IIIII
-	.long	3355443 | IIIIII
-	.long	53687091 | 
-	.long	858993459 | 
+
 	
 * < D7: 0-0x400
 * > D0: 
@@ -1861,303 +1605,7 @@ compute_tile_xy:
 	lsl.w	#3,d1
 	rts
 
-* < D7: 0-0xC00 address
-* < D0: tile code
-* ex:
-* C402: PLAYER (top left)
-* C7BE: number of credits (bottom right)
-update_bg_tile_title:
-	moveq	#0,d2	| mask up to 255
-	move.b	d0,d2
-	bsr		compute_tile_xy
-	
-	move.l		character_tables,a0
 
-	btst	#11,d7		| third layer? sprites
-	jne	update_title_letters
-
-	btst	#10,d7		| second layer?
-	jeq	0f
-	addq.w	#4,a0		| second layer ATM title = same bitplanes
-0:
-	move.l	(a0),a0
-	
-	* updating bitplanes
-	move.l	#BG_SCREEN_PLANE_SIZE,d5
-	move.l	bg_screen_ptr,a1
-	subq	#2,d0 | not sure??
-	add.w	d0,a1
-	lea		mulNB_BYTES_PER_ROW_table,A2
-	add.w	(a2,d1.w*2),a1
-	
-	jra		end_update_bg_tile
-	
-update_title_letters:
-	* updating sprite data
-	sub.w	#0x8,d0		| min X letter
-	jcs		0f
-	cmp.w	#0x18,d0	| max X letter
-	jcc		0f
-	* compute sprite Y offset: x bytes per row, starting at x
-	addq	#1,d1		| skip control words row
-	lsl.w	#SPRITE_POWER_OF_2+1,d1
-	* compute sprite X offset: 1 byte per pixel, 16 pixels per letter
-	btst	#0,d0
-	jeq	1f
-	addq	#1,d1	| right part of the letter
-1:
-	* d0: 2*sprite number
-	lsr.w	#1,d0
-	jra		update_sprite_bitmap
-	
-update_game_elevators:
-	* updating sprite data
-	sub.w	#0x2,d0		| min X elevator (first elevator first col)
-	jcs		0f
-	cmp.w	#0x1D-2,d0	| max X elevator (7th elevator last col.)
-	jcc		0f
-
-	* 0 <= D0 < 27
-	* compute sprite Y offset: x bytes per row, starting at x
-	lsl.w	#SPRITE_POWER_OF_2+1,d1
-	* compute sprite X offset: 1 byte per pixel, 32 pixels per elevator
-	move.w	d0,d3
-	and.b	#3,d3
-	add.w	d3,d1	| proper part of the elevator
-	* d0: 4*sprite number
-	lsr.w	#2,d0	| divide by 4 to get elevator number
-	* TODO: for elevators, we need to store positions of elevator
-	* pink area start so we can change colors dynamically
-	* there can be 2 elevators per column
-* < D0: sprite number
-* < D1: X/Y offset to apply to data
-update_sprite_bitmap:
-	lsl.w	#SPRITE_POWER_OF_2+3,d0	| times SPRITE_STRUCT_SIZE
-	lea		sprite_table,a2
-	add.w	d0,a2		| select proper sprite structure
-	move.l	(_chip_data,a2),a2		| sprite data
-	add.w	#NB_BYTES_PER_SPRITE_ROW*2,a2		| skip control word (done twice???)
-	add.w	d1,a2		| add X/Y offset
-	
-	lsl.w	#2,d2
-	jeq		5f		| code 0: clear sprite area
-	* copy character data into sprite
-	move.l	(8,a0),a0		| third set: elevators/letters
-	move.l	(a0,d2.w),d0
-	jeq		1f		| 0: not registered: clear
-	* sprites are only 4 colors, palette is so only 2 first planes
-	* can contain data
-	move.l	d0,a3
-
-	move.l	(a3)+,d0
-	jne		2f
-	move.l	#blank_row,d0
-2:
-	move.l	(a3),d1
-	jne		2f
-	move.l	#blank_row,d1
-2:
-	move.l	d0,a0
-	move.l	d1,a1
-
-	.set	offset,0
-	.rept	8
-	move.b	(a0)+,d0
-	move.b	d0,(offset,a2)
-	move.b	d0,(offset+(NB_LINES*NB_BYTES_PER_SPRITE_ROW*2),a2)
-	move.b	(a1)+,d0
-	move.b	d0,(NB_BYTES_PER_SPRITE_ROW+offset,a2)
-	move.b	d0,((NB_LINES*NB_BYTES_PER_SPRITE_ROW*2)+NB_BYTES_PER_SPRITE_ROW+offset,a2)
-	.set	offset,offset+NB_BYTES_PER_SPRITE_ROW*2
-	.endr	
-0:
-	rts
-5:
-	.set	offset,0
-	.rept	16
-	clr.b	(offset,a2)
-	clr.b	(offset+(NB_LINES*NB_BYTES_PER_SPRITE_ROW*2),a2)
-	.set	offset,offset+NB_BYTES_PER_SPRITE_ROW
-	.endr
-	rts
-
-1:
-	rts
-	
-blank_row:
-	.skip	8
-	
-update_bg_tile_game:
-	moveq	#0,d2	| mask up to 255
-	move.b	d0,d2
-	bsr		compute_tile_xy
-	
-	move.l		character_tables+4,a0
-
-	btst	#11,d7		| third layer? sprites
-	jne	update_game_elevators
-	
-	move.l	panel_screen_ptr,a1
-	lea		mulNB_BYTES_PER_ROW_table,A2
-	move.w	(a2,d1.w*2),d1
-	add.w	d0,d1
-	move.l	#FG_SCREEN_PLANE_SIZE,d5
-	
-	btst	#10,d7		| second layer?
-	jeq	0f
-	move.l	(4,a0),a0	
-	move.l	#BG_SCREEN_PLANE_SIZE,d5
-	move.l	bg_screen_ptr,a1
-	add.w	d1,a1
-	jra		end_update_playfield_tile
-0:
-	move.l	(a0),a0	
-	add.w	d1,a1
-	
-end_update_bg_tile:
-	tst.b	d2
-	jeq		11f		| 0: clear
-	move.l	(a0,d2.w*4),d0
-	.ifndef	RELEASE
-	jne		12f
-	add.w	#0xC400,d7
-	lea		title_tile_not_registered_error,a0
-	tst.b	current_gfx_bank
-	jeq		111f
-	lea		game_tile_not_registered_error,a0	
-111:
-	jbsr	osd_break
-	jra		11f
-12:
-	.endif
-	
-	* just copy
-	move.l	d0,a2
-	move.w	#NB_PLAYFIELD_PLANES-1,d4
-4:
-	move.l	(a2)+,d0
-	jeq		5f
-	move.l	d0,a0
-	.set	offset,0
-	.rept	8
-	move.b	(a0)+,(offset,a1)
-
-	.set	offset,offset+NB_BYTES_PER_ROW
-	.endr
-41:
-	add.l	d5,a1
-	dbf		d4,4b
-0:
-	rts
-5:
-	.set	offset,0
-	.rept	8
-	clr.b	(offset,a1)
-	.set	offset,offset+NB_BYTES_PER_ROW
-	.endr
-	jra		41b
-	
-	* clear tile
-
-11:
-	move.w	#NB_PLAYFIELD_PLANES-1,d4
-111:
-	.set	offset,0
-	.rept	8
-	clr.b	(offset,a1)
-	.set	offset,offset+NB_BYTES_PER_ROW
-	.endr
-	add.w	d5,a1
-	dbf		d4,111b
-2:
-	rts
-	
-* almost the same but we need to write at 2 locations (barrel scroll)
-end_update_playfield_tile:
-	lea		(BG_SCREEN_PLANE_SIZE/2,a1),a3
-	move.l	(a0,d2.w*4),d0
-	jeq		11f		| 0: clear
-	
-	* just copy
-	move.l	d0,a2
-	move.w	#NB_PLAYFIELD_PLANES-1,d4
-4:
-	move.l	(a2)+,d0
-	jeq		5f
-	move.l	d0,a0
-	.set	offset,0
-	.rept	8
-	move.b	(a0)+,d0
-	move.b	d0,(offset,a1)
-	move.b	d0,(offset,a3)
-	.set	offset,offset+NB_BYTES_PER_ROW
-	.endr
-41:
-	add.l	d5,a1
-	add.l	d5,a3
-	dbf		d4,4b
-0:
-	rts
-5:
-	.set	offset,0
-	.rept	8
-	clr.b	(offset,a1)
-	clr.b	(offset,a3)
-	.set	offset,offset+NB_BYTES_PER_ROW
-	.endr
-	jra		41b
-	
-	* clear tile
-
-11:
-	move.w	#NB_PLAYFIELD_PLANES-1,d4
-111:
-	.set	offset,0
-	.rept	8
-	clr.b	(offset,a1)
-	clr.b	(offset,a3)
-	.set	offset,offset+NB_BYTES_PER_ROW
-	.endr
-	add.w	d5,a1
-	add.w	d5,a3
-	dbf		d4,111b
-2:
-	rts
-
-12:
-	* clut/tile combo not declared as used
-	**blitz
-	rts
-
-
-	
-* < d0.w: x
-* > d0.L: control word
-store_column_sprite_pos:
-    move.l  a0,-(a7)
-
-    lea	HW_SpriteXTable(pc),a0
-	
-	.ifdef	NO68020
-    add.w	d0,d0
-    add.w	d0,d0
-    move.l	(a0,d0.w),d0
-	.else
-    move.l	(a0,d0.w*4),d0
-	.endif 
-	
-    or.l	y_pos(pc),d0
-
-    move.l  (a7)+,a0
-    rts
-
-
-* Y start = 0, Y end = 240
-	.set	ys,0x1c
-	.set	ye,ys+SPRITE_DISPLAYED_HEIGHT
-y_pos:
-    .byte  ys&255, 0, ye&255, ((ys>>6)&4)+((ye>>7)&2)
-	
 HW_SpriteXTable:
 	.set	reptn,0
 	.rept 320
@@ -2234,23 +1682,6 @@ set_fg_bitplanes:
 osd_debug_hook:
 	rts
 	
-osd_get_random:
-* > D0: pseudo random value (8 bits, all other bits zeroed)
-	movem.l	a0,-(a7)
-	lea	seed(pc),a0
-	move.l	(a0),d0
-	* thanks meynaf
-	mulu #0xa57b,d0
-	addi.l #0xbb40e62d,d0
-	rol.l #6,d0	
-	move.l	d0,(a0) 
-	movem.l	(a7)+,a0
-	add.b	_custom+vposr,d0
-	and.l	#0xFF,d0
-	rts
-seed:
-	dc.l	0x12345678
-
 
 * d0=scroll value
 
@@ -2303,6 +1734,18 @@ osd_read_inputs_2:
 *	bclr	#5,d0
 *0:
 	movem.l	(a7)+,a0/d1
+	rts
+	
+osd_sound_stop:
+	rts
+	
+osd_sound_start:
+	rts
+
+save_highscores:
+	rts
+
+load_highscores:
 	rts
 	
 osd_read_inputs_1:
@@ -2662,8 +2105,7 @@ host_sprites:
 keyboard_table:
 	ds.b	0x100
 
-rom_base:
-	.long	0
+	
 interrupt_mode:
 	.word	0
 	
@@ -2683,6 +2125,8 @@ _gfxbase:
 	.long	0
 _dosbase:
 	.long	0
+music_tick:
+	.word	0
 delay_timer:
 	.word	0
 one_out_of_five:
@@ -2692,7 +2136,7 @@ fg_screen_data_1:
 fg_screen_data_2:
 	.long	0
 	
-	* macro to define a color0 change, synced with elevator shafts
+	* macro to define a color0 change, synced with baddudes shafts
 	* thanks to ross for finetuning this part, it was tricky!
 	.macro	 DYN_COLOR_ROW	hpos
     .word    0x35+(\hpos<<8),0xFFFE
@@ -2747,15 +2191,14 @@ main_scroll_value:
 	
 cheat_used:
 	.byte	0
+rom_file:
+	.asciz	"bad_dudes.bin"
 dosname:
-	.ascii	"dos.library"
-	.byte	0
+	.asciz	"dos.library"
 graphicsname:
-	.ascii	"graphics.library"
-	.byte	0
+	.asciz	"graphics.library"
 floppy_file:
-	.ascii	"floppy"
-	.byte	0
+	.asciz	"floppy"
 temp_filename_buffer:
 	ds.b	255
 _end_of_ng_code:
@@ -2766,7 +2209,7 @@ _end_of_ng_code:
 sprite_table:
 	.skip	SPRITE_STRUCT_SIZE*8
 	
-	.include "palettes.68k"
+	.include "palette.68k"
 
 	
 	* on amiga, this file is included in mpatrol.68k file
@@ -2919,7 +2362,7 @@ bob_colors:
 upper_dynamic_row_00:
 	.set	dynrow,0x3D
 	.rept	0x43
-	* elevator dynamic color per row (0-6)
+	* baddudes dynamic color per row (0-6)
 	DYN_COLOR_ROW	dynrow
 	.set		dynrow,dynrow+1
 	.endr
@@ -2933,7 +2376,7 @@ intreq_block:
 
 upper_dynamic_row_43:
 	.rept	0x43+40
-	* elevator dynamic color per row (0-6)
+	* baddudes dynamic color per row (0-6)
 	DYN_COLOR_ROW	dynrow
 	.set		dynrow,dynrow+1
 	.endr
