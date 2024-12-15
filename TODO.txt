@@ -1,3 +1,8 @@
 - recode patchlist macros system (compatible with nonwhdl: generates code)
-- generate patchlist from source to correct RAM locations
-- generate patchlist from source to patch screen tile writes
+- generate patchlist from source to patch screen tile writes: move.w #xxx,videoram: trap #0,...
+trap #0 sur special write move b
+trap #1 sur special write move w
+trap #2 sur special read move.b
+trap #3 sur special read move.w if needed
+- PL_NOP
+

@@ -177,6 +177,7 @@ start:
 	.global		cheat_used
 * osd layer		
 	.global		osd_flush_caches
+	.global		osd_break
 	
 	.include	"ReadJoypad.i"
 	.include	"whdload_funcs.i"

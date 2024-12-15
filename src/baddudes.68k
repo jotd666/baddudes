@@ -10,13 +10,21 @@
 baddudes_reset:
 	move.l	rom_base,a0
 	move.l	ram_base,a1
+	sub.l	#0xFF8000,a1	| arcade RAM base
+	move.l	a1,d1
 	
 	lea		ram_relocs(pc),a2
-	
+0:
+	move.l	(a2)+,d0
+	jmi		1f
+	add.l	d1,(a0,d0.l)
+	jra		0b
+1:
 	* jump to rom start
 	jbsr	osd_flush_caches
 	move.l	rom_base,-(a7)
 	add.l	#0x13dc,(a7)
+	jbsr	osd_break
 	rts
 	
 baddudes_irq:

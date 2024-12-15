@@ -36,4 +36,4 @@ with open(src_dir / "patchlist.68k","w") as f:
     f.write("ram_relocs:\n")
     for (reloc,offset),v in sorted(relocated_ram_offsets.items()):
         f.write(f"\t.long\t0x{reloc:06x}+{offset}\t| {v}\n")
-
+    f.write("\t.long\t-1\n")

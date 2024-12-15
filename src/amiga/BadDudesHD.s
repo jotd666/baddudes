@@ -129,5 +129,5 @@ _resload:
 progstart
     dc.l    0
 exe
-	dc.b	"elevator_action_aga",0
+	dc.b	"baddudes",0
 	
