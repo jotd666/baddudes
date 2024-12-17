@@ -6,4 +6,7 @@ trap #2 sur special read move.b
 trap #3 sur special read move.w if needed
 - PL_NOP
 - PL_S
+- PL_PS
+- PL_P
+
 
