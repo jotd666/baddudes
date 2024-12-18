@@ -67,7 +67,7 @@ for line in af.lines:
                             relocated_ram_offsets[(reloc_address,offset)] = arg
                         elif ext_address >= 0x240000:
                             instruction = inst_info["instruction"]
-                            if instruction.startswith("MOVE."):
+                            if instruction.startswith(("MOVE.","ADD.","SUB.")):
                                 size = instruction[-1]
                                 size = 2 if size=="W" else 1
                                 size_str = "word" if size == 2 else "byte"
@@ -96,16 +96,19 @@ for line in af.lines:
 
                                     patch_function = f"{operation}_{size_str}_{src_str}_to_{dest_str}"
                                     add_pss(reloc_address,patch_function,fill=inst_info["size"]-6)
-                                    patch_functions[patch_function] = {"operation":operation,"size":size,"src":src,"dest":dest}
+                                    patch_functions[patch_function] = {"instruction":instruction.lower(),
+                                    "operation":operation,"size":size,"src":src,"dest":dest,"size_str":size_str}
 
 
                     except ValueError:
                         pass
 
-# manual patches, may override auto patches
+#############################################
+# manual patches, may override auto patches #
 add_i(0x31c,"infinite loop")
 add_s(0x013e4,0x01428,"skip ram test & stack set")
 add_ps(0xcd3e,"write_word_a0plus_to_0030c010","manual")
+#############################################
 
 saveregs = """\tmove.w\td7,-(a7)
 \tmove.l\ta6,-(a7)"""
@@ -136,6 +139,43 @@ with open(src_dir / "patchlist.68k","w") as f:
     f.write("\n")
     for k,v in sorted(patch_functions.items()):
         f.write(f"{k}:\n{saveregs}\n")
+
+        osd_call = "\n".format(**v)
+        if v["operation"]=="read":
+            # read operation
+            f.write("""\tlea\t0x{src:08x},a6
+\tjbsr\tosd_{operation}_{size_str}
+""".format(**v))
+            dest = v["dest"]
+            instruction = v["instruction"]
+            if "_" in dest:
+                dest_address = int(dest.split("_")[-1],16)
+                if is_in_ram(dest_address):
+                    f.write(f"""\tlea\t0x{dest_address:08x},a6
+\tjbsr\tosd_real_ram_address
+""")
+                else:
+                    raise Exception("dest not in RAM: {:08x}".format(dest_address))
+                dest = "(a6)"
+            f.write(f"\t{instruction}\td7,{dest}\n")
+        else:
+            # write operation
+
+            src = v["src"]
+            instruction = v["instruction"]
+            if "_" in src:
+                src_address = int(src.split("_")[-1],16)
+                if is_in_ram(src_address):
+                    f.write(f"""\tlea\t0x{src_address:08x},a6
+\tjbsr\tosd_real_ram_address
+""")
+                src = "(a6)"
+            f.write(f"\t{instruction}\t{src},d7\n")
+
+            f.write("""\tlea\t0x{dest:08x},a6
+\tjbsr\tosd_{operation}_{size_str}
+""".format(**v))
+
         f.write(f"{restoreregs}\n\trts\n\n")
 
     f.write(f"""write_word_a0plus_to_0030c010:
