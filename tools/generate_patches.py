@@ -89,6 +89,7 @@ for line in af.lines:
                                     src_str = src.strip("#$")
                                     if "#" in src:
                                         src_str = "imm_"+src_str
+                                    src = src.replace("$","0x")
                                     dest = ext_address
                                     dest_str = f"{dest:08x}"
                                     operation = "write"
@@ -109,11 +110,13 @@ for line in af.lines:
 
 #############################################
 # manual patches, may override auto patches #
+add_i(0x100,"spurious interrupt")
 add_i(0x31c,"infinite loop")
 add_s(0x013e4,0x01428,"skip ram test & stack set")
 add_ps(0xcd3e,"write_word_a0plus_to_0030c010","manual")
 add_ps(0x01502,"clear_sound")
 add_ps(0x0979a,"test_mcu_reply")
+add_ps(0x1b310,"copy_rom_to_video_1b310")
 
 for offset in [0x0174c,0x0175c,0x07e66]:
     add_pss(offset,"test_input_bit_d1",2)
@@ -140,12 +143,46 @@ for k,v in to_be_manually_patched.items():
 
 print(f"\nunpatched: {nb_unpatched}")
 
-saveregs = """\tmove.w\td7,-(a7)
-\tmove.l\ta6,-(a7)"""
-restoreregs = """\tmove.l\t(a7)+,a6
-\tmove.w\t(a7)+,d7"""
 
 with open(src_dir / "patchlist.68k","w") as f:
+    f.write("""\t.macro\tSTORE_REGS
+\tmove.w\td7,-(a7)
+\tmove.l\ta6,-(a7)
+\t.endm
+\t.macro\tRESTORE_REGS
+\tmove.l\t(a7)+,a6
+\tmove.w\t(a7)+,d7
+\t.endm
+\t.macro\tPL_START
+\t.endm
+\t.macro\tPL_END
+\t.word\t-1
+\t.endm
+\t.macro\tPL_I  offset
+\t.word\t0x8000
+\t.long\t\\offset
+\t.endm
+\t.macro\tPL_NOP    offset,nb_nops
+\t.word\t0x8001
+\t.long\t\\offset
+\t.word\t\\nb_nops
+\t.endm
+\t.macro\tPL_PS    offset,func
+\t.word\t0x8001
+\t.long\t\\offset,\\func
+\t.endm
+\t.macro\tPL_PSS    offset,func,nb_nops
+\t.word\t0x8002
+\t.long\t\\offset,\\func
+\t.word\t\\nb_nops
+\t.endm
+\t.macro\tPL_S    offset,skip
+\t.word\t0x8002
+\t.long\t\\offset
+\t.word\t\\skip
+\t.endm
+
+""")
     f.write("ram_relocs:\n")
     for (reloc,offset),v in sorted(relocated_ram_offsets.items()):
         f.write(f"\t.long\t0x{reloc:06x}+{offset}\t| {v}\n")
@@ -168,7 +205,7 @@ with open(src_dir / "patchlist.68k","w") as f:
 
     f.write("\n")
     for k,v in sorted(patch_functions.items()):
-        f.write(f"{k}:\n{saveregs}\n")
+        f.write(f"{k}:\n\tSTORE_REGS\n")
 
         osd_call = "\n".format(**v)
         if v["operation"]=="read":
@@ -206,45 +243,5 @@ with open(src_dir / "patchlist.68k","w") as f:
 \tjbsr\tosd_{operation}_{size_str}
 """.format(**v))
 
-        f.write(f"{restoreregs}\n\trts\n\n")
+        f.write(f"\tRESTORE_REGS\n\trts\n\n")
 
-    f.write(f"""write_word_a0plus_to_0030c010:
-{saveregs}
-\tmove.w\t(a0)+,d7
-\tlea\t0x0030c010,a6
-\tjbsr\tosd_write_word
-{restoreregs}
-\trts
-test_input_bit_7:
-    *'BTST', 'arguments': ['#7', 'system_inputs_0030c003']
-    jbsr    osd_break
-    rts
-
-test_input_bit_d1:
-    * btst D1,system_inputs_0030c003
-    jbsr    osd_break
-    nop
-    rts
-
-test_dsw_bit_4:
-    *'arguments': ['#4', 'dsw_0030c005']
-    jbsr    osd_break
-    nop
-    nop
-    rts
-
-clear_sound:
-    *;01502: 'address': 5378, 'size': 6, 'instruction': 'CLR.W', 'arguments': ['sound_0030c010']
-    jbsr    osd_break
-    nop
-    nop
-    rts
-
-test_mcu_reply:
-    *'address': 38810, 'size': 6, 'instruction': 'TST.W', 'arguments': ['mcu_reply_0030c008']
-    jbsr    osd_break
-    nop
-    nop
-    rts
-
-""")

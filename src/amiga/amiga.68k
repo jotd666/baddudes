@@ -178,6 +178,14 @@ start:
 * osd layer		
 	.global		osd_flush_caches
 	.global		osd_break
+	.global		osd_real_ram_address
+	.global		osd_read_byte
+	.global		osd_read_word
+	.global		osd_read_long
+	.global		osd_write_byte
+	.global		osd_write_word
+	.global		osd_write_long
+
 	
 	.include	"ReadJoypad.i"
 	.include	"whdload_funcs.i"
@@ -718,6 +726,23 @@ osd_flush_caches:
 	move.l	4,a6
 	jsr	(_LVOCacheClearU,a6)
 	rts
+	
+osd_real_ram_address:
+	illegal
+	rts
+	
+osd_read_byte:
+	illegal
+osd_write_byte:
+	illegal
+osd_read_word:
+	illegal
+osd_write_word:
+	illegal
+osd_read_long:
+	illegal
+osd_write_long:
+	illegal
 	
 osd_blitz:
 	blitz

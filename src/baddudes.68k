@@ -30,3 +30,56 @@ baddudes_reset:
 baddudes_irq:
 	rts
 	
+* manual patches
+
+write_word_a0plus_to_0030c010:
+	STORE_REGS
+	move.w	(a0)+,d7
+	lea	0x0030c010,a6
+	jbsr	osd_write_word
+	RESTORE_REGS
+	rts
+test_input_bit_7:
+    *'BTST', 'arguments': ['#7', 'system_inputs_0030c003']
+    jbsr    osd_break
+    rts
+
+test_input_bit_d1:
+    * btst D1,system_inputs_0030c003
+    jbsr    osd_break
+    nop
+    rts
+
+test_dsw_bit_4:
+    *'arguments': ['#4', 'dsw_0030c005']
+    jbsr    osd_break
+    nop
+    nop
+    rts
+
+clear_sound:
+    *;01502: 'address': 5378, 'size': 6, 'instruction': 'CLR.W', 'arguments': ['sound_0030c010']
+    jbsr    osd_break
+    nop
+    nop
+    rts
+
+test_mcu_reply:
+    *'address': 38810, 'size': 6, 'instruction': 'TST.W', 'arguments': ['mcu_reply_0030c008']
+    jbsr    osd_break
+    nop
+    nop
+    rts
+
+copy_rom_to_video_1b310:
+0:
+    MOVE.W    (A2)+,(A1)+        
+    SUBQ.W    #1,D1            
+    BCC.S    0b
+    SUBQ.W    #1,D0
+    BCS.S    lb_1b320
+    MOVE.W    #0x000f,D1
+    BRA.S    0b
+lb_1b320:
+    RTS
+	
