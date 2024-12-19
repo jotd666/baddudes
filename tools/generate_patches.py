@@ -15,9 +15,11 @@ def is_in_ram(ext_address):
 
 special_read = {0x300000,0x300001,0x300008,0x300009} | set(range(0x30c000, 0x30c010))
 
+manual_patch_declare = dict()
+
 patchlist = {}
 patch_functions = {}
-
+to_be_manually_patched = {}
 
 def add_i(offset,comment=""):
     patchlist[offset] = {"type":"I","comment":comment}
@@ -98,6 +100,8 @@ for line in af.lines:
                                     add_pss(reloc_address,patch_function,fill=inst_info["size"]-6)
                                     patch_functions[patch_function] = {"instruction":instruction.lower(),
                                     "operation":operation,"size":size,"src":src,"dest":dest,"size_str":size_str}
+                            else:
+                                to_be_manually_patched[inst_info["address"]] = inst_info
 
 
                     except ValueError:
@@ -108,7 +112,33 @@ for line in af.lines:
 add_i(0x31c,"infinite loop")
 add_s(0x013e4,0x01428,"skip ram test & stack set")
 add_ps(0xcd3e,"write_word_a0plus_to_0030c010","manual")
+add_ps(0x01502,"clear_sound")
+add_ps(0x0979a,"test_mcu_reply")
+
+for offset in [0x0174c,0x0175c,0x07e66]:
+    add_pss(offset,"test_input_bit_d1",2)
+for offset in [0x014ee,0x01652,0x0173c]:
+    add_pss(offset,"test_dsw_bit_4",2)
+
+for offset in [0x097ae,0x097b8,0x097c2]:
+    add_pss(offset,"test_input_bit_7",2)
+
+
 #############################################
+
+auto_patch_declare = set(patchlist)
+manual_patch_declare = {0x002c8,0x002de,0x020a6,0x020ba,0x02134,0x2148,0x07398,0x073d2,0x0740c,  # function write_tiles_of_given_color_01fc4 patched
+}
+
+to_be_manually_patched = {k:v for k,v in to_be_manually_patched.items() if k not in auto_patch_declare and k not in manual_patch_declare}
+
+nb_unpatched = 0
+for k,v in to_be_manually_patched.items():
+    if v["instruction"] not in ["dc.l"]:
+        nb_unpatched += 1
+        print(f";{k:05x}: {v}")
+
+print(f"\nunpatched: {nb_unpatched}")
 
 saveregs = """\tmove.w\td7,-(a7)
 \tmove.l\ta6,-(a7)"""
@@ -185,4 +215,36 @@ with open(src_dir / "patchlist.68k","w") as f:
 \tjbsr\tosd_write_word
 {restoreregs}
 \trts
+test_input_bit_7:
+    *'BTST', 'arguments': ['#7', 'system_inputs_0030c003']
+    jbsr    osd_break
+    rts
+
+test_input_bit_d1:
+    * btst D1,system_inputs_0030c003
+    jbsr    osd_break
+    nop
+    rts
+
+test_dsw_bit_4:
+    *'arguments': ['#4', 'dsw_0030c005']
+    jbsr    osd_break
+    nop
+    nop
+    rts
+
+clear_sound:
+    *;01502: 'address': 5378, 'size': 6, 'instruction': 'CLR.W', 'arguments': ['sound_0030c010']
+    jbsr    osd_break
+    nop
+    nop
+    rts
+
+test_mcu_reply:
+    *'address': 38810, 'size': 6, 'instruction': 'TST.W', 'arguments': ['mcu_reply_0030c008']
+    jbsr    osd_break
+    nop
+    nop
+    rts
+
 """)
