@@ -185,6 +185,7 @@ start:
 	.global		osd_write_byte
 	.global		osd_write_word
 	.global		osd_write_long
+	.global		osd_enable_interrupts
 
 	
 	.include	"ReadJoypad.i"
@@ -727,22 +728,178 @@ osd_flush_caches:
 	jsr	(_LVOCacheClearU,a6)
 	rts
 	
-osd_real_ram_address:
+* < D0: operation size
+* < D1: operation type read/write
+* < A6: address
+* <> D7: input/output
+
+special_memory_op:
+	movem.l	d2-d3/a0-a1,-(a7)
+	* hash the address
+	move.l	a6,d2
+	swap	d2		| 24, 30, 31
+	sub.w	#0x24,d2
+	jeq		video_ram_op
+	cmp.w	#0x30-0x24,D2
+	jeq		ports_ram_op
+	.ifndef RELEASE
+	cmp.w	#0x31-0x24,D2
+	jeq		palette_and_sprites_ram_op
 	illegal
+	.endif
+	jra		palette_and_sprites_ram_op
+special_memory_op_out:
+	movem.l	(a7)+,d2-d3/a0-a1
 	rts
 	
+* virtual address 0x24xxxx
+video_ram_op:
+	.ifndef RELEASE
+	add.w	#0x24,d2
+	.endif
+	swap	d2
+	move.w	d2,d3
+	and.w	#0xF000,d3
+	rol.w	#4,d3
+	lea		addr_24xxxx_table_op(pc),a0
+	jsr		([a0,d3.w*4])
+	
+	jra		special_memory_op_out
+	
+* virtual address 0x30xxxx
+ports_ram_op:
+	.ifndef RELEASE
+	add.w	#0x24,d2
+	.endif
+
+	swap	d2
+	move.w	d2,d3
+	and.w	#0xC000,d3
+	jeq		an_ports
+	* 0x30Cxxx, 0->0x19: atm do nothing
+	jra		special_memory_op_out
+an_ports:
+	jbsr	osd_break
+	jra		special_memory_op_out
+
+* virtual address 0x31xxxx
+palette_and_sprites_ram_op:
+	.ifndef RELEASE
+	add.w	#0x31,d2
+	.endif
+
+	swap	d2
+			| to_implement
+	jra		special_memory_op_out
+
+addr_24xxxx_table_op:
+	.long	addr_240xxx_op
+	.long	addr_unmapped_op
+	.long	addr_242xxx_op
+	.long	addr_unmapped_op
+	.long	addr_244xxx_tile_layer_0_op
+	.long	addr_unmapped_op
+	.long	addr_246xxx_op
+	.long	addr_unmapped_op
+	.long	addr_248xxx_op
+	.long	addr_unmapped_op
+	.long	addr_24Axxx_tile_layer_1_op
+	.long	addr_unmapped_op
+	.long	addr_24Cxxx_op
+	.long	addr_24Dxxx_tile_layer_2_op
+	.long	addr_unmapped_op
+	.long	addr_unmapped_op
+	
+addr_unmapped_op:
+	lea		unmapped_memory_message(pc),a0
+	jbsr	osd_break
+	rts
+
+addr_240xxx_op:
+	rts		| to_implement
+addr_242xxx_op:
+	rts	| to_implement
+	
+addr_244xxx_tile_layer_0_op:
+	jbsr		osd_break
+	nop
+	nop
+	nop
+	nop
+	rts
+addr_248xxx_op:
+	rts	| to_implement
+addr_246xxx_op:
+	rts	| to_implement
+	
+addr_24Axxx_tile_layer_1_op:
+	jbsr		osd_break
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	rts
+addr_24Cxxx_op:
+	rts	      | to_implement
+addr_24Dxxx_tile_layer_2_op:
+	jbsr		osd_break
+	nop
+	nop
+	nop
+	nop
+	nop
+	nop
+	rts
+	
+
+* < A6: virtual address (in RAM)
+* > A6: real address
+
+osd_real_ram_address:
+	sub.l	#0xFF8000,a6
+	.ifndef	RELEASE
+	bpl.b	0f
+	jbsr	osd_break
+	illegal
+0:	
+	.endif
+	
+	add.l	ram_base,a6
+	rts
+	
+	.macro	OSD_MEM_OP	size,type
+	movem.w	d0/d1,-(a7)
+	move.w	#\size,d0
+	move.w	#\type,d1
+	jbsr	special_memory_op
+	movem.w	(a7)+,d0/d1
+	rts
+	.endm
+	
 osd_read_byte:
-	illegal
+	OSD_MEM_OP	1,0
+
 osd_write_byte:
-	illegal
+	OSD_MEM_OP	1,1
+
+
 osd_read_word:
-	illegal
+	OSD_MEM_OP	2,0
+
 osd_write_word:
-	illegal
+	OSD_MEM_OP	2,1
+
+
 osd_read_long:
-	illegal
+	OSD_MEM_OP	4,0
+
 osd_write_long:
-	illegal
+	OSD_MEM_OP	4,1
+
 	
 osd_blitz:
 	blitz
@@ -770,7 +927,9 @@ osd_break:
 1003:
         .align	2
 
-	
+unmapped_memory_message:	
+	.asciz	"unmapped memory (in d2)"
+        .align	2
 
 * < D0: number of 1/60Hz ticks
 * can work with interrupts enabled or disabled

@@ -26,7 +26,6 @@ baddudes_reset:
 
 	move.l	rom_base,-(a7)
 	add.l	#0x13dc,(a7)
-	jbsr	osd_break
 	rts
 	
 baddudes_irq:
@@ -165,6 +164,34 @@ do_PL_R:
 
 * manual patches
 
+set_scroll_values:
+	STORE_REGS
+	exg	a0,a6
+	move.l	d0,d7
+0:
+	jbsr	osd_write_long
+	addq	#4,a6
+	DBF	D1,0b
+	exg	a0,a6
+	RESTORE_REGS
+	rts
+	
+enable_interrupts_01476:
+	jbsr	osd_enable_interrupts
+	rts
+	
+set_palette_a2:
+	STORE_REGS
+	exg	a0,a6
+0:
+	move.l	(a2)+,d7
+	jbsr	osd_write_long
+	dbf	d0,0b
+	
+	exg	a0,a6
+	RESTORE_REGS
+	rts
+	
 write_word_a0plus_to_0030c010:
 	STORE_REGS
 	move.w	(a0)+,d7
@@ -172,6 +199,7 @@ write_word_a0plus_to_0030c010:
 	jbsr	osd_write_word
 	RESTORE_REGS
 	rts
+	
 test_input_bit_7:
     *'BTST', 'arguments': ['#7', 'system_inputs_0030c003']
     jbsr    osd_break
@@ -183,18 +211,9 @@ test_input_bit_d1:
     nop
     rts
 
-test_dsw_bit_4:
-    *'arguments': ['#4', 'dsw_0030c005']
-    jbsr    osd_break
-    nop
-    nop
-    rts
 
 clear_sound:
     *;01502: 'address': 5378, 'size': 6, 'instruction': 'CLR.W', 'arguments': ['sound_0030c010']
-    jbsr    osd_break
-    nop
-    nop
     rts
 
 test_mcu_reply:

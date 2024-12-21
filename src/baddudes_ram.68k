@@ -15,6 +15,9 @@
 	.global	infinite_lives_flag
 	.global	infinite_time_flag
 	.global break_at_startup_flag
+	.global	video_ram_244000
+	.global	video_ram_24a000
+	.global	video_ram_24d000
 
 	.global	highscore_needs_saving_flag
 	.global	vb_ticks_count
@@ -23,7 +26,10 @@
 	.align	2
 
 	
-
+* on amiga this is guaranteed to be zero (bss hunks are zeroed)
+* so ".skip" instruction provides zero-initialized buffer
+* when porting into another 68k machine, make sure it is zeroed too
+* as not all OSes do that with their bss
 ram_buffer:
 	.ifdef	RELEASE
 	.skip	0xC000-0x8000
@@ -32,6 +38,13 @@ ram_buffer:
 ram_start_ff8000:
 	.long	0
 	.endif
+
+video_ram_244000:
+	.skip	0x800
+video_ram_24a000:
+	.skip	0x800
+video_ram_24d000:
+	.skip	0x800
 rom_base:
 	.long	0
 ram_base:
