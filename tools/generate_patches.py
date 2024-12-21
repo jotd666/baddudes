@@ -153,53 +153,6 @@ with open(src_dir / "patchlist.68k","w") as f:
 \tmove.l\t(a7)+,a6
 \tmove.w\t(a7)+,d7
 \t.endm
-\t.macro\tPL_START
-\t.endm
-\t.macro\tPL_END
-\t.word\t-1
-\t.endm
-\t.macro\tPL_I  offset
-\t.word\t0x8000
-\t.long\t\\offset
-\t.endm
-\t.macro\tPL_NOP    offset,nb_nops
-\t.word\t0x8001
-\t.long\t\\offset
-\t.word\t\\nb_nops
-\t.endm
-\t.macro\tPL_PS    offset,func
-\t.word\t0x8002
-\t.long\t\\offset,\\func
-\t.endm
-\t.macro\tPL_PSS    offset,func,nb_nops
-\t.word\t0x8003
-\t.long\t\\offset,\\func
-\t.word\t\\nb_nops
-\t.endm
-\t.macro\tPL_S    offset,skip
-\t.word\t0x8004
-\t.long\t\\offset
-\t.word\t\\skip
-\t.endm
-\t.macro\tPL_L    offset,value
-\t.word\t0x8005
-\t.long\t\\offset
-\t.long\t\\value
-\t.endm
-\t.macro\tPL_W    offset,value
-\t.word\t0x8006
-\t.long\t\\offset
-\t.word\t\\value
-\t.endm
-\t.macro\tPL_B    offset,value
-\t.word\t0x8007
-\t.long\t\\offset
-\t.word\t\\value
-\t.endm
-\t.macro\tPL_R    offset
-\t.word\t0x8008
-\t.long\t\\offset
-\t.endm
 
 """)
     f.write("ram_relocs:\n")
