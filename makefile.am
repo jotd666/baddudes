@@ -31,14 +31,12 @@ WHDASM = vasmm68k_mot -DDATETIME -I$(HDBASE)/amiga39_JFF_OS/include -I$(WHDBASE)
 OBJS = $(MAIN_OBJ) $(PROGNAME).o vbr.o ReadJoyPad.o ptplayer.o 
 #graphics.o  sounds.o
 
-all: $(AMIGASRC)/graphics.68k $(AMIGASRC)/sounds.68k $(MAIN) $(WHDLOADER) $(WHDLOADER_CHIP)
+all: $(AMIGASRC)/sounds.68k $(MAIN) $(WHDLOADER) $(WHDLOADER_CHIP)
 
 
 clean:
 	del $(OBJS) "$(MAIN)"
 	
-#$(AMIGASRC)/graphics.68k: $(ASSETS)/convert_graphics.py
-#	cmd /c $(ASSETS)\convert_graphics.py
 
 #$(AMIGASRC)/sounds.68k: $(ASSETS)/convert_sounds.py $(ASSETS)/../sounds/$(PROGNAME)_conv.mod
 #$(AMIGASRC)/sounds.68k: $(ASSETS)/convert_sounds.py 
@@ -63,8 +61,7 @@ sounds.o: $(AMIGASRC)/sounds.68k
 	$(ASM) -I$(AMIGASRC) $(AMIGASRC)/sounds.68k -o sounds.o
 ReadJoyPad.o: $(AMIGASRC)/ReadJoyPad.68k amiga/ReadJoyPad.i
 	$(ASM) -I$(AMIGASRC) $(AMIGASRC)/ReadJoyPad.68k -o ReadJoyPad.o
-graphics.o: $(AMIGASRC)/graphics.68k $(PROGNAME).inc
-	$(ASM) $(AMIGASRC)/graphics.68k -o graphics.o
+
 
 
 $(WHDLOADER) : $(SOURCE)

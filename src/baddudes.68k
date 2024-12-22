@@ -223,6 +223,17 @@ test_input_bit_d1:
     nop
     rts
 
+copy_to_tile_064f6:
+	ADDA.L	D7,A3
+	STORE_REGS
+	exg		a6,a0
+	MOVE.W	(A3),d7
+	jbsr	osd_write_word
+	exg		a6,a0
+	RESTORE_REGS
+	MOVE.L	A0,D3
+	rts
+	
 copy_memory_to_tiles_0837c:
 	STORE_REGS
 	MOVE.W	#0x01ff,D0

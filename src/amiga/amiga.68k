@@ -220,7 +220,10 @@ _user:
 	move.l	a1,rom_base
 	jsr	(resload_LoadFileDecrunch,a2)
 	
-    bra		.no_forbid
+	lea		tiles_1_file(pc),a0
+	lea		tiles_1,a1
+ 	jsr	(resload_LoadFileDecrunch,a2)
+   bra		.no_forbid
 .standard:
 	
     * open dos library, graphics library
@@ -859,30 +862,6 @@ addr_30c00xx_table_op:
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 addr_unmapped_op:
 	lea		unmapped_memory_message(pc),a0
 	jbsr	osd_break
@@ -893,6 +872,7 @@ addr_240xxx_op:
 addr_242xxx_op:
 	rts	| to_implement
 	
+* 8x8 tile layer
 addr_244xxx_tile_layer_0_op:
 	jbsr		osd_break
 	nop
@@ -905,19 +885,91 @@ addr_248xxx_op:
 addr_246xxx_op:
 	rts	| to_implement
 	
+* 16x16 tile layer
 addr_24Axxx_tile_layer_1_op:
-	jbsr		osd_break
-	move.b	d0,d0
-	nop
-	nop
-	nop
-	nop
-	nop
-	nop
-	nop
+	subq	#1,d0
+	jpl		0f
+	* byte op: ignore
 	rts
+0:
+	movem.l	a0-a4/d2-d6,-(a7)
+	and.w	#0x7FF,d2
+10:
+	lea		video_ram_24a000,a0
+	add.w	d2,a0
+	tst.b	d1
+	jne		0f		| write
+	jbsr	osd_break
+	move.w	(a0),d7	| read (does that happen? probably not)
+	jra		101f
+0:
+	cmp.w	(a0),d7
+	jeq		100f	| already the proper value
+
+	move.w	d2,d3
+	and.w	#0x1F,D3		| this is X
+	add.w	d3,d3			| 16-bit wide
+	lsr.w	#5,D2			| this is Y/2
+	lea		mulNB_BYTES_PER_ROW_table(pc),a2
+	move.l	bg_screen_ptr(pc),a1
+	add.w	(a2,d2.w*4),a1
+	add.w	d3,a1			| screen dest address on bg playfield
+	move.w	d7,d5			| save code
+	move.w	d7,d6			| tile code
+	and.w	#0x7FF,d6
+	jeq		erase_tile
+	rol.w	#4,d5
+	and.w	#0xF,d5			| tile clut
+	moveq	#0,d5			| tile clut (atm 0)
+	lea		tiles_1,a0
+	add.l	(a0,d6.w*4),a0	| select tile code
+	add.l	(a0,d5.w*4),a0	| select tile clut
+	moveq	#(NB_PLAYFIELD_PLANES-1),d6
+	move.l	a0,a3			| base ptr
+0:
+	move.l	(a0)+,d2
+	jeq		2f		| erase plane
+	lea		(a3,d2.l),a2
+	* plane contains data: copy it
+	.set	offset,0
+	.rept	16
+	move.w	(a2)+,(offset,a1)
+	.set	offset,offset+NB_BYTES_PER_ROW
+	.endr	
+1:
+	lea		(BG_SCREEN_PLANE_SIZE,a1),a1
+	dbf		d6,0b
+100:	
+	* preparing for longword write
+	addq.w	#2,d2
+	swap	d7
+	dbf		d0,10b		| next word (if longword write)
+101:
+	movem.l	(a7)+,a0-a4/d2-d6
+	rts
+2:
+	.set	offset,0
+	.rept	16
+	clr.w	(offset,a1)
+	.set	offset,offset+NB_BYTES_PER_ROW
+	.endr
+	jra		1b
+	
+erase_tile:
+	moveq	#(NB_PLAYFIELD_PLANES-1),d6
+0:
+	.set	offset,0
+	.rept	16
+	clr.w	(offset,a1)
+	.set	offset,offset+NB_BYTES_PER_ROW
+	.endr
+	lea		(BG_SCREEN_PLANE_SIZE,a1),a1
+	dbf		d6,0b
+	jra		100b
+	
 addr_24Cxxx_op:
 	rts	      | to_implement
+* 16x16 tile layer
 addr_24Dxxx_tile_layer_2_op:
 	jbsr		osd_break
 	nop
@@ -954,24 +1006,24 @@ osd_real_ram_address:
 	.endm
 	
 osd_read_byte:
-	OSD_MEM_OP	1,0
+	OSD_MEM_OP	0,0
 
 osd_write_byte:
-	OSD_MEM_OP	1,1
+	OSD_MEM_OP	0,1
 
 
 osd_read_word:
-	OSD_MEM_OP	2,0
+	OSD_MEM_OP	1,0
 
 osd_write_word:
-	OSD_MEM_OP	2,1
+	OSD_MEM_OP	1,1
 
 
 osd_read_long:
-	OSD_MEM_OP	4,0
+	OSD_MEM_OP	2,0
 
 osd_write_long:
-	OSD_MEM_OP	4,1
+	OSD_MEM_OP	2,1
 
 	
 osd_blitz:
@@ -1675,19 +1727,23 @@ platform_init:
 *	
 *	dbf		d0,0b
 	
-*	* set title sprite colors, 8 times the same 4 colors
-*	lea		game_sprite_colors+2,a1
-*	moveq	#7,d0
-*0:
-*	*move.l		baddudess_palette,a0
-*	moveq	#3,d1
-*1:
-*	move.w	(a0)+,d2
-*	move.w	d2,(a1)
-*	addq	#4,a1
-*	dbf		d1,1b
-*	
-*	dbf		d0,0b
+	lea		bg_tiles_colors+2,a1
+	move.w	#15,d0
+	lea		bg_palette,a0
+0:
+	move.w	(a0)+,d2
+	move.w	d2,(a1)
+	addq	#4,a1
+	dbf		d0,0b
+	
+	lea		fg_tiles_colors+2,a1
+	move.w	#15,d0
+	lea		bg_palette,a0
+0:
+	move.w	(a0)+,d2
+	move.w	d2,(a1)
+	addq	#4,a1
+	dbf		d0,0b
 	
 
 
@@ -2441,6 +2497,8 @@ main_scroll_value:
 	
 cheat_used:
 	.byte	0
+tiles_1_file:
+	.asciz	"tiles_1.bin"
 rom_file:
 	.asciz	"bad_dudes.bin"
 dosname:
@@ -2459,6 +2517,7 @@ _end_of_ng_code:
 sprite_table:
 	.skip	SPRITE_STRUCT_SIZE*8
 	
+bg_palette:
 	.include "palette.68k"
 
 	
@@ -2549,8 +2608,6 @@ bobs_bitplanes:
 	DECL_EVEN_BITPLANES	0,4
 playfield_bitplanes:
 	DECL_EVEN_BITPLANES	4,4
-panel_tiles_colors:
-	DECL_COLORS	16,TOTAL_NB_COLORS
 	DECL_COLOR_BANK	1
 game_sprite_colors:
 	DECL_COLORS	0,32
@@ -2560,9 +2617,9 @@ game_sprites:
 
 	* default color bank
 	DECL_COLOR_BANK	0
-playfield_tiles_colors:
+bg_tiles_colors:
 	DECL_COLORS	16,TOTAL_NB_COLORS
-bob_colors:
+fg_tiles_colors:
 	DECL_COLORS	0,TOTAL_NB_COLORS
 	* now set color bank 1
 
@@ -2592,10 +2649,6 @@ upper_dynamic_row_43:
 	
 
 	.word	0xEC01,0xFFFE
-panel_end_bitplanes:
-	DECL_EVEN_BITPLANES	4,4
-panel_end_tiles_colors:
-	DECL_COLORS	0,TOTAL_NB_COLORS
 	
 	* pal limit
     .word  0xFFCF,0xFFFE       | PAL wait
@@ -2610,6 +2663,12 @@ panel_end_tiles_colors:
     .long    -2					
 	.ascii	"ENDCPLST"
 
+	.section	.bsspublic
+	
+tiles_1:
+	.skip	400000
+end_tiles_1:
+	
 	* aligning on 8 bytes so .align will work
 	* in the next datachip sections
 	.align	8
