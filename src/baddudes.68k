@@ -223,6 +223,19 @@ test_input_bit_d1:
     nop
     rts
 
+copy_memory_to_tiles_0837c:
+	STORE_REGS
+	MOVE.W	#0x01ff,D0
+	exg		a6,a1
+lb_08380:
+	MOVE.L	(A0)+,d7
+	jbsr	osd_write_long
+	addq.w	#4,a6
+	DBF	D0,lb_08380
+	exg		a6,a1
+	RESTORE_REGS
+	RTS
+	
 
 clear_sound:
     *;01502: 'address': 5378, 'size': 6, 'instruction': 'CLR.W', 'arguments': ['sound_0030c010']

@@ -798,8 +798,7 @@ addr_30c0002_op:
 	tst.b	D1
 	jne		0f
 	* read
-	jbsr	osd_break
-	moveq	#0,d7
+	moveq	#0,d7	| to_implement: sync flag
 0:
 	rts
 	
@@ -908,7 +907,7 @@ addr_246xxx_op:
 	
 addr_24Axxx_tile_layer_1_op:
 	jbsr		osd_break
-	nop
+	move.b	d0,d0
 	nop
 	nop
 	nop
