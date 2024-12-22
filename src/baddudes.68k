@@ -29,6 +29,8 @@ baddudes_reset:
 	rts
 	
 baddudes_irq:
+	move.l	rom_base,-(a7)
+	add.l	#0x00384,(a7)
 	rts
 	
 	
@@ -80,6 +82,10 @@ baddudes_irq:
 	.word	0x8008
 	.long	\offset
 	.endm
+	.macro	PL_P    offset,func
+	.word	0x8009
+	.long	\offset,\func
+	.endm
 
 
 * < A0: patchlist
@@ -113,6 +119,7 @@ patch_table:
 	.long	do_PL_W   | offset,value
 	.long	do_PL_B   | offset,value
 	.long	do_PL_R   | offset
+	.long	do_PL_P   | offset,func
 	
 do_PL_I:
 	move.w	#0x4AFC,(a3)
@@ -129,6 +136,11 @@ do_PL_NOP:
 	
 do_PL_PS:
 	move.w	#0x4EB9,(a3)+
+	move.l	(a0)+,(a3)+
+	rts
+	
+do_PL_P:
+	move.w	#0x4EF9,(a3)+
 	move.l	(a0)+,(a3)+
 	rts
 	
@@ -223,6 +235,20 @@ test_mcu_reply:
     nop
     rts
 
+copy_to_palette_007be:
+	STORE_REGS
+	exg	a0,a6
+0:
+	MOVE.W	#0x000f,D1
+1:
+	MOVE.W	(A1)+,d7
+	jbsr	osd_write_word
+	DBF	D1,1b
+	DBF	D0,0b
+	exg	a0,a6
+	RESTORE_REGS
+	RTS
+	
 copy_rom_to_video_1b310:
 	move.w	d7,-(a7)
 	exg		a6,a1

@@ -33,6 +33,9 @@ def add_b(offset,value,comment=""):
 def add_nop(offset,count,comment=""):
     patchlist[offset] = {"type":"NOP","value":str(count),"comment":comment}
 
+def add_p(offset,patch_function,comment=""):
+    patchlist[offset] = {"type":"P","value":patch_function,"comment":comment}
+
 def add_ps(offset,patch_function,comment=""):
     add_pss(offset,patch_function,0,comment)
 
@@ -123,12 +126,14 @@ for line in af.lines:
 # manual patches, may override auto patches #
 add_i(0x100,"spurious interrupt")
 add_i(0x31c,"infinite loop")
+add_r(0x003ee,"turn RTE to RTS in irq")
 add_s(0x013e4,0x01428,"skip ram test & stack set")
 add_ps(0xcd3e,"write_word_a0plus_to_0030c010","manual")
 add_ps(0x01502,"clear_sound")
 add_ps(0x0979a,"test_mcu_reply")
 add_ps(0x1b310,"copy_rom_to_video_1b310")
-add_pss(0x01476,"enable_interrupts_01476",14)
+add_ps(0x01476,"enable_interrupts_01476")
+add_s(0x0147c,0X0148e,"skip hw control stuff")
 add_nop(0x01422,6,"set stack")
 add_ps(0x01454,"set_palette_a2")
 add_ps(0x0146a,"set_palette_a2")
@@ -145,6 +150,7 @@ add_r(0x01dc2,"skip spriteram clear")
 add_s(0x01e48,0x01e58,"skip videoram clear")
 add_r(0x0979a,"mcu reply test")
 add_r(0x14ee,"service mode test")
+add_p(0x07be,"copy_to_palette_007be","copy palette subroutine")
 add_ps(0x01e68,"set_scroll_values","set column scroll")
 add_ps(0x01e78,"set_scroll_values","set column scroll")
 add_nop(0x01652,8)

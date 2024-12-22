@@ -336,10 +336,6 @@ _user:
 	lea		bg_screen_buffer,a0
 	bsr		align_for_fmode
 	move.l	a0,bg_screen_ptr
-
-	lea		panel_screen_buffer,a0
-	bsr		align_for_fmode
-	move.l	a0,panel_screen_ptr
 	
 	.ifne	OPT_ENABLE_DOUBLE_BUFFERING
 	lea		fg_screen_buffer_2,a0
@@ -350,12 +346,14 @@ _user:
 		
 	* set them even if reset by game afterwards
 	* avoiding ugly stripe bitplane effect at startup
-	movem.l	a0/a1,-(a7)
-    move.l	bg_screen_ptr(pc),a1
-	lea	title_bitplanes+2,a0
-	bsr		set_static_bitplanes
-	movem.l	(a7)+,a0/a1
 
+	bsr		set_playfield_bitplanes
+	bsr		set_bob_bitplanes
+
+
+	lea		_custom,a5
+	lea		game_copperlist,a0
+	move.l	a0,cop1lc(a5)
 
 
 * ALL DIP SWITCHES ARE WRONG ATM
@@ -777,6 +775,10 @@ ports_ram_op:
 	and.w	#0xC000,d3
 	jeq		an_ports
 	* 0x30Cxxx, 0->0x19: atm do nothing
+	and.w	#0x1F,d2
+	lea		addr_30c00xx_table_op(pc),a0
+	jsr		([a0,d2.w*4])
+
 	jra		special_memory_op_out
 an_ports:
 	jbsr	osd_break
@@ -792,6 +794,18 @@ palette_and_sprites_ram_op:
 			| to_implement
 	jra		special_memory_op_out
 
+addr_30c0002_op:
+	tst.b	D1
+	jne		0f
+	* read
+	jbsr	osd_break
+	moveq	#0,d7
+0:
+	rts
+	
+addr_30c00xx_op:
+	rts
+	
 addr_24xxxx_table_op:
 	.long	addr_240xxx_op
 	.long	addr_unmapped_op
@@ -810,6 +824,66 @@ addr_24xxxx_table_op:
 	.long	addr_unmapped_op
 	.long	addr_unmapped_op
 	
+addr_30c00xx_table_op:
+	.long	addr_30c00xx_op   | 0x00
+	.long	addr_30c00xx_op   | 0x01
+	.long	addr_30c0002_op   | 0x02
+	.long	addr_30c00xx_op   | 0x03
+	.long	addr_30c00xx_op   | 0x04
+	.long	addr_30c00xx_op   | 0x05
+	.long	addr_30c00xx_op   | 0x06
+	.long	addr_30c00xx_op   | 0x07
+	.long	addr_30c00xx_op   | 0x08
+	.long	addr_30c00xx_op   | 0x09
+	.long	addr_30c00xx_op   | 0x0a
+	.long	addr_30c00xx_op   | 0x0b
+	.long	addr_30c00xx_op   | 0x0c
+	.long	addr_30c00xx_op   | 0x0d
+	.long	addr_30c00xx_op   | 0x0e
+	.long	addr_30c00xx_op   | 0x0f
+	.long	addr_30c00xx_op   | 0x10
+	.long	addr_30c00xx_op   | 0x11
+	.long	addr_30c00xx_op   | 0x12
+	.long	addr_30c00xx_op   | 0x13
+	.long	addr_30c00xx_op   | 0x14
+	.long	addr_30c00xx_op   | 0x15
+	.long	addr_30c00xx_op   | 0x16
+	.long	addr_30c00xx_op   | 0x17
+	.long	addr_30c00xx_op   | 0x18
+	.long	addr_30c00xx_op   | 0x19
+	.long	addr_30c00xx_op   | 0x1a
+	.long	addr_30c00xx_op   | 0x1b
+	.long	addr_30c00xx_op   | 0x1c
+	.long	addr_30c00xx_op   | 0x1d
+	.long	addr_30c00xx_op   | 0x1e
+	.long	addr_30c00xx_op   | 0x1f
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 addr_unmapped_op:
 	lea		unmapped_memory_message(pc),a0
 	jbsr	osd_break
@@ -1586,38 +1660,35 @@ platform_init:
 	lea		game_sprites,a0
 	lea		sprite_table,a1
 	bsr		init_sprite_bank
-	lea		title_sprites,a0
-	lea		sprite_table,a1
-	bsr		init_sprite_bank
 
 
 	* set title sprite colors, 8 times the same 4 colors
-	lea		title_sprite_colors+2,a1
-	moveq	#7,d0
-0:
-	lea		title_palette,a0
-	moveq	#3,d1
-1:
-	move.w	(a0)+,d2
-	move.w	d2,(a1)
-	addq	#4,a1
-	dbf		d1,1b
+*	lea		title_sprite_colors+2,a1
+*	moveq	#7,d0
+*0:
+*	lea		title_palette,a0
+*	moveq	#3,d1
+*1:
+*	move.w	(a0)+,d2
+*	move.w	d2,(a1)
+*	addq	#4,a1
+*	dbf		d1,1b
+*	
+*	dbf		d0,0b
 	
-	dbf		d0,0b
-	
-	* set title sprite colors, 8 times the same 4 colors
-	lea		game_sprite_colors+2,a1
-	moveq	#7,d0
-0:
-	*move.l		baddudess_palette,a0
-	moveq	#3,d1
-1:
-	move.w	(a0)+,d2
-	move.w	d2,(a1)
-	addq	#4,a1
-	dbf		d1,1b
-	
-	dbf		d0,0b
+*	* set title sprite colors, 8 times the same 4 colors
+*	lea		game_sprite_colors+2,a1
+*	moveq	#7,d0
+*0:
+*	*move.l		baddudess_palette,a0
+*	moveq	#3,d1
+*1:
+*	move.w	(a0)+,d2
+*	move.w	d2,(a1)
+*	addq	#4,a1
+*	dbf		d1,1b
+*	
+*	dbf		d0,0b
 	
 
 
@@ -1741,6 +1812,27 @@ set_playfield_bitplanes:
 		
 
 
+set_bob_bitplanes:
+	* set bitplanes
+    moveq #NB_PLAYFIELD_PLANES-1,d1
+	moveq	#0,d0
+    move.l	fg_displayed_screen_ptr(pc),d0
+	
+    lea	bobs_bitplanes+2,a0
+	move.l	#FG_SCREEN_PLANE_SIZE,d2
+
+20:
+    swap d0
+    move.w d0,(a0)
+    swap d0
+    move.w d0,(4,a0)    
+    addq.w  #8,a0
+    add.l d2,d0		| LONG!
+    dbf d1,20b
+    rts
+		
+
+
 * a0=screen address (preserved), d0=tile (preserved)
 * a6=ram base
 * should preserve all registers
@@ -1809,30 +1901,6 @@ HW_SpriteYTable_\height:
   .endr
 	.endm
 
-
-
-
-	
-* set_bg_bitplanes
-* what: sets bitplanes in copperlist
-* < A0: copperlist pointer on first bitplane nibble
-* < A1: first bg plane address
-
-set_static_bitplanes:
-	movem.l	d0-d2,-(a7)
-    moveq #NB_PLAYFIELD_PLANES-1,d1
-	move.l	a1,d0
- 	move.l	#BG_SCREEN_PLANE_SIZE,d2
-1:
-    swap d0
-    move.w d0,(a0)
-    swap d0
-    move.w d0,(4,a0)    
-    addq.w  #8,a0
-    add.l d2,d0
-    dbf d1,1b
-	movem.l	(a7)+,d0-d2
-    rts
 
 * set_fg_bitplanes
 * what: sets bitplanes in copperlist
@@ -2349,8 +2417,7 @@ color_row_end:
 
 bg_screen_ptr:
 	.long	0
-panel_screen_ptr:
-	.long	0
+
 
 fg_drawed_screen_ptr:
 	.long	0
@@ -2467,44 +2534,6 @@ debug_color:
 	dc.l	-2
 	
 
-title_copperlist:
-title_bitplanes:
-	DECL_BITPLANES	0,4
-	* default color bank
-	* all sprites have the same palette no need to specify odd or even
-	* on color bank 1
-	DECL_COLOR_BANK	1
-	* black color sprites
-	DECL_COLORS	0,32
-title_sprites:
-	DECL_SPRITES
-	* back to color bank 0
-	DECL_COLOR_BANK	0
-title_colors:
-	DECL_COLORS	0,TOTAL_NB_COLORS
-
-	.word	0x3C01,0xFFFE
-	DECL_COLOR_BANK	1
-title_sprite_colors:
-	DECL_COLORS	0,32
-	DECL_COLOR_BANK	0
-	
-    .word  0x100*120+1,0xFFFE	| mid screen wait
-	*.word	 intreq,0x8014  | call copper interrupt in the middle of a frame, also flag so copper interrupt knows that we're going to call copper int
-
-	* pal limit
-    .word  0xFFDF,0xFFFE       | PAL wait
-	DECL_COLOR_BANK	1
-	* black color sprites
-	DECL_COLORS	0,32
-
-	.word	0x1001,0xFFFE
-	
-	.word	 intreq,0x8010	| no bobs from now on, get more drawing time
-
-
-    .long    -2					
-	.ascii	"ENDCPLST"
 
 
 	
@@ -2519,7 +2548,7 @@ game_copperlist:
 
 bobs_bitplanes:
 	DECL_EVEN_BITPLANES	0,4
-panel_bitplanes:
+playfield_bitplanes:
 	DECL_EVEN_BITPLANES	4,4
 panel_tiles_colors:
 	DECL_COLORS	16,TOTAL_NB_COLORS
@@ -2529,10 +2558,7 @@ game_sprite_colors:
 game_sprites:
 	DECL_SPRITES
 
-	* let the panel display!
-	.word	0x3C01,0xFFFE
-playfield_bitplanes:
-	DECL_EVEN_BITPLANES	4,4
+
 	* default color bank
 	DECL_COLOR_BANK	0
 playfield_tiles_colors:
