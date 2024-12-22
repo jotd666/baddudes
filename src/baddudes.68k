@@ -259,6 +259,64 @@ test_mcu_reply:
     nop
     rts
 
+display_lives_0e122:
+	STORE_REGS
+	exg	a6,a4
+	SUBQ.W	#1,D1	
+	BMI.S	lb_0e12e
+lb_0e126:
+	MOVE.W	#0x0072,d7
+	jbsr	osd_write_word
+	addq	#2,a6
+	DBF	D1,lb_0e126
+lb_0e12e:
+	moveq	#0,d7
+	jbsr	osd_write_byte
+lb_0e130:
+	exg	a6,a4
+	RESTORE_REGS
+	RTS
+	
+write_to_tile_0_083ac:
+	dc.w	0x60FE
+	STORE_REGS
+	move.l	a1,a6
+	MOVE.W	D1,D7
+	jbsr	osd_write_word
+	ADDq.W	#1,D7
+	add.w	#64,a6
+	jbsr	osd_write_word
+	ADDq.W	#1,D7
+	sub.w	#66,a6
+	jbsr	osd_write_word
+	ADDq.W	#1,D7
+	add.w	#64,a6
+	jbsr	osd_write_word
+	RESTORE_REGS
+	rts
+	
+copy_to_tile_0_01fa2:
+	STORE_REGS
+	exg		a6,a1
+lb_01fa2:
+	CMPI.B	#0xfe,(A0)		
+	BNE.W	lb_01fba		
+	ADDA.W	#0x40,A2	
+	MOVEA.L	A2,A6			
+	ADDQ	#1,A0	
+	BRA.S	lb_01fa2		
+lb_01fba:
+	MOVE.B	D1,d7
+	jbsr	osd_write_byte
+	addq	#1,a6
+	MOVE.B	(A0)+,d7		
+	jbsr	osd_write_byte
+	addq	#1,a6
+	DBF	D0,lb_01fa2
+	exg		a6,a1
+	RESTORE_REGS
+	RTS				
+	
 copy_to_palette_007be:
 	STORE_REGS
 	exg	a0,a6

@@ -669,8 +669,8 @@ _vblank:
 	* also set SR accordingly
 	st.b	interrupt_mode
 	jbsr		baddudes_irq
-	move.w	#0x2300,SR
 	clr.b	interrupt_mode	
+	st.b	int_ack
 	clr.b	d0
 1:
 	move.b	d0,mid_screen_interrupt_count
@@ -689,19 +689,9 @@ _vblank:
 	* also set SR accordingly
 	st.b	interrupt_mode
 	jbsr		baddudes_irq
-
-	* re-set SR to 0x2300, game calls osd_enable_interrupts from here and if
-	* something is too slow, then game crashes/trashes display because of re-entering
-	* in IRQ! At least with this it just slows down
-	*
-	* we update the graphics now so it's not possible that mpatrol_irq interrupts
-	* itself in the short time of the computations
-	move.w	#0x2300,SR
 	clr.b	interrupt_mode
+	st.b	int_ack
 
-	
-	* AGA/AA: fmode=3 allows much faster blitter operation
-	* allowing 50 fps without a hitch :)
 
 	bsr		really_update_sprites
 	
@@ -746,6 +736,8 @@ special_memory_op:
 	.ifndef RELEASE
 	cmp.w	#0x31-0x24,D2
 	jeq		palette_and_sprites_ram_op
+	add.w	#0x24,d2
+	jbsr	osd_break
 	illegal
 	.endif
 	jra		palette_and_sprites_ram_op
@@ -798,12 +790,23 @@ palette_and_sprites_ram_op:
 	jra		special_memory_op_out
 
 addr_30c0002_op:
+	move.w	#0xF00,0xDFF180
 	tst.b	D1
-	jne		0f
+	jne		1f
 	* read
-	moveq	#0,d7	| to_implement: sync flag
-0:
+	addq.b	#1,count
+	jne		0f
+	
+	moveq	#0,d7	| sync flag
 	rts
+0:
+	st		d7
+	tst.b	d7
+1:
+	rts
+	
+count:
+	.word	0
 	
 addr_30c00xx_op:
 	rts
@@ -874,7 +877,7 @@ addr_242xxx_op:
 	
 * 8x8 tile layer
 addr_244xxx_tile_layer_0_op:
-	jbsr		osd_break
+	*jbsr		osd_break
 	nop
 	nop
 	nop
@@ -887,13 +890,18 @@ addr_246xxx_op:
 	
 * 16x16 tile layer
 addr_24Axxx_tile_layer_1_op:
+	and.w	#0x7FF,d2
+	cmp.w	#0XE2,d2
+	jne		11f
+	jbsr	osd_break
+11:
+
 	subq	#1,d0
 	jpl		0f
 	* byte op: ignore
 	rts
 0:
 	movem.l	a0-a4/d2-d6,-(a7)
-	and.w	#0x7FF,d2
 10:
 	lea		video_ram_24a000,a0
 	add.w	d2,a0
@@ -971,7 +979,7 @@ addr_24Cxxx_op:
 	rts	      | to_implement
 * 16x16 tile layer
 addr_24Dxxx_tile_layer_2_op:
-	jbsr		osd_break
+	*jbsr		osd_break
 	nop
 	nop
 	nop
@@ -2414,8 +2422,9 @@ keyboard_table:
 
 	
 interrupt_mode:
-	.word	0
-	
+	.byte	0
+int_ack:
+	.byte	0
 pause_flag:
 	.word	0
 

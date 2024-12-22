@@ -161,7 +161,10 @@ add_b(0x0173C+8,0x60)
 add_p(0x00596,"osd_enable_interrupts")
 add_p(0x0837c,"copy_memory_to_tiles_0837c")
 add_ps(0x64f6,"copy_to_tile_064f6")
-
+add_p(0x1fa2,"copy_to_tile_0_01fa2")
+add_p(0x0e122,"display_lives_0e122")
+add_ps(0x083ac,"write_to_tile_0_083ac")
+add_s(0x083ac+6,0x083c6)
 
 for offset in [0x0174c,0x0175c,0x07e66]:
     add_pss(offset,"test_input_bit_d1",2)
