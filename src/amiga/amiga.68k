@@ -908,7 +908,6 @@ addr_24Axxx_tile_layer_1_op:
 
 	move.w	d2,d3
 	and.w	#0x1F,D3		| this is X
-	add.w	d3,d3			| 16-bit wide
 	lsr.w	#5,D2			| this is Y
 	lsl.w	#4,d2			| times 16
 	lea		mulNB_BYTES_PER_ROW_table(pc),a2
