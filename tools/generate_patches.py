@@ -60,8 +60,10 @@ def add_nop(offset,fill,comment=""):
 
 for line in af.lines:
     inst_info = ira_asm_tools.parse_instruction_line(line)
+
     if inst_info:
         args = inst_info["arguments"]
+
         # generate offsets to relocate RAM
         if inst_info["size"] in [4,6,8,10]:
             for i,arg in enumerate(args):
@@ -126,6 +128,7 @@ for line in af.lines:
 # manual patches, may override auto patches #
 add_i(0x100,"spurious interrupt")
 add_i(0x31c,"infinite loop")
+add_i(0x01a70,"fatal error?")
 add_r(0x003ee,"turn RTE to RTS in irq")
 add_s(0x013e4,0x01428,"skip ram test & stack set")
 add_ps(0xcd3e,"write_word_a0plus_to_0030c010","manual")
@@ -161,10 +164,14 @@ add_b(0x0173C+8,0x60)
 add_p(0x00596,"osd_enable_interrupts")
 add_p(0x0837c,"copy_memory_to_tiles_0837c")
 add_ps(0x64f6,"copy_to_tile_064f6")
+add_ps(0x0834A,"write_ninja_message_0834A")
 add_p(0x1fa2,"copy_to_tile_0_01fa2")
 add_p(0x0e122,"display_lives_0e122")
 add_ps(0x083ac,"write_to_tile_0_083ac")
 add_s(0x083ac+6,0x083c6)
+add_s(0x003d0,0x003dc,"skip unneeded vblank wait")
+add_ps(0x083ce,"set_video_attribute_083ce")
+add_s(0x083ce+6,0x083e8)
 
 for offset in [0x0174c,0x0175c,0x07e66]:
     add_pss(offset,"test_input_bit_d1",2)

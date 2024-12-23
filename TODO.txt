@@ -4,11 +4,10 @@ find:
 
 collect unpatched memory references > 0x80000 < 0xFFxxx ram and display/log them
 
-MOVEA.L    #$00ff81f4,A0 => add ext_ so can be relocated
-MOVEA.L    #$002440b0,A1 => add ext_ so can be detected as patch
+copy_memory_to_tiles_0837c not doing the job
 
-- en 825E: patch not detected!!!
-- sync foireuse
+encode 244000 layer as main title & characters use it
+
 
 reverse lb_024dc
 reverse jump tables (like in pooyan): get dc.l  lb_xxxxx and set breakpoints

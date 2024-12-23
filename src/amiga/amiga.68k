@@ -355,6 +355,9 @@ _user:
 
 
 	lea		_custom,a5
+	
+    move.w #0x0610+BORDERBLANK,bplcon0(a5) | 8 bitplanes, dual playfield, borderblank
+
 	lea		game_copperlist,a0
 	move.l	a0,cop1lc(a5)
 
@@ -670,7 +673,6 @@ _vblank:
 	st.b	interrupt_mode
 	jbsr		baddudes_irq
 	clr.b	interrupt_mode	
-	st.b	int_ack
 	clr.b	d0
 1:
 	move.b	d0,mid_screen_interrupt_count
@@ -690,7 +692,6 @@ _vblank:
 	st.b	interrupt_mode
 	jbsr		baddudes_irq
 	clr.b	interrupt_mode
-	st.b	int_ack
 
 
 	bsr		really_update_sprites
@@ -738,7 +739,7 @@ special_memory_op:
 	jeq		palette_and_sprites_ram_op
 	add.w	#0x24,d2
 	jbsr	osd_break
-	illegal
+	jra		special_memory_op_out
 	.endif
 	jra		palette_and_sprites_ram_op
 special_memory_op_out:
@@ -789,24 +790,17 @@ palette_and_sprites_ram_op:
 			| to_implement
 	jra		special_memory_op_out
 
+* system (start/coin and also vblank - which is stubbed)
 addr_30c0002_op:
-	move.w	#0xF00,0xDFF180
 	tst.b	D1
-	jne		1f
-	* read
-	addq.b	#1,count
-	jne		0f
-	
-	moveq	#0,d7	| sync flag
+	jne		0f	
+	moveq	#0x7F,d7	| sync flag set, rest ATM high
 	rts
 0:
 	st		d7
 	tst.b	d7
-1:
 	rts
 	
-count:
-	.word	0
 	
 addr_30c00xx_op:
 	rts
@@ -891,24 +885,22 @@ addr_246xxx_op:
 * 16x16 tile layer
 addr_24Axxx_tile_layer_1_op:
 	and.w	#0x7FF,d2
-	cmp.w	#0XE2,d2
-	jne		11f
-	jbsr	osd_break
-11:
 
 	subq	#1,d0
 	jpl		0f
 	* byte op: ignore
 	rts
 0:
-	movem.l	a0-a4/d2-d6,-(a7)
+	movem.l	a0-a3/d2-d6,-(a7)
 10:
+	move.w	d2,-(a7)
 	lea		video_ram_24a000,a0
 	add.w	d2,a0
 	tst.b	d1
 	jne		0f		| write
 	jbsr	osd_break
-	move.w	(a0),d7	| read (does that happen? probably not)
+	* read: TODO check read size
+	move.w	(a0),d7
 	jra		101f
 0:
 	cmp.w	(a0),d7
@@ -917,10 +909,11 @@ addr_24Axxx_tile_layer_1_op:
 	move.w	d2,d3
 	and.w	#0x1F,D3		| this is X
 	add.w	d3,d3			| 16-bit wide
-	lsr.w	#5,D2			| this is Y/2
+	lsr.w	#5,D2			| this is Y
+	lsl.w	#4,d2			| times 16
 	lea		mulNB_BYTES_PER_ROW_table(pc),a2
 	move.l	bg_screen_ptr(pc),a1
-	add.w	(a2,d2.w*4),a1
+	add.w	(a2,d2.w*2),a1
 	add.w	d3,a1			| screen dest address on bg playfield
 	move.w	d7,d5			| save code
 	move.w	d7,d6			| tile code
@@ -948,12 +941,13 @@ addr_24Axxx_tile_layer_1_op:
 	lea		(BG_SCREEN_PLANE_SIZE,a1),a1
 	dbf		d6,0b
 100:	
+	move.w	(a7)+,d2
 	* preparing for longword write
 	addq.w	#2,d2
 	swap	d7
 	dbf		d0,10b		| next word (if longword write)
 101:
-	movem.l	(a7)+,a0-a4/d2-d6
+	movem.l	(a7)+,a0-a3/d2-d6
 	rts
 2:
 	.set	offset,0
@@ -2423,8 +2417,7 @@ keyboard_table:
 	
 interrupt_mode:
 	.byte	0
-int_ack:
-	.byte	0
+
 pause_flag:
 	.word	0
 
