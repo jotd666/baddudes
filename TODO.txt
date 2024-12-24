@@ -4,7 +4,8 @@ find:
 
 collect unpatched memory references > 0x80000 < 0xFFxxx ram and display/log them
 
-- copy_memory_to_tiles_0837c: ok with word write, trashed with long write
+- copy_memory_to_tiles_0837c: should be 1FF, reduced to FF to avoid trashed gfx
+- try to quantize colors for all background sheets
 - collect used cluts in title screen
 
 encode 244000 layer as main title & characters use it
