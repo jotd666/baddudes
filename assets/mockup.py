@@ -13,7 +13,6 @@ tilesdir = os.path.join(this_dir,os.pardir,"mame","baddudes")
 with open(os.path.join(this_dir,"title"),"rb") as f:
     contents = f.read()
 
-tiles_06 = name_template.format(dev=0,set=1,pal=6)
 
 side = 16
 transparent = (254,254,254)  # not possible to get it in the game
@@ -46,20 +45,30 @@ def load_tileset(image_name,side,dump_prefix=""):
 
     return tileset_1
 
-def create_layer(tileset,address):
+
+
+def create_layer(tileset_list,address):
     used_tiles = set()
-    layer_nb_rows = 34
-    layer_nb_cols = 32
+    used_cluts = set()
+    layer_nb_rows = 17
+    layer_nb_cols = 16
     layer_1 = Image.new("RGBA",(layer_nb_rows*side,layer_nb_cols*side))
 
     current_x = 0
     current_y = 0
-    for addr in range(address,address+0x800,2):
+    grid = [[-1]*layer_nb_cols for _ in range(layer_nb_rows)]
+    for addr in range(address,address+0x200,2):
         c1 = contents[addr]
         c2 = contents[addr+1]
+        x = (addr & 0x1F)//2
+        y = (addr-0xA000) >> 5
+
         c = ((c1&0xF)<<8)+c2
         attr = c1 >> 4
+        used_cluts.add(attr)
+        tileset = tileset_list[attr]
 
+        grid[y][x] = attr
 
         if c < 2048:
             used_tiles.add(c)
@@ -70,13 +79,17 @@ def create_layer(tileset,address):
         if current_x == layer_nb_cols*side:
             current_x = 0
             current_y += side
-    return used_tiles,layer_1
+
+
+    return grid,used_cluts,used_tiles,layer_1
 
 
 
-ts_title = load_tileset(tiles_06,16)
-used_tiles,layer = create_layer(ts_title,0xA000)
 
+ts_title_list = [load_tileset(name_template.format(dev=0,set=1,pal=p),16) for p in range(8)]
+grid,used_cluts,used_tiles,layer = create_layer(ts_title_list,0xA000)
+
+print(used_cluts)
 layer.save("title.png")
 
 if False:

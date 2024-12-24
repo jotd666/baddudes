@@ -137,7 +137,7 @@ def remove_colors(imgname):
     return img
 
 #sprite_sheet_dict = {i:remove_colors(os.path.join(sprites_path,f"sprites_pal_{i:02x}.png")) for i in range(16)}
-tile_1_sheet_dict = {i:os.path.join(sheets_path,f"tiles_1_pal_{i:02x}.png") for i in [2]}
+tile_1_sheet_dict = {i:os.path.join(sheets_path,f"tiles_1_pal_{i:02x}.png") for i in [2,6,7]}
 
 tile_palette = set()
 tile_set_list = []

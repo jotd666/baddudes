@@ -910,8 +910,11 @@ addr_24Axxx_tile_layer_1_op:
 	and.w	#0x1F,D3		| this is X
 	lsr.w	#5,D2			| this is Y
 	lsl.w	#4,d2			| times 16
-	lea		mulNB_BYTES_PER_ROW_table(pc),a2
+	cmp.w	#256,d2
+	jeq		100f
+	
 	move.l	bg_screen_ptr(pc),a1
+	lea		mulNB_BYTES_PER_ROW_table(pc),a2
 	add.w	(a2,d2.w*2),a1
 	add.w	d3,a1			| screen dest address on bg playfield
 	move.w	d7,d5			| save code
@@ -920,10 +923,13 @@ addr_24Axxx_tile_layer_1_op:
 	jeq		erase_tile
 	rol.w	#4,d5
 	and.w	#0xF,d5			| tile clut
-	moveq	#0,d5			| tile clut (atm 0)
 	lea		tiles_1,a0
 	add.l	(a0,d6.w*4),a0	| select tile code
-	add.l	(a0,d5.w*4),a0	| select tile clut
+	move.l	(a0,d5.w*4),d6
+	jne		3f
+	move.l	(8,a0),d6		| default clut 2
+3:
+	add.l	d6,a0	| select tile clut
 	moveq	#(NB_PLAYFIELD_PLANES-1),d6
 	move.l	a0,a3			| base ptr
 0:
@@ -944,7 +950,7 @@ addr_24Axxx_tile_layer_1_op:
 	* preparing for longword write
 	addq.w	#2,d2
 	swap	d7
-	dbf		d0,10b		| next word (if longword write)
+	*dbf		d0,10b		| next word (if longword write)
 101:
 	movem.l	(a7)+,a0-a3/d2-d6
 	rts
