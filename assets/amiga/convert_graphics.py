@@ -142,11 +142,14 @@ tile_1_sheet_dict = {i:os.path.join(sheets_path,f"tiles_1_pal_{i:02x}.png") for 
 tile_palette = set()
 tile_set_list = []
 
-for i,tsd in tile_1_sheet_dict.items():
-    tp,tile_set = load_tileset(tsd,i,16,"tiles",dump_dir,dump=dump_it,name_dict=None)
-    tile_set_list.append(tile_set)
-    tile_palette.update(tp)
-
+for i in range(16):
+    tsd = tile_1_sheet_dict.get(i)
+    if tsd:
+        tp,tile_set = load_tileset(tsd,i,16,"tiles",dump_dir,dump=dump_it,name_dict=None)
+        tile_set_list.append(tile_set)
+        tile_palette.update(tp)
+    else:
+        tile_set_list.append(None)
 
 
 
@@ -171,49 +174,52 @@ def read_tileset(img_set_list,palette,plane_orientation_flags,cache,is_bob):
     tile_table = []
     for n,img_set in enumerate(img_set_list):
         tile_entry = []
-        for i,tile in enumerate(img_set):
-            entry = dict()
-            if tile:
+        if img_set:
+            for i,tile in enumerate(img_set):
+                entry = dict()
+                if tile:
 
-                for b,(plane_name,plane_func) in zip(plane_orientation_flags,plane_orientations):
-                    if b:
+                    for b,(plane_name,plane_func) in zip(plane_orientation_flags,plane_orientations):
+                        if b:
 
-                        actual_nb_planes = nb_planes
-                        wtile = plane_func(tile)
+                            actual_nb_planes = nb_planes
+                            wtile = plane_func(tile)
 
-                        if is_bob:
-                            y_start,wtile = bitplanelib.autocrop_y(wtile)
-                            height = wtile.size[1]
-                            actual_nb_planes += 1
-                            bitplane_data = bitplanelib.palette_image2raw(wtile,None,palette,generate_mask=True,blit_pad=True)
-                        else:
-                            height = 8
-                            y_start = 0
-                            bitplane_data = bitplanelib.palette_image2raw(wtile,None,palette)
-
-                        plane_size = len(bitplane_data) // actual_nb_planes
-                        bitplane_plane_ids = []
-                        for j in range(actual_nb_planes):
-                            offset = j*plane_size
-                            bitplane = bitplane_data[offset:offset+plane_size]
-
-                            cache_id = cache.get(bitplane)
-                            if cache_id is not None:
-                                bitplane_plane_ids.append(cache_id)
+                            if is_bob:
+                                y_start,wtile = bitplanelib.autocrop_y(wtile)
+                                height = wtile.size[1]
+                                actual_nb_planes += 1
+                                bitplane_data = bitplanelib.palette_image2raw(wtile,None,palette,generate_mask=True,blit_pad=True)
                             else:
-                                if any(bitplane):
-                                    cache[bitplane] = next_cache_id
-                                    bitplane_plane_ids.append(next_cache_id)
-                                    next_cache_id += 1
-                                else:
-                                    bitplane_plane_ids.append(0)  # blank
-                        entry[plane_name] = {"height":height,"y_start":y_start,"bitplanes":bitplane_plane_ids}
+                                height = 8
+                                y_start = 0
+                                bitplane_data = bitplanelib.palette_image2raw(wtile,None,palette)
 
-            tile_entry.append(entry)
+                            plane_size = len(bitplane_data) // actual_nb_planes
+                            bitplane_plane_ids = []
+                            for j in range(actual_nb_planes):
+                                offset = j*plane_size
+                                bitplane = bitplane_data[offset:offset+plane_size]
+
+                                cache_id = cache.get(bitplane)
+                                if cache_id is not None:
+                                    bitplane_plane_ids.append(cache_id)
+                                else:
+                                    if any(bitplane):
+                                        cache[bitplane] = next_cache_id
+                                        bitplane_plane_ids.append(next_cache_id)
+                                        next_cache_id += 1
+                                    else:
+                                        bitplane_plane_ids.append(0)  # blank
+                            entry[plane_name] = {"height":height,"y_start":y_start,"bitplanes":bitplane_plane_ids}
+
+                tile_entry.append(entry)
 
         tile_table.append(tile_entry)
 
-    new_tile_table = [[[] for _ in range(16)] for _ in range(len(tile_table[0]))]
+    table_len = len(max(tile_table,key=len))
+
+    new_tile_table = [[[] for _ in range(16)] for _ in range(table_len)]
 
     # reorder/transpose. We have 16 * 256 we need 256 * 16
     for i,u in enumerate(tile_table):
