@@ -1,5 +1,5 @@
 from PIL import Image,ImageOps
-import os,sys,bitplanelib,subprocess
+import os,sys,bitplanelib,subprocess,json
 
 this_dir = os.path.dirname(os.path.abspath(__file__))
 
@@ -10,8 +10,13 @@ sheets_path = os.path.join(this_dir,"..","sheets")
 
 sprite_names = dict()
 
+with open(os.path.join(this_dir,"used_cluts.json")) as f:
+    used_cluts = json.load(f)
+    # set proper types
+    used_cluts = {k:{int(k2):set(v2) for k2,v2 in v.items()} for k,v in used_cluts.items()}
 
-dump_it = False
+
+dump_it = True
 dump_dir = os.path.join(this_dir,"dumps")
 
 
@@ -53,16 +58,17 @@ def load_tileset(image_name,palette_index,side,tileset_name,dumpdir,dump=False,n
             ensure_empty(dump_subdir)
 
     tile_number = 0
+    empty_list = []
     palette = set()
 
     for j in range(nb_rows):
         for i in range(nb_cols):
 
-            if cluts and palette_index not in cluts[tile_number]:
+            if cluts and palette_index not in cluts.get(tile_number,empty_list):
                 # no clut declared for that tile
                 tileset_1.append(None)
-            else:
 
+            else:
                 img = Image.new("RGB",(side,side))
                 img.paste(tiles_1,(-i*side,-j*side))
 
@@ -137,7 +143,7 @@ def remove_colors(imgname):
     return img
 
 #sprite_sheet_dict = {i:remove_colors(os.path.join(sprites_path,f"sprites_pal_{i:02x}.png")) for i in range(16)}
-tile_1_sheet_dict = {i:os.path.join(sheets_path,f"tiles_1_pal_{i:02x}.png") for i in [2]}
+tile_1_sheet_dict = {i:os.path.join(sheets_path,f"tiles_1_pal_{i:02x}.png") for i in range(9)}
 
 tile_palette = set()
 tile_set_list = []
@@ -145,17 +151,22 @@ tile_set_list = []
 for i in range(16):
     tsd = tile_1_sheet_dict.get(i)
     if tsd:
-        tp,tile_set = load_tileset(tsd,i,16,"tiles",dump_dir,dump=dump_it,name_dict=None)
+        tp,tile_set = load_tileset(tsd,i,16,"tiles",dump_dir,dump=dump_it,name_dict=None,cluts=used_cluts["title"])
         tile_set_list.append(tile_set)
         tile_palette.update(tp)
     else:
         tile_set_list.append(None)
 
-
-
+# dual playfield, palette 16-31, color 16 is transparent
+if (0,0,0) not in tile_palette:
+    tile_palette.add((0,0,0))
 full_palette = sorted(tile_palette)
 
-
+lfp = len(full_palette)
+if lfp>16:
+    raise Exception(f"Too many colors {lfp} max 16")
+if lfp<16:
+    full_palette += [(0x10,0x20,0x30)]*(16-lfp)
 
 # pad just in case we don't have 16 colors (but we have)
 full_palette += (nb_colors-len(full_palette)) * [(0x10,0x20,0x30)]

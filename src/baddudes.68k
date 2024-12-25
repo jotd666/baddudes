@@ -236,7 +236,9 @@ copy_to_tile_064f6:
 	
 copy_memory_to_tiles_0837c:
 	STORE_REGS
-	MOVE.W	#0xFF,D0
+	* original game copies 0x800 tiles but this isn't required
+	* apparently?? we'll see
+	MOVE.W	#0x7F,D0
 	exg		a6,a1
 lb_08380:
 	MOVE.L	(A0)+,d7

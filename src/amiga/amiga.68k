@@ -51,7 +51,7 @@ OPT_ENABLE_PROFILING = 0         | DO NOT CHANGE THIS
 OPT_ENABLE_LOGGING = 0           | DO NOT CHANGE THIS
 ONE_TICK = 1
 	.else
-OPT_ENABLE_LOGGING = 0
+OPT_ENABLE_LOGGING = 1
 OPT_ENABLE_PROFILING = 0
 * set to higher values than 1 to speed game up
 ONE_TICK = 1
@@ -910,6 +910,8 @@ addr_24Axxx_tile_layer_1_op:
 	cmp.w	(a0),d7
 	jeq		100f	| already the proper value
 
+	move.w	d7,(a0)	| set value in memory first
+	* then draw the 16x16 tile
 	move.w	d2,d3
 	and.w	#0x1F,D3		| this is X
 	lsr.w	#5,D2			| this is Y
@@ -927,6 +929,20 @@ addr_24Axxx_tile_layer_1_op:
 	jeq		erase_tile
 	rol.w	#4,d5
 	and.w	#0xF,d5			| tile clut
+
+	.ifne	OPT_ENABLE_LOGGING
+	cmp.w	#0x1FF,d6
+	jcc		0f
+	lea		tile_log_table_24a000,a2
+	move.l	a2,0x8		| store address in zero page
+	move.w	d6,-(a7)
+	lsl.w	#4,d6		| 16 cluts
+	add.w	d5,d6		| clut offset
+	st.b	(a2,d6.w)
+	move.w	(a7)+,d6
+0:
+	.endif
+
 	lea		tiles_1,a0
 	add.l	(a0,d6.w*4),a0	| select tile code
 	move.l	(a0,d5.w*4),d6
@@ -1699,7 +1715,7 @@ platform_init:
 *0:
 
  	*         VVHH
-    move.w #0x1C81,diwstrt(a5)
+    move.w #0x2881,diwstrt(a5)
     move.w #0x2889+8,diwstop(a5)
     move.w #0x0038,ddfstrt(a5)
     move.w #0x00D0,ddfstop(a5)
@@ -1709,10 +1725,10 @@ platform_init:
     move.w #BASE_BPLCON2_VALUE,bplcon2(a5)
 	* AGA-compatible ECS default values
 	move.w	#0x32,bplcon4(a5)	| odd sprites palette start at color 48, even at 32
-    move.w #(SPRITE_FMODE<<2)+0x3,fmode(a5)
+    move.w #(SPRITE_FMODE<<2)+0x1,fmode(a5)
 
 	move.w	#0,bplcon1(a5)
-	moveq	#-8,d0
+	moveq	#-4,d0
     move.w d0,bpl1mod(a5)
     move.w d0,bpl2mod(a5)
 
@@ -2532,23 +2548,20 @@ sprite_table:
 bg_palette:
 	.include "palette.68k"
 
-	
-	* on amiga, this file is included in mpatrol.68k file
-	* so the assembler can optimize by using PC-relative addressing
-	* whenever possible (and it does)
+
 	.ifndef	RELEASE
 	* easier to debug game to have memory aligned on 0x10000
-	.align	0x10000
 
 	.ifne	OPT_ENABLE_LOGGING
 	.section	.bss
 	.ascii	"TILE"
-tile_log_table:
-	* 32 cluts, 1024 tiles
+tile_log_table_24a000:
+	* 16 cluts, 2048 tiles
 	* a lot of combinations aren't used (fortunately!)
-	ds.w	0x10000
+	.skip	0x10000
 	.endif
 	.endif
+	
 	.ascii	"CODE_END"
 
 
