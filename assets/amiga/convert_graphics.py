@@ -143,7 +143,8 @@ def remove_colors(imgname):
     return img
 
 #sprite_sheet_dict = {i:remove_colors(os.path.join(sprites_path,f"sprites_pal_{i:02x}.png")) for i in range(16)}
-tile_1_sheet_dict = {i:os.path.join(sheets_path,f"tiles_1_pal_{i:02x}.png") for i in range(9)}
+tile_1_sheet_dict = {i:os.path.join(sheets_path,"tiles_24a000",f"pal_{i:02x}.png") for i in range(9)}
+tile_0_sheet_dict = {i:os.path.join(sheets_path,"tiles_244000",f"pal_{i:02x}.png") for i in range(16)}
 
 tile_palette = set()
 tile_set_list = []
@@ -151,7 +152,7 @@ tile_set_list = []
 for i in range(16):
     tsd = tile_1_sheet_dict.get(i)
     if tsd:
-        tp,tile_set = load_tileset(tsd,i,16,"tiles",dump_dir,dump=dump_it,name_dict=None,cluts=used_cluts["title"])
+        tp,tile_set = load_tileset(tsd,i,16,"tiles",dump_dir,dump=dump_it,name_dict=None,cluts=used_cluts["title_24a000"])
         tile_set_list.append(tile_set)
         tile_palette.update(tp)
     else:

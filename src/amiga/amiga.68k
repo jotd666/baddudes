@@ -1715,8 +1715,8 @@ platform_init:
 *0:
 
  	*         VVHH
-    move.w #0x2881,diwstrt(a5)
-    move.w #0x2889+8,diwstop(a5)
+    move.w #0x2481,diwstrt(a5)
+    move.w #0x2489+8,diwstop(a5)
     move.w #0x0038,ddfstrt(a5)
     move.w #0x00D0,ddfstop(a5)
 
@@ -1764,14 +1764,14 @@ platform_init:
 	addq	#4,a1
 	dbf		d0,0b
 	
-	lea		fg_tiles_colors+2,a1
-	move.w	#15,d0
-	lea		bg_palette,a0
-0:
-	move.w	(a0)+,d2
-	move.w	d2,(a1)
-	addq	#4,a1
-	dbf		d0,0b
+*	lea		fg_tiles_colors+2,a1
+*	move.w	#15,d0
+*	lea		bg_palette,a0
+*0:
+*	move.w	(a0)+,d2
+*	move.w	d2,(a1)
+*	addq	#4,a1
+*	dbf		d0,0b
 	
 
 
@@ -1874,7 +1874,6 @@ set_playfield_bitplanes:
     moveq #NB_PLAYFIELD_PLANES-1,d1
 	moveq	#0,d0
 	move.b	main_scroll_value(pc),d0
-	add.w	#32,d0			| offset
 	and.w	#0xFF,d0		| wrap just in case
 	lea		mulNB_BYTES_PER_ROW_table(pc),a0
 	move.w	(a0,d0.w*2),d0
