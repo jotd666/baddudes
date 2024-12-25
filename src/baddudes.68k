@@ -285,15 +285,17 @@ write_to_tile_0_083ac:
 	MOVE.W	D1,D7                  | MOVE.W	D1,(A1)		
 	jbsr	osd_write_word         | ADDI.W	#$0001,D1	
 	ADDq.W	#1,D7                  | MOVE.W	D1,64(A1)	
-	add.w	#64,a6                 | ADDI.W	#$0001,D1	
+	lea	(64,a1),a6                 | ADDI.W	#$0001,D1	
 	jbsr	osd_write_word         | MOVE.W	D1,-2(A1)	
-	ADDq.W	#1,D7                  | ADDI.W	#$0001,D1	
-	sub.w	#66,a6                 | MOVE.W	D1,62(A1)	
+	ADDq.W	#1,D7                  | ADDI.W	#$0001,D1
+	cmp.l	#0x244000,a1
+	jeq		0f				| avoid original write to 23FFFE error
+	lea	(-2,a1),a6                 | ADDI.W	#$0001,D1	
 	jbsr	osd_write_word
+0:
 	ADDq.W	#1,D7
-	add.w	#64,a6
+	lea	(62,a1),a6                 | ADDI.W	#$0001,D1	
 	jbsr	osd_write_word
-	sub.w	#62,a6
 	move.w	d7,d1
 	RESTORE_REGS
 	rts
@@ -321,6 +323,7 @@ write_ninja_message_0834A:
 	jbsr	osd_write_word
 	RESTORE_REGS
 	exg		a1,a6
+	addq	#2,a1
 	rts
 	
 copy_to_tile_0_01fa2:
@@ -337,7 +340,7 @@ lb_01fba:
 	MOVE.B	D1,d7
 	jbsr	osd_write_byte
 	addq	#1,a6
-	MOVE.B	(A0)+,d7		
+	MOVE.B	(A0)+,d7
 	jbsr	osd_write_byte
 	addq	#1,a6
 	DBF	D0,lb_01fa2

@@ -54,7 +54,7 @@ def load_tileset(image_name,palette_index,side,tileset_name,dumpdir,dump=False,n
 
     if dump:
         dump_subdir = os.path.join(dumpdir,tileset_name)
-        if palette_index == 2:
+        if palette_index == 0:
             ensure_empty(dump_subdir)
 
     tile_number = 0
@@ -144,34 +144,58 @@ def remove_colors(imgname):
 
 #sprite_sheet_dict = {i:remove_colors(os.path.join(sprites_path,f"sprites_pal_{i:02x}.png")) for i in range(16)}
 tile_1_sheet_dict = {i:os.path.join(sheets_path,"tiles_24a000",f"pal_{i:02x}.png") for i in range(9)}
-tile_0_sheet_dict = {i:os.path.join(sheets_path,"tiles_244000",f"pal_{i:02x}.png") for i in range(16)}
+tile_0_sheet_dict = {i:os.path.join(sheets_path,"tiles_244000",f"pal_{i:02x}.png") for i in range(15)}
 
 tile_palette = set()
-tile_set_list = []
+tile_24a00_set_list = []
 
 for i in range(16):
     tsd = tile_1_sheet_dict.get(i)
     if tsd:
-        tp,tile_set = load_tileset(tsd,i,16,"tiles",dump_dir,dump=dump_it,name_dict=None,cluts=used_cluts["title_24a000"])
-        tile_set_list.append(tile_set)
+        tp,tile_set = load_tileset(tsd,i,16,"tiles/24a00",dump_dir,dump=dump_it,name_dict=None,cluts=used_cluts["title_24a000"])
+        tile_24a00_set_list.append(tile_set)
         tile_palette.update(tp)
     else:
-        tile_set_list.append(None)
+        tile_24a00_set_list.append(None)
 
 # dual playfield, palette 16-31, color 16 is transparent
 if (0,0,0) not in tile_palette:
     tile_palette.add((0,0,0))
-full_palette = sorted(tile_palette)
+bg_palette = sorted(tile_palette)
 
-lfp = len(full_palette)
+lfp = len(bg_palette)
 if lfp>16:
-    raise Exception(f"Too many colors {lfp} max 16")
+    raise Exception(f"background: Too many colors {lfp} max 16")
 if lfp<16:
-    full_palette += [(0x10,0x20,0x30)]*(16-lfp)
+    bg_palette += [(0x10,0x20,0x30)]*(16-lfp)
 
 # pad just in case we don't have 16 colors (but we have)
-full_palette += (nb_colors-len(full_palette)) * [(0x10,0x20,0x30)]
+bg_palette += (nb_colors-len(bg_palette)) * [(0x10,0x20,0x30)]
 
+tile_palette = set()
+tile_24400_set_list = []
+
+for i in range(16):
+    tsd = tile_0_sheet_dict.get(i)
+    if tsd:
+        tp,tile_set = load_tileset(tsd,i,8,"tiles/24400",dump_dir,dump=dump_it,name_dict=None,cluts=used_cluts["title_244000"])
+        tile_24400_set_list.append(tile_set)
+        tile_palette.update(tp)
+    else:
+        tile_24400_set_list.append(None)
+
+if (0,0,0) not in tile_palette:
+    tile_palette.add((0,0,0))
+fg_palette = sorted(tile_palette)
+
+lfp = len(fg_palette)
+if lfp>16:
+    raise Exception(f"Foreground: Too many colors {lfp} max 16")
+if lfp<16:
+    fg_palette += [(0x10,0x20,0x30)]*(16-lfp)
+
+# pad just in case we don't have 16 colors (but we have)
+fg_palette += (nb_colors-len(fg_palette)) * [(0x10,0x20,0x30)]
 
 
 
@@ -240,72 +264,80 @@ def read_tileset(img_set_list,palette,plane_orientation_flags,cache,is_bob):
 
     return new_tile_table
 
-tile_plane_cache = {}
-tile_table = read_tileset(tile_set_list,full_palette,[True,False,False,False],cache=tile_plane_cache, is_bob=False)
+
+def dump_tiles(file_radix,tile_table,tile_plane_cache):
+    tiles_1_src = os.path.join(src_dir,file_radix+".68k")
+
+    with open(tiles_1_src,"w") as f:
+        f.write("base:\n")
+        for i,tile_entry in enumerate(tile_table):
+            f.write("\tdc.l\t")
+            if tile_entry:
+                f.write(f"tile_{i:02x}-base")
+            else:
+                f.write("0")
+            f.write("\n")
+
+        for i,tile_entry in enumerate(tile_table):
+            if tile_entry:
+                tile_base = f"tile_{i:02x}"
+                f.write(f"{tile_base}:\n")
+                for j,t in enumerate(tile_entry):
+                    f.write("\tdc.l\t")
+                    if t:
+                        f.write(f"tile_{i:02x}_{j:02x}-{tile_base}")
+                    else:
+                        f.write("0")
+                    f.write("\n")
+
+
+        for i,tile_entry in enumerate(tile_table):
+            if tile_entry:
+                for j,t in enumerate(tile_entry):
+                    if t:
+                        tile_base = f"tile_{i:02x}_{j:02x}"
+
+                        f.write(f"{tile_base}:\n")
+                        for orientation,_ in plane_orientations:
+                            f.write("* {}\n".format(orientation))
+                            if orientation in t:
+                                data = t[orientation]
+                                for bitplane_id in data["bitplanes"]:
+                                    f.write("\tdc.l\t")
+                                    if bitplane_id:
+                                        f.write(f"tile_plane_{bitplane_id:02d}-{tile_base}")
+                                    else:
+                                        f.write("0")
+                                    f.write("\n")
+                                if len(t)==1:
+                                    # optim: only standard
+                                    break
+                            else:
+                                for _ in range(nb_planes):
+                                    f.write("\tdc.l\t0\n")
+
+
+                        #dump_asm_bytes(t["bitmap"],f)
+
+        for k,v in tile_plane_cache.items():
+            f.write(f"tile_plane_{v:02d}:")
+            dump_asm_bytes(k,f)
+    # now convert the asm file to full binary
+    tiles_1_bin = os.path.join(data_dir,os.path.basename(os.path.splitext(tiles_1_src)[0])+".bin")
+    subprocess.run(["vasmm68k_mot","-nosym","-Fbin",tiles_1_src,"-o",tiles_1_bin],check=True)
+
+
+tile_24400_cache = {}
+tile_24a00_cache = {}
+
+tile_24a00_table = read_tileset(tile_24a00_set_list,bg_palette,[True,False,False,False],cache=tile_24a00_cache, is_bob=False)
+tile_24400_table = read_tileset(tile_24400_set_list,fg_palette,[True,False,False,False],cache=tile_24400_cache, is_bob=False)
 
 
 with open(os.path.join(src_dir,"palette.68k"),"w") as f:
-    bitplanelib.palette_dump(full_palette,f,bitplanelib.PALETTE_FORMAT_ASMGNU)
+    bitplanelib.palette_dump(bg_palette,f,bitplanelib.PALETTE_FORMAT_ASMGNU)
 
-tiles_1_src = os.path.join(src_dir,"tiles_1.68k")
+dump_tiles("tiles_1",tile_24a00_table,tile_24a00_cache)
+dump_tiles("tiles_0",tile_24400_table,tile_24400_cache)
 
-with open(tiles_1_src,"w") as f:
-    f.write("base:\n")
-    for i,tile_entry in enumerate(tile_table):
-        f.write("\tdc.l\t")
-        if tile_entry:
-            f.write(f"tile_{i:02x}-base")
-        else:
-            f.write("0")
-        f.write("\n")
-
-    for i,tile_entry in enumerate(tile_table):
-        if tile_entry:
-            tile_base = f"tile_{i:02x}"
-            f.write(f"{tile_base}:\n")
-            for j,t in enumerate(tile_entry):
-                f.write("\tdc.l\t")
-                if t:
-                    f.write(f"tile_{i:02x}_{j:02x}-{tile_base}")
-                else:
-                    f.write("0")
-                f.write("\n")
-
-
-    for i,tile_entry in enumerate(tile_table):
-        if tile_entry:
-            for j,t in enumerate(tile_entry):
-                if t:
-                    tile_base = f"tile_{i:02x}_{j:02x}"
-
-                    f.write(f"{tile_base}:\n")
-                    for orientation,_ in plane_orientations:
-                        f.write("* {}\n".format(orientation))
-                        if orientation in t:
-                            data = t[orientation]
-                            for bitplane_id in data["bitplanes"]:
-                                f.write("\tdc.l\t")
-                                if bitplane_id:
-                                    f.write(f"tile_plane_{bitplane_id:02d}-{tile_base}")
-                                else:
-                                    f.write("0")
-                                f.write("\n")
-                            if len(t)==1:
-                                # optim: only standard
-                                break
-                        else:
-                            for _ in range(nb_planes):
-                                f.write("\tdc.l\t0\n")
-
-
-                    #dump_asm_bytes(t["bitmap"],f)
-
-    for k,v in tile_plane_cache.items():
-        f.write(f"tile_plane_{v:02d}:")
-        dump_asm_bytes(k,f)
-
-# now convert the asm file to full binary
-tiles_1_bin = os.path.join(data_dir,os.path.basename(os.path.splitext(tiles_1_src)[0])+".bin")
-
-subprocess.run(["vasmm68k_mot","-nosym","-Fbin",tiles_1_src,"-o",tiles_1_bin],check=True)
 

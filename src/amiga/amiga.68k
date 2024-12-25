@@ -223,6 +223,9 @@ _user:
 	lea		tiles_1_file(pc),a0
 	lea		tiles_1,a1
  	jsr	(resload_LoadFileDecrunch,a2)
+	lea		tiles_0_file(pc),a0
+	lea		tiles_0,a1
+ 	jsr	(resload_LoadFileDecrunch,a2)
    bra		.no_forbid
 .standard:
 	
@@ -871,11 +874,143 @@ addr_242xxx_op:
 	
 * 8x8 tile layer
 addr_244xxx_tile_layer_0_op:
-	*jbsr		osd_break
-	nop
-	nop
-	nop
-	nop
+	and.w	#0x3FF,d2
+
+	cmp.b	#2,d0
+	jne		0f
+	swap	d7	
+0:
+	subq	#1,d0
+	jpl		0f
+
+	* byte op
+	tst.b	d1
+	jne		1f		| write
+	jbsr		osd_break
+	move.b	d0,d0	| ignored read atm
+1:
+	* write byte: equivalent to write word with attr+code
+	lea		video_ram_244000,a6
+	bclr	#0,d2
+	jeq		11f
+	* odd: get even value
+	rol.w	#8,d7
+	move.b	(a6,d2.w),d7
+	rol.w	#8,d7
+	jra		12f
+11:
+	* even: get odd value
+	rol.w	#8,d7
+	move.b	(1,a6,d2.w),d7
+12:
+	moveq	#1,d0		| word operation
+	lea		0x244000,a6
+	add.w	d2,a6
+	jra		addr_244xxx_tile_layer_0_op
+2:
+	rts
+0:
+	movem.l	a0-a3/d2-d6,-(a7)
+10:
+	move.w	d2,-(a7)
+	lea		video_ram_244000,a0
+	add.w	d2,a0
+	tst.b	d1
+	jne		0f		| write
+	jbsr	osd_break
+	* read: TODO check read size
+	move.w	(a0),d7
+	jra		101f
+0:
+	cmp.w	(a0),d7
+	jeq		100f	| already the proper value
+
+	move.w	d7,(a0)	| set value in memory first
+	* then draw the 8x8 tile
+	move.w	d2,d3
+	and.w	#0x3F,D3		| this is X
+	lsr.w	#1,d3			| divide by 2
+	lsr.w	#6,D2			| this is Y
+	lsl.w	#3,d2			| times 8
+	cmp.w	#256,d2
+	jeq		100f
+	
+	move.l	fg_drawed_screen_ptr(pc),a1
+	lea		mulNB_BYTES_PER_ROW_table(pc),a2
+	add.w	(a2,d2.w*2),a1
+	add.w	d3,a1			| screen dest address on bg playfield
+	move.w	d7,d5			| save code
+	move.w	d7,d6			| tile code
+	and.w	#0x3FF,d6
+	jeq		erase_tile_8
+	rol.w	#4,d5
+	and.w	#0xF,d5			| tile clut
+
+	.ifne	OPT_ENABLE_LOGGING
+	cmp.w	#0x3FF,d6
+	jcc		0f
+	move.l	#video_ram_244000,0x14
+	lea		tile_log_table_244000,a2
+	move.l	a2,0x10		| store address in zero page
+	move.w	d6,-(a7)
+	lsl.w	#4,d6		| 16 cluts
+	add.w	d5,d6		| clut offset
+	st.b	(a2,d6.w)
+	move.w	(a7)+,d6
+0:
+	.endif
+
+	lea		tiles_0,a0
+	add.l	(a0,d6.w*4),a0	| select tile code
+	move.l	(a0,d5.w*4),d6
+	jne		3f
+	move.l	(a0),d6		| default clut 0
+3:
+	add.l	d6,a0	| select tile clut
+	
+	moveq	#(NB_PLAYFIELD_PLANES-1),d6
+	move.l	a0,a3			| base ptr
+0:
+	move.l	(a0)+,d2
+	jeq		2f		| erase plane
+	lea		(a3,d2.l),a2
+	* plane contains data: copy it
+	.set	offset,0
+	.rept	8
+	move.b	(a2)+,(offset,a1)
+	.set	offset,offset+NB_BYTES_PER_ROW
+	.endr	
+1:
+	lea		(FG_SCREEN_PLANE_SIZE,a1),a1
+	dbf		d6,0b
+100:	
+	move.w	(a7)+,d2
+	* preparing for longword write
+	addq.w	#2,d2
+	swap	d7
+	dbf		d0,10b		| next word (if longword write)
+101:
+	movem.l	(a7)+,a0-a3/d2-d6
+	rts
+2:
+	.set	offset,0
+	.rept	8
+	clr.b	(offset,a1)
+	.set	offset,offset+NB_BYTES_PER_ROW
+	.endr
+	jra		1b
+	
+erase_tile_8:
+	moveq	#(NB_PLAYFIELD_PLANES-1),d6
+0:
+	.set	offset,0
+	.rept	8
+	clr.b	(offset,a1)
+	.set	offset,offset+NB_BYTES_PER_ROW
+	.endr
+	lea		(FG_SCREEN_PLANE_SIZE,a1),a1
+	dbf		d6,0b
+	jra		100b
 	rts
 addr_248xxx_op:
 	rts	| to_implement
@@ -916,8 +1051,8 @@ addr_24Axxx_tile_layer_1_op:
 	and.w	#0x1F,D3		| this is X
 	lsr.w	#5,D2			| this is Y
 	lsl.w	#4,d2			| times 16
-	cmp.w	#256,d2
-	jeq		100f
+	cmp.w	#256,d2		| TEMP!!!
+	jcc		100f
 	
 	move.l	bg_screen_ptr(pc),a1
 	lea		mulNB_BYTES_PER_ROW_table(pc),a2
@@ -931,7 +1066,7 @@ addr_24Axxx_tile_layer_1_op:
 	and.w	#0xF,d5			| tile clut
 
 	.ifne	OPT_ENABLE_LOGGING
-	cmp.w	#0x1FF,d6
+	cmp.w	#0x1FF,d6			| when logging on title: 1FF, else increase!
 	jcc		0f
 	lea		tile_log_table_24a000,a2
 	move.l	a2,0x8		| store address in zero page
@@ -2524,6 +2659,8 @@ main_scroll_value:
 	
 cheat_used:
 	.byte	0
+tiles_0_file:
+	.asciz	"tiles_0.bin"
 tiles_1_file:
 	.asciz	"tiles_1.bin"
 rom_file:
@@ -2554,6 +2691,10 @@ bg_palette:
 	.ifne	OPT_ENABLE_LOGGING
 	.section	.bss
 	.ascii	"TILE"
+tile_log_table_244000:
+	* 16 cluts, 2048 tiles
+	* a lot of combinations aren't used (fortunately!)
+	.skip	0x10000
 tile_log_table_24a000:
 	* 16 cluts, 2048 tiles
 	* a lot of combinations aren't used (fortunately!)
@@ -2689,8 +2830,10 @@ upper_dynamic_row_43:
 
 	.section	.bsspublic
 	
+tiles_0:
+	.skip	400000
 tiles_1:
-	.skip	1000000
+	.skip	400000
 end_tiles_1:
 	
 	* aligning on 8 bytes so .align will work
