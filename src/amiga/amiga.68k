@@ -60,7 +60,7 @@ ONE_TICK = 1
 	.endif
 	
 
-OPT_ENABLE_DOUBLE_BUFFERING = 1
+OPT_ENABLE_DOUBLE_BUFFERING = 0
 
 _custom = 0xDFF000
 
@@ -947,7 +947,7 @@ addr_244xxx_tile_layer_0_op:
 	and.w	#0xF,d5			| tile clut
 
 	.ifne	OPT_ENABLE_LOGGING
-	cmp.w	#0x3FF,d6
+	cmp.w	#0x7FF,d6
 	jcc		0f
 	move.l	#video_ram_244000,0x14
 	lea		tile_log_table_244000,a2
@@ -1160,11 +1160,13 @@ osd_real_ram_address:
 	rts
 	
 	.macro	OSD_MEM_OP	size,type
+	move.l	d7,-(a7)
 	movem.w	d0/d1,-(a7)
 	move.w	#\size,d0
 	move.w	#\type,d1
 	jbsr	special_memory_op
 	movem.w	(a7)+,d0/d1
+	move.l	(a7)+,d7
 	rts
 	.endm
 	
