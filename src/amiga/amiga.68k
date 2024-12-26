@@ -874,7 +874,7 @@ addr_242xxx_op:
 	
 * 8x8 tile layer
 addr_244xxx_tile_layer_0_op:
-	and.w	#0x3FF,d2
+	and.w	#0x7FF,d2
 
 	cmp.b	#2,d0
 	jne		0f
@@ -933,7 +933,7 @@ addr_244xxx_tile_layer_0_op:
 	lsr.w	#6,D2			| this is Y
 	lsl.w	#3,d2			| times 8
 	cmp.w	#256,d2
-	jeq		100f
+	jcc		100f
 	
 	move.l	fg_drawed_screen_ptr(pc),a1
 	lea		mulNB_BYTES_PER_ROW_table(pc),a2
@@ -941,14 +941,12 @@ addr_244xxx_tile_layer_0_op:
 	add.w	d3,a1			| screen dest address on bg playfield
 	move.w	d7,d5			| save code
 	move.w	d7,d6			| tile code
-	and.w	#0x3FF,d6
+	and.w	#0x7FF,d6
 	jeq		erase_tile_8
 	rol.w	#4,d5
 	and.w	#0xF,d5			| tile clut
 
 	.ifne	OPT_ENABLE_LOGGING
-	cmp.w	#0x7FF,d6
-	jcc		0f
 	move.l	#video_ram_244000,0x14
 	lea		tile_log_table_244000,a2
 	move.l	a2,0x10		| store address in zero page
@@ -957,10 +955,9 @@ addr_244xxx_tile_layer_0_op:
 	add.w	d5,d6		| clut offset
 	st.b	(a2,d6.w)
 	move.w	(a7)+,d6
-0:
 	.endif
 
-	lea		tiles_0,a0
+	lea		tiles_0+0x20,a0
 	add.l	(a0,d6.w*4),a0	| select tile code
 	move.l	(a0,d5.w*4),d6
 	jne		3f
@@ -1078,7 +1075,7 @@ addr_24Axxx_tile_layer_1_op:
 0:
 	.endif
 
-	lea		tiles_1,a0
+	lea		tiles_1+0x20,a0	| skip palette
 	add.l	(a0,d6.w*4),a0	| select tile code
 	move.l	(a0,d5.w*4),d6
 	jne		3f
@@ -1894,21 +1891,21 @@ platform_init:
 	
 	lea		bg_tiles_colors+2,a1
 	move.w	#15,d0
-	lea		bg_palette,a0
+	lea		tiles_1,a0
 0:
 	move.w	(a0)+,d2
 	move.w	d2,(a1)
 	addq	#4,a1
 	dbf		d0,0b
 	
-*	lea		fg_tiles_colors+2,a1
-*	move.w	#15,d0
-*	lea		bg_palette,a0
-*0:
-*	move.w	(a0)+,d2
-*	move.w	d2,(a1)
-*	addq	#4,a1
-*	dbf		d0,0b
+	lea		fg_tiles_colors+2,a1
+	move.w	#15,d0
+	lea		tiles_0,a0
+0:
+	move.w	(a0)+,d2
+	move.w	d2,(a1)
+	addq	#4,a1
+	dbf		d0,0b
 	
 
 
@@ -2683,8 +2680,7 @@ _end_of_ng_code:
 sprite_table:
 	.skip	SPRITE_STRUCT_SIZE*8
 	
-bg_palette:
-	.include "palette.68k"
+
 
 
 	.ifndef	RELEASE
@@ -2831,11 +2827,18 @@ upper_dynamic_row_43:
 	.ascii	"ENDCPLST"
 
 	.section	.bsspublic
-	
-tiles_0:
-	.skip	400000
-tiles_1:
-	.skip	400000
+
+	* format of the file is first palette (32 bytes)
+	* then main tile table that points to tile cluts, .. and
+	* so on. It is readable in the tiles_0.68k file which is
+	* pre-assembled so several tile files can be loaded depending
+	* on the game phase
+tiles_0:		| address 0x244000
+	.skip	300000
+tiles_1:		| address 0x24A000
+	.skip	300000
+tiles_2:		| address 0x24D000
+	.skip	300000
 end_tiles_1:
 	
 	* aligning on 8 bytes so .align will work

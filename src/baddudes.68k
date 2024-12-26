@@ -279,6 +279,8 @@ lb_0e130:
 	RESTORE_REGS
 	RTS
 	
+
+	
 write_to_tile_0_083ac:
 	STORE_REGS
 	move.l	a1,a6

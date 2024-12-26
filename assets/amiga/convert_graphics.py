@@ -1,7 +1,7 @@
 from PIL import Image,ImageOps
-import os,sys,bitplanelib,subprocess,json
+import os,sys,bitplanelib,subprocess,json,pathlib
 
-this_dir = os.path.dirname(os.path.abspath(__file__))
+this_dir = pathlib.Path(__file__).absolute().parent
 
 data_dir = os.path.join(this_dir,"..","..","data")
 src_dir = os.path.join(this_dir,"..","..","src","amiga")
@@ -17,7 +17,7 @@ with open(os.path.join(this_dir,"used_cluts.json")) as f:
 
 
 dump_it = True
-dump_dir = os.path.join(this_dir,"dumps")
+dump_dir = this_dir / "dumps"
 
 
 if dump_it:
@@ -75,8 +75,8 @@ def load_tileset(image_name,palette_index,side,tileset_name,dumpdir,dump=False,n
                 # only consider colors of used tiles
                 palette.update(set(bitplanelib.palette_extract(img)))
 
-
                 tileset_1.append(img)
+
                 if dump:
                     img = ImageOps.scale(img,5,resample=Image.Resampling.NEAREST)
                     if name_dict:
@@ -91,6 +91,52 @@ def load_tileset(image_name,palette_index,side,tileset_name,dumpdir,dump=False,n
     return sorted(set(palette)),tileset_1
 
 
+# ATM all colors are considered the same weight
+# should rather 1) create a big pic with all sprites & all cluts
+# 2) apply quantize on that image
+def quantize_palette_16(rgb_tuples,img_type):
+    rgb_configs = set(rgb_tuples)
+    nb_quantize = 16
+    # remove black, white, we don't want it quantized
+    immutable_colors = ()
+##    immutable_colors = (black,white,transparent_color)
+##    for c in immutable_colors:
+##        rgb_configs.discard(c)
+
+    rgb_configs = sorted(rgb_configs)
+
+    dump_graphics = False
+    # now compose an image with the colors
+    clut_img = Image.new("RGB",(len(rgb_configs),1))
+    for i,rgb in enumerate(rgb_configs):
+        #rgb_value = (rgb[0]<<16)+(rgb[1]<<8)+rgb[2]
+        clut_img.putpixel((i,0),rgb)
+
+    reduced_colors_clut_img = clut_img.quantize(colors=nb_quantize,dither=0).convert('RGB')
+
+    # get the reduced palette
+    reduced_palette = [reduced_colors_clut_img.getpixel((i,0)) for i,_ in enumerate(rgb_configs)]
+    # apply rounding now
+    # reduced_palette = bitplanelib.palette_round(reduced_palette,0xF0)
+    #print(len(set(reduced_palette))) # should still be 15
+    # now create a dictionary by associating the original & reduced colors
+    rval = dict(zip(rgb_configs,reduced_palette))
+
+    # add black & white & transparent back
+    for c in immutable_colors:
+        rval[c] = c
+
+
+    if True:  # debug it
+        s = clut_img.size
+        ns = (s[0]*30,s[1]*30)
+        clut_img = clut_img.resize(ns,resample=0)
+        clut_img.save(dump_dir / "{}_colors_not_quantized.png".format(img_type))
+        reduced_colors_clut_img = reduced_colors_clut_img.resize(ns,resample=0)
+        reduced_colors_clut_img.save(dump_dir / "{}_colors_quantized.png".format(img_type))
+
+    # return it
+    return rval
 
 
 def paint_black(img,coords):
@@ -131,7 +177,11 @@ nb_planes = 4
 nb_colors = 1<<nb_planes
 
 
-
+def apply_quantize(tile_set,quantized):
+    if tile_set:
+        for t in tile_set:
+            if t:
+                bitplanelib.replace_color_from_dict(t,quantized)
 
 def remove_colors(imgname):
     img = Image.open(imgname)
@@ -147,16 +197,16 @@ tile_1_sheet_dict = {i:os.path.join(sheets_path,"tiles_24a000",f"pal_{i:02x}.png
 tile_0_sheet_dict = {i:os.path.join(sheets_path,"tiles_244000",f"pal_{i:02x}.png") for i in range(15)}
 
 tile_palette = set()
-tile_24a00_set_list = []
+tile_24a000_set_list = []
 
 for i in range(16):
     tsd = tile_1_sheet_dict.get(i)
     if tsd:
-        tp,tile_set = load_tileset(tsd,i,16,"tiles/24a00",dump_dir,dump=dump_it,name_dict=None,cluts=used_cluts["title_24a000"])
-        tile_24a00_set_list.append(tile_set)
+        tp,tile_set = load_tileset(tsd,i,16,"tiles/24a000",dump_dir,dump=dump_it,name_dict=None,cluts=used_cluts["title_24a000"])
+        tile_24a000_set_list.append(tile_set)
         tile_palette.update(tp)
     else:
-        tile_24a00_set_list.append(None)
+        tile_24a000_set_list.append(None)
 
 # dual playfield, palette 16-31, color 16 is transparent
 if (0,0,0) not in tile_palette:
@@ -173,16 +223,18 @@ if lfp<16:
 bg_palette += (nb_colors-len(bg_palette)) * [(0x10,0x20,0x30)]
 
 tile_palette = set()
-tile_24400_set_list = []
+tile_244000_set_list = []
 
 for i in range(16):
     tsd = tile_0_sheet_dict.get(i)
     if tsd:
-        tp,tile_set = load_tileset(tsd,i,8,"tiles/24400",dump_dir,dump=dump_it,name_dict=None,cluts=used_cluts["title_244000"])
-        tile_24400_set_list.append(tile_set)
+        tp,tile_set = load_tileset(tsd,i,8,"tiles/244000/unquantized",dump_dir,dump=dump_it,name_dict=None,cluts=used_cluts["title_244000"])
+
+        tile_244000_set_list.append(tile_set)
         tile_palette.update(tp)
     else:
-        tile_24400_set_list.append(None)
+        tile_244000_set_list.append(None)
+
 
 if (0,0,0) not in tile_palette:
     tile_palette.add((0,0,0))
@@ -190,13 +242,32 @@ fg_palette = sorted(tile_palette)
 
 lfp = len(fg_palette)
 if lfp>16:
-    raise Exception(f"Foreground: Too many colors {lfp} max 16")
+    #raise Exception(f"Foreground: Too many colors {lfp} max 16")
+    quantized = quantize_palette_16(fg_palette,"baddudes")
+
+
+    for tile_set in tile_244000_set_list:
+        apply_quantize(tile_set,quantized)
+
+
+    fg_palette = sorted(set(quantized.values()))
+
+    if dump_it:
+        dump_subdir = dump_dir / "tiles/244000/quantized"
+        ensure_empty(dump_subdir)
+
+        for palette_index,tile_set in enumerate(tile_244000_set_list):
+            if tile_set:
+                for tile_number,img in enumerate(tile_set):
+                    if img:
+                        img = ImageOps.scale(img,5,resample=Image.Resampling.NEAREST)
+                        name = "unknown"
+
+                        img.save(os.path.join(dump_subdir,f"{name}_{tile_number:02x}_{palette_index:02x}.png"))
+
+
 if lfp<16:
     fg_palette += [(0x10,0x20,0x30)]*(16-lfp)
-
-# pad just in case we don't have 16 colors (but we have)
-fg_palette += (nb_colors-len(fg_palette)) * [(0x10,0x20,0x30)]
-
 
 
 
@@ -265,10 +336,13 @@ def read_tileset(img_set_list,palette,plane_orientation_flags,cache,is_bob):
     return new_tile_table
 
 
-def dump_tiles(file_radix,tile_table,tile_plane_cache):
+def dump_tiles(file_radix,palette,tile_table,tile_plane_cache):
     tiles_1_src = os.path.join(src_dir,file_radix+".68k")
 
     with open(tiles_1_src,"w") as f:
+        f.write("palette:\n")
+        bitplanelib.palette_dump(palette,f,bitplanelib.PALETTE_FORMAT_ASMMOT)
+
         f.write("base:\n")
         for i,tile_entry in enumerate(tile_table):
             f.write("\tdc.l\t")
@@ -327,17 +401,15 @@ def dump_tiles(file_radix,tile_table,tile_plane_cache):
     subprocess.run(["vasmm68k_mot","-nosym","-Fbin",tiles_1_src,"-o",tiles_1_bin],check=True)
 
 
-tile_24400_cache = {}
-tile_24a00_cache = {}
+tile_244000_cache = {}
+tile_24a000_cache = {}
 
-tile_24a00_table = read_tileset(tile_24a00_set_list,bg_palette,[True,False,False,False],cache=tile_24a00_cache, is_bob=False)
-tile_24400_table = read_tileset(tile_24400_set_list,fg_palette,[True,False,False,False],cache=tile_24400_cache, is_bob=False)
+tile_24a000_table = read_tileset(tile_24a000_set_list,bg_palette,[True,False,False,False],cache=tile_24a000_cache, is_bob=False)
+tile_244000_table = read_tileset(tile_244000_set_list,fg_palette,[True,False,False,False],cache=tile_244000_cache, is_bob=False)
 
 
-with open(os.path.join(src_dir,"palette.68k"),"w") as f:
-    bitplanelib.palette_dump(bg_palette,f,bitplanelib.PALETTE_FORMAT_ASMGNU)
 
-dump_tiles("tiles_1",tile_24a00_table,tile_24a00_cache)
-dump_tiles("tiles_0",tile_24400_table,tile_24400_cache)
+dump_tiles("tiles_1",bg_palette,tile_24a000_table,tile_24a000_cache)
+dump_tiles("tiles_0",fg_palette,tile_244000_table,tile_244000_cache)
 
 
