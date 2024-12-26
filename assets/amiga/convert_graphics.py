@@ -7,6 +7,7 @@ data_dir = os.path.join(this_dir,"..","..","data")
 src_dir = os.path.join(this_dir,"..","..","src","amiga")
 
 sheets_path = os.path.join(this_dir,"..","sheets")
+transparent = (255,0,255)
 
 sprite_names = dict()
 
@@ -96,14 +97,14 @@ def load_tileset(image_name,palette_index,side,tileset_name,dumpdir,dump=False,n
 # 2) apply quantize on that image
 def quantize_palette_16(rgb_tuples,img_type):
     rgb_configs = set(rgb_tuples)
-    nb_quantize = 16
+    rgb_configs.remove(transparent)
+    nb_quantize = 15
     # remove black, white, we don't want it quantized
-    immutable_colors = ()
-##    immutable_colors = (black,white,transparent_color)
-##    for c in immutable_colors:
-##        rgb_configs.discard(c)
+    immutable_colors = (transparent,(0,0,0))
+    for c in immutable_colors:
+        rgb_configs.discard(c)
 
-    rgb_configs = sorted(rgb_configs)
+
 
     dump_graphics = False
     # now compose an image with the colors
@@ -125,6 +126,7 @@ def quantize_palette_16(rgb_tuples,img_type):
     # add black & white & transparent back
     for c in immutable_colors:
         rval[c] = c
+
 
 
     if True:  # debug it
@@ -208,7 +210,6 @@ for i in range(16):
     else:
         tile_24a000_set_list.append(None)
 
-# dual playfield, palette 16-31, color 16 is transparent
 if (0,0,0) not in tile_palette:
     tile_palette.add((0,0,0))
 bg_palette = sorted(tile_palette)
@@ -235,9 +236,6 @@ for i in range(16):
     else:
         tile_244000_set_list.append(None)
 
-
-if (0,0,0) not in tile_palette:
-    tile_palette.add((0,0,0))
 fg_palette = sorted(tile_palette)
 
 lfp = len(fg_palette)
@@ -250,7 +248,10 @@ if lfp>16:
         apply_quantize(tile_set,quantized)
 
 
+    # put transparent color first
     fg_palette = sorted(set(quantized.values()))
+    fg_palette.remove(transparent)
+    fg_palette.insert(0,transparent)
 
     if dump_it:
         dump_subdir = dump_dir / "tiles/244000/quantized"
@@ -296,11 +297,11 @@ def read_tileset(img_set_list,palette,plane_orientation_flags,cache,is_bob):
                                 y_start,wtile = bitplanelib.autocrop_y(wtile)
                                 height = wtile.size[1]
                                 actual_nb_planes += 1
-                                bitplane_data = bitplanelib.palette_image2raw(wtile,None,palette,generate_mask=True,blit_pad=True)
+                                bitplane_data = bitplanelib.palette_image2raw(wtile,None,palette,generate_mask=True,blit_pad=True,mask_color=transparent)
                             else:
                                 height = 8
                                 y_start = 0
-                                bitplane_data = bitplanelib.palette_image2raw(wtile,None,palette)
+                                bitplane_data = bitplanelib.palette_image2raw(wtile,None,palette,mask_color=transparent)
 
                             plane_size = len(bitplane_data) // actual_nb_planes
                             bitplane_plane_ids = []
