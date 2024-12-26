@@ -9,6 +9,9 @@ collect unpatched memory references > 0x80000 < 0xFFxxx ram and display/log them
 - collect used cluts in title screen, use a tile logger for levels & screens
   for all layers, create a per-level/context tile file
   use osd_set_tile_context or such to reset tile logger & load another tileset
+- tileset 04: fake black but also some tiles with actual black, identify them in the converter
+  to generate a modified tile_04
+- osd_write_byte not working properly
 
 encode 244000 layer as main title & characters use it
 
