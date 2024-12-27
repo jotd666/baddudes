@@ -16,6 +16,8 @@ AFB_68010 = 0
 AFB_68020 = 1
 
 
+TOTAL_PUBLIC_MEMORY_SIZE = 600000
+TOTAL_CHIP_MEMORY_SIZE = 200000
 
 PREVIOUS_SPRITE_SIZE = 8
 BORDERBLANK = 1
@@ -220,12 +222,7 @@ _user:
 	move.l	a1,rom_base
 	jsr	(resload_LoadFileDecrunch,a2)
 	
-	lea		tiles_1_file(pc),a0
-	lea		tiles_1,a1
- 	jsr	(resload_LoadFileDecrunch,a2)
-	lea		tiles_0_file(pc),a0
-	lea		tiles_0,a1
- 	jsr	(resload_LoadFileDecrunch,a2)
+	
    bra		.no_forbid
 .standard:
 	
@@ -588,14 +585,30 @@ call_bcpl:
 	rts
 
 
+
 	
 
 demo_game:
-		move		#0x4000,_custom+intena						| disable interrupts
-		move		#0x7FFF,_custom+intreq						| ack all interrupts
-		bsr			platform_init					| amiga-specific init
+
+	* init dynamic memory blocks
+	jbsr	free_all_memory
+	
+	* load data files for intro
+
+	lea		tiles_0_file(pc),a0
+	jbsr	allocate_and_load_public_mem_file
+	move.l	d0,tiles_0
+	lea		tiles_1_file(pc),a0
+	jbsr	allocate_and_load_public_mem_file
+	move.l	d0,tiles_1
+	
+	move		#0x4000,_custom+intena						| disable interrupts
+	move		#0x7FFF,_custom+intreq						| ack all interrupts
+	bsr			platform_init					| amiga-specific init
 		
 0:	
+
+	
 	* compute ram start
 	lea		ram_buffer,a6
 	.ifndef	RELEASE
@@ -961,12 +974,12 @@ addr_244xxx_tile_layer_0_op:
 	move.w	(a7)+,d6
 	.endif
 
-	lea		tiles_0+0x20,a0
+	move.l		tiles_0,a0
+	add.w	#0x20,a0
 	add.l	(a0,d6.w*4),a0	| select tile code
 	move.l	(a0,d5.w*4),d6
-	jne		3f
-	move.l	(a0),d6		| default clut 0
-3:
+	jeq		100f		| ignored
+
 	add.l	d6,a0	| select tile clut
 	
 	moveq	#(NB_PLAYFIELD_PLANES-1),d6
@@ -1079,12 +1092,12 @@ addr_24Axxx_tile_layer_1_op:
 0:
 	.endif
 
-	lea		tiles_1+0x20,a0	| skip palette
-	add.l	(a0,d6.w*4),a0	| select tile code
+	move.l	tiles_1,a0
+	add.w	#0x20,a0
+	add.l	(a0,d6.w*4),a0  | skip palette select tile code
 	move.l	(a0,d5.w*4),d6
-	jne		3f
-	move.l	(2*4,a0),d6		| default clut 2
-3:
+	jeq		100f				| tile not found/ignored, skip
+
 	add.l	d6,a0	| select tile clut
 	
 	moveq	#(NB_PLAYFIELD_PLANES-1),d6
@@ -1816,23 +1829,23 @@ quit_to_os:
 
 
 * set sprite pointers on chipmem zone
+* < A0: copperlist
 
 init_sprite_bank:
-*	move.w	#sprpt,d0
-*	move.w	#NB_HOST_SPRITES-1,d2		| 7
-*0:
-*	move.l	(_chip_data,a1),d1
-*	move.w	d0,(a0)+
-*	swap	d1
-*	move.w	d1,(a0)+
-*	swap	d1
-*	addq	#2,d0
-*	move.w	d0,(a0)+
-*	move.w	d1,(a0)+
-*	
-*	add.w	#SPRITE_STRUCT_SIZE,a1
-*	addq	#2,d0
-*	dbf		d2,0b
+	move.l	#blank_sprite,a1
+	move.w	#sprpt,d0
+	move.w	#NB_HOST_SPRITES-1,d2		| 7
+0:
+	move.w	d0,(a0)+
+	swap	d1
+	move.w	d1,(a0)+
+	swap	d1
+	addq	#2,d0
+	move.w	d0,(a0)+
+	move.w	d1,(a0)+
+	
+	addq	#2,d0
+	dbf		d2,0b
 	rts
 	
 platform_init:
@@ -1876,13 +1889,12 @@ platform_init:
 	
 	* set sprite registers in copperlist
 	lea		intro_sprites,a0
-	lea		sprite_table,a1
 	bsr		init_sprite_bank
 
 	
 	lea		bg_tiles_colors_intro+2,a1
 	move.w	#15,d0
-	lea		tiles_1,a0
+	move.l	tiles_1,a0		| palette
 0:
 	move.w	(a0)+,d2
 	move.w	d2,(a1)
@@ -1891,13 +1903,12 @@ platform_init:
 	
 	lea		fg_tiles_colors_intro+2,a1
 	move.w	#15,d0
-	lea		tiles_0,a0
+	move.l	tiles_0,a0		| palette
 0:
 	move.w	(a0)+,d2
 	move.w	d2,(a1)
 	addq	#4,a1
 	dbf		d0,0b
-	
 
 
 	* wait 300 lines
@@ -1944,8 +1955,86 @@ platform_init:
 	
     rts
 	
+* < A0: filename
+* > D0,D1: file pointer, file size
+allocate_and_load_public_mem_file:
+	jbsr	get_file_size
+	move.l	D0,-(a7)
+	moveq	#0,d1
+	jbsr	allocate_memory
+	move.l	d0,a1
+	move.l	a1,-(a7)
+	jbsr	load_and_decrunch_file
+	move.l	(a7)+,d0
+	move.l	(a7)+,d1
+	rts
 	
-
+load_and_decrunch_file:
+	move.l	_resload(pc),a2
+ 	jsr	(resload_LoadFileDecrunch,a2)
+	rts
+	
+* < A0: filename
+* > D0: size (decrunch supported)
+get_file_size:
+	tst.l	_resload
+	jeq		0f
+	movem.l	d1/a0-a2,-(a7)
+	move.l	_resload,a2
+	jbsr	(resload_GetFileSizeDec,a2)
+	movem.l	(a7)+,d1/a0-a2
+	rts
+0:
+	* unsupported
+	illegal
+	illegal
+	illegal
+	rts
+	
+* < D0: required size
+* < D1: 0 any, 1 chip
+* > d0: allocated block
+allocate_memory:
+	movem.l	d2-d4/a0-a1,-(a7)
+	tst.b	d1
+	jeq		0f
+	lea		chip_memory_block,a0
+	lea		chip_memory_current_ptr,a1
+	move.l	#TOTAL_CHIP_MEMORY_SIZE,d3
+	jra		1f
+0:
+	lea		public_memory_block,a0
+	lea		public_memory_current_ptr,a1
+	move.l	#TOTAL_PUBLIC_MEMORY_SIZE,d3
+1:
+	and.l	#0xFFFFFFF0,d0
+	add.l	#0x10,d0	| will always be aligned on 0x10 bytes
+	
+	move.l	(a1),d2
+	move.l	d2,d4
+	sub.l	a0,d2		| occupied size
+	add.l	d0,d2		| next free block
+	cmp.l	d3,d2		| compare to max
+	jcc		out_of_memory
+	add.l	d0,(a1)
+	move.l	d4,d0		| return value
+	movem.l	(a7)+,d2-d4/a0-a1
+	rts
+	
+out_of_memory:
+	jbsr	osd_break
+	illegal
+	illegal
+	illegal
+	
+* < D0: 0 any, 1 chip	
+free_all_memory:
+	lea		public_memory_block,a0
+	move.l	a0,public_memory_current_ptr
+	lea		chip_memory_block,a0
+	move.l	a0,chip_memory_current_ptr
+	rts
+	
 * < A0: palette
 * < A1: copperlist
 * < D0: number of colors to load	
@@ -2689,6 +2778,11 @@ tile_log_table_24a000:
 	.endif
 	.endif
 	
+public_memory_current_ptr:
+	.long	0
+chip_memory_current_ptr:
+	.long	0
+
 	.ascii	"CODE_END"
 
 
@@ -2735,6 +2829,9 @@ tile_log_table_24a000:
 
 blank_sound:
 	ds.l	4
+	
+blank_sprite:
+	.skip	8
 	
 debug_copperlist:
 	dc.w	bplcon0,0x200
@@ -2786,7 +2883,9 @@ intro_intreq_block:
 
 	
 
-	.word	0xEC01,0xFFFE
+	.word	0x9C01,0xFFFE
+dudes_palette:
+	*DECL_COLORS	0,TOTAL_NB_COLORS
 	
 	* pal limit
     .word  0xFFCF,0xFFFE       | PAL wait
@@ -2859,24 +2958,29 @@ intreq_block_game:
 
 	.section	.bsspublic
 
+public_memory_block:
+	.skip	TOTAL_PUBLIC_MEMORY_SIZE
+	
 	* format of the file is first palette (32 bytes)
 	* then main tile table that points to tile cluts, .. and
 	* so on. It is readable in the tiles_0.68k file which is
 	* pre-assembled so several tile files can be loaded depending
 	* on the game phase
 tiles_0:		| address 0x244000
-	.skip	300000
+	.long	0
 tiles_1:		| address 0x24A000
-	.skip	300000
+	.long	0
 tiles_2:		| address 0x24D000
-	.skip	300000
-end_tiles_1:
+	.long	0
+
 	
 	* aligning on 8 bytes so .align will work
 	* in the next datachip sections
 	.align	8
 	
 		.section .bsschip
+chip_memory_block:
+	.skip	TOTAL_CHIP_MEMORY_SIZE
 		
 sprite_buffer:
 	.skip	(SPRITE_SIZE+(1<<SPRITE_POWER_OF_2))*8		| 32 more bytes for control word and end zeroes
