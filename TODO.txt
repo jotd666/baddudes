@@ -5,6 +5,11 @@ find:
 
 collect unpatched memory references > 0x80000 < 0xFFxxx ram and display/log them
 
+- delete "rampant ninja" text not working properly (1 out of 2 erased, debug with MAME)
+- when tile 5/526 is written at 244398, blit dude 0
+- when tile 5/41E is written at 244398, blit dude 1
+- produce dude file in "data" and allocate/load it
+
 - copy_memory_to_tiles_0837c: should be 1FF, reduced to FF to avoid trashed gfx
 - collect used cluts in title screen, use a tile logger for levels & screens
   for all layers, create a per-level/context tile file

@@ -240,7 +240,7 @@ fg_palette = sorted(tile_palette)
 
 lfp = len(fg_palette)
 if lfp>16:
-    #raise Exception(f"Foreground: Too many colors {lfp} max 16")
+    print(f"Foreground: Too many colors {lfp} max 16, quantizing")
     quantized = quantize_palette_16(fg_palette,"baddudes")
 
 
@@ -250,8 +250,6 @@ if lfp>16:
 
     # put transparent color first
     fg_palette = sorted(set(quantized.values()))
-    fg_palette.remove(transparent)
-    fg_palette.insert(0,transparent)
 
     if dump_it:
         dump_subdir = dump_dir / "tiles/244000/quantized"
@@ -266,6 +264,8 @@ if lfp>16:
 
                         img.save(os.path.join(dump_subdir,f"{name}_{tile_number:02x}_{palette_index:02x}.png"))
 
+fg_palette.remove(transparent)
+fg_palette.insert(0,transparent)
 
 if lfp<16:
     fg_palette += [(0x10,0x20,0x30)]*(16-lfp)

@@ -9,6 +9,7 @@
 .include "custom.i"
 .include "exec_lvos.i"
 .include "dos_lvos.i"
+.include "game_context.i"
 .include "graphics_lvos.i"
 
 AttnFlags = 0x128
@@ -188,7 +189,7 @@ start:
 	.global		osd_write_word
 	.global		osd_write_long
 	.global		osd_enable_interrupts
-
+	.global		osd_set_context
 	
 	.include	"ReadJoypad.i"
 	.include	"whdload_funcs.i"
@@ -593,14 +594,8 @@ demo_game:
 	* init dynamic memory blocks
 	jbsr	free_all_memory
 	
-	* load data files for intro
-
-	lea		tiles_0_file(pc),a0
-	jbsr	allocate_and_load_public_mem_file
-	move.l	d0,tiles_0
-	lea		tiles_1_file(pc),a0
-	jbsr	allocate_and_load_public_mem_file
-	move.l	d0,tiles_1
+	move.w	#CTX_INTRO,d0
+	jbsr	osd_set_context
 	
 	move		#0x4000,_custom+intena						| disable interrupts
 	move		#0x7FFF,_custom+intreq						| ack all interrupts
@@ -2539,8 +2534,30 @@ toggle_pause:
 	rts
 
 	
+osd_set_context:
+	cmp.w	game_context,d0
+	jeq		0f
+	move.w	d0,game_context
+	lea		game_context_table(pc),a0
+	jsr		([a0,d0.w*4])
+0:
+	rts
+	
+game_context_table:
+	.long	0
+	.long	set_intro_context
+	
+set_intro_context:
+	* load data files for intro
 
-    
+	lea		tiles_0_file(pc),a0
+	jbsr	allocate_and_load_public_mem_file
+	move.l	d0,tiles_0
+	lea		tiles_1_file(pc),a0
+	jbsr	allocate_and_load_public_mem_file
+	move.l	d0,tiles_1
+	rts
+	
 * < D0: numbers of vertical positions to wait
 beamdelay:
 0:
@@ -2597,7 +2614,8 @@ old_stack:
 	.long	0
 return_address:
 	.long	0
-	
+game_context:
+	.word	0
 	
 _tag:
 		.long	WHDLTAG_MONITOR_GET
