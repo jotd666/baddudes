@@ -8,4 +8,9 @@ src_dir = os.path.join(this_dir,"..","..","src","amiga")
 
 for i in range(2):
     dude_pic = this_dir / f"dudes_{i}.png"
-    p = PIL.Image.open(dude_pic)
+    p = Image.open(dude_pic)
+    transparent = p.getpixel((0,0))
+    x_start,rval = bitplanelib.autocrop_x(p,transparent,align=16)
+    y_start,rval = bitplanelib.autocrop_y(rval,transparent)
+    print(x_start,y_start)
+    rval.save(this_dir/ f"dudes_crop_{i}.png")
