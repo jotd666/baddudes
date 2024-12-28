@@ -1,13 +1,7 @@
 from PIL import Image,ImageOps
 import os,sys,bitplanelib,subprocess,json,pathlib
 
-this_dir = pathlib.Path(__file__).absolute().parent
-
-data_dir = os.path.join(this_dir,"..","..","data")
-src_dir = os.path.join(this_dir,"..","..","src","amiga")
-
-sheets_path = os.path.join(this_dir,"..","sheets")
-transparent = (255,0,255)
+from shared import *
 
 sprite_names = dict()
 
@@ -399,7 +393,7 @@ def dump_tiles(file_radix,palette,tile_table,tile_plane_cache):
             dump_asm_bytes(k,f)
     # now convert the asm file to full binary
     tiles_1_bin = os.path.join(data_dir,os.path.basename(os.path.splitext(tiles_1_src)[0])+".bin")
-    subprocess.run(["vasmm68k_mot","-nosym","-Fbin",tiles_1_src,"-o",tiles_1_bin],check=True)
+    asm2bin(tiles_1_src,tiles_1_bin)
 
 
 tile_244000_cache = {}

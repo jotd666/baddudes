@@ -1,12 +1,12 @@
 from PIL import Image,ImageOps
 import os,sys,bitplanelib,subprocess,json,pathlib
 
-this_dir = pathlib.Path(__file__).absolute().parent
+from shared import *
 
-data_dir = this_dir / ".." / ".." / "data"
-src_dir = this_dir / ".." / ".." / "src" / "amiga"
 
-with open(src_dir / "dudes.68k","w") as f:
+asm_out = src_dir / "dudes.68k"
+
+with open(asm_out,"w") as f:
     f.write("main_table:\n")
     for i in range(2):
         f.write(f"\tdc.l\tdude_{i}-main_table\n")
@@ -30,4 +30,8 @@ with open(src_dir / "dudes.68k","w") as f:
         f.write("; bitmap\n")
         raw = bitplanelib.palette_image2raw(rval,None,p,mask_color=transparent)
         bitplanelib.dump_asm_bytes(raw,f)
+
+dudes_bin = data_dir / "dudes.bin"
+
+asm2bin(asm_out,dudes_bin)
 

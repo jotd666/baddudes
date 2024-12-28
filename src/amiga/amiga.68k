@@ -1671,6 +1671,108 @@ start_process_1_plane:
 * 2 words: first shift (as bplcon value), then
 * offset in bytes
 
+* < A5: custom
+* < D0.W,D1.W: x,y, no shifting
+* < A0: source (pointer on array of planes)
+* < A1: destination fg plane
+* < D2: width in bytes
+* < D3: number of planes
+* < D4: height. If negative, source is copied with negative modulo (flip)
+* < D5: y offset for source planes
+* < D7: blit mask (not considered, optim, -1 all through the game)
+* blit mask set
+* returns: start of destination in A1 (computed from old A1+X,Y)
+* trashes: a1
+blit_planes_any_internal_no_cookie_cut:
+    movem.l d0-d7/a4,-(a7)
+    * pre-compute the maximum of shit here
+	tst.w	d4
+	bpl.b	1f
+	sub.w	d4,d1	| pre-add height to d1
+	subq.w	#1,d1	| minus one
+1:	
+	tst	d1
+    beq.b   2f    | optim
+    lea		mulNB_BYTES_PER_ROW_table(pc),a4
+	.ifdef	NO68020
+	add.w	d1,d1
+    move.w  (a4,d1.w),d1	| y times 40
+	.else
+    move.w  (a4,d1.w*2),d1	| y times 40
+	.endif
+2:
+	
+    lsr.w   #3,d0			| X displacement in bytes
+
+    add.w   d0,d1
+
+	move.l  #0x09f00000,d7    | A->D copy, ascending mode
+	move.l  #0x0FCA0000,d6     | D clear
+
+    * make offset even. Blitter will ignore odd address
+    * but a 68000 CPU doesn't and since we RETURN A1...
+    *bclr    #0,d1
+    add.w   d1,a1       | plane position (D1 < 0x7FFF, 288*40=0x2D00)
+	move.w	#NB_BYTES_PER_ROW,d0
+	tst.w	d4
+	bpl.b	5f
+	neg.w	d0
+	neg.w	d4    | make d4 positive again
+5:
+    sub.w   d2,d0       | blit width
+    lsl.w   #6,d4
+    lsr.w   #1,d2
+    add.w   d2,d4       | blit height
+    * always the same settings (ATM)
+	moveq	#0,d2
+	
+    * now just wait for blitter ready to write all registers
+	WAIT_BLIT
+    
+    * blitter registers set
+
+	move.w d2,bltamod(a5)		|A modulo=bytes to skip between lines
+	
+    move.w  d0,bltdmod(a5)	|D modulo
+					
+	add.w	d5,a3			| apply y offset to mask too (y offset looks wrong)
+	subq	#1,d3
+	beq.b	7f
+	subq	#1,d3
+6:
+	move.l a0,bltapt(a5)	|source graphic top left corner
+	bsr.b	start_process_1_plane_nocc
+	
+	move.l	a1,bltdpt(a5)	|destination top (bottom) left corner
+	move.w  d4,bltsize(a5)	|rectangle size, starts blit
+	lea		(FG_SCREEN_PLANE_SIZE,a1),a1
+	WAIT_BLIT
+	dbf		d3,6b
+7:
+	move.l a0,bltapt(a5)	|source graphic top left corner (mask)
+	bsr.b	start_process_1_plane_nocc
+	move.l	a1,bltdpt(a5)	|destination top (bottom) left corner
+	move.w  d4,bltsize(a5)	|rectangle size, starts blit
+    
+    movem.l (a7)+,d0-d7/a4
+    rts
+	
+start_process_1_plane_nocc:
+	move.l (a0)+,d0
+	beq.b	60f
+	move.l	d0,a4
+	add.w	d5,a4		| add Y offset
+	bra.b	61f
+60:
+	* source is 0: just apply mask (less bandwidth lost) and change bltcon
+	move.l	d6,bltcon0(a5)	| sets con0 and con1: clear
+ 	move.w	d2,bltbdat(a5)	|B word is zero
+	rts
+61:
+	* non-zero: set data source & bltcon
+	move.l	d7,bltcon0(a5)	| sets con0 and con1: C-A+B->D cookie cut full
+	move.l	a4,bltbpt(a5)	|source graphic top left corner
+	rts
 
 	
 bob_previous_positions_1:
@@ -2537,6 +2639,19 @@ toggle_pause:
 osd_set_context:
 	cmp.w	game_context,d0
 	jeq		0f
+	.ifndef	RELEASE
+	.ifne	OPT_ENABLE_LOGGING
+	* context change: clear tile log: it is no longer relevant
+	lea	tile_log_table_244000,a0
+0:
+	clr.l	(a0)+
+	clr.l	(a0)+
+	clr.l	(a0)+
+	clr.l	(a0)+
+	cmp.l	#tile_log_table_end,a0
+	jne	0b
+	.endif
+	.endif
 	move.w	d0,game_context
 	lea		game_context_table(pc),a0
 	jsr		([a0,d0.w*4])
@@ -2556,6 +2671,8 @@ set_intro_context:
 	lea		tiles_1_file(pc),a0
 	jbsr	allocate_and_load_public_mem_file
 	move.l	d0,tiles_1
+	
+	* set intro copperlist (todo)
 	rts
 	
 * < D0: numbers of vertical positions to wait
@@ -2789,10 +2906,15 @@ tile_log_table_244000:
 	* 16 cluts, 2048 tiles
 	* a lot of combinations aren't used (fortunately!)
 	.skip	0x10000
-tile_log_table_24a000:
+tile_log_table_24a000:		| make sure it's contiguous to prev table
 	* 16 cluts, 2048 tiles
 	* a lot of combinations aren't used (fortunately!)
 	.skip	0x10000
+tile_log_table_24d000:		| make sure it's contiguous to prev table
+	* 16 cluts, 2048 tiles
+	* a lot of combinations aren't used (fortunately!)
+	.skip	0x10000
+tile_log_table_end:
 	.endif
 	.endif
 	
