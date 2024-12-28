@@ -286,7 +286,7 @@ write_to_tile_0_083ac:
 	move.l	a1,a6
 	MOVE.W	D1,D7                  | MOVE.W	D1,(A1)		
 	jbsr	osd_write_word         | ADDI.W	#$0001,D1	
-	ADDq.W	#1,D7                  | MOVE.W	D1,64(A1)	
+	ADD.W	#1,D7                  | MOVE.W	D1,64(A1)	
 	lea	(64,a1),a6                 | ADDI.W	#$0001,D1	
 	jbsr	osd_write_word         | MOVE.W	D1,-2(A1)	
 	ADDq.W	#1,D7                  | ADDI.W	#$0001,D1

@@ -21,7 +21,7 @@ with open(asm_out,"w") as f:
         width = rval.size[0]
         height = rval.size[1]
         f.write("; x  y  w  h\n")
-        f.write(f"\tdc.w\t{x_start},{y_start+16},{width},{height}\n")
+        f.write(f"\tdc.w\t{x_start},{y_start+8},{width},{height}\n")
         p = bitplanelib.palette_extract(rval)
         p.remove(transparent)
         p.insert(0,transparent)

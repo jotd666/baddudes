@@ -13,7 +13,8 @@ for i in range(2):
         contents = f.read()
         for j in range(0,len(contents),2):
             tile_index = ((contents[j]<<8)+contents[j+1])&0xFFF
-            dropped_tile_index.add(tile_index)
+            if tile_index > 0x100:
+                dropped_tile_index.add(tile_index)
 
 
 ##if os.path.exists(used_cluts_file):

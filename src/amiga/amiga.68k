@@ -685,7 +685,7 @@ _vblank:
 
 	
 	tst.b	pause_flag
-	bne.b	23f
+	jne	23f
 
 	subq.w	#1,delay_timer
 		
@@ -697,13 +697,12 @@ _vblank:
 
 	move.w	display_dudes(pc),d0
 	jeq		1100f
-	clr.w	display_dudes
 	* set dudes palette #0
 	move.l	dude_pics,a2
 	move.l	(-4,a2,d0.w*4),a2		| requested dude struct
 	lea		(8,a2),a0			| palette
 	lea		dudes_palette,a1
-	move.w	#TOTAL_NB_COLORS-1,d0
+	move.w	#TOTAL_NB_COLORS,d0
 	jbsr	load_palette
 
 	move.l	fg_drawed_screen_ptr(pc),a1
@@ -726,6 +725,14 @@ _vblank:
 * < D5: y offset for source planes
 
 	jbsr	blit_planes_any_internal_no_cookie_cut
+	cmp.w	#1,display_dudes
+	jeq		1101f
+	* erase one location where the old pic remains
+	move.w	#0x3,d7
+	lea		0x2446D2+0x40,a6
+	jbsr	osd_write_word
+1101:
+	clr.w	display_dudes
 1100:
 	
 	
@@ -1997,7 +2004,7 @@ platform_init:
 
  	*         VVHH
     move.w #0x2481,diwstrt(a5)
-    move.w #0x2481,diwstop(a5)
+    move.w #0x2481-0x800,diwstop(a5)
     move.w #0x0038,ddfstrt(a5)
     move.w #0x00D0,ddfstop(a5)
 
