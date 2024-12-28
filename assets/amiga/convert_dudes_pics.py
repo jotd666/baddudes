@@ -20,8 +20,8 @@ with open(asm_out,"w") as f:
         y_start,rval = bitplanelib.autocrop_y(rval,transparent)
         width = rval.size[0]
         height = rval.size[1]
-
-        f.write(f"\tdc.w\t{x_start},{y_start},{width},{height}\n")
+        f.write("; x  y  w  h\n")
+        f.write(f"\tdc.w\t{x_start},{y_start+16},{width},{height}\n")
         p = bitplanelib.palette_extract(rval)
         p.remove(transparent)
         p.insert(0,transparent)
@@ -31,8 +31,8 @@ with open(asm_out,"w") as f:
         for j in range(4):
             f.write(f"\tdc.l\tdude_{i}_plane_{j}-dude_{i}\n")
         raw = bitplanelib.palette_image2raw(rval,None,p,mask_color=transparent)
-        f.write("; bpldata\n")
         plane_size = len(raw)//4
+        f.write(f"; bpldata (plane size = {plane_size})\n")
         offset = 0
         for j in range(4):
             f.write(f"dude_{i}_plane_{j}:\n")

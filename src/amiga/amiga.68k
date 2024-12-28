@@ -695,12 +695,45 @@ _vblank:
 	jbsr		baddudes_irq
 	clr.b	interrupt_mode
 
+	move.w	display_dudes(pc),d0
+	jeq		1100f
+	clr.w	display_dudes
+	* set dudes palette #0
+	move.l	dude_pics,a2
+	move.l	(-4,a2,d0.w*4),a2		| requested dude struct
+	lea		(8,a2),a0			| palette
+	lea		dudes_palette,a1
+	move.w	#TOTAL_NB_COLORS-1,d0
+	jbsr	load_palette
 
+	move.l	fg_drawed_screen_ptr(pc),a1
+	move.w	(a2)+,d0			| X
+	move.w	(a2)+,d1			| Y
+	move.w	(a2)+,d2			| width
+	lsr.w	#3,d2				| divide by 8 to get len in bytes
+	move.w	#NB_PLAYFIELD_PLANES,d3
+	move.w	(a2)+,d4			| height
+	moveq	#0,d5
+	lea		(0x20,a2),a0			| pic planes
+	
+* < A5: custom
+* < D0.W,D1.W: x,y, no shifting
+* < A0: source (pointer on array of planes)
+* < A1: destination fg plane
+* < D2: width in bytes
+* < D3: number of planes
+* < D4: height. If negative, source is copied with negative modulo (flip)
+* < D5: y offset for source planes
+
+	jbsr	blit_planes_any_internal_no_cookie_cut
+1100:
+	
+	
 	bsr		really_update_sprites
 	
 	* double buffering only in-game
-	tst.b	current_gfx_bank
-	jeq		23f
+	cmp.w	#CTX_INTRO+1,game_context
+	jcs		23f
 	bsr		switch_screen_buffers
 
 23:
@@ -892,6 +925,7 @@ addr_244xxx_tile_layer_0_op:
 	lea		video_ram_244000,a6
 	bclr	#0,d2
 	jeq		11f
+	* this is not working properly!
 	* odd: get even value
 	rol.w	#8,d7
 	move.b	(a6,d2.w),d7
@@ -923,13 +957,29 @@ addr_244xxx_tile_layer_0_op:
 0:
 	cmp.w	(a0),d7
 	jeq		100f	| already the proper value
-
 	move.w	d7,(a0)	| set value in memory first
+
+	* special cases: on some special tiles, 
+	* blit the whole pic (big dudes in intro)
+	cmp.w	#CTX_INTRO,game_context
+	jne		16f
+	cmp.w	#0x5526,d7	| written at 244398
+	jne		15f
+	move.w	#1,display_dudes
+	jra		100f
+15:
+	cmp.w	#0x541E,d7
+	jne		16f
+	move.w	#2,display_dudes
+	jra		100f
+16:
 	* then draw the 8x8 tile
 	move.w	d2,d3
 	and.w	#0x3F,D3		| this is X
 	lsr.w	#1,d3			| divide by 2
 	lsr.w	#6,D2			| this is Y
+	subq	#1,d2
+	jmi		100f
 	lsl.w	#3,d2			| times 8
 	cmp.w	#256,d2
 	jcc		100f
@@ -1727,7 +1777,6 @@ blit_planes_any_internal_no_cookie_cut:
 	beq.b	7f
 	subq	#1,d3
 6:
-	move.l a0,bltapt(a5)	|source graphic top left corner
 	bsr.b	start_process_1_plane_nocc
 	
 	move.l	a1,bltdpt(a5)	|destination top (bottom) left corner
@@ -1736,7 +1785,6 @@ blit_planes_any_internal_no_cookie_cut:
 	WAIT_BLIT
 	dbf		d3,6b
 7:
-	move.l a0,bltapt(a5)	|source graphic top left corner (mask)
 	bsr.b	start_process_1_plane_nocc
 	move.l	a1,bltdpt(a5)	|destination top (bottom) left corner
 	move.w  d4,bltsize(a5)	|rectangle size, starts blit
@@ -1746,11 +1794,8 @@ blit_planes_any_internal_no_cookie_cut:
 	
 start_process_1_plane_nocc:
 	move.l (a0)+,d0
-	beq.b	60f
-	move.l	d0,a4
-	add.w	d5,a4		| add Y offset
-	bra.b	61f
-60:
+	bne.b	61f
+
 	* source is 0: just apply mask (less bandwidth lost) and change bltcon
 	move.l	d6,bltcon0(a5)	| sets con0 and con1: clear
  	move.w	d2,bltbdat(a5)	|B word is zero
@@ -1758,7 +1803,7 @@ start_process_1_plane_nocc:
 61:
 	* non-zero: set data source & bltcon
 	move.l	d7,bltcon0(a5)	| sets con0 and con1: C-A+B->D cookie cut full
-	move.l	a4,bltbpt(a5)	|source graphic top left corner
+	move.l d0,bltapt(a5)	| source graphic top left corner
 	rts
 
 	
@@ -2778,7 +2823,8 @@ return_address:
 	.long	0
 game_context:
 	.word	0
-	
+display_dudes:
+	.word	0
 _tag:
 		.long	WHDLTAG_MONITOR_GET
 monitor:
@@ -3072,7 +3118,7 @@ intro_intreq_block:
 
 	.word	0x9C01,0xFFFE
 dudes_palette:
-	*DECL_COLORS	0,TOTAL_NB_COLORS
+	DECL_COLORS	0,TOTAL_NB_COLORS
 	
 	* pal limit
     .word  0xFFCF,0xFFFE       | PAL wait
