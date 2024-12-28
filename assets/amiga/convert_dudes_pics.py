@@ -27,9 +27,17 @@ with open(asm_out,"w") as f:
         p.insert(0,transparent)
         f.write("; palette\n")
         bitplanelib.palette_dump(p,f)
-        f.write("; bitmap\n")
+        f.write("; bitplanes\n")
+        for j in range(4):
+            f.write(f"\tdc.l\tdude_{i}_plane_{j}-dude_{i}\n")
         raw = bitplanelib.palette_image2raw(rval,None,p,mask_color=transparent)
-        bitplanelib.dump_asm_bytes(raw,f)
+        f.write("; bpldata\n")
+        plane_size = len(raw)//4
+        offset = 0
+        for j in range(4):
+            f.write(f"dude_{i}_plane_{j}:\n")
+            bitplanelib.dump_asm_bytes(raw[offset:offset+plane_size],f)
+            offset += plane_size
 
 dudes_bin = data_dir / "dudes.bin"
 

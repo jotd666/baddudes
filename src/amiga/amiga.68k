@@ -347,24 +347,11 @@ _user:
 	move.l	a0,fg_screen_data_2
 	move.l	a0,fg_displayed_screen_ptr
 	.endif
-		
-	* set them even if reset by game afterwards
-	* avoiding ugly stripe bitplane effect at startup
-    lea	playfield_bitplanes_intro+2,a0
-
-	bsr		set_playfield_bitplanes
-
-    lea	bobs_bitplanes_intro+2,a0
-
-	bsr		set_bob_bitplanes
-
-
+	
 	lea		_custom,a5
 	
     move.w #0x0610+BORDERBLANK,bplcon0(a5) | 8 bitplanes, dual playfield, borderblank
-
-	lea		intro_copperlist,a0
-	move.l	a0,cop1lc(a5)
+	
 
 
 * ALL DIP SWITCHES ARE WRONG ATM
@@ -2066,6 +2053,20 @@ allocate_and_load_public_mem_file:
 	move.l	(a7)+,d1
 	rts
 	
+* < A0: filename
+* > D0,D1: file pointer, file size
+allocate_and_load_chip_mem_file:
+	jbsr	get_file_size
+	move.l	D0,-(a7)
+	moveq	#1,d1
+	jbsr	allocate_memory
+	move.l	d0,a1
+	move.l	a1,-(a7)
+	jbsr	load_and_decrunch_file
+	move.l	(a7)+,d0
+	move.l	(a7)+,d1
+	rts
+	
 load_and_decrunch_file:
 	move.l	_resload(pc),a2
  	jsr	(resload_LoadFileDecrunch,a2)
@@ -2637,6 +2638,7 @@ toggle_pause:
 
 	
 osd_set_context:
+	movem.l	d0-a6,-(a7)
 	cmp.w	game_context,d0
 	jeq		0f
 	.ifndef	RELEASE
@@ -2656,6 +2658,7 @@ osd_set_context:
 	lea		game_context_table(pc),a0
 	jsr		([a0,d0.w*4])
 0:
+	movem.l	(a7)+,d0-a6
 	rts
 	
 game_context_table:
@@ -2672,8 +2675,50 @@ set_intro_context:
 	jbsr	allocate_and_load_public_mem_file
 	move.l	d0,tiles_1
 	
-	* set intro copperlist (todo)
+	lea		dudes_pics_files(pc),a0
+	jbsr	allocate_and_load_chip_mem_file
+	move.l	d0,dude_pics
+	
+	* resolve relative relocs so generic blitter routines can be used
+	* and it also avoids a lot of confusion & bugs
+	* if we wanted more speed we could even copy the header into fastmem after that
+	* but for intro pics it's probably not worth it
+	
+	move.l		dude_pics,a0
+	move.l	d0,a0
+	* dude pic struct relative => absolute
+	add.l		d0,(a0)
+	add.l		d0,(4,a0)
+	
+	moveq	#1,d1
+0:
+	move.l	(a0)+,a1	| pointer on dude pic struct
+	move.l	a1,d2
+	add.w	#0x20+8,a1	| skip palette & size
+	moveq	#NB_PLAYFIELD_PLANES-1,d0
+1:
+	add.l	d2,(a1)+	| relocate to absolute
+	dbf		d0,1b
+	dbf		d1,0b
+	
+	* set intro copperlist
+	
+	lea		_custom,a5
+	* set them even if reset by game afterwards
+	* avoiding ugly stripe bitplane effect at startup
+    lea	playfield_bitplanes_intro+2,a0
+
+	bsr		set_playfield_bitplanes
+
+    lea	bobs_bitplanes_intro+2,a0
+
+	bsr		set_bob_bitplanes
+
+	lea		intro_copperlist,a0
+	move.l	a0,cop1lc(a5)
+
 	rts
+	
 	
 * < D0: numbers of vertical positions to wait
 beamdelay:
@@ -2875,6 +2920,8 @@ tiles_0_file:
 	.asciz	"tiles_0.bin"
 tiles_1_file:
 	.asciz	"tiles_1.bin"
+dudes_pics_files:
+	.asciz	"dudes.bin"
 rom_file:
 	.asciz	"bad_dudes.bin"
 dosname:
@@ -3112,7 +3159,8 @@ tiles_1:		| address 0x24A000
 	.long	0
 tiles_2:		| address 0x24D000
 	.long	0
-
+dude_pics:
+	.long	0
 	
 	* aligning on 8 bytes so .align will work
 	* in the next datachip sections
