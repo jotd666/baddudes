@@ -6,17 +6,17 @@ find:
 collect unpatched memory references > 0x80000 < 0xFFxxx ram and display/log them
 
 
-- doesnt break at 9592 anymore (to collect highscore context)
-- breaks at 1A70 ???? trace with H
+- load highscore palette, why is layer not erased 244000 ?? watchpoints!
 - figure a way to free the last block? OR store block at some point in intro to avoid
-  reloading 244000 tiles
+  reloading 244000 tiles OR keep 244000 tiles loaded at all times
+  (and share palette with 24D000 layer too!)
 
 - osd_write_byte not working properly
 - copy_memory_to_tiles_0837c: should be 1FF, reduced to FF to avoid trashed gfx
 - tileset 04: fake black but also some tiles with actual black, identify them in the converter
   to generate a modified tile_04
 - maybe blit 16x16 tiles at some point instead of using CPU
-encode 244000 layer as main title & characters use it
+
 
 
 reverse lb_024dc

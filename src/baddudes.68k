@@ -26,10 +26,18 @@ baddudes_reset:
 	jbsr	apply_patchlist
 	* jump to rom start
 
+	* this is an empty patchlist in release
+	.ifndef	RELEASE
+	lea		debug_patchlist,a0
+	move.l	rom_base,a1
+	jbsr	apply_patchlist
+	.endif
+	
 	move.l	rom_base,-(a7)
 	add.l	#0x13dc,(a7)
 	rts
 	
+
 baddudes_irq:
 	move.l	rom_base,-(a7)
 	add.l	#0x00384,(a7)
@@ -184,6 +192,17 @@ do_PL_R:
 ***** manual patches *****
 **************************
 
+	.ifndef	RELEASE
+debug_patchlist:
+	PL_START
+	.ifne	OPT_SKIP_TITLE
+	PL_NOP	0x08298,4
+	PL_NOP	0x082be,4
+	PL_NOP	0x08354,4
+	.endif
+	PL_END
+	.endif
+
 * this routine heavily writes to A2 there and there
 * so I copied it and adapted it instead of patching it
 * a million times
@@ -285,7 +304,6 @@ lb_09592:
 	DBF	D0,lb_09592
 	exg	a4,a6
 	RESTORE_REGS
-	BREAKPOINT	"cioueddd"
 	RTS
 	
 set_scroll_values:

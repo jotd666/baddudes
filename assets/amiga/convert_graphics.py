@@ -414,3 +414,9 @@ dump_tiles("tiles_title_244000",fg_palette,tile_244000_table,tile_244000_cache)
 
 
 tile_24a000_set_list,bg_palette = load_contexted_tileset(tile_1_sheet_dict,"highs_24a000")
+
+tile_24a000_cache = {}
+
+tile_24a000_table = read_tileset(tile_24a000_set_list,bg_palette,[True,False,False,False],cache=tile_24a000_cache, is_bob=False)
+
+dump_tiles("tiles_highs_24a000",fg_palette,tile_24a000_table,tile_24a000_cache)

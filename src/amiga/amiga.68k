@@ -604,6 +604,7 @@ demo_game:
 	.endif
 
 	move.l	a6,ram_base
+	lea		stack_top,a7
 	jmp			baddudes_reset					| pass control to the mpatrol core
 		
 	
@@ -1210,34 +1211,43 @@ osd_real_ram_address:
 	add.l	ram_base,a6
 	rts
 	
-	.macro	OSD_MEM_OP	size,type
+	.macro	OSD_MEM_WRITE_OP	size
 	movem.l	d0/d1/d7,-(a7)
 	move.w	#\size,d0
-	move.w	#\type,d1
+	move.w	#1,d1
 	jbsr	special_memory_op
 	movem.l	(a7)+,d0/d1/d7
 	rts
 	.endm
 	
+	.macro	OSD_MEM_READ_OP	size
+	movem.l	d0/d1,-(a7)
+	move.w	#\size,d0
+	move.w	#0,d1		| read
+	jbsr	special_memory_op
+	movem.l	(a7)+,d0/d1
+	rts
+	.endm
+	
 osd_read_byte:
-	OSD_MEM_OP	0,0
+	OSD_MEM_READ_OP	0
 
 osd_write_byte:
-	OSD_MEM_OP	0,1
+	OSD_MEM_WRITE_OP	0
 
 
 osd_read_word:
-	OSD_MEM_OP	1,0
+	OSD_MEM_READ_OP	1
 
 osd_write_word:
-	OSD_MEM_OP	1,1
+	OSD_MEM_WRITE_OP	1
 
 
 osd_read_long:
-	OSD_MEM_OP	2,0
+	OSD_MEM_READ_OP	2
 
 osd_write_long:
-	OSD_MEM_OP	2,1
+	OSD_MEM_WRITE_OP	2
 
 	
 osd_blitz:
@@ -2638,11 +2648,12 @@ toggle_pause:
 osd_set_context:
 	movem.l	d0-a6,-(a7)
 	cmp.w	game_context,d0
-	jeq		0f
+	jeq		1f
 	.ifndef	RELEASE
 	.ifne	OPT_ENABLE_LOGGING
 	* context change: clear tile log: it is no longer relevant
-	lea	tile_log_table_244000,a0
+	* but not for layer 244000 which is shared
+	lea	tile_log_table_24a000,a0
 0:
 	clr.l	(a0)+
 	clr.l	(a0)+
@@ -2655,14 +2666,14 @@ osd_set_context:
 	move.w	d0,game_context
 	lea		game_context_table(pc),a0
 	jsr		([a0,d0.w*4])
-0:
+1:
 	movem.l	(a7)+,d0-a6
 	rts
 	
 game_context_table:
 	.long	0
-	.long	set_intro_context
-	.long	set_high_score_context
+	.long	set_intro_context			| CTX_INTRO
+	.long	set_high_score_context		| CTX_HIGH_SCORE
 	
 set_high_score_context:
 	jbsr	free_all_memory  | TODO maybe remove this
@@ -2671,7 +2682,7 @@ set_high_score_context:
 	lea		tiles_title_244000_file(pc),a0
 	jbsr	allocate_and_load_public_mem_file
 	move.l	d0,tiles_244000
-	lea		tiles_title_24a000_file(pc),a0
+	lea		tiles_highs_24a000_file(pc),a0
 	jbsr	allocate_and_load_public_mem_file
 	move.l	d0,tiles_24a000
 	
@@ -2941,6 +2952,8 @@ tiles_title_244000_file:
 	.asciz	"tiles_title_244000.bin"
 tiles_title_24a000_file:
 	.asciz	"tiles_title_24a000.bin"
+tiles_highs_24a000_file:
+	.asciz	"tiles_highs_24a000.bin"
 dudes_pics_files:
 	.asciz	"dudes.bin"
 rom_file:
@@ -3165,6 +3178,9 @@ intreq_block_game:
 	.ascii	"ENDCPLST"
 
 	.section	.bsspublic
+
+	.skip	0x10000
+stack_top:
 
 public_memory_block:
 	.skip	TOTAL_PUBLIC_MEMORY_SIZE
