@@ -49,9 +49,9 @@ $(MAIN): $(OBJS)
 patchlist.68k: $(GENPATCHES_PY)
 	cmd /c $(GENPATCHES_PY)
 	
-$(PROGNAME).o: $(PROGNAME).68k patchlist.68k $(PROGNAME)_ram.68k
-	$(ASM) $(PROGNAME).68k -o $(PROGNAME).o
-amiga.o: $(AMIGASRC)/amiga.68k $(AMIGASRC)/ReadJoyPad.i $(AMIGASRC)/palette.68k
+$(PROGNAME).o: $(PROGNAME).68k patchlist.68k $(PROGNAME)_ram.68k $(PROGNAME).inc
+	$(ASM) $(PROGNAME).68k -o $(PROGNAME).o 
+amiga.o: $(AMIGASRC)/amiga.68k $(AMIGASRC)/ReadJoyPad.i $(PROGNAME).inc
 	$(ASM) -Iamiga $(AMIGASRC)/amiga.68k -o amiga.o
 vbr.o: $(AMIGASRC)/vbr.68k
 	$(ASM_020) -Iamiga $(AMIGASRC)/vbr.68k -o vbr.o

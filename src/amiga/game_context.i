@@ -1,2 +1,0 @@
-CTX_UNKNOWN = 0
-CTX_INTRO = 1

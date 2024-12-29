@@ -6,6 +6,8 @@
 	.endif
 	.align	2
 
+	.include 	"baddudes.inc"
+	
 baddudes_reset:
 	move.l	rom_base,a0
 	move.l	ram_base,a1
@@ -172,10 +174,120 @@ do_PL_R:
 	move.w	#0x4E75,(a3)
 	rts
 	
+****************************
+***** gernated patches *****
+****************************
+
 	.include	"patchlist.68k"
 
-* manual patches
+**************************
+***** manual patches *****
+**************************
 
+* this routine heavily writes to A2 there and there
+* so I copied it and adapted it instead of patching it
+* a million times
+display_scores_loop_07b9a:
+	exg		a6,a2
+	MOVE.W	D2,D7
+	jbsr	osd_write_word
+	addq	#2,a6		
+	ADDI.W	#0x0030,D1		
+	MOVE.W	D1,D7
+	jbsr	osd_write_word
+	addq	#4,a6		
+	MOVE.W	D0,D1			
+	SUBQ.L	#1,D1			
+	LSL.W	#3,D1
+	exg		a1,a6
+	LEA	0x00ffa8fe,A6
+	jbsr	osd_real_ram_address
+	exg		a1,a6
+	ADDA.L	D1,A1
+	.rept	3
+	moveq	#0,d7
+	move.b	(a1)+,d7
+	jbsr	osd_write_word
+	addq	#2,a6
+	.endr	
+	ADDq	#2,A6	
+	ADDq	#1,A1	
+	MOVEQ	#2,D3		
+	MOVEQ	#0,D4		
+lb_07bd8:
+	MOVE.B	(A1)+,D1	
+	EXT.W	D1			
+	MOVE.W	D1,D2		
+	LSR.W	#4,D1		
+	ANDI.W	#0x000f,D1	
+	TST.W	D4			
+	BNE.W	lb_07bfa	
+	TST.W	D1			
+	BNE.W	lb_07bfa	
+	moveq	#0,d7
+	jbsr	osd_write_word
+	addq	#2,a6
+	jra	lb_07c02    
+lb_07bfa:
+	MOVEQ	#1,D4		
+	ADDI.W	#0x0030,D1
+	move.w	d1,d7	
+	jbsr	osd_write_word
+	addq	#2,a6
+lb_07c02:
+	ANDI.W	#0x000f,D2	
+	TST.W	D4			
+	BNE.W	lb_07c1c	
+	TST.W	D2			
+	BNE.W	lb_07c1c	
+	moveq	#0,d7
+	jbsr	osd_write_word
+	addq	#2,a6
+	jra	lb_07c24
+lb_07c1c:
+	MOVEQ	#1,D4			
+	ADDI.W	#0x0030,D2		
+	move.w	D2,d7	
+	jbsr	osd_write_word
+	addq	#2,a6		
+lb_07c24:
+	DBF	D3,lb_07bd8		
+	ADDq	#0x00000002,A6		
+	MOVE.B	(A1)+,D1	
+	EXT.W	D1			
+	CMPI.W	#0x0008,D1	
+	jne		lb_07c44	
+	MOVE.W	#0x007e,D1	
+	jra	lb_07c4c					
+lb_07c44:
+	ANDI.W	#0x000f,D1		
+	ADDI.W	#0x0030,D1		
+lb_07c4c:
+	move.w	d1,d7	
+	jbsr	osd_write_word
+	addq	#2,a6
+	exg		a6,a2
+	RTS			
+
+
+copy_highscore_tiles_loop_09592:
+	* changing game context (palette changes)
+	STORE_REGS
+	exg	d0,d7
+	move.w	#CTX_HIGH_SCORE,d0
+	jbsr	osd_set_context
+	exg	d0,d7
+	exg	a4,a6
+lb_09592:
+	MOVE.W	(A5)+,d7
+	jbsr	osd_write_word
+	addq	#2,a6
+	DBF	D0,lb_09592
+	exg	a4,a6
+	RESTORE_REGS
+	BREAKPOINT	"cioueddd"
+	RTS
+	
 set_scroll_values:
 	STORE_REGS
 	exg	a0,a6
@@ -285,17 +397,17 @@ write_to_tile_0_083ac:
 	STORE_REGS
 	move.l	a1,a6
 	MOVE.W	D1,D7                  | MOVE.W	D1,(A1)		
-	jbsr	osd_write_word         | ADDI.W	#$0001,D1	
+	jbsr	osd_write_word         | ADDI.W	#0x0001,D1	
 	ADD.W	#1,D7                  | MOVE.W	D1,64(A1)	
-	lea	(64,a1),a6                 | ADDI.W	#$0001,D1	
+	lea	(64,a1),a6                 | ADDI.W	#0x0001,D1	
 	jbsr	osd_write_word         | MOVE.W	D1,-2(A1)	
-	ADDq.W	#1,D7                  | ADDI.W	#$0001,D1
+	ADDq.W	#1,D7                  | ADDI.W	#0x0001,D1
 	cmp.l	#0x244000,a1
 	jeq		0f				| avoid original write to 23FFFE error
-	lea	(-2,a1),a6                 | ADDI.W	#$0001,D1	
+	lea	(-2,a1),a6                 | ADDI.W	#0x0001,D1	
 	jbsr	osd_write_word
 0:
-	ADDq.W	#1,D7                  | ADDI.W	#$0001,D1
+	ADDq.W	#1,D7                  | ADDI.W	#0x0001,D1
 	lea	(62,a1),a6                 |     MOVE.W	D1,62(A1)           	
 	jbsr	osd_write_word
 	move.w	d7,d1
@@ -339,12 +451,17 @@ lb_01fa2:
 	ADDQ	#1,A0	
 	BRA.S	lb_01fa2		
 lb_01fba:
+* original code (adapted). osd_write_byte doesn't seem to work
+* properly, so in that case a rewrite using osd_write_word is faster
+* and at least it works (used when displaying Data East copyright in the
+* title screen)
 *	MOVE.B	D1,d7
 *	jbsr	osd_write_byte
 *	addq	#1,a6
 *	MOVE.B	(A0)+,d7
 *	jbsr	osd_write_byte
 *	addq	#1,a6
+
 	MOVE.B	D1,d7
 	ror.w	#8,d7
 	move.b	(a0)+,d7 

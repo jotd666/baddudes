@@ -192,30 +192,35 @@ def remove_colors(imgname):
 tile_1_sheet_dict = {i:os.path.join(sheets_path,"tiles_24a000",f"pal_{i:02x}.png") for i in range(9)}
 tile_0_sheet_dict = {i:os.path.join(sheets_path,"tiles_244000",f"pal_{i:02x}.png") for i in range(15)}
 
-tile_palette = set()
-tile_24a000_set_list = []
+def load_contexted_tileset(tile_sheet_dict,context):
+    tile_palette = set()
+    tile_24a000_set_list = []
 
-for i in range(16):
-    tsd = tile_1_sheet_dict.get(i)
-    if tsd:
-        tp,tile_set = load_tileset(tsd,i,16,"tiles/24a000",dump_dir,dump=dump_it,name_dict=None,cluts=used_cluts["title_24a000"])
-        tile_24a000_set_list.append(tile_set)
-        tile_palette.update(tp)
-    else:
-        tile_24a000_set_list.append(None)
+    for i in range(16):
+        tsd = tile_1_sheet_dict.get(i)
+        if tsd:
+            tp,tile_set = load_tileset(tsd,i,16,pathlib.Path("tiles") / context,dump_dir,dump=dump_it,name_dict=None,cluts=used_cluts[context])
+            tile_24a000_set_list.append(tile_set)
+            tile_palette.update(tp)
+        else:
+            tile_24a000_set_list.append(None)
 
-if (0,0,0) not in tile_palette:
-    tile_palette.add((0,0,0))
-bg_palette = sorted(tile_palette)
+    if (0,0,0) not in tile_palette:
+        tile_palette.add((0,0,0))
+    bg_palette = sorted(tile_palette)
 
-lfp = len(bg_palette)
-if lfp>16:
-    raise Exception(f"background: Too many colors {lfp} max 16")
-if lfp<16:
-    bg_palette += [(0x10,0x20,0x30)]*(16-lfp)
+    lfp = len(bg_palette)
+    if lfp>16:
+        raise Exception(f"background: Too many colors {lfp} max 16")
+    if lfp<16:
+        bg_palette += [(0x10,0x20,0x30)]*(16-lfp)
 
-# pad just in case we don't have 16 colors (but we have)
-bg_palette += (nb_colors-len(bg_palette)) * [(0x10,0x20,0x30)]
+    # pad just in case we don't have 16 colors (but we have)
+    bg_palette += (nb_colors-len(bg_palette)) * [(0x10,0x20,0x30)]
+
+    return tile_24a000_set_list,bg_palette
+
+tile_24a000_set_list,bg_palette = load_contexted_tileset(tile_1_sheet_dict,"title_24a000")
 
 tile_palette = set()
 tile_244000_set_list = []
@@ -404,7 +409,8 @@ tile_244000_table = read_tileset(tile_244000_set_list,fg_palette,[True,False,Fal
 
 
 
-dump_tiles("tiles_1",bg_palette,tile_24a000_table,tile_24a000_cache)
-dump_tiles("tiles_0",fg_palette,tile_244000_table,tile_244000_cache)
+dump_tiles("tiles_title_24a000",bg_palette,tile_24a000_table,tile_24a000_cache)
+dump_tiles("tiles_title_244000",fg_palette,tile_244000_table,tile_244000_cache)
 
 
+tile_24a000_set_list,bg_palette = load_contexted_tileset(tile_1_sheet_dict,"highs_24a000")

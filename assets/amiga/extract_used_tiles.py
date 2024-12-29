@@ -40,5 +40,12 @@ for n in os.listdir(tiles_dir):
 
     used_dict[n] = used_tiles
 
+# force use of clut 0 for all letters & numbers in tileset 244000
+n = "title_244000"
+for i in range(ord("A"),ord("Z")+1):
+    used_dict[n][i].append(0)
+for i in range(ord("0"),ord("9")+1):
+    used_dict[n][i].append(0)
+
 with open(used_cluts_file,"w") as f:
     json.dump(used_dict,f,indent=2)

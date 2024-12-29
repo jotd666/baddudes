@@ -5,19 +5,17 @@ find:
 
 collect unpatched memory references > 0x80000 < 0xFFxxx ram and display/log them
 
-- delete "rampant ninja" text not working properly (1 out of 2 erased, debug with MAME)
-- when tile 5/526 is written at 244398, blit dude 0
-- when tile 5/41E is written at 244398, blit dude 1
-- produce dude file in "data" and allocate/load it
+
+- doesnt break at 9592 anymore (to collect highscore context)
+- breaks at 1A70 ???? trace with H
+- figure a way to free the last block? OR store block at some point in intro to avoid
+  reloading 244000 tiles
 
 - osd_write_byte not working properly
 - copy_memory_to_tiles_0837c: should be 1FF, reduced to FF to avoid trashed gfx
-
-  use osd_set_tile_context or such to reset tile logger & load another tileset
 - tileset 04: fake black but also some tiles with actual black, identify them in the converter
   to generate a modified tile_04
 - maybe blit 16x16 tiles at some point instead of using CPU
-
 encode 244000 layer as main title & characters use it
 
 

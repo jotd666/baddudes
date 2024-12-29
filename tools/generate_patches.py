@@ -172,6 +172,8 @@ add_s(0x083ac+6,0x083c6)
 add_s(0x003d0,0x003dc,"skip unneeded vblank wait")
 add_ps(0x083ce,"set_video_attribute_083ce")
 add_s(0x083ce+6,0x083e8)
+add_p(0x09592,"copy_highscore_tiles_loop_09592")
+add_p(0x7B9A,"display_scores_loop_07b9a")
 
 for offset in [0x0174c,0x0175c,0x07e66]:
     add_pss(offset,"test_input_bit_d1",2)

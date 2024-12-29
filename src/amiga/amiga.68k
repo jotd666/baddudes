@@ -9,8 +9,8 @@
 .include "custom.i"
 .include "exec_lvos.i"
 .include "dos_lvos.i"
-.include "game_context.i"
 .include "graphics_lvos.i"
+.include "baddudes.inc"
 
 AttnFlags = 0x128
 AFB_68010 = 0
@@ -739,7 +739,7 @@ _vblank:
 	bsr		really_update_sprites
 	
 	* double buffering only in-game
-	cmp.w	#CTX_INTRO+1,game_context
+	cmp.w	#CTX_HIGH_SCORE+1,game_context
 	jcs		23f
 	bsr		switch_screen_buffers
 
@@ -780,7 +780,7 @@ special_memory_op:
 	cmp.w	#0x31-0x24,D2
 	jeq		palette_and_sprites_ram_op
 	add.w	#0x24,d2
-	jbsr	osd_break
+	BREAKPOINT	"virtual access violation (address in D2)"
 	jra		special_memory_op_out
 	.endif
 	jra		palette_and_sprites_ram_op
@@ -819,7 +819,7 @@ ports_ram_op:
 
 	jra		special_memory_op_out
 an_ports:
-	jbsr	osd_break
+	BREAKPOINT		"an ports"
 	jra		special_memory_op_out
 
 * virtual address 0x31xxxx
@@ -902,8 +902,7 @@ addr_30c00xx_table_op:
 
 
 addr_unmapped_op:
-	lea		unmapped_memory_message(pc),a0
-	jbsr	osd_break
+	BREAKPOINT		"unmapped memory (in d2)"
 	rts
 
 addr_240xxx_op:
@@ -925,21 +924,22 @@ addr_244xxx_tile_layer_0_op:
 	* byte op
 	tst.b	d1
 	jne		1f		| write
-	jbsr		osd_break
-	move.b	d0,d0	| ignored read atm
+	BREAKPOINT	"byte read from 244xxx (in D2)"
+	rts
 1:
 	* write byte: equivalent to write word with attr+code
 	lea		video_ram_244000,a6
 	bclr	#0,d2
 	jeq		11f
 	* this is not working properly!
-	* odd: get even value
+	* odd: get even MSB value
+	BREAKPOINT	"write byte 244xxx"
 	rol.w	#8,d7
 	move.b	(a6,d2.w),d7
 	rol.w	#8,d7
 	jra		12f
 11:
-	* even: get odd value
+	* even: get odd LSB value
 	rol.w	#8,d7
 	move.b	(1,a6,d2.w),d7
 12:
@@ -957,7 +957,7 @@ addr_244xxx_tile_layer_0_op:
 	add.w	d2,a0
 	tst.b	d1
 	jne		0f		| write
-	jbsr	osd_break
+	BREAKPOINT	"word read from 244xxx (in D2)"
 	* read: TODO check read size
 	move.w	(a0),d7
 	jra		101f
@@ -1013,7 +1013,7 @@ addr_244xxx_tile_layer_0_op:
 	move.w	(a7)+,d6
 	.endif
 
-	move.l		tiles_0,a0
+	move.l		tiles_244000,a0
 	add.w	#0x20,a0
 	add.l	(a0,d6.w*4),a0	| select tile code
 	move.l	(a0,d5.w*4),d6
@@ -1091,7 +1091,7 @@ addr_24Axxx_tile_layer_1_op:
 	tst.b	d1
 	jne		0f		| write
 	jbsr	osd_break
-	* read: TODO check read size
+	BREAKPOINT	"word read from 24axxx (in D2)"
 	move.w	(a0),d7
 	jra		101f
 0:
@@ -1119,9 +1119,10 @@ addr_24Axxx_tile_layer_1_op:
 	and.w	#0xF,d5			| tile clut
 
 	.ifne	OPT_ENABLE_LOGGING
-	cmp.w	#0x1FF,d6			| when logging on title: 1FF, else increase!
+	cmp.w	#0x7FF,d6			| when logging on title: 1FF, else increase!
 	jcc		0f
 	lea		tile_log_table_24a000,a2
+	move.l 	#video_ram_24a000,0xC
 	move.l	a2,0x8		| store address in zero page
 	move.w	d6,-(a7)
 	lsl.w	#4,d6		| 16 cluts
@@ -1131,7 +1132,7 @@ addr_24Axxx_tile_layer_1_op:
 0:
 	.endif
 
-	move.l	tiles_1,a0
+	move.l	tiles_24a000,a0
 	add.w	#0x20,a0
 	add.l	(a0,d6.w*4),a0  | skip palette select tile code
 	move.l	(a0,d5.w*4),d6
@@ -1184,16 +1185,12 @@ erase_tile:
 	jra		100b
 	
 addr_24Cxxx_op:
+	* happens at start, see if needed
+	*BREAKPOINT	"word read/write from 24Cxxx (in D2)"
 	rts	      | to_implement
 * 16x16 tile layer
 addr_24Dxxx_tile_layer_2_op:
-	*jbsr		osd_break
-	nop
-	nop
-	nop
-	nop
-	nop
-	nop
+	BREAKPOINT	"word read/write from 24Dxxx (in D2)"
 	rts
 	
 
@@ -1204,7 +1201,8 @@ osd_real_ram_address:
 	sub.l	#0xFF8000,a6
 	.ifndef	RELEASE
 	bpl.b	0f
-	jbsr	osd_break
+	add.l	#0xFF8000,a6
+	BREAKPOINT	"ram address out of range (in A6)"
 	illegal
 0:	
 	.endif
@@ -1213,13 +1211,11 @@ osd_real_ram_address:
 	rts
 	
 	.macro	OSD_MEM_OP	size,type
-	move.l	d7,-(a7)
-	movem.w	d0/d1,-(a7)
+	movem.l	d0/d1/d7,-(a7)
 	move.w	#\size,d0
 	move.w	#\type,d1
 	jbsr	special_memory_op
-	movem.w	(a7)+,d0/d1
-	move.l	(a7)+,d7
+	movem.l	(a7)+,d0/d1/d7
 	rts
 	.endm
 	
@@ -1270,9 +1266,7 @@ osd_break:
 1003:
         .align	2
 
-unmapped_memory_message:	
-	.asciz	"unmapped memory (in d2)"
-        .align	2
+
 
 * < D0: number of 1/60Hz ticks
 * can work with interrupts enabled or disabled
@@ -2030,7 +2024,7 @@ platform_init:
 	
 	lea		bg_tiles_colors_intro+2,a1
 	move.w	#15,d0
-	move.l	tiles_1,a0		| palette
+	move.l	tiles_24a000,a0		| palette
 0:
 	move.w	(a0)+,d2
 	move.w	d2,(a1)
@@ -2039,7 +2033,7 @@ platform_init:
 	
 	lea		fg_tiles_colors_intro+2,a1
 	move.w	#15,d0
-	move.l	tiles_0,a0		| palette
+	move.l	tiles_244000,a0		| palette
 0:
 	move.w	(a0)+,d2
 	move.w	d2,(a1)
@@ -2172,10 +2166,9 @@ allocate_memory:
 	rts
 	
 out_of_memory:
-	jbsr	osd_break
+	BREAKPOINT	"out of memory"
 	illegal
-	illegal
-	illegal
+
 	
 * < D0: 0 any, 1 chip	
 free_all_memory:
@@ -2277,53 +2270,6 @@ set_bob_bitplanes:
 		
 
 
-* a0=screen address (preserved), d0=tile (preserved)
-* a6=ram base
-* should preserve all registers
-
-osd_w_videoram:
-	movem.l	d0-d7/a0-a3,-(a7)
-	move.l	a0,d7		| save address
-	sub.l	a6,d7
-	jcs		0f
-	sub.l	#SCREEN_ADDRESS-0x8000,d7
-	bcs.b	0f
-	.ifndef	RELEASE
-	cmp.w	#0x800*3,d7
-	bcs.b	1f
-0:
-	* should not happen
-	add.l	#SCREEN_ADDRESS-0x8000,d7
-	lea		write_videoram_out_of_range_error(pc),a0
-	jbsr	osd_break
-	nop	
-	bra.b	0f
-	.endif
-1:	
-	cmp.b	(a0),d0
-	beq.b	0f		| already the proper value
-3:
-	move.b	d0,(a0)	| update logical grid
-
-	* TODO mark as dirty
-0:
-	movem.l	(a7)+,d0-d7/a0-a3
-	rts
-
-
-	
-* < D7: 0-0x400
-* > D0: 
-compute_tile_xy:
-	moveq	#0,d0
-	move.b	d7,d0
-	
-	and.b	#0x1F,d0	| x
-	move.w	d7,d1
-	and.w	#0x3FF,d1
-	lsr.w	#5,d1		| Y
-	lsl.w	#3,d1
-	rts
 
 
 HW_SpriteXTable:
@@ -2716,16 +2662,36 @@ osd_set_context:
 game_context_table:
 	.long	0
 	.long	set_intro_context
+	.long	set_high_score_context
 	
-set_intro_context:
+set_high_score_context:
+	jbsr	free_all_memory  | TODO maybe remove this
 	* load data files for intro
 
-	lea		tiles_0_file(pc),a0
+	lea		tiles_title_244000_file(pc),a0
 	jbsr	allocate_and_load_public_mem_file
-	move.l	d0,tiles_0
-	lea		tiles_1_file(pc),a0
+	move.l	d0,tiles_244000
+	lea		tiles_title_24a000_file(pc),a0
 	jbsr	allocate_and_load_public_mem_file
-	move.l	d0,tiles_1
+	move.l	d0,tiles_24a000
+	
+	* TODO set highscore palette here, remove dudes palette
+	
+	rts
+	
+
+set_intro_context:
+	jbsr	free_all_memory
+	* load data files for intro
+
+	lea		tiles_title_244000_file(pc),a0
+	jbsr	allocate_and_load_public_mem_file
+	move.l	d0,tiles_244000
+	* TODO: store current memory pointer to avoid resetting all & reload
+	
+	lea		tiles_title_24a000_file(pc),a0
+	jbsr	allocate_and_load_public_mem_file
+	move.l	d0,tiles_24a000
 	
 	lea		dudes_pics_files(pc),a0
 	jbsr	allocate_and_load_chip_mem_file
@@ -2752,6 +2718,8 @@ set_intro_context:
 	add.l	d2,(a1)+	| relocate to absolute
 	dbf		d0,1b
 	dbf		d1,0b
+	
+	* TODO set intro palette here
 	
 	* set intro copperlist
 	
@@ -2969,10 +2937,10 @@ main_scroll_value:
 	
 cheat_used:
 	.byte	0
-tiles_0_file:
-	.asciz	"tiles_0.bin"
-tiles_1_file:
-	.asciz	"tiles_1.bin"
+tiles_title_244000_file:
+	.asciz	"tiles_title_244000.bin"
+tiles_title_24a000_file:
+	.asciz	"tiles_title_24a000.bin"
 dudes_pics_files:
 	.asciz	"dudes.bin"
 rom_file:
@@ -3206,11 +3174,11 @@ public_memory_block:
 	* so on. It is readable in the tiles_0.68k file which is
 	* pre-assembled so several tile files can be loaded depending
 	* on the game phase
-tiles_0:		| address 0x244000
+tiles_244000:		| address 0x244000
 	.long	0
-tiles_1:		| address 0x24A000
+tiles_24a000:		| address 0x24A000
 	.long	0
-tiles_2:		| address 0x24D000
+tiles_24d000:		| address 0x24D000
 	.long	0
 dude_pics:
 	.long	0
