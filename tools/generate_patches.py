@@ -33,17 +33,22 @@ def add_b(offset,value,comment=""):
 def add_nop(offset,count,comment=""):
     patchlist[offset] = {"type":"NOP","value":str(count),"comment":comment}
 
-def add_p(offset,patch_function,comment=""):
+def add_p(offset,patch_function=None,comment=""):
+    if patch_function is None:
+        # deduce the offset from patch function suffix (which contains hex address)
+        patch_function = offset
+        offset = int(offset.split("_")[-1],0x10)
     patchlist[offset] = {"type":"P","value":patch_function,"comment":comment}
 
-def add_ps(offset,patch_function,comment=""):
+def add_ps(offset,patch_function=None,comment=""):
     add_pss(offset,patch_function,0,comment)
 
-def add_pss(offset,patch_function,fill,comment=""):
-    # remove prior patch function if offset override
-##    if offset in patchlist:
-##        old_patch_function = patchlist[offset]["value"]
-##        patch_functions.pop(old_patch_function)
+def add_pss(offset,patch_function=None,fill=0,comment=""):
+
+    if patch_function is None:
+        # deduce the offset from patch function suffix (which contains hex address)
+        patch_function = offset
+        offset = int(offset.split("_")[-1],0x10)
 
     if fill==0:
         patchlist[offset] = {"type":"PS","value":patch_function,"comment":comment}
@@ -63,7 +68,6 @@ for line in af.lines:
 
     if inst_info:
         args = inst_info["arguments"]
-
         # generate offsets to relocate RAM
         if inst_info["size"] in [4,6,8,10]:
             for i,arg in enumerate(args):
@@ -80,7 +84,6 @@ for line in af.lines:
 
                         if is_in_ram(ext_address):
                             # in RAM: relocate
-
 
                             relocated_ram_offsets[(reloc_address,offset)] = arg
                         elif ext_address >= 0x240000:
@@ -126,6 +129,11 @@ for line in af.lines:
 
 #############################################
 # manual patches, may override auto patches #
+#############################################
+
+# note that passing a single string arg to add_ps or add_p assumes that
+# the offset is the suffix: no need to repeat the patch address then
+
 add_i(0x100,"spurious interrupt")
 add_i(0x31c,"infinite loop")
 add_i(0x01a70,"fatal error?")
@@ -134,27 +142,37 @@ add_s(0x013e4,0x01428,"skip ram test & stack set")
 add_ps(0xcd3e,"write_word_a0plus_to_0030c010","manual")
 add_ps(0x01502,"clear_sound")
 add_ps(0x0979a,"test_mcu_reply")
-add_ps(0x1b310,"copy_rom_to_video_1b310")
-add_ps(0x01476,"enable_interrupts_01476")
+add_ps("copy_rom_to_video_1b310")
+add_ps("enable_interrupts_01476")
 add_s(0x0147c,0X0148e,"skip hw control stuff")
 add_nop(0x01422,6,"set stack")
 add_ps(0x01454,"set_palette_a2")
 add_ps(0x0146a,"set_palette_a2")
 add_r(0x097a4,"skipping some hardware init shit")
 add_i(0x0166e,"reset")
-add_r(0x01d56,"skip videoram clear")
-add_r(0x01d64,"skip videoram clear")
-add_r(0x01d78,"skip videoram clear")
-add_r(0x01d8c,"skip videoram clear")
-add_r(0x01da0,"skip videoram clear")
-add_r(0x01daa,"skip videoram clear")
-add_r(0x01df6,"skip videoram clear")
-add_r(0x01dc2,"skip spriteram clear")
-add_s(0x01e48,0x01e58,"skip videoram clear")
+add_p(0x01d5c,"videoram_write_loop_d1_d0")
+add_p(0x01d70,"videoram_write_loop_d1_d0")
+add_p(0x01d84,"videoram_write_loop_d1_d0")
+add_p(0x01d98,"videoram_write_loop_d1_d0")
+add_ps(0x01e16,"videoram_write_loop_d0_d1")
+add_p(0x01e26,"videoram_write_loop_d0_d1")
+add_ps(0x01daa,"videoram_write_loop_d0_d1")
+add_p(0x01dba,"videoram_write_loop_d0_d1")
+add_ps(0x01e00,"videoram_write_loop_d0_d1")
+add_ps(0x001e52,"videoram_write_loop_d0_d1")
+add_ps("videoram_write_062ae")
+add_ps("videoram_write_062e2")
+add_ps("videoram_write_loop_0e07e")
+add_p("videoram_write_0e0ac")
+add_p("videoram_write_01fca")
+add_p("videoram_write_021e8")
+add_p("videoram_clear_01ff8")
+add_r(0x01dc2,"skip spriteram clear")  # temp
+add_r(0x1e80)  # temp sprite attribute change
 add_r(0x0979a,"mcu reply test")
 add_p(0x372,"osd_enable_interrupts","mcu shit and enable interrupts")
 add_r(0x14ee,"service mode test")
-add_p(0x07be,"copy_to_palette_007be","copy palette subroutine")
+add_p("copy_to_palette_007be",comment="copy palette subroutine")
 add_ps(0x01e68,"set_scroll_values","set column scroll")
 add_ps(0x01e78,"set_scroll_values","set column scroll")
 add_nop(0x01652,8)
@@ -162,18 +180,21 @@ add_b(0x0165a,0x60)
 add_nop(0x0173C,8)
 add_b(0x0173C+8,0x60)
 add_p(0x00596,"osd_enable_interrupts")
-add_p(0x0837c,"copy_memory_to_tiles_0837c")
-add_ps(0x64f6,"copy_to_tile_064f6")
-add_ps(0x0834A,"write_ninja_message_0834A")
-add_p(0x1fa2,"copy_to_tile_0_01fa2")
-add_p(0x0e122,"display_lives_0e122")
-add_ps(0x083ac,"write_to_tile_0_083ac")
+add_p("copy_memory_to_tiles_0837c")
+add_ps("copy_to_tile_064f6")
+add_ps("write_ninja_message_0834A")
+add_p("copy_to_tile_0_01fa2")
+add_p("display_lives_0e122")
+add_ps("write_to_tile_0_083ac")
+add_ps("videoram_write_0e3ba")
+add_pss("videoram_write_06c82",fill=0xC)
+
 add_s(0x083ac+6,0x083c6)
 add_s(0x003d0,0x003dc,"skip unneeded vblank wait")
-add_ps(0x083ce,"set_video_attribute_083ce")
+add_ps("set_video_attribute_083ce")
 add_s(0x083ce+6,0x083e8)
-add_p(0x09592,"copy_highscore_tiles_loop_09592")
-add_p(0x7B9A,"display_scores_loop_07b9a")
+add_p("copy_highscore_tiles_loop_09592")
+add_p("display_scores_loop_07b9a")
 
 for offset in [0x0174c,0x0175c,0x07e66]:
     add_pss(offset,"test_input_bit_d1",2)
@@ -191,13 +212,13 @@ manual_patch_declare = {0x002c8,0x002de,0x020a6,0x020ba,0x02134,0x2148,0x07398,0
 
 to_be_manually_patched = {k:v for k,v in to_be_manually_patched.items() if k not in auto_patch_declare and k not in manual_patch_declare}
 
-nb_unpatched = 0
-for k,v in to_be_manually_patched.items():
-    if v["instruction"] not in ["dc.l"]:
-        nb_unpatched += 1
-        print(f";{k:05x}: {v}")
-
-print(f"\nunpatched: {nb_unpatched}")
+##nb_unpatched = 0
+##for k,v in to_be_manually_patched.items():
+##    if v["instruction"] not in ["dc.l"]:
+##        nb_unpatched += 1
+##        print(f";{k:05x}: {v}")
+##
+##print(f"\nunpatched: {nb_unpatched}")
 
 
 with open(src_dir / "patchlist.68k","w") as f:
@@ -217,6 +238,7 @@ with open(src_dir / "patchlist.68k","w") as f:
     f.write("\t.long\t-1\n")
 
     f.write("patchlist:\n\tPL_START\n")
+
     for offset,p in sorted(patchlist.items()):
         f.write("\tPL_{type}\t0x{offset:06x}".format(type=p["type"],offset=offset))
         value = p.get("value")

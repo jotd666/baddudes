@@ -341,7 +341,11 @@ def dump_tiles(file_radix,palette,tile_table,tile_plane_cache):
 
     with open(tiles_1_src,"w") as f:
         f.write("palette:\n")
-        bitplanelib.palette_dump(palette,f,bitplanelib.PALETTE_FORMAT_ASMMOT)
+        palette_copy = palette.copy()
+        # avoid that sometimes screen flashes purple when in fact it should be black
+        if palette_copy[0] == transparent:
+            palette_copy[0] = (0,0,0)
+        bitplanelib.palette_dump(palette_copy,f,bitplanelib.PALETTE_FORMAT_ASMMOT)
 
         f.write("base:\n")
         for i,tile_entry in enumerate(tile_table):
@@ -419,4 +423,4 @@ tile_24a000_cache = {}
 
 tile_24a000_table = read_tileset(tile_24a000_set_list,bg_palette,[True,False,False,False],cache=tile_24a000_cache, is_bob=False)
 
-dump_tiles("tiles_highs_24a000",fg_palette,tile_24a000_table,tile_24a000_cache)
+dump_tiles("tiles_highs_24a000",bg_palette,tile_24a000_table,tile_24a000_cache)

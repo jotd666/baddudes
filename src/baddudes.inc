@@ -18,7 +18,7 @@ next\@:
 	.ifdef	RELEASE
 OPT_SKIP_TITLE = 0
 	.else
-OPT_SKIP_TITLE = 0
+OPT_SKIP_TITLE = 1
 	.endif
 	
 CTX_UNKNOWN = 0

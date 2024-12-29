@@ -203,14 +203,82 @@ debug_patchlist:
 	PL_END
 	.endif
 
+	.macro	WRITE_WORD_AND_PLUS
+	jbsr	osd_write_word
+	addq	#2,a6
+	.endm
+	
+videoram_write_062ae:
+	STORE_REGS
+	exg		a6,a1
+	MOVE.W	(A0),D7
+	jbsr	osd_write_word
+	MOVE.L	4(A0),D2
+	exg		a6,a1
+	RESTORE_REGS
+	rts
+
+videoram_write_0e0ac:
+	ADDI.W	#0x1030,D0
+	STORE_REGS
+	exg	a3,a6
+	MOVE.W	D0,D7
+	WRITE_WORD_AND_PLUS
+	exg	a3,a6
+	RESTORE_REGS
+	rts
+	
+videoram_write_062e2:
+	STORE_REGS
+	exg		a6,a1
+	MOVE.W	4(A0),d7
+	addq	#2,a6
+	jbsr	osd_write_word
+	exg		a6,a1
+	RESTORE_REGS
+	rts
+
+videoram_write_loop_0e07e:
+	STORE_REGS
+	exg	a4,a6
+0:	
+	MOVE.W	(A3)+,d7
+	WRITE_WORD_AND_PLUS
+	DBF	D0,0b
+	exg	a4,a6
+	RESTORE_REGS
+	RTS
+
+
+videoram_write_loop_d0_d1:
+	STORE_REGS
+	exg		a6,a0
+0:
+	MOVE.L	D0,D7
+	WRITE_WORD_AND_PLUS
+	DBF	D1,0b
+	exg		a6,a0
+	RESTORE_REGS
+	rts
+	
+videoram_write_loop_d1_d0:
+	STORE_REGS
+	exg		a6,a0
+0:
+	MOVE.L	D1,D7
+	WRITE_WORD_AND_PLUS
+	DBF	D0,0b
+	exg		a6,a0
+	RESTORE_REGS
+	rts
+	
 * this routine heavily writes to A2 there and there
 * so I copied it and adapted it instead of patching it
 * a million times
 display_scores_loop_07b9a:
 	exg		a6,a2
 	MOVE.W	D2,D7
-	jbsr	osd_write_word
-	addq	#2,a6		
+	WRITE_WORD_AND_PLUS		
 	ADDI.W	#0x0030,D1		
 	MOVE.W	D1,D7
 	jbsr	osd_write_word
@@ -226,8 +294,7 @@ display_scores_loop_07b9a:
 	.rept	3
 	moveq	#0,d7
 	move.b	(a1)+,d7
-	jbsr	osd_write_word
-	addq	#2,a6
+	WRITE_WORD_AND_PLUS
 	.endr	
 	ADDq	#2,A6	
 	ADDq	#1,A1	
@@ -244,15 +311,13 @@ lb_07bd8:
 	TST.W	D1			
 	BNE.W	lb_07bfa	
 	moveq	#0,d7
-	jbsr	osd_write_word
-	addq	#2,a6
+	WRITE_WORD_AND_PLUS
 	jra	lb_07c02    
 lb_07bfa:
 	MOVEQ	#1,D4		
 	ADDI.W	#0x0030,D1
 	move.w	d1,d7	
-	jbsr	osd_write_word
-	addq	#2,a6
+	WRITE_WORD_AND_PLUS
 lb_07c02:
 	ANDI.W	#0x000f,D2	
 	TST.W	D4			
@@ -260,15 +325,13 @@ lb_07c02:
 	TST.W	D2			
 	BNE.W	lb_07c1c	
 	moveq	#0,d7
-	jbsr	osd_write_word
-	addq	#2,a6
+	WRITE_WORD_AND_PLUS
 	jra	lb_07c24
 lb_07c1c:
 	MOVEQ	#1,D4			
 	ADDI.W	#0x0030,D2		
 	move.w	D2,d7	
-	jbsr	osd_write_word
-	addq	#2,a6		
+	WRITE_WORD_AND_PLUS		
 lb_07c24:
 	DBF	D3,lb_07bd8		
 	ADDq	#0x00000002,A6		
@@ -283,8 +346,7 @@ lb_07c44:
 	ADDI.W	#0x0030,D1		
 lb_07c4c:
 	move.w	d1,d7	
-	jbsr	osd_write_word
-	addq	#2,a6
+	WRITE_WORD_AND_PLUS
 	exg		a6,a2
 	RTS			
 
@@ -299,8 +361,7 @@ copy_highscore_tiles_loop_09592:
 	exg	a4,a6
 lb_09592:
 	MOVE.W	(A5)+,d7
-	jbsr	osd_write_word
-	addq	#2,a6
+	WRITE_WORD_AND_PLUS
 	DBF	D0,lb_09592
 	exg	a4,a6
 	RESTORE_REGS
@@ -398,8 +459,7 @@ display_lives_0e122:
 	BMI.S	lb_0e12e
 lb_0e126:
 	MOVE.W	#0x0072,d7
-	jbsr	osd_write_word
-	addq	#2,a6
+	WRITE_WORD_AND_PLUS
 	DBF	D1,lb_0e126
 lb_0e12e:
 	moveq	#0,d7
@@ -440,8 +500,7 @@ lb_083d4:
 	MOVE.W	(A0)+,D7		
 	ANDI.W	#0x0fff,D7
 	ORI.W	#0x3000,D7
-	jbsr	osd_write_word
-	addq	#2,a6
+	WRITE_WORD_AND_PLUS
 	CMPA.L	#0x244300,A6
 	BNE.S	lb_083d4
 	RESTORE_REGS
@@ -483,9 +542,67 @@ lb_01fba:
 	MOVE.B	D1,d7
 	ror.w	#8,d7
 	move.b	(a0)+,d7 
-	jbsr	osd_write_word
-	addq	#2,a6
+	WRITE_WORD_AND_PLUS
 	DBF	D0,lb_01fa2
+	exg		a6,a1
+	RESTORE_REGS
+	RTS				
+	
+videoram_write_021e8:
+	STORE_REGS
+	exg		a6,a3
+0:
+	MOVE.W	(A4)+,D7
+	WRITE_WORD_AND_PLUS
+	DBF	D3,0b
+	exg		a6,a3
+	RESTORE_REGS
+	RTS				
+
+videoram_write_06c82:
+	STORE_REGS
+	exg		a6,a0
+0:
+	MOVE.W	(A1),D7	
+	jbsr	osd_write_word
+	ADD.W	#0x20,A1	
+	ADD.W	#0x20,A6	
+	DBF	D0,0b
+	exg		a6,a0
+	RESTORE_REGS
+	RTS				
+	
+videoram_write_0e3ba:
+	STORE_REGS
+	exg		a6,a0
+0:
+	MOVE.W	(A1)+,D7
+	WRITE_WORD_AND_PLUS
+	DBF	D4,0b
+	exg		a6,a0
+	RESTORE_REGS
+	RTS				
+	
+videoram_clear_01ff8:
+	STORE_REGS
+	exg		a6,a1
+	moveq	#0,d7
+0:
+	WRITE_WORD_AND_PLUS
+	DBF	D1,0b
+	exg		a6,a1
+	RESTORE_REGS
+	RTS				
+	
+videoram_write_01fca:
+	STORE_REGS
+	exg		a6,a1
+0:
+	MOVE.B	D1,d7
+	ror.w	#8,d7
+	move.b	(a0)+,d7 
+	WRITE_WORD_AND_PLUS
+	DBF	D0,0b
 	exg		a6,a1
 	RESTORE_REGS
 	RTS				

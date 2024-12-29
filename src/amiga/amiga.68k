@@ -704,7 +704,8 @@ _vblank:
 	lea		(8,a2),a0			| palette
 	lea		dudes_palette,a1
 	move.w	#TOTAL_NB_COLORS,d0
-	jbsr	load_palette
+	move.w	#color,d1
+	jbsr	load_palette_fully
 
 	move.l	fg_drawed_screen_ptr(pc),a1
 	move.w	(a2)+,d0			| X
@@ -854,7 +855,7 @@ addr_24xxxx_table_op:
 	.long	addr_242xxx_op
 	.long	addr_unmapped_op
 	.long	addr_244xxx_tile_layer_0_op
-	.long	addr_unmapped_op
+	.long	addr_245xxx_tile_layer_0_op
 	.long	addr_246xxx_op
 	.long	addr_unmapped_op
 	.long	addr_248xxx_op
@@ -910,6 +911,10 @@ addr_240xxx_op:
 	rts		| to_implement
 addr_242xxx_op:
 	rts	| to_implement
+	
+* 8x8 tile layer, right screen nothing done TODO
+addr_245xxx_tile_layer_0_op:
+	rts
 	
 * 8x8 tile layer
 addr_244xxx_tile_layer_0_op:
@@ -1189,9 +1194,9 @@ addr_24Cxxx_op:
 	* happens at start, see if needed
 	*BREAKPOINT	"word read/write from 24Cxxx (in D2)"
 	rts	      | to_implement
-* 16x16 tile layer
+* 16x16 tile layer TODO NOP
 addr_24Dxxx_tile_layer_2_op:
-	BREAKPOINT	"word read/write from 24Dxxx (in D2)"
+	*BREAKPOINT	"word read/write from 24Dxxx (in D2)"
 	rts
 	
 
@@ -2032,23 +2037,15 @@ platform_init:
 	bsr		init_sprite_bank
 
 	
-	lea		bg_tiles_colors_intro+2,a1
-	move.w	#15,d0
+	lea		bg_tiles_colors_intro,a1
+	move.w	#TOTAL_NB_COLORS,d0
 	move.l	tiles_24a000,a0		| palette
-0:
-	move.w	(a0)+,d2
-	move.w	d2,(a1)
-	addq	#4,a1
-	dbf		d0,0b
+	jbsr	load_palette
 	
-	lea		fg_tiles_colors_intro+2,a1
-	move.w	#15,d0
+	lea		fg_tiles_colors_intro,a1
+	move.w	#TOTAL_NB_COLORS,d0
 	move.l	tiles_244000,a0		| palette
-0:
-	move.w	(a0)+,d2
-	move.w	d2,(a1)
-	addq	#4,a1
-	dbf		d0,0b
+	jbsr	load_palette
 
 
 	* wait 300 lines
@@ -2197,6 +2194,34 @@ load_palette:
 1:
 	addq.w	#2,a1
 	move.w	(a0)+,(a1)+
+	dbf		d0,1b
+2:
+	rts
+	
+* < A1: copperlist
+* < D0: number of colors to unload	
+unload_palette:
+	subq.w	#1,d0
+	beq.b	2f
+1:
+	move.w	#0x1FE,(a1)+		| nop
+	addq.w	#2,a1
+	dbf		d0,1b
+2:
+	rts
+	
+
+* < A0: palette
+* < A1: copperlist
+* < D0: number of colors to load	
+* < D1: color register to start from (color)
+load_palette_fully:
+	subq.w	#1,d0
+	beq.b	2f
+1:
+	move.w	d1,(a1)+
+	move.w	(a0)+,(a1)+
+	addq	#2,d1	| next color reg
 	dbf		d0,1b
 2:
 	rts
@@ -2686,8 +2711,45 @@ set_high_score_context:
 	jbsr	allocate_and_load_public_mem_file
 	move.l	d0,tiles_24a000
 	
-	* TODO set highscore palette here, remove dudes palette
+	* clear dudes pics (basically lower part of screen)
 	
+* < A5: custom
+* < D0,D1: x,y
+* < A1: plane pointer
+* < D2: width in bytes (inc. 2 extra for shifting)
+* < D4: blit height
+* trashes D0-D6
+* > A1: even address where blit was done
+	lea	_custom,a5
+	moveq	#0,d0
+	move.w  #120,d1
+	move.w	#256,d4
+	sub.w	d1,d4
+	move.w	#NB_BYTES_PER_ROW,d2
+	move.w	#NB_PLAYFIELD_PLANES,d3
+	move.l	fg_displayed_screen_ptr(pc),a1
+	jbsr	clear_fg_planes_any_blitter_internal
+	
+	moveq	#0,d0
+	move.w  #120,d1
+	move.w	#256,d4
+	sub.w	d1,d4
+	move.w	#NB_BYTES_PER_ROW,d2
+	move.w	#NB_PLAYFIELD_PLANES,d3
+	move.l	fg_drawed_screen_ptr(pc),a1
+	jbsr	clear_fg_planes_any_blitter_internal
+	
+	
+	* remove dudes palette
+	lea	dudes_palette,a1
+	move.w	#TOTAL_NB_COLORS,d0
+	jbsr	unload_palette
+
+	* set highscore palette
+	lea		bg_tiles_colors_intro,a1
+	move.w	#TOTAL_NB_COLORS,d0
+	move.l	tiles_24a000,a0		| palette
+	jbsr	load_palette
 	rts
 	
 
