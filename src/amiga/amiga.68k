@@ -837,12 +837,13 @@ palette_and_sprites_ram_op:
 * system (start/coin and also vblank - which is stubbed)
 addr_30c0002_op:
 	tst.b	D1
-	jne		0f	
-	moveq	#0x7F,d7	| sync flag set, rest ATM high
+	jne		0f
+	jbsr	read_system_inputs
+	move.b	d0,d7		| make sure sync flag set (bit 7 cleared)
+	
 	rts
 0:
-	st		d7
-	tst.b	d7
+	BREAKPOINT	"unexpected write to 30c0002"
 	rts
 	
 	
@@ -1340,7 +1341,13 @@ really_update_sprites:
 is_game_playing:
 	movem.l	d0/a6,-(a7)
 	GET_RAM_START_IN_A6
-
+	tst.b	(0x215,a6)
+	jpl		0f			| negative: game in play
+	moveq	#1,d0
+	jra		1f
+0:
+	moveq	#0,d0
+1:
 	movem.l	(a7)+,d0/a6
 	rts
 	
@@ -2372,8 +2379,14 @@ osd_set_main_scroll:
 0:
 	rts
 	
-osd_read_inputs_2:
-	moveq	#-1,d0
+	
+BIT_INSERT_COIN_1 = 4
+BIT_INSERT_COIN_2 = 5
+BIT_START_1P = 6		| wrong
+BIT_START_2P = 7	| wrong
+
+read_system_inputs:
+	move.b	#0x7F,d0		| sync flag set, always
 	movem.l	a0/d1,-(a7)
 	lea		keyboard_table(pc),a0
 	* misc control keys
@@ -2490,13 +2503,9 @@ osd_read_inputs_1:
 
 	movem.l	(a7)+,a0/d1
 	rts
-	
-BIT_INSERT_COIN_1 = 5
-BIT_INSERT_COIN_2 = 4
-BIT_START_1P = 6
-BIT_START_2P = 7
 
-osd_read_inputs_1__:
+
+osd_read_inputs:
 
 	moveq	#-1,d0
 		
@@ -2699,6 +2708,12 @@ game_context_table:
 	.long	0
 	.long	set_intro_context			| CTX_INTRO
 	.long	set_high_score_context		| CTX_HIGH_SCORE
+	.long	set_game_context		    | CTX_GAME
+	
+set_game_context:
+
+	BREAKPOINT	"game starts"
+	rts
 	
 set_high_score_context:
 	jbsr	free_all_memory  | TODO maybe remove this

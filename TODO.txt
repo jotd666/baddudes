@@ -5,6 +5,7 @@ find:
 
 collect unpatched memory references > 0x80000 < 0xFFxxx ram and display/log them
 
+
 - rip more 244000 tiles (for demo)
 - rip 24D000 & 24A000 tiles
 - scrolling!!!

@@ -90,8 +90,9 @@ for line in af.lines:
                             instruction = inst_info["instruction"]
                             if instruction.startswith(("MOVE.","ADD.","SUB.")):
                                 size = instruction[-1]
-                                size = 2 if size=="W" else 1
-                                size_str = "word" if size == 2 else "byte"
+                                size = {"W":2,"B":1,"L":4}[size]
+
+                                size_str = {2:"word",1:"byte",4:"long"}[size]
                                 operation = None
                                 # laying out 4 traps for read/write byte/word
                                 if i==0:
@@ -114,8 +115,6 @@ for line in af.lines:
                                     operation = "write"
 
                                 if operation:
-
-
                                     patch_function = f"{operation}_{size_str}_{src_str}_to_{dest_str}"
                                     add_pss(reloc_address,patch_function,fill=inst_info["size"]-6)
                                     patch_functions[patch_function] = {"instruction":instruction.lower(),
@@ -195,7 +194,9 @@ add_ps("set_video_attribute_083ce")
 add_s(0x083ce+6,0x083e8)
 add_p("copy_highscore_tiles_loop_09592")
 add_p("display_scores_loop_07b9a")
-
+add_ps("set_game_context_1ab0")  # there are NOPs there
+add_p("play_sound_0def0")
+add_pss("copy_tiles_099f0",fill=4)
 for offset in [0x0174c,0x0175c,0x07e66]:
     add_pss(offset,"test_input_bit_d1",2)
 

@@ -18,10 +18,11 @@ next\@:
 	.ifdef	RELEASE
 OPT_SKIP_TITLE = 0
 	.else
-OPT_SKIP_TITLE = 1
+OPT_SKIP_TITLE = 0
 	.endif
 	
 CTX_UNKNOWN = 0
 CTX_INTRO = 1
 CTX_HIGH_SCORE = 2
+CTX_GAME = 3
 

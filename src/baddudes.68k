@@ -208,6 +208,11 @@ debug_patchlist:
 	addq	#2,a6
 	.endm
 	
+	.macro	WRITE_LONG_AND_PLUS
+	jbsr	osd_write_long
+	addq	#4,a6
+	.endm
+	
 videoram_write_062ae:
 	STORE_REGS
 	exg		a6,a1
@@ -452,6 +457,20 @@ test_mcu_reply:
     nop
     rts
 
+* copy angry baddudes + title pic to layer when credit is inserted
+copy_tiles_099f0:
+	STORE_REGS
+	exg	a6,a3
+	lea		video_ram_244000,a2	| direct read from video ram
+0:
+	MOVE.W	(A2)+,d7
+	WRITE_WORD_AND_PLUS		| using LONG doesn't speed it up, on the contrary
+	CMPA.L	#video_ram_244000+0x800,A2
+	BNE.S	0b
+	exg	a6,a3
+	RESTORE_REGS
+	RTS
+	
 display_lives_0e122:
 	STORE_REGS
 	exg	a6,a4
@@ -469,7 +488,15 @@ lb_0e130:
 	RESTORE_REGS
 	RTS
 	
-
+* < D0: sound code to play
+play_sound_0def0:
+	rts
+	
+set_game_context_1ab0:
+	move.w	#CTX_GAME,d0
+	jbsr	osd_set_context
+	rts
+	
 	
 write_to_tile_0_083ac:
 	STORE_REGS
