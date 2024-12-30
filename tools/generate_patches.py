@@ -135,9 +135,9 @@ for line in af.lines:
 
 add_i(0x100,"spurious interrupt")
 add_i(0x31c,"infinite loop")
-add_i(0x01a70,"fatal error?")
 add_r(0x003ee,"turn RTE to RTS in irq")
-add_s(0x013e4,0x01428,"skip ram test & stack set")
+add_s(0x013e4,0x01422,"skip ram test")
+
 add_ps(0xcd3e,"write_word_a0plus_to_0030c010","manual")
 add_ps(0x01502,"clear_sound")
 add_ps(0x0979a,"test_mcu_reply")
@@ -149,6 +149,7 @@ add_ps(0x01454,"set_palette_a2")
 add_ps(0x0146a,"set_palette_a2")
 add_r(0x097a4,"skipping some hardware init shit")
 add_i(0x0166e,"reset")
+add_p(0xe402,"videoram_write_loop_d1_d0")
 add_p(0x01d5c,"videoram_write_loop_d1_d0")
 add_p(0x01d70,"videoram_write_loop_d1_d0")
 add_p(0x01d84,"videoram_write_loop_d1_d0")
@@ -187,7 +188,7 @@ add_p("display_lives_0e122")
 add_ps("write_to_tile_0_083ac")
 add_ps("videoram_write_0e3ba")
 add_pss("videoram_write_06c82",fill=0xC)
-
+add_pss("write_to_tiles_0e30e",fill=4)
 add_s(0x083ac+6,0x083c6)
 add_s(0x003d0,0x003dc,"skip unneeded vblank wait")
 add_ps("set_video_attribute_083ce")
@@ -197,6 +198,8 @@ add_p("display_scores_loop_07b9a")
 add_ps("set_game_context_1ab0")  # there are NOPs there
 add_p("play_sound_0def0")
 add_pss("copy_tiles_099f0",fill=4)
+add_ps("videoram_write_08848")
+
 for offset in [0x0174c,0x0175c,0x07e66]:
     add_pss(offset,"test_input_bit_d1",2)
 

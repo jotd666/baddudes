@@ -604,7 +604,7 @@ demo_game:
 	.endif
 
 	move.l	a6,ram_base
-	lea		stack_top,a7
+	*lea		stack_top,a7
 	jmp			baddudes_reset					| pass control to the mpatrol core
 		
 	
@@ -833,7 +833,12 @@ palette_and_sprites_ram_op:
 	swap	d2
 			| to_implement
 	jra		special_memory_op_out
-
+	
+* actual inputs
+addr_30c0000_op:
+	st	d7
+	rts
+	
 * system (start/coin and also vblank - which is stubbed)
 addr_30c0002_op:
 	tst.b	D1
@@ -869,7 +874,7 @@ addr_24xxxx_table_op:
 	.long	addr_unmapped_op
 	
 addr_30c00xx_table_op:
-	.long	addr_30c00xx_op   | 0x00
+	.long	addr_30c0000_op   | 0x00
 	.long	addr_30c00xx_op   | 0x01
 	.long	addr_30c0002_op   | 0x02
 	.long	addr_30c00xx_op   | 0x03
@@ -2382,8 +2387,8 @@ osd_set_main_scroll:
 	
 BIT_INSERT_COIN_1 = 4
 BIT_INSERT_COIN_2 = 5
-BIT_START_1P = 6		| wrong
-BIT_START_2P = 7	| wrong
+BIT_START_1P = 2
+BIT_START_2P = 3
 
 read_system_inputs:
 	move.b	#0x7F,d0		| sync flag set, always
@@ -2712,7 +2717,7 @@ game_context_table:
 	
 set_game_context:
 
-	BREAKPOINT	"game starts"
+	jbsr	remove_dudes
 	rts
 	
 set_high_score_context:
@@ -2726,6 +2731,16 @@ set_high_score_context:
 	jbsr	allocate_and_load_public_mem_file
 	move.l	d0,tiles_24a000
 	
+	jbsr	remove_dudes
+
+	* set highscore palette
+	lea		bg_tiles_colors_intro,a1
+	move.w	#TOTAL_NB_COLORS,d0
+	move.l	tiles_24a000,a0		| palette
+	jbsr	load_palette
+	rts
+	
+remove_dudes:
 	* clear dudes pics (basically lower part of screen)
 	
 * < A5: custom
@@ -2759,15 +2774,8 @@ set_high_score_context:
 	lea	dudes_palette,a1
 	move.w	#TOTAL_NB_COLORS,d0
 	jbsr	unload_palette
-
-	* set highscore palette
-	lea		bg_tiles_colors_intro,a1
-	move.w	#TOTAL_NB_COLORS,d0
-	move.l	tiles_24a000,a0		| palette
-	jbsr	load_palette
 	rts
 	
-
 set_intro_context:
 	jbsr	free_all_memory
 	* load data files for intro
@@ -3256,8 +3264,8 @@ intreq_block_game:
 
 	.section	.bsspublic
 
-	.skip	0x10000
-stack_top:
+*	.skip	0x10000
+*stack_top:
 
 public_memory_block:
 	.skip	TOTAL_PUBLIC_MEMORY_SIZE

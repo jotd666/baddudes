@@ -265,6 +265,16 @@ videoram_write_loop_d0_d1:
 	exg		a6,a0
 	RESTORE_REGS
 	rts
+
+videoram_write_08848:
+	STORE_REGS
+	exg		a6,a1
+	moveq	#0,d7
+	MOVE.B	(A0)+,d7
+	WRITE_WORD_AND_PLUS
+	exg		a6,a1
+	RESTORE_REGS
+	rts
 	
 videoram_write_loop_d1_d0:
 	STORE_REGS
@@ -497,6 +507,17 @@ set_game_context_1ab0:
 	jbsr	osd_set_context
 	rts
 	
+write_to_tiles_0e30e:
+	STORE_REGS
+	exg	a6,a0
+0:
+	MOVE.W	D0,D7
+	jbsr	osd_write_word
+	LEA	64(A6),A6
+	dbf		D1,0b
+	exg	a6,a0
+	RESTORE_REGS
+	RTS
 	
 write_to_tile_0_083ac:
 	STORE_REGS
