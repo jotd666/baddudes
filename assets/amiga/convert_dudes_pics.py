@@ -25,8 +25,9 @@ with open(asm_out,"w") as f:
         p = bitplanelib.palette_extract(rval)
         p.remove(transparent)
         p.insert(0,transparent)
+
         f.write("; palette\n")
-        bitplanelib.palette_dump(p,f)
+        bitplanelib.palette_dump([(0,0,0)]+p[1:],f) # black will not trigger flashes
         f.write("; bitplanes\n")
         for j in range(4):
             f.write(f"\tdc.l\tdude_{i}_plane_{j}-dude_{i}\n")

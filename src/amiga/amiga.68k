@@ -89,7 +89,7 @@ SPRITE_POWER_OF_2 = 2
 	.endif
 	
 NB_BYTES_PER_SPRITE_ROW = 1<<SPRITE_POWER_OF_2
-NB_LINES = 256
+NB_LINES = 512
 NB_PLAYFIELD_LINES = NB_LINES
 
 SPRITE_DISPLAYED_HEIGHT = 240
@@ -838,7 +838,8 @@ palette_and_sprites_ram_op:
 	
 * actual inputs
 addr_30c0000_op:
-	st	d7
+	jbsr	read_controls
+	move.w	d0,d7
 	rts
 	
 * system (start/coin and also vblank - which is stubbed)
@@ -1002,7 +1003,7 @@ addr_244xxx_tile_layer_0_op:
 	subq	#1,d2
 	jmi		100f
 	lsl.w	#3,d2			| times 8
-	cmp.w	#256,d2
+	cmp.w	#512,d2
 	jcc		100f
 	
 	move.l	fg_drawed_screen_ptr(pc),a1
@@ -2392,6 +2393,13 @@ BIT_INSERT_COIN_2 = 5
 BIT_START_1P = 2
 BIT_START_2P = 3
 
+BIT_UP = 0
+BIT_LEFT = 2
+BIT_RIGHT = 3
+BIT_DOWN = 1
+BIT_FIRE1 = 4
+BIT_FIRE2 = 5
+
 read_system_inputs:
 	move.b	#0x7F,d0		| sync flag set, always
 	movem.l	a0/d1,-(a7)
@@ -2445,67 +2453,63 @@ save_highscores:
 load_highscores:
 	rts
 	
-osd_read_inputs_1:
+read_controls:
 	moveq	#-1,d0
 	movem.l	a0/d1,-(a7)
-
-
 
 	lea		keyboard_table(pc),a0
 
 	tst.b	(0x4C,a0)		| "up" key
 	beq.b	0f
-	bclr	#3,d0
+	bclr	#BIT_UP,d0
 0:
 	tst.b	(0x4D,a0)		| "down" key
 	beq.b	0f
-	bclr	#2,d0
+	bclr	#JPB_BTN_DOWN,d0
 0:
 	tst.b	(0x4F,a0)		| "<-" key
 	beq.b	0f
-	bclr	#1,d0
+	bclr	#BIT_LEFT,d0
 0:
 	tst.b	(0x4E,a0)		| "->" key
 	beq.b	0f
-	bclr	#0,d0
+	bclr	#BIT_RIGHT,d0
 0:
 	tst.b	(0x63,a0)		| "ctrl" key
 	beq.b	0f
-	bclr	#7,d0
+	bclr	#BIT_FIRE1,d0
 0:
 	tst.b	(0x64,a0)		| left "alt" key
 	beq.b	0f
-	bclr	#5,d0
+	bclr	#BIT_FIRE2,d0
 0:
+
 
 	* directions + fire
 	move.l	_joypad_state(pc),d1
 	btst	#JPB_BTN_UP,d1
 	beq.b	0f
-	bclr	#3,d0
-	btst	#0,control_flags+3
-	bne.b	0f
-	bclr	#5,d0		| only if up for jump set!
+	bclr	#BIT_UP,d0
 0:
 	btst	#JPB_BTN_DOWN,d1
 	beq.b	0f
-	bclr	#2,d0
+	bclr	#BIT_DOWN,d0
 0:
 	btst	#JPB_BTN_LEFT,d1
 	beq.b	0f
-	bclr	#1,d0
+	bclr	#BIT_LEFT,d0
 0:
 	btst	#JPB_BTN_RIGHT,d1
 	beq.b	0f
-	bclr	#0,d0
+	bclr	#BIT_RIGHT,d0
 0:
 	btst	#JPB_BTN_RED,d1
 	beq.b	0f
-	bclr	#7,d0
+	bclr	#BIT_FIRE1,d0
 0:
 	btst	#JPB_BTN_BLU,d1
 	beq.b	0f
-	bclr	#5,d0
+	bclr	#BIT_FIRE2,d0
 0:
 
 	movem.l	(a7)+,a0/d1

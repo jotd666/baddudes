@@ -50,7 +50,7 @@ for i in range(ord("0"),ord("9")+1):
 # only 4 tiles are used for background. Character is too costly in colors (32)
 # besides it also uses sprites for glasses & mouth. We'll see later
 
-used_dict["tiles_game_intro_24A000"] = {k:[3] for k in range(0x6A0,0x6A4)}
+used_dict["game_intro_24a000"] = {k:[3] for k in range(0x6A0,0x6A4)}
 
 with open(used_cluts_file,"w") as f:
     json.dump(used_dict,f,indent=2)

@@ -190,6 +190,7 @@ def remove_colors(imgname):
 #sprite_sheet_dict = {i:remove_colors(os.path.join(sprites_path,f"sprites_pal_{i:02x}.png")) for i in range(16)}
 title_tile_24a000_sheet_dict = {i:sheets_path / "tiles_24a000" / "title" / f"pal_{i:02x}.png" for i in range(9)}
 game_intro_tile_24a000_sheet_dict = {i:sheets_path / "tiles_24a000" / "game_intro" / f"pal_{i:02x}.png" for i in range(4)}
+level_1_tile_24a000_sheet_dict = {i:sheets_path / "tiles_24a000" / "level_1" / f"pal_{i:02x}.png" for i in range(16)}
 tile_0_sheet_dict = {i:os.path.join(sheets_path,"tiles_244000",f"pal_{i:02x}.png") for i in range(15)}
 
 def load_contexted_tileset(tile_sheet_dict,context):
@@ -356,6 +357,11 @@ def dump_tiles(file_radix,palette,tile_table,tile_plane_cache):
     tiles_1_bin = os.path.join(data_dir,os.path.basename(os.path.splitext(tiles_1_src)[0])+".bin")
     asm2bin(tiles_1_src,tiles_1_bin)
 
+def process_tile_context(context_name,tile_sheet_dict):
+    tile_24a000_set_list,bg_palette = load_contexted_tileset(tile_sheet_dict,context_name)
+    tile_24a000_cache = {}
+    tile_24a000_table = read_tileset(tile_24a000_set_list,bg_palette,[True,False,False,False],cache=tile_24a000_cache, is_bob=False)
+    dump_tiles("tiles_"+context_name,bg_palette,tile_24a000_table,tile_24a000_cache)
 
 
 
@@ -407,35 +413,15 @@ if lfp<16:
     fg_palette += [(0x10,0x20,0x30)]*(16-lfp)
 
 
-
-tile_24a000_set_list,bg_palette = load_contexted_tileset(title_tile_24a000_sheet_dict,"title_24a000")
-
 tile_244000_cache = {}
-tile_24a000_cache = {}
-
 tile_244000_table = read_tileset(tile_244000_set_list,fg_palette,[True,False,False,False],cache=tile_244000_cache, is_bob=False)
-tile_24a000_table = read_tileset(tile_24a000_set_list,bg_palette,[True,False,False,False],cache=tile_24a000_cache, is_bob=False)
 
-dump_tiles("tiles_title_24a000",bg_palette,tile_24a000_table,tile_24a000_cache)
 dump_tiles("tiles_title_244000",fg_palette,tile_244000_table,tile_244000_cache)
 
-tile_24a000_cache = {}
-
-# start screen tiles
-game_intro_tile_24a000_set_list,game_intro_palette = load_contexted_tileset(game_intro_tile_24a000_sheet_dict,"tiles_game_intro_24A000")
-
-game_intro_tile_24a000_table = read_tileset(game_intro_tile_24a000_set_list,game_intro_palette,[True,False,False,False],cache=tile_24a000_cache, is_bob=False)
-
-dump_tiles("tiles_game_intro_24a000",game_intro_palette,game_intro_tile_24a000_table,tile_24a000_cache)
-
-# high score tiles
-tile_24a000_set_list,bg_palette = load_contexted_tileset(title_tile_24a000_sheet_dict,"highs_24a000")
-
-tile_24a000_cache = {}
-
-tile_24a000_table = read_tileset(tile_24a000_set_list,bg_palette,[True,False,False,False],cache=tile_24a000_cache, is_bob=False)
-
-dump_tiles("tiles_highs_24a000",bg_palette,tile_24a000_table,tile_24a000_cache)
+#process_tile_context("title_24a000",title_tile_24a000_sheet_dict)
+#process_tile_context("game_intro_24a000",game_intro_tile_24a000_sheet_dict)
+#process_tile_context("highs_24a000",game_intro_tile_24a000_sheet_dict)
+process_tile_context("level_1_24a000",title_tile_24a000_sheet_dict)
 
 
 
