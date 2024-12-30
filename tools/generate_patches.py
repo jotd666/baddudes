@@ -199,6 +199,7 @@ add_ps("set_game_context_1ab0")  # there are NOPs there
 add_p("play_sound_0def0")
 add_pss("copy_tiles_099f0",fill=4)
 add_ps("videoram_write_08848")
+add_ps("set_game_intro_context_084c4")
 
 for offset in [0x0174c,0x0175c,0x07e66]:
     add_pss(offset,"test_input_bit_d1",2)

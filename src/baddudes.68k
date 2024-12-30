@@ -254,7 +254,12 @@ videoram_write_loop_0e07e:
 	RESTORE_REGS
 	RTS
 
-
+set_game_intro_context_084c4:
+	LEA	0x24A000,A1		| original code
+	move.w	#CTX_GAME_INTRO,d0
+	jbsr	osd_set_context		| just to change palette
+	rts
+	
 videoram_write_loop_d0_d1:
 	STORE_REGS
 	exg		a6,a0

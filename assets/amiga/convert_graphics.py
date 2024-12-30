@@ -33,10 +33,9 @@ def dump_asm_bytes(*args,**kwargs):
     bitplanelib.dump_asm_bytes(*args,**kwargs)
 
 
-
 def load_tileset(image_name,palette_index,side,tileset_name,dumpdir,dump=False,name_dict=None,cluts=None):
 
-    if isinstance(image_name,str):
+    if isinstance(image_name,(str,pathlib.Path)):
         full_image_path = os.path.join(this_dir,os.path.pardir,"sheets",image_name)
         tiles_1 = Image.open(full_image_path)
     else:
@@ -189,7 +188,8 @@ def remove_colors(imgname):
     return img
 
 #sprite_sheet_dict = {i:remove_colors(os.path.join(sprites_path,f"sprites_pal_{i:02x}.png")) for i in range(16)}
-tile_1_sheet_dict = {i:os.path.join(sheets_path,"tiles_24a000",f"pal_{i:02x}.png") for i in range(9)}
+title_tile_24a000_sheet_dict = {i:sheets_path / "tiles_24a000" / "title" / f"pal_{i:02x}.png" for i in range(9)}
+game_intro_tile_24a000_sheet_dict = {i:sheets_path / "tiles_24a000" / "game_intro" / f"pal_{i:02x}.png" for i in range(4)}
 tile_0_sheet_dict = {i:os.path.join(sheets_path,"tiles_244000",f"pal_{i:02x}.png") for i in range(15)}
 
 def load_contexted_tileset(tile_sheet_dict,context):
@@ -197,7 +197,7 @@ def load_contexted_tileset(tile_sheet_dict,context):
     tile_24a000_set_list = []
 
     for i in range(16):
-        tsd = tile_1_sheet_dict.get(i)
+        tsd = tile_sheet_dict.get(i)
         if tsd:
             tp,tile_set = load_tileset(tsd,i,16,pathlib.Path("tiles") / context,dump_dir,dump=dump_it,name_dict=None,cluts=used_cluts[context])
             tile_24a000_set_list.append(tile_set)
@@ -220,54 +220,6 @@ def load_contexted_tileset(tile_sheet_dict,context):
 
     return tile_24a000_set_list,bg_palette
 
-tile_24a000_set_list,bg_palette = load_contexted_tileset(tile_1_sheet_dict,"title_24a000")
-
-tile_palette = set()
-tile_244000_set_list = []
-
-for i in range(16):
-    tsd = tile_0_sheet_dict.get(i)
-    if tsd:
-        tp,tile_set = load_tileset(tsd,i,8,"tiles/244000/unquantized",dump_dir,dump=dump_it,name_dict=None,cluts=used_cluts["title_244000"])
-
-        tile_244000_set_list.append(tile_set)
-        tile_palette.update(tp)
-    else:
-        tile_244000_set_list.append(None)
-
-fg_palette = sorted(tile_palette)
-
-lfp = len(fg_palette)
-if lfp>16:
-    print(f"Foreground: Too many colors {lfp} max 16, quantizing")
-    quantized = quantize_palette_16(fg_palette,"baddudes")
-
-
-    for tile_set in tile_244000_set_list:
-        apply_quantize(tile_set,quantized)
-
-
-    # put transparent color first
-    fg_palette = sorted(set(quantized.values()))
-
-    if dump_it:
-        dump_subdir = dump_dir / "tiles/244000/quantized"
-        ensure_empty(dump_subdir)
-
-        for palette_index,tile_set in enumerate(tile_244000_set_list):
-            if tile_set:
-                for tile_number,img in enumerate(tile_set):
-                    if img:
-                        img = ImageOps.scale(img,5,resample=Image.Resampling.NEAREST)
-                        name = "unknown"
-
-                        img.save(os.path.join(dump_subdir,f"{name}_{tile_number:02x}_{palette_index:02x}.png"))
-
-fg_palette.remove(transparent)
-fg_palette.insert(0,transparent)
-
-if lfp<16:
-    fg_palette += [(0x10,0x20,0x30)]*(16-lfp)
 
 
 
@@ -326,7 +278,7 @@ def read_tileset(img_set_list,palette,plane_orientation_flags,cache,is_bob):
 
     table_len = len(max(tile_table,key=len))
 
-    new_tile_table = [[[] for _ in range(16)] for _ in range(table_len)]
+    new_tile_table = [[{} for _ in range(16)] for _ in range(table_len)]
 
     # reorder/transpose. We have 16 * 256 we need 256 * 16
     for i,u in enumerate(tile_table):
@@ -405,20 +357,79 @@ def dump_tiles(file_radix,palette,tile_table,tile_plane_cache):
     asm2bin(tiles_1_src,tiles_1_bin)
 
 
+
+
+tile_palette = set()
+tile_244000_set_list = []
+
+for i in range(16):
+    tsd = tile_0_sheet_dict.get(i)
+    if tsd:
+        tp,tile_set = load_tileset(tsd,i,8,"tiles/244000/unquantized",dump_dir,dump=dump_it,name_dict=None,cluts=used_cluts["title_244000"])
+
+        tile_244000_set_list.append(tile_set)
+        tile_palette.update(tp)
+    else:
+        tile_244000_set_list.append(None)
+
+fg_palette = sorted(tile_palette)
+
+lfp = len(fg_palette)
+if lfp>16:
+    print(f"Foreground: Too many colors {lfp} max 16, quantizing")
+    quantized = quantize_palette_16(fg_palette,"baddudes")
+
+
+    for tile_set in tile_244000_set_list:
+        apply_quantize(tile_set,quantized)
+
+
+    # put transparent color first
+    fg_palette = sorted(set(quantized.values()))
+
+    if dump_it:
+        dump_subdir = dump_dir / "tiles/244000/quantized"
+        ensure_empty(dump_subdir)
+
+        for palette_index,tile_set in enumerate(tile_244000_set_list):
+            if tile_set:
+                for tile_number,img in enumerate(tile_set):
+                    if img:
+                        img = ImageOps.scale(img,5,resample=Image.Resampling.NEAREST)
+                        name = "unknown"
+
+                        img.save(os.path.join(dump_subdir,f"{name}_{tile_number:02x}_{palette_index:02x}.png"))
+
+fg_palette.remove(transparent)
+fg_palette.insert(0,transparent)
+
+if lfp<16:
+    fg_palette += [(0x10,0x20,0x30)]*(16-lfp)
+
+
+
+tile_24a000_set_list,bg_palette = load_contexted_tileset(title_tile_24a000_sheet_dict,"title_24a000")
+
 tile_244000_cache = {}
 tile_24a000_cache = {}
 
-tile_24a000_table = read_tileset(tile_24a000_set_list,bg_palette,[True,False,False,False],cache=tile_24a000_cache, is_bob=False)
 tile_244000_table = read_tileset(tile_244000_set_list,fg_palette,[True,False,False,False],cache=tile_244000_cache, is_bob=False)
-
-
+tile_24a000_table = read_tileset(tile_24a000_set_list,bg_palette,[True,False,False,False],cache=tile_24a000_cache, is_bob=False)
 
 dump_tiles("tiles_title_24a000",bg_palette,tile_24a000_table,tile_24a000_cache)
 dump_tiles("tiles_title_244000",fg_palette,tile_244000_table,tile_244000_cache)
 
+tile_24a000_cache = {}
+
+# start screen tiles
+game_intro_tile_24a000_set_list,game_intro_palette = load_contexted_tileset(game_intro_tile_24a000_sheet_dict,"tiles_game_intro_24A000")
+
+game_intro_tile_24a000_table = read_tileset(game_intro_tile_24a000_set_list,game_intro_palette,[True,False,False,False],cache=tile_24a000_cache, is_bob=False)
+
+dump_tiles("tiles_game_intro_24a000",game_intro_palette,game_intro_tile_24a000_table,tile_24a000_cache)
 
 # high score tiles
-tile_24a000_set_list,bg_palette = load_contexted_tileset(tile_1_sheet_dict,"highs_24a000")
+tile_24a000_set_list,bg_palette = load_contexted_tileset(title_tile_24a000_sheet_dict,"highs_24a000")
 
 tile_24a000_cache = {}
 
@@ -426,12 +437,6 @@ tile_24a000_table = read_tileset(tile_24a000_set_list,bg_palette,[True,False,Fal
 
 dump_tiles("tiles_highs_24a000",bg_palette,tile_24a000_table,tile_24a000_cache)
 
-# start screen tiles
-#tile_24a000_set_list,bg_palette = load_contexted_tileset(tile_1_sheet_dict,"game_start_24a000")
 
-#tile_24a000_cache = {}
 
-#tile_24a000_table = read_tileset(tile_24a000_set_list,bg_palette,[True,False,False,False],cache=tile_24a000_cache, is_bob=False)
-
-#dump_tiles("tiles_game_start_24a000",bg_palette,tile_24a000_table,tile_24a000_cache)
 

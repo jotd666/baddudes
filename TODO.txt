@@ -5,7 +5,10 @@ find:
 
 collect unpatched memory references > 0x80000 < 0xFFxxx ram and display/log them
 
-
+- context change before intro start screen to rip tiles separately, then
+  merge tiles with intro tiles but load a different palette
+- implement inputs
+- rip a few sounds  
 - rip more 244000 tiles (for demo)
 - rip 24D000 & 24A000 tiles
 - scrolling!!!

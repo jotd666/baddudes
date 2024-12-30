@@ -733,6 +733,8 @@ _vblank:
 	move.w	#0x3,d7
 	lea		0x2446D2+0x40,a6
 	jbsr	osd_write_word
+	lea		_custom,a5
+	WAIT_BLIT
 1101:
 	clr.w	display_dudes
 1100:
@@ -741,7 +743,7 @@ _vblank:
 	bsr		really_update_sprites
 	
 	* double buffering only in-game
-	cmp.w	#CTX_HIGH_SCORE+1,game_context
+	cmp.w	#CTX_GAME,game_context
 	jcs		23f
 	bsr		switch_screen_buffers
 
@@ -2688,7 +2690,18 @@ osd_set_context:
 	movem.l	d0-a6,-(a7)
 	cmp.w	game_context,d0
 	jeq		1f
-	.ifndef	RELEASE
+
+	move.w	d0,game_context
+	jbsr	free_all_memory  | TODO maybe remove this
+	jbsr	clear_log_memory
+
+	lea		game_context_table(pc),a0
+	jsr		([a0,d0.w*4])
+1:
+	movem.l	(a7)+,d0-a6
+	rts
+	
+clear_log_memory:
 	.ifne	OPT_ENABLE_LOGGING
 	* context change: clear tile log: it is no longer relevant
 	* but not for layer 244000 which is shared
@@ -2701,28 +2714,38 @@ osd_set_context:
 	cmp.l	#tile_log_table_end,a0
 	jne	0b
 	.endif
-	.endif
-	move.w	d0,game_context
-	lea		game_context_table(pc),a0
-	jsr		([a0,d0.w*4])
-1:
-	movem.l	(a7)+,d0-a6
 	rts
 	
 game_context_table:
 	.long	0
 	.long	set_intro_context			| CTX_INTRO
 	.long	set_high_score_context		| CTX_HIGH_SCORE
+	.long	set_game_intro_context	    | CTX_GAME_INTRO
 	.long	set_game_context		    | CTX_GAME
+	
+set_game_intro_context:
+	jbsr	remove_dudes
+
+	lea		tiles_title_244000_file(pc),a0
+	jbsr	allocate_and_load_public_mem_file
+	move.l	d0,tiles_244000
+	lea		tiles_game_intro_24a000_file(pc),a0
+	jbsr	allocate_and_load_public_mem_file
+	move.l	d0,tiles_24a000
+
+	* set highscore palette
+	lea		bg_tiles_colors_intro,a1
+	move.w	#TOTAL_NB_COLORS,d0
+	move.l	tiles_24a000,a0		| palette
+	jbsr	load_palette
+
+	rts
 	
 set_game_context:
 
-	jbsr	remove_dudes
 	rts
 	
 set_high_score_context:
-	jbsr	free_all_memory  | TODO maybe remove this
-	* load data files for intro
 
 	lea		tiles_title_244000_file(pc),a0
 	jbsr	allocate_and_load_public_mem_file
@@ -2774,6 +2797,8 @@ remove_dudes:
 	lea	dudes_palette,a1
 	move.w	#TOTAL_NB_COLORS,d0
 	jbsr	unload_palette
+	
+	WAIT_BLIT
 	rts
 	
 set_intro_context:
@@ -3037,6 +3062,8 @@ tiles_title_244000_file:
 	.asciz	"tiles_title_244000.bin"
 tiles_title_24a000_file:
 	.asciz	"tiles_title_24a000.bin"
+tiles_game_intro_24a000_file:
+	.asciz	"tiles_game_intro_24a000.bin"
 tiles_highs_24a000_file:
 	.asciz	"tiles_highs_24a000.bin"
 dudes_pics_files:
