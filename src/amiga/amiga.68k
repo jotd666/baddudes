@@ -1,7 +1,7 @@
 *
-*	Amiga-specific portions of baddudes Action (AGA version)
+*	Amiga-specific portions of baddudes (AGA version)
 *
-* (c) JOTD 2024
+* (c) JOTD 2025
 *
 
 
@@ -31,8 +31,8 @@ HW_SPRITE_Y_CORRECTION = 0
 PANEL_Y_GAP = 208
 Y_MAX = 260
 
-BASE_BPLCON3_VALUE = (1<<12)+(BORDERBLANK<<5)  | dpf second playfield palette starts at color 16!
-BASE_BPLCON2_VALUE = 0x0000
+BASE_BPLCON3_VALUE = (2<<12)+(BORDERBLANK<<5)  | dpf second playfield palette starts at color 32!
+BASE_BPLCON2_VALUE = 0 | 0x0200  | killehb (we're using 6 real bitplanes)
 SCREEN_ADDRESS = 0x244000
 
 
@@ -72,8 +72,8 @@ OPT_ENABLE_MULTIPLEXED_SPRITES = 0
 * background scrolls (in-game)
 * foreground is static and contains bobs
 
-NB_PLAYFIELD_PLANES = 4
-TOTAL_NB_COLORS = 1<<NB_PLAYFIELD_PLANES
+NB_PLAYFIELD_PLANES = 6
+*TOTAL_NB_COLORS = 1<<NB_PLAYFIELD_PLANES
 NB_BYTES_PER_ROW = 40
 
 * fmode=0b11xx => 3, 0b01xx => 2
@@ -101,8 +101,7 @@ SPRITE_STRUCT_SIZE = 1<<(SPRITE_POWER_OF_2+3)
 
 BG_SCREEN_PLANE_SIZE = NB_BYTES_PER_ROW*NB_PLAYFIELD_LINES*2
 BG_SCREEN_SIZE =  BG_SCREEN_PLANE_SIZE*NB_PLAYFIELD_PLANES
-FG_SCREEN_PLANE_SIZE = NB_BYTES_PER_ROW*NB_PLAYFIELD_LINES
-FG_SCREEN_SIZE =  FG_SCREEN_PLANE_SIZE*NB_PLAYFIELD_PLANES
+
 
 NB_HOST_SPRITES = 8
 
@@ -216,6 +215,11 @@ _user:
 	move.l	a0,a2
 	lea	(_tag,pc),a0
 	jsr	(resload_Control,a2)
+	
+	.ifndef	RELEASE
+	* install quit handler 
+	move.l	#quit_to_os,0x4	
+	.endif
 	
 	* load game ROM in 0 (this is temporary)
 	lea		rom_file(pc),a0
@@ -337,9 +341,6 @@ _user:
 	move.l	a0,fg_drawed_screen_ptr
 	move.l	a0,fg_displayed_screen_ptr
 	
-	lea		bg_screen_buffer,a0
-	bsr		align_for_fmode
-	move.l	a0,bg_screen_ptr
 	
 	.ifne	OPT_ENABLE_DOUBLE_BUFFERING
 	lea		fg_screen_buffer_2,a0
@@ -350,7 +351,7 @@ _user:
 	
 	lea		_custom,a5
 	
-    move.w #0x0610+BORDERBLANK,bplcon0(a5) | 8 bitplanes, dual playfield, borderblank
+    move.w #0x6200+BORDERBLANK,bplcon0(a5) | 6 bitplanes, borderblank
 	
 
 
@@ -703,9 +704,9 @@ _vblank:
 	move.l	(-4,a2,d0.w*4),a2		| requested dude struct
 	lea		(8,a2),a0			| palette
 	lea		dudes_palette,a1
-	move.w	#TOTAL_NB_COLORS,d0
+	move.w	#24,d0
 	move.w	#color,d1
-	jbsr	load_palette_fully
+	jbsr	load_palette
 
 	move.l	fg_drawed_screen_ptr(pc),a1
 	move.w	(a2)+,d0			| X
@@ -1007,6 +1008,7 @@ addr_244xxx_tile_layer_0_op:
 	jcc		100f
 	
 	move.l	fg_drawed_screen_ptr(pc),a1
+	add.l	#4*BG_SCREEN_PLANE_SIZE,a1		| TEMP!!!
 	lea		mulNB_BYTES_PER_ROW_table(pc),a2
 	add.w	(a2,d2.w*2),a1
 	add.w	d3,a1			| screen dest address on bg playfield
@@ -1029,14 +1031,14 @@ addr_244xxx_tile_layer_0_op:
 	.endif
 
 	move.l		tiles_244000,a0
-	add.w	#0x20,a0
+	add.w	#0x22,a0
 	add.l	(a0,d6.w*4),a0	| select tile code
 	move.l	(a0,d5.w*4),d6
 	jeq		100f		| ignored
 
 	add.l	d6,a0	| select tile clut
 	
-	moveq	#(NB_PLAYFIELD_PLANES-1),d6
+	moveq	#(2-1),d6		| TEMP
 	move.l	a0,a3			| base ptr
 0:
 	move.l	(a0)+,d2
@@ -1049,7 +1051,7 @@ addr_244xxx_tile_layer_0_op:
 	.set	offset,offset+NB_BYTES_PER_ROW
 	.endr	
 1:
-	lea		(FG_SCREEN_PLANE_SIZE,a1),a1
+	lea		(BG_SCREEN_PLANE_SIZE,a1),a1
 	dbf		d6,0b
 100:	
 	move.w	(a7)+,d2
@@ -1076,7 +1078,7 @@ erase_tile_8:
 	clr.b	(offset,a1)
 	.set	offset,offset+NB_BYTES_PER_ROW
 	.endr
-	lea		(FG_SCREEN_PLANE_SIZE,a1),a1
+	lea		(BG_SCREEN_PLANE_SIZE,a1),a1
 	dbf		d6,0b
 	jra		100b
 	rts
@@ -1105,7 +1107,6 @@ addr_24Axxx_tile_layer_1_op:
 	add.w	d2,a0
 	tst.b	d1
 	jne		0f		| write
-	jbsr	osd_break
 	BREAKPOINT	"word read from 24axxx (in D2)"
 	move.w	(a0),d7
 	jra		101f
@@ -1122,7 +1123,7 @@ addr_24Axxx_tile_layer_1_op:
 	cmp.w	#256,d2		| TEMP!!!
 	jcc		100f
 	
-	move.l	bg_screen_ptr(pc),a1
+	move.l	fg_drawed_screen_ptr(pc),a1
 	lea		mulNB_BYTES_PER_ROW_table(pc),a2
 	add.w	(a2,d2.w*2),a1
 	add.w	d3,a1			| screen dest address on bg playfield
@@ -1147,19 +1148,29 @@ addr_24Axxx_tile_layer_1_op:
 0:
 	.endif
 
-	move.l	tiles_24a000,a0
-	add.w	#0x20,a0
+111:
+	move.l	tile_data_24a000,a0
 	add.l	(a0,d6.w*4),a0  | skip palette select tile code
 	move.l	(a0,d5.w*4),d6
 	jeq		100f				| tile not found/ignored, skip
 
 	add.l	d6,a0	| select tile clut
 	
-	moveq	#(NB_PLAYFIELD_PLANES-1),d6
+	move.w	nb_tile_planes_24a000,d6
+	subq	#1,d6
 	move.l	a0,a3			| base ptr
 0:
 	move.l	(a0)+,d2
 	jeq		2f		| erase plane
+
+	.ifndef	RELEASE
+	cmp.l	#0x00FFFFF,d2
+	jcs		22f
+	lea		111b,a1
+	BREAKPOINT	"invalid d2 value!"
+22:
+	.endif
+	
 	lea		(a3,d2.l),a2
 	* plane contains data: copy it
 	.set	offset,0
@@ -1560,7 +1571,7 @@ clear_fg_planes_any_blitter_internal:
 3:
 	move.l a1,bltdpt(a5)	|destination top left corner
 	move.w  d4,bltsize(a5)	|rectangle size, starts blit
-	lea		(FG_SCREEN_PLANE_SIZE,a1),a1
+	lea		(BG_SCREEN_PLANE_SIZE,a1),a1
 	WAIT_BLIT
 	dbf		d3,3b
 4:
@@ -1694,7 +1705,7 @@ blit_planes_any_internal_cookie_cut:
 	move.l	a1,bltcpt(a5)	|pristine background top (bottom) left corner
 	move.l	a1,bltdpt(a5)	|destination top (bottom) left corner
 	move.w  d4,bltsize(a5)	|rectangle size, starts blit
-	lea		(FG_SCREEN_PLANE_SIZE,a1),a1
+	lea		(BG_SCREEN_PLANE_SIZE,a1),a1
 	WAIT_BLIT
 	dbf		d3,6b
 7:
@@ -1812,7 +1823,7 @@ blit_planes_any_internal_no_cookie_cut:
 	
 	move.l	a1,bltdpt(a5)	|destination top (bottom) left corner
 	move.w  d4,bltsize(a5)	|rectangle size, starts blit
-	lea		(FG_SCREEN_PLANE_SIZE,a1),a1
+	lea		(BG_SCREEN_PLANE_SIZE,a1),a1
 	WAIT_BLIT
 	dbf		d3,6b
 7:
@@ -1880,7 +1891,7 @@ switch_screen_buffers:
 	move.l	a2,bob_previous_drawed_sprites
 
 	lea		bobs_bitplanes_game+2,a0
-	jbsr		set_fg_bitplanes
+	jbsr		set_playfield_bitplanes
 	.endif
 	
 	rts
@@ -2050,17 +2061,7 @@ platform_init:
 	* set sprite registers in copperlist
 	lea		intro_sprites,a0
 	bsr		init_sprite_bank
-
 	
-	lea		bg_tiles_colors_intro,a1
-	move.w	#TOTAL_NB_COLORS,d0
-	move.l	tiles_24a000,a0		| palette
-	jbsr	load_palette
-	
-	lea		fg_tiles_colors_intro,a1
-	move.w	#TOTAL_NB_COLORS,d0
-	move.l	tiles_244000,a0		| palette
-	jbsr	load_palette
 
 
 	* wait 300 lines
@@ -2284,29 +2285,9 @@ set_playfield_bitplanes:
 	and.w	#0xFF,d0		| wrap just in case
 	lea		mulNB_BYTES_PER_ROW_table(pc),a2
 	move.w	(a2,d0.w*2),d0
-    add.l	bg_screen_ptr(pc),d0
+    add.l	fg_drawed_screen_ptr(pc),d0
 	
 	move.l	#BG_SCREEN_PLANE_SIZE,d2
-
-20:
-    swap d0
-    move.w d0,(a0)
-    swap d0
-    move.w d0,(4,a0)    
-    addq.w  #8,a0
-    add.l d2,d0		| LONG!
-    dbf d1,20b
-    rts
-		
-
-
-set_bob_bitplanes:
-	* set bitplanes
-    moveq #NB_PLAYFIELD_PLANES-1,d1
-	moveq	#0,d0
-    move.l	fg_displayed_screen_ptr(pc),d0
-	
-	move.l	#FG_SCREEN_PLANE_SIZE,d2
 
 20:
     swap d0
@@ -2341,31 +2322,6 @@ HW_SpriteYTable_\height:
   .endr
 	.endm
 
-
-* set_fg_bitplanes
-* what: sets bitplanes in copperlist
-* sets 6 bitplanes at start even if only 4 are used in the panel
-* or it will just be big headaches to compute...
-* a small amount of chipmem is wasted for the 2 bitplanes that aren't active
-* in the first 48 lines but we're talking about 48*40*2 = 3840 bytes...
-* maybe we can use that memory for something at some point.
-
-set_fg_bitplanes:
-    move.l	fg_displayed_screen_ptr(pc),a0
-    moveq #4-1,d1
-	move.l	a0,d0
-	moveq	#0,d2
-	move.w	#FG_SCREEN_PLANE_SIZE,d2
-1:
-    swap d0
-    move.w d0,(a0)
-    swap d0
-    move.w d0,(4,a0)    
-    addq.w  #8,a0
-    add.l d2,d0		| LONG!
-    dbf d1,1b
-
-    rts
 
 
 	
@@ -2727,20 +2683,36 @@ game_context_table:
 	.long	set_game_intro_context	    | CTX_GAME_INTRO
 	.long	set_game_context		    | CTX_GAME
 	
+load_tiles_file_24a000:
+	jbsr	allocate_and_load_public_mem_file
+	BREAKPOINT	"loaded!!"
+	move.l	d0,tiles_24a000
+	move.l	d0,a0
+	move.w	(a0)+,d0	| nb planes
+	move.w	d0,nb_tile_planes_24a000		| save it for later
+	moveq	#0,d1
+	bset	d0,d1
+	move.w	d1,nb_tile_colors_24a000
+	add.w	d1,d1
+	add.w	d1,a0
+	move.l	a0,tile_data_24a000	 			| save it for later
+	rts
+	
 set_game_intro_context:
 	jbsr	remove_dudes
 
 	lea		tiles_title_244000_file(pc),a0
 	jbsr	allocate_and_load_public_mem_file
 	move.l	d0,tiles_244000
+	
 	lea		tiles_game_intro_24a000_file(pc),a0
-	jbsr	allocate_and_load_public_mem_file
-	move.l	d0,tiles_24a000
+	jbsr	load_tiles_file_24a000
 
-	* set highscore palette
-	lea		bg_tiles_colors_intro,a1
-	move.w	#TOTAL_NB_COLORS,d0
+	* set game intro palette
+	lea		intro_palette,a1
+	move.w	nb_tile_colors_24a000,d0
 	move.l	tiles_24a000,a0		| palette
+	addq	#2,a0				| skip nb planes
 	jbsr	load_palette
 
 	rts
@@ -2754,15 +2726,15 @@ set_high_score_context:
 	lea		tiles_title_244000_file(pc),a0
 	jbsr	allocate_and_load_public_mem_file
 	move.l	d0,tiles_244000
+	
 	lea		tiles_highs_24a000_file(pc),a0
-	jbsr	allocate_and_load_public_mem_file
-	move.l	d0,tiles_24a000
+	jbsr	load_tiles_file_24a000
 	
 	jbsr	remove_dudes
 
 	* set highscore palette
-	lea		bg_tiles_colors_intro,a1
-	move.w	#TOTAL_NB_COLORS,d0
+	lea		intro_palette,a1
+	move.w	#16,d0
 	move.l	tiles_24a000,a0		| palette
 	jbsr	load_palette
 	rts
@@ -2796,27 +2768,30 @@ remove_dudes:
 	move.l	fg_drawed_screen_ptr(pc),a1
 	jbsr	clear_fg_planes_any_blitter_internal
 	
-	
-	* remove dudes palette
-	lea	dudes_palette,a1
-	move.w	#TOTAL_NB_COLORS,d0
-	jbsr	unload_palette
+
 	
 	WAIT_BLIT
 	rts
 	
 set_intro_context:
+
 	jbsr	free_all_memory
 	* load data files for intro
 
 	lea		tiles_title_244000_file(pc),a0
 	jbsr	allocate_and_load_public_mem_file
 	move.l	d0,tiles_244000
+	
+	lea		letters_palette,a1
+	move.w	#8,d0
+	move.l	tiles_244000,a0		| palette
+	addq	#2,a0
+	jbsr	load_palette
+	
 	* TODO: store current memory pointer to avoid resetting all & reload
 	
 	lea		tiles_title_24a000_file(pc),a0
-	jbsr	allocate_and_load_public_mem_file
-	move.l	d0,tiles_24a000
+	jbsr	load_tiles_file_24a000
 	
 	lea		dudes_pics_files(pc),a0
 	jbsr	allocate_and_load_chip_mem_file
@@ -2851,13 +2826,9 @@ set_intro_context:
 	lea		_custom,a5
 	* set them even if reset by game afterwards
 	* avoiding ugly stripe bitplane effect at startup
-    lea	playfield_bitplanes_intro+2,a0
+    lea	bitplanes_intro+2,a0
 
 	bsr		set_playfield_bitplanes
-
-    lea	bobs_bitplanes_intro+2,a0
-
-	bsr		set_bob_bitplanes
 
 	lea		intro_copperlist,a0
 	move.l	a0,cop1lc(a5)
@@ -3035,10 +3006,6 @@ color_row_start:
 	DYN_COLOR_ROW	0
 color_row_end:
 
-bg_screen_ptr:
-	.long	0
-
-
 fg_drawed_screen_ptr:
 	.long	0
 fg_displayed_screen_ptr:
@@ -3125,25 +3092,17 @@ chip_memory_current_ptr:
 
 	.section	.datachip
 
-* title
-.macro	DECL_BITPLANES	bpoff_start,nb_planes
-	.set	bpoff,\bpoff_start
-	.rept	\nb_planes
-	dc.w  0xe0+bpoff,0
-	dc.w  0xe2+bpoff,0
-	.set	bpoff,bpoff+4
-	.endr
-	.endm
 
-* game	
-.macro	DECL_EVEN_BITPLANES	bpoff_start,nb_planes
+.macro	DECL_BITPLANES	bpoff_start,nb_planes
 	.set	bpoff,\bpoff_start
 	.rept	\nb_planes
 	dc.w  bplpt+bpoff,0
 	dc.w  bplpt+bpoff+2,0
-	.set	bpoff,bpoff+8
+	.set	bpoff,bpoff+4
 	.endr
 	.endm
+
+
 
 .macro	DECL_COLOR_BANK	bankno
 	.word	bplcon3,BASE_BPLCON3_VALUE+(\bankno<<13)
@@ -3190,25 +3149,22 @@ intro_copperlist:
 	* black color sprites
 	DECL_COLORS	0,32
 
-bobs_bitplanes_intro:
-	DECL_EVEN_BITPLANES	0,4
-playfield_bitplanes_intro:
-	DECL_EVEN_BITPLANES	4,4
-	DECL_COLOR_BANK	1
+bitplanes_intro:
+	DECL_BITPLANES	0,NB_PLAYFIELD_PLANES
 intro_sprites:
 	DECL_SPRITES
 
 
-	* default color bank
-	DECL_COLOR_BANK	0
-bg_tiles_colors_intro:
-	DECL_COLORS	16,TOTAL_NB_COLORS
-fg_tiles_colors_intro:
-	DECL_COLORS	0,TOTAL_NB_COLORS
+	* color bank 1
+	DECL_COLOR_BANK 0
+intro_palette:
+	DECL_COLORS	0,32
 	* now set color bank 1
-
-	DECL_COLOR_BANK	0
-
+	DECL_COLOR_BANK	1
+dudes_palette:
+	DECL_COLORS	0,24
+letters_palette:
+	DECL_COLORS	24,8
 	
 	* mid-line wait & extra interrupt
 	.word	0x8001,0xFFFE
@@ -3218,11 +3174,6 @@ intro_intreq_block:
 	.word	 intreq,0x8014  | call copper interrupt in the middle of a frame, also flag so copper interrupt knows that we're going to call copper int
 
 
-	
-
-	.word	0x9C01,0xFFFE
-dudes_palette:
-	DECL_COLORS	0,TOTAL_NB_COLORS
 	
 	* pal limit
     .word  0xFFCF,0xFFFE       | PAL wait
@@ -3247,9 +3198,9 @@ game_copperlist:
 	DECL_COLORS	0,32
 
 bobs_bitplanes_game:
-	DECL_EVEN_BITPLANES	0,4
+	DECL_BITPLANES	0,4
 playfield_bitplanes_game:
-	DECL_EVEN_BITPLANES	4,4
+	DECL_BITPLANES	4,4
 	DECL_COLOR_BANK	1
 game_sprite_colors:
 	DECL_COLORS	0,32
@@ -3260,9 +3211,9 @@ game_sprites:
 	* default color bank
 	DECL_COLOR_BANK	0
 bg_tiles_colors_game:
-	DECL_COLORS	16,TOTAL_NB_COLORS
+	DECL_COLORS	16,16
 fg_tiles_colors_game:
-	DECL_COLORS	0,TOTAL_NB_COLORS
+	DECL_COLORS	0,16
 	* now set color bank 1
 
 	DECL_COLOR_BANK	0
@@ -3314,6 +3265,16 @@ tiles_24d000:		| address 0x24D000
 	.long	0
 dude_pics:
 	.long	0
+
+tile_data_24a000:
+	.long	0
+nb_tile_planes_24a000:
+	.word	0
+nb_tile_colors_24a000:
+	.word	0
+	
+tile_data_24d000:
+	.long	0
 	
 	* aligning on 8 bytes so .align will work
 	* in the next datachip sections
@@ -3327,23 +3288,14 @@ sprite_buffer:
 	.skip	(SPRITE_SIZE+(1<<SPRITE_POWER_OF_2))*8		| 32 more bytes for control word and end zeroes
 	.skip	8
 	.skip	8
-	
-bg_screen_buffer:
-	.skip	BG_SCREEN_SIZE
-	.skip	8
-	.skip	8
-panel_screen_buffer:
-	.skip	FG_SCREEN_SIZE
-	.skip	8
-	.skip	8
-	
+		
 fg_screen_buffer_1:
-	.skip	FG_SCREEN_SIZE
+	.skip	BG_SCREEN_SIZE
 	.skip	NB_BYTES_PER_ROW*12*3
 	.skip	8
 	.ifne  OPT_ENABLE_DOUBLE_BUFFERING
 fg_screen_buffer_2:
-	.skip	FG_SCREEN_SIZE
+	.skip	BG_SCREEN_SIZE
 	.skip	NB_BYTES_PER_ROW*12*3
 	.skip	8
 	.endif

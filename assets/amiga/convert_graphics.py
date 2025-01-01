@@ -14,6 +14,9 @@ with open(os.path.join(this_dir,"used_cluts.json")) as f:
 dump_it = True
 dump_dir = this_dir / "dumps"
 
+src_gen_dir = src_dir / "generated"
+if not src_gen_dir.exists():
+    src_gen_dir.mkdir()
 
 if dump_it:
     if not os.path.exists(dump_dir):
@@ -193,7 +196,7 @@ game_intro_tile_24a000_sheet_dict = {i:sheets_path / "tiles_24a000" / "game_intr
 level_1_tile_24a000_sheet_dict = {i:sheets_path / "tiles_24a000" / "level_1" / f"pal_{i:02x}.png" for i in range(16)}
 tile_0_sheet_dict = {i:os.path.join(sheets_path,"tiles_244000",f"pal_{i:02x}.png") for i in range(15)}
 
-def load_contexted_tileset(tile_sheet_dict,context):
+def load_contexted_tileset(tile_sheet_dict,context,nb_colors):
     tile_palette = set()
     tile_24a000_set_list = []
 
@@ -211,13 +214,10 @@ def load_contexted_tileset(tile_sheet_dict,context):
     bg_palette = sorted(tile_palette)
 
     lfp = len(bg_palette)
-    if lfp>16:
-        raise Exception(f"background: Too many colors {lfp} max 16")
-    if lfp<16:
-        bg_palette += [(0x10,0x20,0x30)]*(16-lfp)
-
-    # pad just in case we don't have 16 colors (but we have)
-    bg_palette += (nb_colors-len(bg_palette)) * [(0x10,0x20,0x30)]
+    if lfp>nb_colors:
+        raise Exception(f"background: Too many colors {lfp} max {nb_colors}")
+    if lfp<nb_colors:
+        bg_palette += [(0x10,0x20,0x30)]*(nb_colors-lfp)
 
     return tile_24a000_set_list,bg_palette
 
@@ -290,9 +290,13 @@ def read_tileset(img_set_list,palette,plane_orientation_flags,cache,is_bob):
 
 
 def dump_tiles(file_radix,palette,tile_table,tile_plane_cache):
-    tiles_1_src = os.path.join(src_dir,file_radix+".68k")
+    import math
+    nb_planes = int(math.log2(len(palette)))
+
+    tiles_1_src = src_gen_dir / f"{file_radix}.68k"
 
     with open(tiles_1_src,"w") as f:
+        f.write(f"\tdc.w\t{nb_planes}   ; nb planes \n")
         f.write("palette:\n")
         palette_copy = palette.copy()
         # avoid that sometimes screen flashes purple when in fact it should be black
@@ -357,8 +361,8 @@ def dump_tiles(file_radix,palette,tile_table,tile_plane_cache):
     tiles_1_bin = os.path.join(data_dir,os.path.basename(os.path.splitext(tiles_1_src)[0])+".bin")
     asm2bin(tiles_1_src,tiles_1_bin)
 
-def process_tile_context(context_name,tile_sheet_dict):
-    tile_24a000_set_list,bg_palette = load_contexted_tileset(tile_sheet_dict,context_name)
+def process_tile_context(context_name,tile_sheet_dict,nb_colors):
+    tile_24a000_set_list,bg_palette = load_contexted_tileset(tile_sheet_dict,context_name,nb_colors)
     tile_24a000_cache = {}
     tile_24a000_table = read_tileset(tile_24a000_set_list,bg_palette,[True,False,False,False],cache=tile_24a000_cache, is_bob=False)
     dump_tiles("tiles_"+context_name,bg_palette,tile_24a000_table,tile_24a000_cache)
@@ -371,7 +375,7 @@ tile_244000_set_list = []
 for i in range(16):
     tsd = tile_0_sheet_dict.get(i)
     if tsd:
-        tp,tile_set = load_tileset(tsd,i,8,"tiles/244000/unquantized",dump_dir,dump=dump_it,name_dict=None,cluts=used_cluts["title_244000"])
+        tp,tile_set = load_tileset(tsd,i,8,"tiles/244000",dump_dir,dump=dump_it,name_dict=None,cluts=used_cluts["title_244000"])
 
         tile_244000_set_list.append(tile_set)
         tile_palette.update(tp)
@@ -382,29 +386,29 @@ fg_palette = sorted(tile_palette)
 
 lfp = len(fg_palette)
 if lfp>16:
-    print(f"Foreground: Too many colors {lfp} max 16, quantizing")
-    quantized = quantize_palette_16(fg_palette,"baddudes")
-
-
-    for tile_set in tile_244000_set_list:
-        apply_quantize(tile_set,quantized)
-
-
-    # put transparent color first
-    fg_palette = sorted(set(quantized.values()))
-
-    if dump_it:
-        dump_subdir = dump_dir / "tiles/244000/quantized"
-        ensure_empty(dump_subdir)
-
-        for palette_index,tile_set in enumerate(tile_244000_set_list):
-            if tile_set:
-                for tile_number,img in enumerate(tile_set):
-                    if img:
-                        img = ImageOps.scale(img,5,resample=Image.Resampling.NEAREST)
-                        name = "unknown"
-
-                        img.save(os.path.join(dump_subdir,f"{name}_{tile_number:02x}_{palette_index:02x}.png"))
+    raise Exception(f"Foreground: Too many colors {lfp} max 16, quantizing")
+##    quantized = quantize_palette_16(fg_palette,"baddudes")
+##
+##
+##    for tile_set in tile_244000_set_list:
+##        apply_quantize(tile_set,quantized)
+##
+##
+##    # put transparent color first
+##    fg_palette = sorted(set(quantized.values()))
+##
+##    if dump_it:
+##        dump_subdir = dump_dir / "tiles/244000/quantized"
+##        ensure_empty(dump_subdir)
+##
+##        for palette_index,tile_set in enumerate(tile_244000_set_list):
+##            if tile_set:
+##                for tile_number,img in enumerate(tile_set):
+##                    if img:
+##                        img = ImageOps.scale(img,5,resample=Image.Resampling.NEAREST)
+##                        name = "unknown"
+##
+##                        img.save(os.path.join(dump_subdir,f"{name}_{tile_number:02x}_{palette_index:02x}.png"))
 
 fg_palette.remove(transparent)
 fg_palette.insert(0,transparent)
@@ -418,10 +422,10 @@ tile_244000_table = read_tileset(tile_244000_set_list,fg_palette,[True,False,Fal
 
 dump_tiles("tiles_title_244000",fg_palette,tile_244000_table,tile_244000_cache)
 
-#process_tile_context("title_24a000",title_tile_24a000_sheet_dict)
-#process_tile_context("game_intro_24a000",game_intro_tile_24a000_sheet_dict)
-#process_tile_context("highs_24a000",game_intro_tile_24a000_sheet_dict)
-process_tile_context("level_1_24a000",title_tile_24a000_sheet_dict)
+process_tile_context("title_24a000",title_tile_24a000_sheet_dict,16)
+process_tile_context("game_intro_24a000",game_intro_tile_24a000_sheet_dict,32)
+process_tile_context("highs_24a000",game_intro_tile_24a000_sheet_dict,16)
+process_tile_context("level_1_24a000",title_tile_24a000_sheet_dict,32)
 
 
 

@@ -4,7 +4,7 @@ import os,sys,bitplanelib,subprocess,json,pathlib
 from shared import *
 
 
-asm_out = src_dir / "dudes.68k"
+asm_out = src_dir / "generated" / "dudes.68k"
 
 with open(asm_out,"w") as f:
     f.write("main_table:\n")
