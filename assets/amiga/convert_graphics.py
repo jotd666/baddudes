@@ -171,9 +171,6 @@ def add_hw_sprite(index,name,cluts=[0]):
 
 
 
-nb_planes = 4
-nb_colors = 1<<nb_planes
-
 
 def apply_quantize(tile_set,quantized):
     if tile_set:
@@ -214,8 +211,10 @@ def load_contexted_tileset(tile_sheet_dict,context,nb_colors):
     bg_palette = sorted(tile_palette)
 
     lfp = len(bg_palette)
+    if lfp==1:
+        raise Exception(f"{context}: no colors found, empty tiles?")
     if lfp>nb_colors:
-        raise Exception(f"background: Too many colors {lfp} max {nb_colors}")
+        raise Exception(f"{context}: Too many colors {lfp} max {nb_colors}")
     if lfp<nb_colors:
         bg_palette += [(0x10,0x20,0x30)]*(nb_colors-lfp)
 
@@ -229,9 +228,15 @@ plane_orientations = [("standard",lambda x:x),
 ("mirror",ImageOps.mirror),
 ("flip_mirror",lambda x:ImageOps.flip(ImageOps.mirror(x)))]
 
+def get_nb_planes(palette):
+    import math
+    nb_planes = int(math.log2(len(palette)))
+    return nb_planes
+
 def read_tileset(img_set_list,palette,plane_orientation_flags,cache,is_bob):
     next_cache_id = 1
     tile_table = []
+    nb_planes = get_nb_planes(palette)
     for n,img_set in enumerate(img_set_list):
         tile_entry = []
         if img_set:
@@ -290,8 +295,7 @@ def read_tileset(img_set_list,palette,plane_orientation_flags,cache,is_bob):
 
 
 def dump_tiles(file_radix,palette,tile_table,tile_plane_cache):
-    import math
-    nb_planes = int(math.log2(len(palette)))
+    nb_planes = get_nb_planes(palette)
 
     tiles_1_src = src_gen_dir / f"{file_radix}.68k"
 
@@ -424,7 +428,7 @@ dump_tiles("tiles_title_244000",fg_palette,tile_244000_table,tile_244000_cache)
 
 process_tile_context("title_24a000",title_tile_24a000_sheet_dict,16)
 process_tile_context("game_intro_24a000",game_intro_tile_24a000_sheet_dict,32)
-process_tile_context("highs_24a000",game_intro_tile_24a000_sheet_dict,16)
+process_tile_context("highs_24a000",title_tile_24a000_sheet_dict,16)
 process_tile_context("level_1_24a000",title_tile_24a000_sheet_dict,32)
 
 
