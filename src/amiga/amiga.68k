@@ -20,8 +20,8 @@ AFB_68020 = 1
 	BREAKPOINT	"work breakpoint"
 	.endm
 
-TOTAL_PUBLIC_MEMORY_SIZE = 600000
-TOTAL_CHIP_MEMORY_SIZE = 200000
+TOTAL_PUBLIC_MEMORY_SIZE = 500000
+TOTAL_CHIP_MEMORY_SIZE = 150000
 
 PREVIOUS_SPRITE_SIZE = 8
 BORDERBLANK = 1
@@ -102,8 +102,10 @@ SPRITE_SIZE = NB_BYTES_PER_SPRITE_ROW*(2*SPRITE_HEIGHT+2)
 
 SPRITE_STRUCT_SIZE = 1<<(SPRITE_POWER_OF_2+3)
 
-BG_SCREEN_PLANE_SIZE = NB_BYTES_PER_ROW*NB_PLAYFIELD_LINES*2
-BG_SCREEN_SIZE =  BG_SCREEN_PLANE_SIZE*NB_PLAYFIELD_PLANES
+SCREEN_PLANE_SIZE = NB_BYTES_PER_ROW*NB_PLAYFIELD_LINES*2
+SCREEN_SIZE =  SCREEN_PLANE_SIZE*NB_PLAYFIELD_PLANES
+RESTORE_SCREEN_PLANE_SIZE = SCREEN_PLANE_SIZE
+RESTORE_SCREEN_SIZE = RESTORE_SCREEN_PLANE_SIZE*5   | max 5 planes, can be 4 too
 
 
 NB_HOST_SPRITES = 8
@@ -715,21 +717,21 @@ _vblank:
 	move.w	(a2)+,d1			| Y
 	move.w	(a2)+,d2			| width
 	lsr.w	#3,d2				| divide by 8 to get len in bytes
-	move.w	#6,d3				| 6 bitplanes
+	move.w	#4,d3				| 4 bitplanes in cookie cut mode
 	move.w	(a2)+,d4			| height
 	moveq	#0,d5
 	lea		(0x40,a2),a0			| pic planes
-	
-* < A5: custom
-* < D0.W,D1.W: x,y, no shifting
-* < A0: source (pointer on array of planes)
-* < A1: destination fg plane
-* < D2: width in bytes
-* < D3: number of planes
-* < D4: height. If negative, source is copied with negative modulo (flip)
-* < D5: y offset for source planes
-
+	move.l	(6*4,a0),a3				| mask plane
+	movem.l	D0-D5/A1/A2,-(a7)
+	jbsr	blit_planes_any_internal_cookie_cut
+	movem.l	(a7)+,D0-D5/A1/A2
+	lea		(0x50,a2),a0			| pic remaining planes
+	move.w	#2,d3				| 4 bitplanes in non cookie cut mode
+	lea		(SCREEN_PLANE_SIZE*4,a1),a1
 	jbsr	blit_planes_any_internal_no_cookie_cut
+	
+	
+	
 	cmp.w	#1,display_dudes
 	jeq		1101f
 	* erase one location where the old pic remains
@@ -1010,7 +1012,7 @@ addr_244xxx_tile_layer_0_op:
 	jcc		100f
 	
 	move.l	fg_drawed_screen_ptr(pc),a1
-	add.l	#4*BG_SCREEN_PLANE_SIZE,a1		| TEMP!!!
+	add.l	#4*SCREEN_PLANE_SIZE,a1		| TEMP!!!
 	lea		mulNB_BYTES_PER_ROW_table(pc),a2
 	add.w	(a2,d2.w*2),a1
 	add.w	d3,a1			| screen dest address on bg playfield
@@ -1053,7 +1055,7 @@ addr_244xxx_tile_layer_0_op:
 	.set	offset,offset+NB_BYTES_PER_ROW
 	.endr	
 1:
-	lea		(BG_SCREEN_PLANE_SIZE,a1),a1
+	lea		(SCREEN_PLANE_SIZE,a1),a1
 	dbf		d6,0b
 100:	
 	move.w	(a7)+,d2
@@ -1080,7 +1082,7 @@ erase_tile_8:
 	clr.b	(offset,a1)
 	.set	offset,offset+NB_BYTES_PER_ROW
 	.endr
-	lea		(BG_SCREEN_PLANE_SIZE,a1),a1
+	lea		(SCREEN_PLANE_SIZE,a1),a1
 	dbf		d6,0b
 	jra		100b
 	rts
@@ -1089,6 +1091,18 @@ addr_248xxx_op:
 addr_246xxx_op:
 	rts	| to_implement
 	
+	.macro	NEXT_PLANES
+	lea		(SCREEN_PLANE_SIZE,a1),a1
+	lea		(SCREEN_PLANE_SIZE,a4),a4	
+	.endm
+	.macro	CLR_PLANE
+	.set	offset,0
+	.rept	16
+	clr.w	(offset,a1)
+	clr.w	(offset,a4)
+	.set	offset,offset+NB_BYTES_PER_ROW
+	.endr
+	.endm
 * 16x16 tile layer
 addr_24Axxx_tile_layer_1_op:
 	and.w	#0x7FF,d2
@@ -1102,7 +1116,7 @@ addr_24Axxx_tile_layer_1_op:
 	* byte op: ignore
 	rts
 0:
-	movem.l	a0-a3/d2-d6,-(a7)
+	movem.l	a0-a4/d2-d6,-(a7)
 10:
 	move.w	d2,-(a7)
 	lea		video_ram_24a000,a0
@@ -1126,9 +1140,12 @@ addr_24Axxx_tile_layer_1_op:
 	jcc		100f
 	
 	move.l	fg_drawed_screen_ptr(pc),a1
+	lea		background_restore_buffer,a4
 	lea		mulNB_BYTES_PER_ROW_table(pc),a2
-	add.w	(a2,d2.w*2),a1
-	add.w	d3,a1			| screen dest address on bg playfield
+	move.w	(a2,d2.w*2),d5
+	add.w	d3,d5
+	add.w	d5,a1			| screen dest address on playfield
+	add.w	d5,a4			| screen dest address on restore playfield
 	move.w	d7,d5			| save code
 	move.w	d7,d6			| tile code
 	and.w	#0x7FF,d6
@@ -1177,11 +1194,13 @@ addr_24Axxx_tile_layer_1_op:
 	* plane contains data: copy it
 	.set	offset,0
 	.rept	16
-	move.w	(a2)+,(offset,a1)
+	move.w	(a2)+,d5
+	move.w	d5,(offset,a1)
+	move.w	d5,(offset,a4)
 	.set	offset,offset+NB_BYTES_PER_ROW
 	.endr	
 1:
-	lea		(BG_SCREEN_PLANE_SIZE,a1),a1
+	NEXT_PLANES
 	dbf		d6,0b
 100:	
 	move.w	(a7)+,d2
@@ -1190,25 +1209,18 @@ addr_24Axxx_tile_layer_1_op:
 	swap	d7
 	dbf		d0,10b		| next word (if longword write)
 101:
-	movem.l	(a7)+,a0-a3/d2-d6
+	movem.l	(a7)+,a0-a4/d2-d6
 	rts
 2:
-	.set	offset,0
-	.rept	16
-	clr.w	(offset,a1)
-	.set	offset,offset+NB_BYTES_PER_ROW
-	.endr
+	CLR_PLANE
 	jra		1b
 	
 erase_tile:
-	moveq	#(NB_PLAYFIELD_PLANES-1),d6
+	move.w	nb_tile_planes_24a000,d6
+	subq	#1,d6
 0:
-	.set	offset,0
-	.rept	16
-	clr.w	(offset,a1)
-	.set	offset,offset+NB_BYTES_PER_ROW
-	.endr
-	lea		(BG_SCREEN_PLANE_SIZE,a1),a1
+	CLR_PLANE
+	NEXT_PLANES
 	dbf		d6,0b
 	jra		100b
 	
@@ -1573,7 +1585,7 @@ clear_fg_planes_any_blitter_internal:
 3:
 	move.l a1,bltdpt(a5)	|destination top left corner
 	move.w  d4,bltsize(a5)	|rectangle size, starts blit
-	lea		(BG_SCREEN_PLANE_SIZE,a1),a1
+	lea		(SCREEN_PLANE_SIZE,a1),a1
 	WAIT_BLIT
 	dbf		d3,3b
 4:
@@ -1707,7 +1719,7 @@ blit_planes_any_internal_cookie_cut:
 	move.l	a1,bltcpt(a5)	|pristine background top (bottom) left corner
 	move.l	a1,bltdpt(a5)	|destination top (bottom) left corner
 	move.w  d4,bltsize(a5)	|rectangle size, starts blit
-	lea		(BG_SCREEN_PLANE_SIZE,a1),a1
+	lea		(SCREEN_PLANE_SIZE,a1),a1
 	WAIT_BLIT
 	dbf		d3,6b
 7:
@@ -1825,7 +1837,7 @@ blit_planes_any_internal_no_cookie_cut:
 	
 	move.l	a1,bltdpt(a5)	|destination top (bottom) left corner
 	move.w  d4,bltsize(a5)	|rectangle size, starts blit
-	lea		(BG_SCREEN_PLANE_SIZE,a1),a1
+	lea		(SCREEN_PLANE_SIZE,a1),a1
 	WAIT_BLIT
 	dbf		d3,6b
 7:
@@ -2289,7 +2301,7 @@ set_playfield_bitplanes:
 	move.w	(a2,d0.w*2),d0
     add.l	fg_drawed_screen_ptr(pc),d0
 	
-	move.l	#BG_SCREEN_PLANE_SIZE,d2
+	move.l	#SCREEN_PLANE_SIZE,d2
 
 20:
     swap d0
@@ -2809,7 +2821,7 @@ set_intro_context:
 	move.l	(a0)+,a1	| pointer on dude pic struct
 	move.l	a1,d2
 	add.w	#0x40+8,a1	| skip palette & size
-	moveq	#6-1,d0
+	moveq	#6,d0		| 6 bitplanes + mask
 1:
 	add.l	d2,(a1)+	| relocate to absolute
 	dbf		d0,1b
@@ -3286,6 +3298,9 @@ tile_data_24d000:
 	.align	8
 	
 		.section .bsschip
+background_restore_buffer:
+	.skip	RESTORE_SCREEN_SIZE
+
 chip_memory_block:
 	.skip	TOTAL_CHIP_MEMORY_SIZE
 		
@@ -3295,12 +3310,12 @@ sprite_buffer:
 	.skip	8
 		
 fg_screen_buffer_1:
-	.skip	BG_SCREEN_SIZE
+	.skip	SCREEN_SIZE
 	.skip	NB_BYTES_PER_ROW*12*3
 	.skip	8
 	.ifne  OPT_ENABLE_DOUBLE_BUFFERING
 fg_screen_buffer_2:
-	.skip	BG_SCREEN_SIZE
+	.skip	SCREEN_SIZE
 	.skip	NB_BYTES_PER_ROW*12*3
 	.skip	8
 	.endif

@@ -30,7 +30,7 @@ with open(asm_out,"w") as f:
         f.write("; partial upper palette\n")
         bitplanelib.palette_dump([(0,0,0)]+p[1:],f) # black will not trigger flashes
         f.write("; bitplanes\n")
-        nb_planes = 6
+        nb_planes = 7
         for j in range(nb_planes):
             f.write(f"\tdc.l\tdude_{i}_plane_{j}-dude_{i}\n")
 
@@ -38,8 +38,8 @@ with open(asm_out,"w") as f:
         # tile base colors
         palette_64 = (32*[pad_value]) + p
 
-        raw = bitplanelib.palette_image2raw(rval,None,palette_64,mask_color=transparent)
-        plane_size = len(raw)//nb_planes
+        raw = bitplanelib.palette_image2raw(rval,None,palette_64,generate_mask=True,mask_color=transparent)
+        plane_size = len(raw)//nb_planes # mask included
         f.write(f"; bpldata (plane size = {plane_size})\n")
         offset = 0
         for j in range(nb_planes):
