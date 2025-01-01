@@ -6,6 +6,7 @@ from shared import *
 
 asm_out = src_dir / "generated" / "dudes.68k"
 
+pad_value =(0X10,0x20,0x30)
 with open(asm_out,"w") as f:
     f.write("main_table:\n")
     for i in range(2):
@@ -22,20 +23,26 @@ with open(asm_out,"w") as f:
         height = rval.size[1]
         f.write("; x  y  w  h\n")
         f.write(f"\tdc.w\t{x_start},{y_start+8},{width},{height}\n")
-        p = bitplanelib.palette_extract(rval)
+        p = bitplanelib.palette_extract(rval,pad_count=32,pad_value=pad_value)
         p.remove(transparent)
         p.insert(0,transparent)
 
-        f.write("; palette\n")
+        f.write("; partial upper palette\n")
         bitplanelib.palette_dump([(0,0,0)]+p[1:],f) # black will not trigger flashes
         f.write("; bitplanes\n")
-        for j in range(4):
+        nb_planes = 6
+        for j in range(nb_planes):
             f.write(f"\tdc.l\tdude_{i}_plane_{j}-dude_{i}\n")
-        raw = bitplanelib.palette_image2raw(rval,None,p,mask_color=transparent)
-        plane_size = len(raw)//4
+
+        # generate bitplanes, but with high palette (shifted by 32 colors) so we can mix with
+        # tile base colors
+        palette_64 = (32*[pad_value]) + p
+
+        raw = bitplanelib.palette_image2raw(rval,None,palette_64,mask_color=transparent)
+        plane_size = len(raw)//nb_planes
         f.write(f"; bpldata (plane size = {plane_size})\n")
         offset = 0
-        for j in range(4):
+        for j in range(nb_planes):
             f.write(f"dude_{i}_plane_{j}:\n")
             bitplanelib.dump_asm_bytes(raw[offset:offset+plane_size],f)
             offset += plane_size
