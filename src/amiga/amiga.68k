@@ -704,6 +704,37 @@ _vblank:
 
 	move.w	display_dudes(pc),d0
 	jeq		1100f
+	
+	cmp.w	#1,display_dudes
+	jeq		1101f
+	move.w	D0,-(a7)
+	* restore background
+* what: blits data on bg plane, no horizontal shifting (erase)
+* args:
+* < A0: pristine background
+* < A1: dest buffer
+* < D0: X (rounded to smaller 8-multiple)
+* < D1: Y
+* < D2: width in bytes
+* < D4: height
+
+	move.l	dude_pics,a2
+	move.l	(a2),a2		| first dude struct data
+
+	move.l	fg_drawed_screen_ptr(pc),a1
+	lea		background_restore_buffer,a0
+	move.w	(a2)+,d0			| X
+	move.w	(a2)+,d1			| Y
+	move.w	(a2)+,d2			| width
+	lsr.w	#3,d2				| divide by 8 to get len in bytes
+	move.w	(a2)+,d4			| height
+	jbsr	blit_background
+
+	lea		_custom,a5
+	WAIT_BLIT
+	move.w	(a7)+,d0
+1101:
+	
 	* set dudes palette #0
 	move.l	dude_pics,a2
 	move.l	(-4,a2,d0.w*4),a2		| requested dude struct
@@ -730,17 +761,8 @@ _vblank:
 	lea		(SCREEN_PLANE_SIZE*4,a1),a1
 	jbsr	blit_planes_any_internal_no_cookie_cut
 	
-	
-	
-	cmp.w	#1,display_dudes
-	jeq		1101f
-	* erase one location where the old pic remains
-	move.w	#0x3,d7
-	lea		0x2446D2+0x40,a6
-	jbsr	osd_write_word
-	lea		_custom,a5
-	WAIT_BLIT
-1101:
+
+
 	clr.w	display_dudes
 1100:
 	
@@ -1763,6 +1785,72 @@ start_process_1_plane:
 
 * 2 words: first shift (as bplcon value), then
 * offset in bytes
+
+
+
+* what: blits data on bg plane, no horizontal shifting (erase)
+* args:
+* < A0: pristine background
+* < A1: dest buffer
+* < D0: X (rounded to smaller 8-multiple)
+* < D1: Y
+* < D2: width in bytes
+* < D4: height
+
+* trashes: D0-D1
+
+blit_background:
+	movem.l	d2-d6/a0-a5,-(a7)
+	lea		_custom,a5
+	* adjust offset X: X//8
+	lsr.w	#3,d0
+	lea		mulNB_BYTES_PER_ROW_table(pc),a4
+	add.w	d1,d1
+	* add Y offset: Y*40
+	add.w	(a4,d1.w),d0
+	* same offset for source and destination
+	add.w	d0,a1
+	add.w	d0,a0
+	
+
+    move.l  #0x09f00000,d3    | A->D copy, ascending mode	
+	move.w	#NB_BYTES_PER_ROW,d1		| blit modulo
+
+    sub.w   d2,d1       | blit modulo
+    lsl.w   #6,d4
+    lsr.w   #1,d2		| blit width
+    add.w   d2,d4       | blit height
+	
+    * always the same settings
+
+    * now just wait for blitter ready to write all registers
+	WAIT_BLIT
+    
+    * blitter registers set
+
+	move.l d3,bltcon0(a5)	| sets con0 and con1
+
+    move.w  d1,bltamod(a5)	|A modulo
+    move.w  d1,bltdmod(a5)	|D modulo
+							
+	move.l a0,bltapt(a5)	|source graphic top left corner
+	move.l a1,bltdpt(a5)	|destination top (bottom) left corner
+	move.w  d4,bltsize(a5)	|rectangle size, starts blit
+	
+	move.w	nb_tile_planes_24a000,d0
+	subq	#2,d0
+0:
+	lea	(RESTORE_SCREEN_PLANE_SIZE,a0),a0
+	lea	(SCREEN_PLANE_SIZE,a1),a1
+	WAIT_BLIT
+	move.l a0,bltapt(a5)	|source graphic top left corner
+	move.l a1,bltdpt(a5)	|destination top (bottom) left corner
+	move.w  d4,bltsize(a5)	|rectangle size, starts blit
+	dbf		D0,0b
+	
+	movem.l	(a7)+,d2-d6/a0-a5
+	rts
+
 
 * < A5: custom
 * < D0.W,D1.W: x,y, no shifting
@@ -3105,6 +3193,30 @@ public_memory_current_ptr:
 chip_memory_current_ptr:
 	.long	0
 
+	* format of the file is first palette (32 bytes)
+	* then main tile table that points to tile cluts, .. and
+	* so on. It is readable in the tiles_0.68k file which is
+	* pre-assembled so several tile files can be loaded depending
+	* on the game phase
+tiles_244000:		| address 0x244000
+	.long	0
+tiles_24a000:		| address 0x24A000
+	.long	0
+tiles_24d000:		| address 0x24D000
+	.long	0
+dude_pics:
+	.long	0
+
+tile_data_24a000:
+	.long	0
+nb_tile_planes_24a000:
+	.word	0
+nb_tile_colors_24a000:
+	.word	0
+	
+tile_data_24d000:
+	.long	0
+	
 	.ascii	"CODE_END"
 
 
@@ -3269,29 +3381,7 @@ intreq_block_game:
 public_memory_block:
 	.skip	TOTAL_PUBLIC_MEMORY_SIZE
 	
-	* format of the file is first palette (32 bytes)
-	* then main tile table that points to tile cluts, .. and
-	* so on. It is readable in the tiles_0.68k file which is
-	* pre-assembled so several tile files can be loaded depending
-	* on the game phase
-tiles_244000:		| address 0x244000
-	.long	0
-tiles_24a000:		| address 0x24A000
-	.long	0
-tiles_24d000:		| address 0x24D000
-	.long	0
-dude_pics:
-	.long	0
 
-tile_data_24a000:
-	.long	0
-nb_tile_planes_24a000:
-	.word	0
-nb_tile_colors_24a000:
-	.word	0
-	
-tile_data_24d000:
-	.long	0
 	
 	* aligning on 8 bytes so .align will work
 	* in the next datachip sections
