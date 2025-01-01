@@ -91,16 +91,20 @@ def load_tileset(image_name,palette_index,side,tileset_name,dumpdir,dump=False,n
 # ATM all colors are considered the same weight
 # should rather 1) create a big pic with all sprites & all cluts
 # 2) apply quantize on that image
-def quantize_palette_16(rgb_tuples,img_type):
+def quantize_palette(rgb_tuples,img_type,nb_quantize,transparent=None):
     rgb_configs = set(rgb_tuples)
-    rgb_configs.remove(transparent)
-    nb_quantize = 15
-    # remove black, white, we don't want it quantized
-    immutable_colors = (transparent,(0,0,0))
+
+    nb_target_colors = nb_quantize
+    if transparent:
+        rgb_configs.remove(transparent)
+        # remove black, white, we don't want it quantized
+        immutable_colors = (transparent,(0,0,0))
+    else:
+        immutable_colors = ((0,0,0),)
+
     for c in immutable_colors:
         rgb_configs.discard(c)
-
-
+        nb_quantize -= 1
 
     dump_graphics = False
     # now compose an image with the colors
@@ -133,6 +137,9 @@ def quantize_palette_16(rgb_tuples,img_type):
         reduced_colors_clut_img = reduced_colors_clut_img.resize(ns,resample=0)
         reduced_colors_clut_img.save(dump_dir / "{}_colors_quantized.png".format(img_type))
 
+    result_nb = len(set(reduced_palette))
+    if nb_quantize != result_nb:
+        raise Exception(f"quantize: {img_type}: {nb_quantize} expected, found {result_nb}")
     # return it
     return rval
 
@@ -197,10 +204,12 @@ def load_contexted_tileset(tile_sheet_dict,context,nb_colors):
     tile_palette = set()
     tile_24a000_set_list = []
 
+    context_dir = pathlib.Path("tiles") / context
+
     for i in range(16):
         tsd = tile_sheet_dict.get(i)
         if tsd:
-            tp,tile_set = load_tileset(tsd,i,16,pathlib.Path("tiles") / context,dump_dir,dump=dump_it,name_dict=None,cluts=used_cluts[context])
+            tp,tile_set = load_tileset(tsd,i,16,context_dir,dump_dir,dump=dump_it,name_dict=None,cluts=used_cluts[context])
             tile_24a000_set_list.append(tile_set)
             tile_palette.update(tp)
         else:
@@ -214,7 +223,29 @@ def load_contexted_tileset(tile_sheet_dict,context,nb_colors):
     if lfp==1:
         raise Exception(f"{context}: no colors found, empty tiles?")
     if lfp>nb_colors:
-        raise Exception(f"{context}: Too many colors {lfp} max {nb_colors}")
+        print(f"{context}: Too many colors {lfp} max {nb_colors}, quantizing")
+        quantized = quantize_palette(bg_palette,context,nb_colors)
+
+
+        for tile_set in tile_24a000_set_list:
+            apply_quantize(tile_set,quantized)
+
+
+        # put transparent color first
+        bg_palette = sorted(set(quantized.values()))
+
+##        if dump_it:
+##            dump_subdir = dump_dir / "tiles/244000/quantized"
+##            ensure_empty(dump_subdir)
+##
+##            for palette_index,tile_set in enumerate(tile_244000_set_list):
+##                if tile_set:
+##                    for tile_number,img in enumerate(tile_set):
+##                        if img:
+##                            img = ImageOps.scale(img,5,resample=Image.Resampling.NEAREST)
+##                            name = "unknown"
+##
+##                            img.save(os.path.join(dump_subdir,f"{name}_{tile_number:02x}_{palette_index:02x}.png"))
     if lfp<nb_colors:
         bg_palette += [(0x10,0x20,0x30)]*(nb_colors-lfp)
 
@@ -390,29 +421,8 @@ fg_palette = sorted(tile_palette)
 
 lfp = len(fg_palette)
 if lfp>16:
-    raise Exception(f"Foreground: Too many colors {lfp} max 16, quantizing")
-##    quantized = quantize_palette_16(fg_palette,"baddudes")
-##
-##
-##    for tile_set in tile_244000_set_list:
-##        apply_quantize(tile_set,quantized)
-##
-##
-##    # put transparent color first
-##    fg_palette = sorted(set(quantized.values()))
-##
-##    if dump_it:
-##        dump_subdir = dump_dir / "tiles/244000/quantized"
-##        ensure_empty(dump_subdir)
-##
-##        for palette_index,tile_set in enumerate(tile_244000_set_list):
-##            if tile_set:
-##                for tile_number,img in enumerate(tile_set):
-##                    if img:
-##                        img = ImageOps.scale(img,5,resample=Image.Resampling.NEAREST)
-##                        name = "unknown"
-##
-##                        img.save(os.path.join(dump_subdir,f"{name}_{tile_number:02x}_{palette_index:02x}.png"))
+    raise Exception(f"Foreground: Too many colors {lfp} max 16")
+
 
 fg_palette.remove(transparent)
 fg_palette.insert(0,transparent)
@@ -429,7 +439,7 @@ dump_tiles("tiles_title_244000",fg_palette,tile_244000_table,tile_244000_cache)
 process_tile_context("title_24a000",title_tile_24a000_sheet_dict,16)
 process_tile_context("game_intro_24a000",game_intro_tile_24a000_sheet_dict,32)
 process_tile_context("highs_24a000",title_tile_24a000_sheet_dict,16)
-process_tile_context("level_1_24a000",title_tile_24a000_sheet_dict,32)
+process_tile_context("level_1_24a000",level_1_tile_24a000_sheet_dict,32)
 
 
 

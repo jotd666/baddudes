@@ -187,7 +187,7 @@ add_ps("write_ninja_message_0834A")
 add_p("copy_to_tile_0_01fa2")
 add_p("display_lives_0e122")
 add_ps("write_to_tile_0_083ac")
-add_ps("videoram_write_0e3ba")
+#add_ps("videoram_write_0e3ba")   # not necessary, as MCU check is now disabled
 add_pss("videoram_write_06c82",fill=0xC)
 add_pss("write_to_tiles_0e30e",fill=4)
 add_s(0x083ac+6,0x083c6)
@@ -201,7 +201,7 @@ add_p("play_sound_0def0")
 add_pss("copy_tiles_099f0",fill=4)
 add_ps("videoram_write_08848")
 add_ps("set_game_intro_context_084c4")
-
+add_nop(0x0e32e,2)  # nonsensical / protection (?) code
 for offset in [0x0174c,0x0175c,0x07e66]:
     add_pss(offset,"test_input_bit_d1",2)
 

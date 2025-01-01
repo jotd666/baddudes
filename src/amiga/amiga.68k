@@ -38,6 +38,8 @@ BASE_BPLCON3_VALUE = (BORDERBLANK<<5)
 BASE_BPLCON2_VALUE = 0x0200  | killehb (we're using 6 real bitplanes)
 SCREEN_ADDRESS = 0x244000
 
+* set to nonzero for full static screen, no scroll, 1 screen tile
+OPT_NO_SCROLLING = 0
 
 * if the alloc_sprite & update_sprite routines
 * are reused, changing those offsets can make
@@ -770,7 +772,7 @@ _vblank:
 	bsr		really_update_sprites
 	
 	* double buffering only in-game
-	cmp.w	#CTX_GAME,game_context
+	cmp.w	#CTX_GAME,global_context
 	jcs		23f
 	bsr		switch_screen_buffers
 
@@ -896,7 +898,7 @@ addr_24xxxx_table_op:
 	.long	addr_unmapped_op
 	.long	addr_248xxx_op
 	.long	addr_unmapped_op
-	.long	addr_24Axxx_tile_layer_1_op
+	.long	addr_24Axxx_tile_layer_op
 	.long	addr_unmapped_op
 	.long	addr_24Cxxx_op
 	.long	addr_24Dxxx_tile_layer_2_op
@@ -1010,7 +1012,7 @@ addr_244xxx_tile_layer_0_op:
 
 	* special cases: on some special tiles, 
 	* blit the whole pic (big dudes in intro)
-	cmp.w	#CTX_INTRO,game_context
+	cmp.w	#CTX_INTRO,global_context
 	jne		16f
 	cmp.w	#0x5526,d7	| written at 244398
 	jne		15f
@@ -1110,8 +1112,27 @@ erase_tile_8:
 	rts
 addr_248xxx_op:
 	rts	| to_implement
+	
+* scroll registers
+* 00246010: X-scroll (wraps at 0x200)
+* 00246012: Y-scroll
 addr_246xxx_op:
-	rts	| to_implement
+	cmp.w	#0x6010,d2
+	jeq		0f
+	cmp.w	#0x6012,d2
+	jeq		1f
+	* unsupported, also not useful & ignored
+	rts
+0:
+	and.w	#0x1FF,d7
+	move.w	d7,d0
+	jbsr	set_scroll_x
+	rts
+1:
+	and.w	#0x1FF,d7
+	move.w	d7,d0
+	jbsr	set_scroll_y
+	rts
 	
 	.macro	NEXT_PLANES
 	lea		(SCREEN_PLANE_SIZE,a1),a1
@@ -1127,7 +1148,7 @@ addr_246xxx_op:
 	.endm
 	
 * 16x16 tile layer
-addr_24Axxx_tile_layer_1_op:
+addr_24Axxx_tile_layer_op:
 	and.w	#0x7FF,d2
 
 	cmp.b	#2,d0
@@ -1160,6 +1181,11 @@ addr_24Axxx_tile_layer_1_op:
 	move.w	d2,d4
 	lsr.w	#5,D4			| this is Y
 	lsl.w	#4,d4			| times 16
+	
+	.ifne	OPT_NO_SCROLLING
+	and.w	#0x1FF,d2
+	.endif
+	
 	* now compute quadrant.
 	sub.w	#0x200,d2
 	jmi		20f		| 000-200: no changes
@@ -2394,32 +2420,71 @@ osd_disable_interrupts:
 
 	
 
+set_scroll_x:
+	move.w	x_scroll_value(pc),d1
+	cmp.w	d1,d0
+	jne		0f
+	rts
+0:
+	move.w	d0,x_scroll_value
+	.ifne	OPT_NO_SCROLLING
+	rts
+	.endif
+	jra		set_game_bitplanes
 
-
+set_scroll_y:
+	move.w	y_scroll_value(pc),d1
+	cmp.w	d1,d0
+	jne		0f
+	rts
+0:
+	move.w	d0,y_scroll_value
+	.ifne	OPT_NO_SCROLLING
+	rts
+	.endif
+	jra		set_game_bitplanes
 
 set_playfield_bitplanes:
 	* set bitplanes
     moveq #NB_PLAYFIELD_PLANES-1,d1
 	moveq	#0,d0
-	move.b	main_scroll_value(pc),d0
-	and.w	#0xFF,d0		| wrap just in case
+	move.w	y_scroll_value(pc),d0
+	*and.w	#0x1FF,d0		| wrap just in case
 	lea		mulNB_BYTES_PER_ROW_table(pc),a2
 	move.w	(a2,d0.w*2),d0
+	move.w	x_scroll_value(pc),d2
+	move.w	d2,d3
+	lsr.w	#4,d2
+	add.w	d2,d0
+	and.w	#0xF,d3		| temp not 16 bit!!
+	move.w	d3,fine_x_scroll_value
+	
     add.l	fg_drawed_screen_ptr(pc),d0
 	
 	move.l	#SCREEN_PLANE_SIZE,d2
-
-20:
+0:
     swap d0
     move.w d0,(a0)
     swap d0
     move.w d0,(4,a0)    
     addq.w  #8,a0
     add.l d2,d0		| LONG!
-    dbf d1,20b
+    dbf d1,0b
+	rts
+
+set_game_bitplanes:	
+	movem.l	d0-d3/a0-a2,-(a7)
+    lea	bitplanes_intro+2,a0
+	jbsr	set_playfield_bitplanes
+	movem.l	(a7)+,d0-d3/a0-a2
     rts
 		
 
+* 2 words: first shift (as bplcon value), then
+* offset in bytes
+
+scroll_table:
+	.include	"scroll_table.68k"
 
 
 
@@ -2450,20 +2515,6 @@ osd_debug_hook:
 	rts
 	
 
-* d0=scroll value
-
-osd_set_main_scroll:
-	cmp.b	main_scroll_value,d0
-	jeq		0f
-	movem.l	d0-d2/a0,-(a7)
-	move.b	d0,main_scroll_value
-    lea	playfield_bitplanes_game+2,a0
-	jbsr	set_playfield_bitplanes 
-	movem.l	(a7)+,a0/d0-d2
-0:
-	rts
-	
-	
 BIT_INSERT_COIN_1 = 4
 BIT_INSERT_COIN_2 = 5
 BIT_START_1P = 2
@@ -2768,10 +2819,10 @@ toggle_pause:
 	
 osd_set_context:
 	movem.l	d0-a6,-(a7)
-	cmp.w	game_context,d0
+	cmp.w	global_context(pc),d0
 	jeq		1f
 
-	move.w	d0,game_context
+	move.w	d0,global_context
 	jbsr	free_all_memory  | TODO maybe remove this
 	jbsr	clear_log_memory
 
@@ -2847,7 +2898,16 @@ set_high_score_context:
 	rts
 
 set_game_context:
+	* level 1 only atm
+	lea		tiles_title_244000_file(pc),a0
+	jbsr	allocate_and_load_public_mem_file
+	move.l	d0,tiles_244000
+	
+	lea		tiles_level_1_24a000_file(pc),a0
+	jbsr	load_tiles_file_24a000
 
+	jbsr	load_intro_palette
+	
 	rts
 	
 remove_dudes:
@@ -2937,7 +2997,6 @@ set_intro_context:
 	* set them even if reset by game afterwards
 	* avoiding ugly stripe bitplane effect at startup
     lea	bitplanes_intro+2,a0
-
 	bsr		set_playfield_bitplanes
 
 	jbsr	load_intro_palette
@@ -3013,10 +3072,15 @@ old_stack:
 	.long	0
 return_address:
 	.long	0
-game_context:
+global_context:
 	.word	0
 display_dudes:
 	.word	0
+x_scroll_value:
+	.word	0
+y_scroll_value:
+	.word	0
+	
 _tag:
 		.long	WHDLTAG_MONITOR_GET
 monitor:
@@ -3158,6 +3222,8 @@ tiles_game_intro_24a000_file:
 	.asciz	"tiles_game_intro_24a000.bin"
 tiles_highs_24a000_file:
 	.asciz	"tiles_highs_24a000.bin"
+tiles_level_1_24a000_file:
+	.asciz	"tiles_level_1_24a000.bin"
 dudes_pics_files:
 	.asciz	"dudes.bin"
 rom_file:
@@ -3296,6 +3362,11 @@ intro_copperlist:
 
 bitplanes_intro:
 	DECL_BITPLANES	0,NB_PLAYFIELD_PLANES
+
+	.word	bplcon1
+fine_x_scroll_value:
+	.word	0
+
 intro_sprites:
 	DECL_SPRITES
 
@@ -3332,61 +3403,7 @@ intro_intreq_block:
     .long    -2					
 	.ascii	"ENDCPLST"
 	
-	* main copperlist
-game_copperlist:
-	* all sprites have the same palette no need to specify odd or even
-	* on color bank 1
 	
-	DECL_COLOR_BANK	1
-	* black color sprites
-	DECL_COLORS	0,32
-
-bobs_bitplanes_game:
-	DECL_BITPLANES	0,4
-playfield_bitplanes_game:
-	DECL_BITPLANES	4,4
-	DECL_COLOR_BANK	1
-game_sprite_colors:
-	DECL_COLORS	0,32
-game_sprites:
-	DECL_SPRITES
-
-
-	* default color bank
-	DECL_COLOR_BANK	0
-bg_tiles_colors_game:
-	DECL_COLORS	16,16
-fg_tiles_colors_game:
-	DECL_COLORS	0,16
-	* now set color bank 1
-
-	DECL_COLOR_BANK	0
-
-	
-	* mid-line wait & extra interrupt
-	.word	0x8001,0xFFFE
-intreq_block_game:
-	* now wait some lines until we're sure bitmap only contains
-	* non-black: we can set color 0 to light blue now
-	.word	 intreq,0x8014  | call copper interrupt in the middle of a frame, also flag so copper interrupt knows that we're going to call copper int
-
-
-	
-
-	.word	0xEC01,0xFFFE
-	
-	* pal limit
-    .word  0xFFCF,0xFFFE       | PAL wait
-	.word	 intreq,0x8010	| no bobs from now on, get more drawing time
-
-	
-    *.word  0x1401,0xFFFE		| wait more lines to set to black (big holes!)
-	
-    *.word   0x1C01,0xFFFE
-	
- 	*.word	beampos,0xFFFE
-    .long    -2					
-	.ascii	"ENDCPLST"
 
 	.section	.bsspublic
 
