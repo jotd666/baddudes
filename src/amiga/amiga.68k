@@ -1157,15 +1157,32 @@ addr_24Axxx_tile_layer_1_op:
 	* then draw the 16x16 tile
 	move.w	d2,d3
 	and.w	#0x1F,D3		| this is X
-	lsr.w	#5,D2			| this is Y
-	lsl.w	#4,d2			| times 16
-	cmp.w	#256,d2		| TEMP!!!
-	jcc		100f
-	
+	move.w	d2,d4
+	lsr.w	#5,D4			| this is Y
+	lsl.w	#4,d4			| times 16
+	* now compute quadrant.
+	sub.w	#0x200,d2
+	jmi		20f		| 000-200: no changes
+	sub.w	#0x200,d2
+	jpl		21f	
+	* 200-400: add to X
+	add.w	#0x20,D3
+	jra		20f
+21:
+	sub.w	#0x200,d2
+	jpl		22f	
+	* 400-600: add to Y
+	add.w	#15,d4
+	jra		20f
+22:
+	* 600_800: add to both
+	add.w	#0x20,D3
+	add.w	#15,d4
+20:	
 	move.l	fg_drawed_screen_ptr(pc),a1
 	lea		background_restore_buffer,a4
 	lea		mulNB_BYTES_PER_ROW_table(pc),a2
-	move.w	(a2,d2.w*2),d5
+	move.w	(a2,d4.w*2),d5
 	add.w	d3,d5
 	add.w	d5,a1			| screen dest address on playfield
 	add.w	d5,a4			| screen dest address on restore playfield
