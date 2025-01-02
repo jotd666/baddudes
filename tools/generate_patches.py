@@ -10,8 +10,10 @@ af = ira_asm_tools.AsmFile(asmfile)
 
 relocated_ram_offsets = {}
 
+RAM_TOP = 0x00ffc000
+
 def is_in_ram(ext_address):
-    return 0xff8000 <= ext_address <= 0x00ffc000
+    return 0xff8000 <= ext_address <= RAM_TOP
 
 special_read = {0x300000,0x300001,0x300008,0x300009} | set(range(0x30c000, 0x30c010))
 
@@ -81,7 +83,7 @@ for line in af.lines:
                     try:
                         ext_address = int(rest[-1],16)
                         reloc_address = inst_info["address"]
-
+                        ram_reloc = is_in_ram(ext_address)
                         if is_in_ram(ext_address):
                             # in RAM: relocate
 

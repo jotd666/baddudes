@@ -32,7 +32,7 @@
 * as not all OSes do that with their bss
 ram_buffer:
 	.ifdef	RELEASE
-	.skip	0xC000-0x8000
+	.skip	0xC800-0x8000	| size includes sprites memory (last 0x800 bytes in FFC000)
 	.else
 	.skip	0x20000
 ram_start_ff8000:

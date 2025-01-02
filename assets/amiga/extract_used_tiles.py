@@ -4,7 +4,7 @@ this_dir = pathlib.Path(__file__).absolute().parent
 used_dict = {}
 dropped_tile_index = set()
 
-used_cluts_file = this_dir / "used_cluts.json"
+used_cluts_file = this_dir / "used_tile_cluts.json"
 
 # get dude tiles (big dude pics in intro) and don't consider their tiles
 for i in range(2):
@@ -46,9 +46,6 @@ for i in range(ord("A"),ord("Z")+1):
     used_dict[n][i].append(0)
 for i in range(ord("0"),ord("9")+1):
     used_dict[n][i].append(0)
-
-# only 4 tiles are used for background. Character is too costly in colors (32)
-# besides it also uses sprites for glasses & mouth. We'll see later
 
 
 with open(used_cluts_file,"w") as f:

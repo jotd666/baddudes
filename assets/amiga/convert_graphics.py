@@ -5,10 +5,16 @@ from shared import *
 
 sprite_names = dict()
 
-with open(os.path.join(this_dir,"used_cluts.json")) as f:
-    used_cluts = json.load(f)
+def reformat_dict(d):
+    return {k:{int(k2):set(v2) for k2,v2 in v.items()} for k,v in d.items()}
+
+with open(os.path.join(this_dir,"used_tile_cluts.json")) as f:
     # set proper types
-    used_cluts = {k:{int(k2):set(v2) for k2,v2 in v.items()} for k,v in used_cluts.items()}
+    used_tile_cluts = reformat_dict(json.load(f))
+
+with open(os.path.join(this_dir,"used_sprite_cluts.json")) as f:
+    # set proper types
+    used_sprite_cluts = reformat_dict(json.load(f))
 
 
 dump_it = True
@@ -198,18 +204,20 @@ def remove_colors(imgname):
 title_tile_24a000_sheet_dict = {i:sheets_path / "tiles_24a000" / "title" / f"pal_{i:02x}.png" for i in range(9)}
 game_intro_tile_24a000_sheet_dict = {i:sheets_path / "tiles_24a000" / "game_intro" / f"pal_{i:02x}.png" for i in range(4)}
 level_1_tile_24a000_sheet_dict = {i:sheets_path / "tiles_24a000" / "level_1" / f"pal_{i:02x}.png" for i in range(16)}
-tile_0_sheet_dict = {i:os.path.join(sheets_path,"tiles_244000",f"pal_{i:02x}.png") for i in range(15)}
+tile_0_sheet_dict = {i:sheets_path / "tiles_244000" / f"pal_{i:02x}.png" for i in range(15)}
+sprite_sheet_dict = {i:sheets_path / "sprites" / f"pal_{i:02x}.png" for i in range(16)}
 
-def load_contexted_tileset(tile_sheet_dict,context,nb_colors):
+def load_contexted_tileset(tile_sheet_dict,context,nb_colors,is_bob):
     tile_palette = set()
     tile_24a000_set_list = []
 
-    context_dir = pathlib.Path("tiles") / context
+    context_dir = pathlib.Path("sprites" if is_bob else "tiles") / context
+    used_cluts_dict = used_sprite_cluts if is_bob else used_tile_cluts
 
     for i in range(16):
         tsd = tile_sheet_dict.get(i)
         if tsd:
-            tp,tile_set = load_tileset(tsd,i,16,context_dir,dump_dir,dump=dump_it,name_dict=None,cluts=used_cluts[context])
+            tp,tile_set = load_tileset(tsd,i,16,context_dir,dump_dir,dump=dump_it,name_dict=None,cluts=used_cluts_dict[context])
             tile_24a000_set_list.append(tile_set)
             tile_palette.update(tp)
         else:
@@ -396,11 +404,13 @@ def dump_tiles(file_radix,palette,tile_table,tile_plane_cache):
     tiles_1_bin = os.path.join(data_dir,os.path.basename(os.path.splitext(tiles_1_src)[0])+".bin")
     asm2bin(tiles_1_src,tiles_1_bin)
 
-def process_tile_context(context_name,tile_sheet_dict,nb_colors):
-    tile_24a000_set_list,bg_palette = load_contexted_tileset(tile_sheet_dict,context_name,nb_colors)
+def process_tile_context(context_name,tile_sheet_dict,nb_colors,is_bob=False):
+
+    tile_24a000_set_list,bg_palette = load_contexted_tileset(tile_sheet_dict,context_name,nb_colors,is_bob)
     tile_24a000_cache = {}
-    tile_24a000_table = read_tileset(tile_24a000_set_list,bg_palette,[True,False,False,False],cache=tile_24a000_cache, is_bob=False)
-    dump_tiles("tiles_"+context_name,bg_palette,tile_24a000_table,tile_24a000_cache)
+    tile_24a000_table = read_tileset(tile_24a000_set_list,bg_palette,[True,True,False,False] if is_bob else [True,False,False,False],cache=tile_24a000_cache, is_bob=is_bob)
+    prefix = "sprites_" if is_bob else "tiles_"
+    dump_tiles(prefix+context_name,bg_palette,tile_24a000_table,tile_24a000_cache)
 
 
 
@@ -410,7 +420,7 @@ tile_244000_set_list = []
 for i in range(16):
     tsd = tile_0_sheet_dict.get(i)
     if tsd:
-        tp,tile_set = load_tileset(tsd,i,8,"tiles/244000",dump_dir,dump=dump_it,name_dict=None,cluts=used_cluts["title_244000"])
+        tp,tile_set = load_tileset(tsd,i,8,"tiles/244000",dump_dir,dump=dump_it,name_dict=None,cluts=used_tile_cluts["title_244000"])
 
         tile_244000_set_list.append(tile_set)
         tile_palette.update(tp)
@@ -431,16 +441,24 @@ if lfp<16:
     fg_palette += [(0x10,0x20,0x30)]*(16-lfp)
 
 
-tile_244000_cache = {}
-tile_244000_table = read_tileset(tile_244000_set_list,fg_palette,[True,False,False,False],cache=tile_244000_cache, is_bob=False)
+# tiles
 
-dump_tiles("tiles_title_244000",fg_palette,tile_244000_table,tile_244000_cache)
+if False:
+    tile_244000_cache = {}
+    tile_244000_table = read_tileset(tile_244000_set_list,fg_palette,[True,False,False,False],cache=tile_244000_cache, is_bob=False)
 
-process_tile_context("title_24a000",title_tile_24a000_sheet_dict,16)
-process_tile_context("game_intro_24a000",game_intro_tile_24a000_sheet_dict,32)
-process_tile_context("highs_24a000",title_tile_24a000_sheet_dict,16)
-process_tile_context("level_1_24a000",level_1_tile_24a000_sheet_dict,32)
+    dump_tiles("tiles_title_244000",fg_palette,tile_244000_table,tile_244000_cache)
 
+    process_tile_context("title_24a000",title_tile_24a000_sheet_dict,16)
+    process_tile_context("game_intro_24a000",game_intro_tile_24a000_sheet_dict,32)
+    process_tile_context("highs_24a000",title_tile_24a000_sheet_dict,16)
+    process_tile_context("level_1_24a000",level_1_tile_24a000_sheet_dict,32)
+
+# sprites
+    process_tile_context("title_24a000",title_tile_24a000_sheet_dict,16)
+
+
+process_tile_context("game_intro",sprite_sheet_dict,32,True)
 
 
 

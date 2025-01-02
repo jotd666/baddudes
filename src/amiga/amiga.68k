@@ -1200,7 +1200,7 @@ addr_24Axxx_tile_layer_op:
 	jpl		22f	
 	* 400-600: add to Y
 	.ifeq	OPT_NO_SCROLLING_Y	
-	add.w	#15*16,d4
+	add.w	#16*16,d4
 	.endif
 	jra		20f
 22:
@@ -1209,7 +1209,7 @@ addr_24Axxx_tile_layer_op:
 	add.w	#0x20,D3
 	.endif
 	.ifeq	OPT_NO_SCROLLING_Y	
-	add.w	#15*16,d4
+	add.w	#16*16,d4
 	.endif
 20:	
 	move.l	fg_drawed_screen_ptr(pc),a1
@@ -2454,12 +2454,11 @@ set_scroll_y:
 set_playfield_bitplanes:
 	* set bitplanes
     moveq #NB_PLAYFIELD_PLANES-1,d1
-	moveq	#0,d0
 	move.w	y_scroll_value(pc),d0
 	*and.w	#0x1FF,d0		| wrap just in case
 	lea		mulNB_BYTES_PER_ROW_table(pc),a2
 	move.w	(a2,d0.w*2),d0
-	move.w	x_scroll_value(pc),d2
+	move.w	x_scroll_value(pc),d2	
 	lea		scroll_table(pc),a2
 	move.w	(a2,d2.w*4),fine_x_scroll_value
 	add.w	(2,a2,d2.w*4),d0
