@@ -38,8 +38,9 @@ BASE_BPLCON3_VALUE = (BORDERBLANK<<5)
 BASE_BPLCON2_VALUE = 0x0200  | killehb (we're using 6 real bitplanes)
 SCREEN_ADDRESS = 0x244000
 
-* set to nonzero for full static screen, no scroll, 1 screen tile
-OPT_NO_SCROLLING = 0
+* set both to nonzero for full static screen, no scroll, 1 screen tile
+OPT_NO_SCROLLING_X = 0
+OPT_NO_SCROLLING_Y = 0
 
 * if the alloc_sprite & update_sprite routines
 * are reused, changing those offsets can make
@@ -1183,29 +1184,33 @@ addr_24Axxx_tile_layer_op:
 	lsr.w	#5,D4			| this is Y
 	lsl.w	#4,d4			| times 16
 	
-	.ifne	OPT_NO_SCROLLING
-	and.w	#0x1FF,d2
-	.endif
-	
 
 	* now compute quadrant.
 	sub.w	#0x200,d2
 	jmi		20f		| 000-200: no changes
 	sub.w	#0x200,d2
 	jpl		21f	
+	.ifeq	OPT_NO_SCROLLING_X	
 	* 200-400: add to X
 	add.w	#0x20,D3
+	.endif
 	jra		20f
 21:
 	sub.w	#0x200,d2
 	jpl		22f	
 	* 400-600: add to Y
+	.ifeq	OPT_NO_SCROLLING_Y	
 	add.w	#15*16,d4
+	.endif
 	jra		20f
 22:
 	* 600_800: add to both
+	.ifeq	OPT_NO_SCROLLING_X	
 	add.w	#0x20,D3
-	add.w	#15,d4
+	.endif
+	.ifeq	OPT_NO_SCROLLING_Y	
+	add.w	#15*16,d4
+	.endif
 20:	
 	move.l	fg_drawed_screen_ptr(pc),a1
 	lea		background_restore_buffer,a4
@@ -2187,7 +2192,7 @@ platform_init:
 
  	*         VVHH
     move.w #0x2481,diwstrt(a5)
-    move.w #0x2481-0x800,diwstop(a5)
+    move.w #0x24A0-0x800,diwstop(a5)
     move.w #0x0038,ddfstrt(a5)
     move.w #0x00D0,ddfstop(a5)
 
@@ -2428,7 +2433,7 @@ set_scroll_x:
 	jne		0f
 	rts
 0:
-	.ifne	OPT_NO_SCROLLING
+	.ifne	OPT_NO_SCROLLING_X
 	rts
 	.endif
 	move.w	d0,x_scroll_value
@@ -2440,7 +2445,7 @@ set_scroll_y:
 	jne		0f
 	rts
 0:
-	.ifne	OPT_NO_SCROLLING
+	.ifne	OPT_NO_SCROLLING_Y
 	rts
 	.endif
 	move.w	d0,y_scroll_value
@@ -2455,11 +2460,9 @@ set_playfield_bitplanes:
 	lea		mulNB_BYTES_PER_ROW_table(pc),a2
 	move.w	(a2,d0.w*2),d0
 	move.w	x_scroll_value(pc),d2
-	move.w	d2,d3
-	lsr.w	#4,d2
-	add.w	d2,d0
-	and.w	#0xF,d3		| temp not 16 bit!!
-	move.w	d3,fine_x_scroll_value
+	lea		scroll_table(pc),a2
+	move.w	(a2,d2.w*4),fine_x_scroll_value
+	add.w	(2,a2,d2.w*4),d0
 	
     add.l	fg_drawed_screen_ptr(pc),d0
 	
