@@ -1179,6 +1179,7 @@ addr_24Axxx_tile_layer_op:
 	move.w	d2,d3
 	and.w	#0x1F,D3		| this is X
 	move.w	d2,d4
+	and.w	#0x1FF,d4
 	lsr.w	#5,D4			| this is Y
 	lsl.w	#4,d4			| times 16
 	
@@ -1186,6 +1187,7 @@ addr_24Axxx_tile_layer_op:
 	and.w	#0x1FF,d2
 	.endif
 	
+
 	* now compute quadrant.
 	sub.w	#0x200,d2
 	jmi		20f		| 000-200: no changes
@@ -1198,7 +1200,7 @@ addr_24Axxx_tile_layer_op:
 	sub.w	#0x200,d2
 	jpl		22f	
 	* 400-600: add to Y
-	add.w	#15,d4
+	add.w	#15*16,d4
 	jra		20f
 22:
 	* 600_800: add to both
@@ -2426,10 +2428,10 @@ set_scroll_x:
 	jne		0f
 	rts
 0:
-	move.w	d0,x_scroll_value
 	.ifne	OPT_NO_SCROLLING
 	rts
 	.endif
+	move.w	d0,x_scroll_value
 	jra		set_game_bitplanes
 
 set_scroll_y:
@@ -2438,10 +2440,10 @@ set_scroll_y:
 	jne		0f
 	rts
 0:
-	move.w	d0,y_scroll_value
 	.ifne	OPT_NO_SCROLLING
 	rts
 	.endif
+	move.w	d0,y_scroll_value
 	jra		set_game_bitplanes
 
 set_playfield_bitplanes:
@@ -2908,7 +2910,9 @@ set_game_context:
 
 	jbsr	load_intro_palette
 	
+
 	rts
+
 	
 remove_dudes:
 	* clear dudes pics (basically lower part of screen)
