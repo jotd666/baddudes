@@ -272,7 +272,7 @@ def get_nb_planes(palette):
     nb_planes = int(math.log2(len(palette)))
     return nb_planes
 
-def read_tileset(img_set_list,palette,plane_orientation_flags,cache,is_bob):
+def read_tileset(img_set_list,palette,plane_orientation_flags,cache,is_bob,generate_mask):
     next_cache_id = 1
     tile_table = []
     nb_planes = get_nb_planes(palette)
@@ -292,13 +292,16 @@ def read_tileset(img_set_list,palette,plane_orientation_flags,cache,is_bob):
                             if is_bob:
                                 y_start,wtile = bitplanelib.autocrop_y(wtile)
                                 height = wtile.size[1]
-                                actual_nb_planes += 1
-                                bitplane_data = bitplanelib.palette_image2raw(wtile,None,palette,generate_mask=True,blit_pad=True,mask_color=transparent)
+                                generate_mask = bitplanelib.MASK_ON
                             else:
                                 height = 8
                                 y_start = 0
-                                bitplane_data = bitplanelib.palette_image2raw(wtile,None,palette,mask_color=transparent)
+                                if generate_mask:
+                                    generate_mask = bitplanelib.MASK_INVERTED
 
+                            bitplane_data = bitplanelib.palette_image2raw(wtile,None,palette,generate_mask=generate_mask,blit_pad=is_bob,mask_color=transparent)
+                            if generate_mask:
+                                actual_nb_planes += 1
                             plane_size = len(bitplane_data) // actual_nb_planes
                             bitplane_plane_ids = []
                             for j in range(actual_nb_planes):
@@ -404,12 +407,16 @@ def dump_tiles(file_radix,palette,tile_table,tile_plane_cache):
     tiles_1_bin = os.path.join(data_dir,os.path.basename(os.path.splitext(tiles_1_src)[0])+".bin")
     asm2bin(tiles_1_src,tiles_1_bin)
 
-def process_tile_context(context_name,tile_sheet_dict,nb_colors,is_bob=False):
+def process_tile_context(context_name,tile_sheet_dict,nb_colors,is_bob=False,nb_previous_colors=0):
 
     tile_24a000_set_list,bg_palette = load_contexted_tileset(tile_sheet_dict,context_name,nb_colors,is_bob)
     tile_24a000_cache = {}
-    tile_24a000_table = read_tileset(tile_24a000_set_list,bg_palette,[True,True,False,False] if is_bob else [True,False,False,False],cache=tile_24a000_cache, is_bob=is_bob)
+    tile_24a000_table = read_tileset(tile_24a000_set_list,bg_palette,[True,True,False,False] if is_bob else [True,False,False,False],
+    cache=tile_24a000_cache, is_bob=is_bob, generate_mask=is_bob)
     prefix = "sprites_" if is_bob else "tiles_"
+    if nb_previous_colors:
+        # got to fill with completely unrelated previous colors (tiles)
+        bg_palette = ([(0x10,0x20,0x30)]*nb_previous_colors) + bg_palette
     dump_tiles(prefix+context_name,bg_palette,tile_24a000_table,tile_24a000_cache)
 
 
@@ -454,7 +461,13 @@ if lfp<8:
 
 if True:
     tile_244000_cache = {}
-    tile_244000_table = read_tileset(tile_244000_set_list,fg_palette,[True,False,False,False],cache=tile_244000_cache, is_bob=False)
+    fg_palette = [(0x10,0x20,0x30)]*56 + fg_palette
+
+    tile_244000_table = read_tileset(tile_244000_set_list,fg_palette,[True,False,False,False],
+    cache=tile_244000_cache,
+    generate_mask = True,
+    is_bob=False)
+
 
     dump_tiles("tiles_title_244000",fg_palette,tile_244000_table,tile_244000_cache)
 
@@ -467,7 +480,7 @@ if True:
     process_tile_context("title_24a000",title_tile_24a000_sheet_dict,16)
 
 
-process_tile_context("game_intro",sprite_sheet_dict,32,True)
+process_tile_context("game_intro",sprite_sheet_dict,32,True,nb_previous_colors=32)
 
 
 

@@ -893,7 +893,7 @@ addr_24xxxx_table_op:
 	.long	addr_unmapped_op
 	.long	addr_242xxx_op
 	.long	addr_unmapped_op
-	.long	addr_244xxx_tile_layer_0_op
+	.long	addr_244xxx_tile_layer_op
 	.long	addr_245xxx_tile_layer_0_op
 	.long	addr_246xxx_op
 	.long	addr_unmapped_op
@@ -956,7 +956,7 @@ addr_245xxx_tile_layer_0_op:
 	rts
 	
 * 8x8 tile layer
-addr_244xxx_tile_layer_0_op:
+addr_244xxx_tile_layer_op:
 	and.w	#0x7FF,d2
 
 	cmp.b	#2,d0
@@ -991,7 +991,7 @@ addr_244xxx_tile_layer_0_op:
 	moveq	#1,d0		| word operation
 	lea		0x244000,a6
 	add.w	d2,a6
-	jra		addr_244xxx_tile_layer_0_op
+	jra		addr_244xxx_tile_layer_op
 2:
 	rts
 0:
@@ -1037,7 +1037,6 @@ addr_244xxx_tile_layer_0_op:
 	jcc		100f
 	
 	move.l	fg_drawed_screen_ptr(pc),a1
-	add.l	#4*SCREEN_PLANE_SIZE,a1		| TEMP!!!
 	lea		mulNB_BYTES_PER_ROW_table(pc),a2
 	add.w	(a2,d2.w*2),a1
 	add.w	d3,a1			| screen dest address on bg playfield
@@ -1059,15 +1058,14 @@ addr_244xxx_tile_layer_0_op:
 	move.w	(a7)+,d6
 	.endif
 
-	move.l		tiles_244000,a0
-	add.w	#0x22,a0
+	move.l		tile_data_244000,a0
 	add.l	(a0,d6.w*4),a0	| select tile code
 	move.l	(a0,d5.w*4),d6
 	jeq		100f		| ignored
 
 	add.l	d6,a0	| select tile clut
 	
-	moveq	#(2-1),d6		| TEMP
+	moveq	#(NB_PLAYFIELD_PLANES-1),d6
 	move.l	a0,a3			| base ptr
 0:
 	move.l	(a0)+,d2
@@ -2858,6 +2856,26 @@ game_context_table:
 	.long	set_game_intro_context	    | CTX_GAME_INTRO
 	.long	set_game_context		    | CTX_GAME
 	
+load_tiles_file_244000:
+	lea		tiles_title_244000_file(pc),a0
+	jbsr	allocate_and_load_public_mem_file
+	move.l	d0,tiles_244000
+	* set palette
+	move.l	d0,a0
+	add.w	#2+(56*2),a0	| skip nb planes (6) plus 56 dummy colors
+
+
+	lea		letters_palette,a1
+	move.w	#8,d0
+	jbsr	load_palette
+
+	move.l	tiles_244000,a0
+	add.w	#2+(64*2),a0	| skip nb planes (6) plus palette
+	
+	move.l	a0,tile_data_244000
+	
+	rts
+	
 load_tiles_file_24a000:
 	jbsr	allocate_and_load_public_mem_file
 	move.l	d0,tiles_24a000
@@ -2875,9 +2893,8 @@ load_tiles_file_24a000:
 set_game_intro_context:
 	jbsr	remove_dudes
 
-	lea		tiles_title_244000_file(pc),a0
-	jbsr	allocate_and_load_public_mem_file
-	move.l	d0,tiles_244000
+	jbsr	load_tiles_file_244000
+
 	
 	lea		tiles_game_intro_24a000_file(pc),a0
 	jbsr	load_tiles_file_24a000
@@ -2890,9 +2907,7 @@ set_game_intro_context:
 set_high_score_context:
 	jbsr	remove_dudes
 
-	lea		tiles_title_244000_file(pc),a0
-	jbsr	allocate_and_load_public_mem_file
-	move.l	d0,tiles_244000
+	jbsr	load_tiles_file_244000
 	
 	lea		tiles_highs_24a000_file(pc),a0
 	jbsr	load_tiles_file_24a000
@@ -2903,9 +2918,7 @@ set_high_score_context:
 
 set_game_context:
 	* level 1 only atm
-	lea		tiles_title_244000_file(pc),a0
-	jbsr	allocate_and_load_public_mem_file
-	move.l	d0,tiles_244000
+	jbsr	load_tiles_file_244000
 	
 	lea		tiles_level_1_24a000_file(pc),a0
 	jbsr	load_tiles_file_24a000
@@ -2915,55 +2928,15 @@ set_game_context:
 
 	rts
 
-	
-remove_dudes:
-	* clear dudes pics (basically lower part of screen)
-	
-* < A5: custom
-* < D0,D1: x,y
-* < A1: plane pointer
-* < D2: width in bytes (inc. 2 extra for shifting)
-* < D4: blit height
-* trashes D0-D6
-* > A1: even address where blit was done
-	lea	_custom,a5
-	moveq	#0,d0
-	move.w  #120,d1
-	move.w	#256,d4
-	sub.w	d1,d4
-	move.w	#NB_BYTES_PER_ROW,d2
-	move.w	#NB_PLAYFIELD_PLANES,d3		| all planes
-	move.l	fg_displayed_screen_ptr(pc),a1
-	jbsr	clear_fg_planes_any_blitter_internal
-	
-	moveq	#0,d0
-	move.w  #120,d1
-	move.w	#256,d4
-	sub.w	d1,d4
-	move.w	#NB_BYTES_PER_ROW,d2
-	move.w	#NB_PLAYFIELD_PLANES,d3
-	move.l	fg_drawed_screen_ptr(pc),a1
-	jbsr	clear_fg_planes_any_blitter_internal
-	
 
-	
-	WAIT_BLIT
-	rts
 	
 set_intro_context:
 
 	jbsr	free_all_memory
 	* load data files for intro
 
-	lea		tiles_title_244000_file(pc),a0
-	jbsr	allocate_and_load_public_mem_file
-	move.l	d0,tiles_244000
+	jbsr	load_tiles_file_244000
 	
-	lea		letters_palette,a1
-	move.w	#8,d0
-	move.l	tiles_244000,a0		| palette
-	addq	#2,a0
-	jbsr	load_palette
 	
 	* TODO: store current memory pointer to avoid resetting all & reload
 	
@@ -3022,6 +2995,39 @@ load_intro_palette:
 	rts
 	
 	
+remove_dudes:
+	* clear dudes pics (basically lower part of screen)
+	
+* < A5: custom
+* < D0,D1: x,y
+* < A1: plane pointer
+* < D2: width in bytes (inc. 2 extra for shifting)
+* < D4: blit height
+* trashes D0-D6
+* > A1: even address where blit was done
+	lea	_custom,a5
+	moveq	#0,d0
+	move.w  #120,d1
+	move.w	#256,d4
+	sub.w	d1,d4
+	move.w	#NB_BYTES_PER_ROW,d2
+	move.w	#NB_PLAYFIELD_PLANES,d3		| all planes
+	move.l	fg_displayed_screen_ptr(pc),a1
+	jbsr	clear_fg_planes_any_blitter_internal
+	
+	moveq	#0,d0
+	move.w  #120,d1
+	move.w	#256,d4
+	sub.w	d1,d4
+	move.w	#NB_BYTES_PER_ROW,d2
+	move.w	#NB_PLAYFIELD_PLANES,d3
+	move.l	fg_drawed_screen_ptr(pc),a1
+	jbsr	clear_fg_planes_any_blitter_internal
+	
+
+	
+	WAIT_BLIT
+	rts	
 * < D0: numbers of vertical positions to wait
 beamdelay:
 0:
@@ -3295,6 +3301,8 @@ dude_pics:
 	.long	0
 
 tile_data_24a000:
+	.long	0
+tile_data_244000:
 	.long	0
 nb_tile_planes_24a000:
 	.word	0

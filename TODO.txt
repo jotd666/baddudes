@@ -14,6 +14,8 @@ vgmrip: https://vgmrips.net/packs/pack/bad-dudes-vs-dragonninja-data-east
   * patch display_multi_tile_object_028c6 to include special cases where
     object is fully displayed (no multi-tile shit), ex ninjas, create extended sprite codes
 	for those cases, cars: whole block
+
+- tile/sprite set: if not used, put 0 and don't dump empty clut list with only zeroes!
 	
 - write letters: should "cookie cut": generate tiles mask too, fix palette
 - rip a few sounds  
