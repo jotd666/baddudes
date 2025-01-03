@@ -108,7 +108,7 @@ SPRITE_STRUCT_SIZE = 1<<(SPRITE_POWER_OF_2+3)
 SCREEN_PLANE_SIZE = NB_BYTES_PER_ROW*NB_PLAYFIELD_LINES*2
 SCREEN_SIZE =  SCREEN_PLANE_SIZE*NB_PLAYFIELD_PLANES
 RESTORE_SCREEN_PLANE_SIZE = SCREEN_PLANE_SIZE
-RESTORE_SCREEN_SIZE = RESTORE_SCREEN_PLANE_SIZE*5   | max 5 planes, can be 4 too
+RESTORE_SCREEN_SIZE = RESTORE_SCREEN_PLANE_SIZE*6   | max 5 planes, can be 4 too ATM 6 for convenience (8x8 fonts)
 
 
 NB_HOST_SPRITES = 8
@@ -995,7 +995,7 @@ addr_244xxx_tile_layer_op:
 2:
 	rts
 0:
-	movem.l	a0-a4/d2-d6,-(a7)
+	movem.l	a0-a5/d2-d6,-(a7)
 10:
 	move.w	d2,-(a7)
 	lea		video_ram_244000,a0
@@ -1037,13 +1037,15 @@ addr_244xxx_tile_layer_op:
 	jcc		100f
 	
 	move.l	fg_drawed_screen_ptr(pc),a1
+	lea		background_restore_buffer,a5
 	lea		mulNB_BYTES_PER_ROW_table(pc),a2
-	add.w	(a2,d2.w*2),a1
+	add.w	(a2,d2.w*2),d3
 	add.w	d3,a1			| screen dest address on bg playfield
-	move.w	d7,d5			| save code
+	add.w	d3,a5
 	move.w	d7,d6			| tile code
 	and.w	#0x7FF,d6
 	jeq		erase_tile_8
+	move.w	d7,d5			| save code
 	rol.w	#4,d5
 	and.w	#0xF,d5			| tile clut
 
@@ -1078,15 +1080,15 @@ addr_244xxx_tile_layer_op:
 	.set	offset,0
 	.rept	8
 	move.b	(moffset,a4),d3
-	move.b	(offset,a1),d4
-	and.b	d3,d4
-	or.b	(a2)+,d4
-	move.b	d4,(offset,a1)
+	and.b	(offset,a5),d3		| read pristine backbuffer/remove bits (cookie cut) 
+	or.b	(a2)+,d3			| insert tile bits
+	move.b	d3,(offset,a1)		| put in destination
 	.set	offset,offset+NB_BYTES_PER_ROW
 	.set	moffset,moffset+1
 	.endr	
 1:
 	lea		(SCREEN_PLANE_SIZE,a1),a1
+	lea		(RESTORE_SCREEN_PLANE_SIZE,a5),a5
 	dbf		d6,0b
 100:	
 	move.w	(a7)+,d2
@@ -1095,12 +1097,12 @@ addr_244xxx_tile_layer_op:
 	swap	d7
 	dbf		d0,10b		| next word (if longword write)
 101:
-	movem.l	(a7)+,a0-a4/d2-d6
+	movem.l	(a7)+,a0-a5/d2-d6
 	rts
 2:
 	.set	offset,0
 	.rept	8
-	clr.b	(offset,a1)
+	move.b	(offset,a5),(offset,a1)
 	.set	offset,offset+NB_BYTES_PER_ROW
 	.endr
 	jra		1b
@@ -1110,10 +1112,11 @@ erase_tile_8:
 0:
 	.set	offset,0
 	.rept	8
-	clr.b	(offset,a1)
+	move.b	(offset,a5),(offset,a1)
 	.set	offset,offset+NB_BYTES_PER_ROW
 	.endr
 	lea		(SCREEN_PLANE_SIZE,a1),a1
+	lea		(RESTORE_SCREEN_PLANE_SIZE,a5),a5
 	dbf		d6,0b
 	jra		100b
 	rts
