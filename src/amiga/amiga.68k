@@ -20,7 +20,7 @@ AFB_68020 = 1
 	BREAKPOINT	"work breakpoint"
 	.endm
 
-TOTAL_PUBLIC_MEMORY_SIZE = 500000
+TOTAL_PUBLIC_MEMORY_SIZE = 350000
 TOTAL_CHIP_MEMORY_SIZE = 150000
 
 PREVIOUS_SPRITE_SIZE = 8
@@ -80,7 +80,7 @@ OPT_ENABLE_MULTIPLEXED_SPRITES = 0
 
 NB_PLAYFIELD_PLANES = 6
 *TOTAL_NB_COLORS = 1<<NB_PLAYFIELD_PLANES
-NB_BYTES_PER_ROW = 40
+NB_BYTES_PER_ROW = 64
 
 * fmode=0b11xx => 3, 0b01xx => 2
 SPRITE_FMODE = 1
@@ -2204,7 +2204,7 @@ platform_init:
     move.w #(SPRITE_FMODE<<2)+0x1,fmode(a5)
 
 	move.w	#0,bplcon1(a5)
-	moveq	#-4,d0
+	moveq	#-4+NB_BYTES_PER_ROW-40,d0
     move.w d0,bpl1mod(a5)
     move.w d0,bpl2mod(a5)
 

@@ -417,33 +417,42 @@ def process_tile_context(context_name,tile_sheet_dict,nb_colors,is_bob=False):
 tile_palette = set()
 tile_244000_set_list = []
 
+# hack replace a close color by another, so we get 8 colors / possibly 3 planes
+to_replace = (0, 0, 104)
+replace_by = (0, 0, 123)
+
 for i in range(16):
     tsd = tile_0_sheet_dict.get(i)
     if tsd:
         tp,tile_set = load_tileset(tsd,i,8,"tiles/244000",dump_dir,dump=dump_it,name_dict=None,cluts=used_tile_cluts["title_244000"])
+        for tile in tile_set:
+            if tile:
+                bitplanelib.replace_color(tile,{to_replace},replace_by)
 
         tile_244000_set_list.append(tile_set)
         tile_palette.update(tp)
     else:
         tile_244000_set_list.append(None)
 
+tile_palette.discard(to_replace)
 fg_palette = sorted(tile_palette)
 
 lfp = len(fg_palette)
-if lfp>16:
-    raise Exception(f"Foreground: Too many colors {lfp} max 16")
+
+if lfp>8:
+    raise Exception(f"Foreground: Too many colors {lfp} max 8")
 
 
 fg_palette.remove(transparent)
 fg_palette.insert(0,transparent)
 
-if lfp<16:
-    fg_palette += [(0x10,0x20,0x30)]*(16-lfp)
+if lfp<8:
+    fg_palette += [(0x10,0x20,0x30)]*(8-lfp)
 
 
 # tiles
 
-if False:
+if True:
     tile_244000_cache = {}
     tile_244000_table = read_tileset(tile_244000_set_list,fg_palette,[True,False,False,False],cache=tile_244000_cache, is_bob=False)
 

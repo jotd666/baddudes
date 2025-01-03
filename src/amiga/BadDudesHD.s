@@ -8,11 +8,7 @@
 _base	SLAVE_HEADER					; ws_security + ws_id
 	dc.w	17					; ws_version (was 10)
 	dc.w	WHDLF_NoError|WHDLF_ReqAGA|WHDLF_Req68020
-    IFD CHIP_ONLY
 	dc.l	$200000					; ws_basememsize
-	ELSE
-	dc.l	$100000
-	ENDC
 	dc.l	0					; ws_execinstall
 	dc.w	start-_base		; ws_gameloader
 	dc.w	_data-_base					; ws_currentdir
@@ -107,7 +103,7 @@ _Relocate	movem.l	d0-d1/a0-a2,-(sp)
 ;        pea     -1                      ;true
 ;        pea     WHDLTAG_LOADSEG
 		IFND		CHIP_ONLY
-        move.l  #$400,-(a7)       ;chip area
+        move.l  #$60000,-(a7)       ;chip area
         pea     WHDLTAG_CHIPPTR        
         pea     8                       ;8 byte alignment
         pea     WHDLTAG_ALIGN

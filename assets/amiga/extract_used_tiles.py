@@ -31,11 +31,17 @@ for n in os.listdir(tiles_dir):
 
     tile_index = 0
     for offset in range(0,len(contents),16):
-        if tile_index and (n != "title_244000" or tile_index not in dropped_tile_index):
+        is_244000 = n == "title_244000"
+        if tile_index and (not is_244000 or tile_index not in dropped_tile_index):
             block = contents[offset:offset+16]
             for i,c in enumerate(block):
                 if c:
-                    used_tiles[tile_index].append(i)
+                    if i==3 and is_244000:
+                        # drop the yellow tiles in title, only useful to make title
+                        # flash but renders ugly and eats a lot of colors for nothing
+                        pass
+                    else:
+                        used_tiles[tile_index].append(i)
         tile_index += 1
 
     used_dict[n] = used_tiles
