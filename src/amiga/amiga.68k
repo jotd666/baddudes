@@ -1079,13 +1079,13 @@ addr_244xxx_tile_layer_op:
 	.set	moffset,0
 	.set	offset,0
 	.rept	8
-	move.b	(moffset,a4),d3
+	move.b	(a4)+,d3			| get mask line
 	and.b	(offset,a5),d3		| read pristine backbuffer/remove bits (cookie cut) 
 	or.b	(a2)+,d3			| insert tile bits
 	move.b	d3,(offset,a1)		| put in destination
 	.set	offset,offset+NB_BYTES_PER_ROW
-	.set	moffset,moffset+1
-	.endr	
+	.endr
+	subq	#8,a4
 1:
 	lea		(SCREEN_PLANE_SIZE,a1),a1
 	lea		(RESTORE_SCREEN_PLANE_SIZE,a5),a5
@@ -1100,11 +1100,15 @@ addr_244xxx_tile_layer_op:
 	movem.l	(a7)+,a0-a5/d2-d6
 	rts
 2:
+	* just cut this plane using mask (no data to OR with)
 	.set	offset,0
 	.rept	8
-	move.b	(offset,a5),(offset,a1)
+	move.b	(a4)+,d3			| get mask line
+	and.b	(offset,a5),d3		| read pristine backbuffer/remove bits (cookie cut) 
+	move.b	d3,(offset,a1)		| put in destination
 	.set	offset,offset+NB_BYTES_PER_ROW
 	.endr
+	subq	#8,a4
 	jra		1b
 	
 erase_tile_8:
@@ -1441,8 +1445,8 @@ osd_wait:
 really_update_sprites:
 	GET_RAM_START_IN_A6
 	lea	(0x2000,a6),a0		| sprites
-	TMPBREAK
-	bsr		update_bobs
+	*TMPBREAK
+	*bsr		update_bobs
 
 	rts
 	

@@ -26,6 +26,9 @@ to_be_manually_patched = {}
 def add_i(offset,comment=""):
     patchlist[offset] = {"type":"I","comment":comment}
 
+def add_l(offset,value,comment=""):
+    patchlist[offset] = {"type":"L","value":str(value),"comment":comment}
+
 def add_r(offset,comment=""):
     patchlist[offset] = {"type":"R","comment":comment}
 
@@ -78,6 +81,15 @@ for line in af.lines:
                     offset = 0
                 else:
                     offset = 2 if i==0 else inst_info["size"]-4
+
+                # fix problematic movem.w
+                if inst_info["instruction"].lower() == "movem.w":
+                    address = inst_info["address"]
+                    if args[0]=="(A7)+" and args[1]=="D0-D7/A0-A7":
+                        add_l(address,"0x4CDF7FFF","fix movem.w")   # change movem.w (A7)+,D0-D7/A0-A7 by movem.l (A7)+,D0-D7/A0-A6
+                    elif args[0]=="D0-D7/A0-A7" and args[1] == "-(A7)":
+                        add_l(address,"0x48E7FFFE","fix movem.w")   # change movem.w D0-D7/A0-A7,-(A7) by movem.l D0-D7/A0-A6,-(A7)
+
                 prefix,*rest = arg.split("_")
                 if rest:
                     try:
@@ -203,6 +215,8 @@ add_p("play_sound_0def0")
 add_pss("copy_tiles_099f0",fill=4)
 add_ps("videoram_write_08848")
 add_ps("set_game_intro_context_084c4")
+
+
 add_nop(0x0e32e,2)  # nonsensical / protection (?) code
 for offset in [0x0174c,0x0175c,0x07e66]:
     add_pss(offset,"test_input_bit_d1",2)
