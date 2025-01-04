@@ -2,20 +2,20 @@
 vgmrip: https://vgmrips.net/packs/pack/bad-dudes-vs-dragonninja-data-east
 
 
-
-- implement sprites, test it first on game intro screen (glasses...)
+- mockup game sprites from a sprite memory capture at game start (display dude!)
+- implement sprites
   * fully implement sprite system
-  * hack palette carefully so ninjas (red/blue/grey) only use 5*3 colors together
-  * hack palette carefully so bad dudes trouser colors are located on powers of 2 to save
-    memory duplication (2 player mode)
   * possible context change on some given X/Y (rounded) scroll values to load/unload sprites (boss fights)
     or just patch the game at 00eca (initialize boss)
   * patch display_multi_tile_object_028c6 to include special cases where
     object is fully displayed (no multi-tile shit), ex ninjas, create extended sprite codes
 	for those cases, cars: whole block
   * to save memory, log used tiles per level (ex: no climbing ninjas in non-truck/train levels, no cars,
-    on the other hand, no gray sabre men on truck, or dogs)
-	
+    on the other hand, no gray sabre men on truck, or dogs), flipping/flaming ninjas only
+	on levels 4 (and 6?)
+
+- still undetected real black on enemies (Karnov...) OK on Bad dude.
+  
 - tile/sprite set: if not used, put 0 and don't dump empty clut list with only zeroes!
 	
 - rip a few sounds  
@@ -23,7 +23,7 @@ vgmrip: https://vgmrips.net/packs/pack/bad-dudes-vs-dragonninja-data-east
 - rip 24D000 & 24A000 tiles
 - scrolling!!! 
 
-- if possible, hack lamps/trees (from 244000 layer) with hardware sprites
+- if possible, hack lamps/trees/fire hydrants (from 244000 layer) with hardware sprites
 
 - write letters: should "cookie cut": generate tiles mask too, fix "bad dudes" 
   almost OK, still small glitches
@@ -33,8 +33,6 @@ vgmrip: https://vgmrips.net/packs/pack/bad-dudes-vs-dragonninja-data-east
   (and share palette with 24D000 layer too!)
 
 - osd_write_byte not working properly
-- tileset 04: fake black but also some tiles with actual black, identify them in the converter
-  to generate a modified tile_04
 - maybe blit 16x16 tiles at some point instead of using CPU
 
 

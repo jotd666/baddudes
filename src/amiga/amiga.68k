@@ -729,9 +729,7 @@ _vblank:
 	move.w	(a2)+,d2			| width
 	lsr.w	#3,d2				| divide by 8 to get len in bytes
 	move.w	(a2)+,d4			| height
-	movem.l	d0-d4,-(a7)
 	jbsr	blit_background
-	movem.l	(a7)+,d0-d4
 	lea	(SCREEN_PLANE_SIZE,a1),a1
 	* remaining planes need to be simply cleared
 	* when exiting from blit_background, A1 points
@@ -1527,6 +1525,12 @@ update_bobs:
 
 	* clear previous positions
 	move.w	#NB_TARGET_SPRITES-1,d7
+
+	* compute number of remaining empty planes (after background planes)
+	move.w	nb_tile_planes_24a000,d5
+	neg.w	d5
+	addq.w	#NB_PLAYFIELD_PLANES,d5
+	
 1:
 	move.w	(2,a4),d1
 	beq.b	11f		| y=0: inactive
@@ -1544,7 +1548,16 @@ update_bobs:
 	lea		background_restore_buffer,a0
 	jbsr	blit_background
 	* clear the rest of the planes (background can be 4 or 5 planes, we need to
-	* clear the rest)
+	* clear the rest 1 or 2 planes)
+	* a1 is returned by blit_background as the last cleared start address
+	* go to next plane and use 0,0 coords to avoid more computations
+	lea		(SCREEN_PLANE_SIZE,a1),a1
+	moveq	#0,d0
+	moveq	#0,d1
+	move.w	d5,d3
+	move.w	d5,-(a7)
+	jbsr	clear_fg_planes_any_blitter_internal
+	move.w	(a7)+,d5
 	bra.b	12f
 11:
 	addq	#8,a4
@@ -1590,7 +1603,6 @@ update_bobs:
 
 	move.w	(TARGET_SPRITE_Y,a0),d1  | sprite Y
 	beq.b	2f			| Y set to 0: not shown
-	move.w	#0xF00,0xDFF180
 	bclr	#15,d1		| remove bit 15 which is set
 	* correct X/Y: 240-x
 	neg.w	d1

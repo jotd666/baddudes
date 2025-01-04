@@ -58,11 +58,11 @@ def load_tileset(image_name,side,tileset_name,dumpdir,used_tiles=None,dump=False
     #sorted(set(palette)),
     return tileset_1
 
-name_template = "gfx dev {dev} set {st} tiles 16x16 colors 16 pal {pal:02x}.png"
+name_template = "pal_{pal:02x}.png"
 
 this_dir = os.path.dirname(os.path.abspath(__file__))
 
-tilesdir = os.path.join(this_dir,os.pardir,"mame","baddudes")
+tilesdir = os.path.join(this_dir,"sheets","sprites")
 
 dump_dir = os.path.join(this_dir,"dumps")
 if not os.path.exists(dump_dir):
@@ -158,7 +158,7 @@ sprite_info = {
  0x537f2: {'name':'on_fire'},
  0x53804: {'name':'unknown'},
  0x53816: {'name':'unknown'},
- 0x53828: {'name':'unknown'},
+ 0x53828: {'name':'wheel'},
  0x5383a: {'name':'unknown'},
  0x5384c: {'name':'unknown'},
  0x5385e: {'name':'player'},
@@ -253,9 +253,9 @@ sprite_info = {
  0x544f6: {'name':'praying_ninja'},
  0x54518: {'name':'unknown'},
  0x5452a: {'name':'unknown'},
- 0x5454c: {'name':'unknown'},
+ 0x5454c: {'name':'smoke'},
  0x5456e: {'name':'unknown'},
- 0x545b0: {'name':'unknown'},
+ 0x545b0: {'name':'smoke'},
  0x545f2: {'name':'nunchuck_ninja'},
  0x54614: {'name':'sabreman'},
  0x54626: {'name':'sabreman'},
@@ -276,8 +276,8 @@ sprite_info = {
  0x548d4: {'name':'sabreman'},
  0x548fe: {'name':'sabreman'},
  0x54930: {'name':'sabreman'},
- 0x54952: {'name':'unknown'},
- 0x54984: {'name':'unknown'},
+ 0x54952: {'name':'smoke'},
+ 0x54984: {'name':'smoke'},
  0x549b6: {'name':'female_ninja'},
  0x549c8: {'name':'female_ninja'},
  0x549da: {'name':'female_ninja'},
@@ -474,15 +474,15 @@ sprite_info = {
  0x570d0: {'name':'nunchuk'},
  0x570e2: {'name':'nunchuk'},
  0x570f4: {'name':'nunchuk'},
- 0x57106: {'name':'unknown'},
- 0x57118: {'name':'unknown'},
+ 0x57106: {'name':'nunchuk'},
+ 0x57118: {'name':'nunchuk'},
  0x5712a: {'name':'unknown'},
- 0x57134: {'name':'unknown'},
+ 0x57134: {'name':'knife'},
  0x5713e: {'name':'unknown'},
- 0x57148: {'name':'unknown'},
+ 0x57148: {'name':'knife'},
  0x57152: {'name':'unknown'},
  0x5715c: {'name':'unknown'},
- 0x57166: {'name':'unknown'},
+ 0x57166: {'name':'knife'},
  0x57170: {'name':'unknown'},
  0x5717a: {'name':'unknown'},
  0x57184: {'name':'unknown'},
@@ -501,19 +501,19 @@ sprite_info = {
  0x57206: {'name':'unknown'},
  0x57210: {'name':'unknown'},
  0x5721a: {'name':'unknown'},
- 0x57224: {'name':'unknown'},
+ 0x57224: {'name':'smoke'},
  0x57236: {'name':'unknown'},
  0x57258: {'name':'unknown'},
  0x5727a: {'name':'unknown'},
  0x5729c: {'name':'unknown'},
  0x572be: {'name':'unknown'},
  0x572c8: {'name':'unknown'},
- 0x572d2: {'name':'unknown'},
- 0x572dc: {'name':'unknown'},
+ 0x572d2: {'name':'time'},
+ 0x572dc: {'name':'time'},
  0x572e6: {'name':'nunchuk'},
  0x572f0: {'name':'nunchuk'},
- 0x572fa: {'name':'unknown'},
- 0x57304: {'name':'unknown'},
+ 0x572fa: {'name':'knife'},
+ 0x57304: {'name':'knife'},
  0x5730e: {'name':'unknown'},
  0x57318: {'name':'unknown'},
  0x57322: {'name':'unknown'},
@@ -523,12 +523,12 @@ sprite_info = {
  0x5734a: {'name':'unknown'},
  0x57354: {'name':'unknown'},
  0x5735e: {'name':'unknown'},
- 0x57368: {'name':'unknown'},
- 0x57372: {'name':'unknown'},
+ 0x57368: {'name':'star'},
+ 0x57372: {'name':'star'},
  0x5737c: {'name':'unknown'},
- 0x57386: {'name':'unknown'},
+ 0x57386: {'name':'star'},
  0x57390: {'name':'grappling'},
- 0x573a2: {'name':'unknown'},
+ 0x573a2: {'name':'grappling'},
  0x573bc: {'name':'unknown'},
  0x573ce: {'name':'unknown'},
  0x573d8: {'name':'unknown'},
@@ -548,10 +548,10 @@ sprite_info = {
  0x5752c: {'name':'unknown'},
  0x5754e: {'name':'unknown'},
  0x57580: {'name':'unknown'},
- 0x575c2: {'name':'unknown'},
- 0x575d4: {'name':'unknown'},
- 0x575e6: {'name':'unknown'},
- 0x575f8: {'name':'unknown'},
+ 0x575c2: {'name':'helicopter_blade_axis'},
+ 0x575d4: {'name':'helicopter_blade_axis'},
+ 0x575e6: {'name':'helicopter_blade_axis'},
+ 0x575f8: {'name':'helicopter_blade_axis'},
  0x5760a: {'name':'unknown'},
  0x57654: {'name':'unknown'},
  0x57676: {'name':'unknown'},
@@ -573,9 +573,9 @@ sprite_info = {
  0x579ba: {'name':'heli_door'},
  0x579d4: {'name':'ronnie'},
  0x579f6: {'name':'ronnie'},
- 0x57a18: {'name':'unknown'},
- 0x57a6a: {'name':'unknown'},
- 0x57acc: {'name':'unknown'},
+ 0x57a18: {'name':'bad_dude'},
+ 0x57a6a: {'name':'bad_dude'},  # exactly same as above
+ 0x57acc: {'name':'ronnie'},
  0x57b1e: {'name':'unknown'},
 }
 
@@ -672,7 +672,7 @@ def decode_sprite(offset):
 
         if (not (spriteram[offs] & 0x8000)):
                 offs += 4
-                FUCK
+                raise Exception("doesn't happen, good")
 
 
         for x in range(w):
