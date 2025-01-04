@@ -27,7 +27,7 @@ PREVIOUS_SPRITE_SIZE = 8
 BORDERBLANK = 1
 
 SPRITE_X_CORRECTION = 0
-SPRITE_Y_CORRECTION = -14
+SPRITE_Y_CORRECTION = 0
 HW_SPRITE_X_CORRECTION = 0
 HW_SPRITE_Y_CORRECTION = 0
 
@@ -111,7 +111,7 @@ RESTORE_SCREEN_SIZE = RESTORE_SCREEN_PLANE_SIZE*6   | max 5 planes, can be 4 too
 
 NB_HOST_SPRITES = 8
 
-NB_TARGET_SPRITES = 48
+NB_TARGET_SPRITES = 256
 
 SPRITE_X = 0
 SPRITE_Y = 1
@@ -1439,10 +1439,8 @@ osd_wait:
 
 
 really_update_sprites:
-	GET_RAM_START_IN_A6
-	lea	(0x2000,a6),a0		| sprites
-	*TMPBREAK
-	*bsr		update_bobs
+
+	bsr		update_bobs
 
 	rts
 	
@@ -1471,7 +1469,7 @@ update_bobs:
 	
 
 	* clear previous positions
-	moveq	#NB_TARGET_SPRITES-1,d7
+	move.w	#NB_TARGET_SPRITES-1,d7
 1:
 	move.w	(2,a4),d1
 	beq.b	11f		| y=0: inactive
@@ -1493,23 +1491,26 @@ update_bobs:
 12:
 	dbf		d7,1b
 	
+	GET_RAM_START_IN_A6
+	lea	(0x4000,a6),a0		| sprites
+	
     lea _custom,A5
 	move.l	bob_previous_drawed_sprites(pc),a6
-	**lea		bob_table,a4
+	move.l		sprite_table_base,a4
 	*add.w	#(NB_TARGET_SPRITES-1)*4,a0		| start by the end (drawing priority)
-	moveq	#NB_TARGET_SPRITES-1,d7
+	move.w	#NB_TARGET_SPRITES-1,d7
 1:
-	move.b	(TARGET_SPRITE_X,a0),d0  | sprite X
-	cmp.b	#230,d0
-	jcc		2f 						| don't draw sprites too far right
+	move.w	(TARGET_SPRITE_X,a0),d0  | sprite X
+*	cmp.b	#230,d0
+*	jcc		2f 						| don't draw sprites too far right
 	* code = 0 and clut = 0 => disabled ?? to check
 	moveq	#0,d2
-	move.b	(TARGET_SPRITE_CODE,a0),d2
+	move.w	(TARGET_SPRITE_CODE,a0),d2
 	jeq	2f
-	and.b	#0x3F,d2
-*int color = 2 * ((m_colorbank[1] >> 4) & 0x03) + ((m_spriteram[offs + 2] >> 2) & 0x01);
-*int flip_x = m_spriteram[offs + 2] & 0x01;
-*int flip_y = m_spriteram[ offs + 2] & 0x02;
+	move.w	d0,d3
+	rol.w	#4,d3
+	and.w	#0xF,d3		| color code
+	and.w	#0xFFF,d0	| sprite X
 
 * alt color:  #2,(TARGET_SPRITE_ATTRIBUTES,a0)
 * flipy:  #1,(TARGET_SPRITE_ATTRIBUTES,a0)
@@ -1527,15 +1528,15 @@ update_bobs:
 	bra.b	2f
 11:
 
-
-	moveq	#0,d0
 	moveq	#0,d1
 	move.w	(TARGET_SPRITE_Y,a0),d1  | sprite Y
 	beq.b	2f			| Y set to 0: not shown
+	move.w	#0xF00,0xDFF180
+	bclr	#15,d1		| remove bit 15 which is set
 	not.w	d1
 	add.w	#0x100,d1
 	
-	move.w	(TARGET_SPRITE_X,a0),d0  | sprite X
+	*move.w	(TARGET_SPRITE_X,a0),d0  | sprite X, already read & masked
 	.ifne	SPRITE_Y_CORRECTION
 	add.w	#SPRITE_Y_CORRECTION,d1
 	.endif
@@ -1552,10 +1553,11 @@ update_bobs:
 	
 	move.l	a0,-(a7)
 	move.l	d4,a0
+	move.l	(a0,d3.w*4),a0	| structure
 	move.w	(a0)+,d4		| height
 	move.w	(a0)+,d5		| width
 	add.w	(a0)+,d1		| add offset to Y
-	* A0 points on the first bitplane of the bob
+	* now A0 points on the first bitplane of the bob
 
 	move.l		fg_drawed_screen_ptr(pc),a1
 	* D0 and D1 are already set
@@ -2865,15 +2867,14 @@ load_tiles_file_244000:
 	move.l	d0,a0
 	add.w	#2+(56*2),a0	| skip nb planes (6) plus 56 dummy colors
 
-
-	lea		letters_palette,a1
-	move.w	#8,d0
-	jbsr	load_palette
+	move.l	a0,letters_colors
 
 	move.l	tiles_244000,a0
 	add.w	#2+(64*2),a0	| skip nb planes (6) plus palette
 	
 	move.l	a0,tile_data_244000
+	
+	jbsr	load_letters_colors
 	
 	rts
 	
@@ -2889,6 +2890,13 @@ load_tiles_file_24a000:
 	add.w	d1,d1
 	add.w	d1,a0
 	move.l	a0,tile_data_24a000	 			| save it for later
+	rts
+	
+load_letters_colors:
+	move.l	letters_colors,a0
+	lea		letters_palette,a1
+	move.w	#8,d0
+	jbsr	load_palette
 	rts
 	
 **********************
@@ -2911,9 +2919,9 @@ set_game_intro_context:
 	lea		sprites_game_intro_file(pc),a0
 	jbsr 	load_sprite_file
 	
-	move.l	sprite_table_base,a1
-	TMPBREAK
-	
+	* re-apply letter colors 56-63 (the sprites in that context only use 24 colors
+	* so we're good!)
+	jbsr	load_letters_colors
 	rts
 	
 load_sprite_file:
@@ -2946,12 +2954,13 @@ load_sprite_file:
 	move.l	d2,a1
 10:
 	move.l	(a1)+,d3
-	jeq		2f			| add to displacement: pointer becomes absolute
-	add.l	d2,d3
+	jeq		2f
+	add.l	d2,d3			| add to displacement: pointer becomes absolute
 	move.l	d3,(-4,a1)		| store
 	* now relocate each bitplane
 	move.w	#NB_PLAYFIELD_PLANES*2-1,d5  | standard + mirror (bobs)
 	move.l	d3,a2
+	addq	#6,a2		| skip h,w,y offset!
 20:
 	move.l	(a2)+,d4
 	jeq		3f
@@ -2965,6 +2974,9 @@ load_sprite_file:
 	dbf	d7,0b			| next sprite
 	rts
 	
+**********************
+* HIGH SCORE CONTEXT *
+**********************
 	
 set_high_score_context:
 	jbsr	remove_dudes
@@ -2977,6 +2989,10 @@ set_high_score_context:
 	jbsr	load_intro_palette
 	
 	rts
+
+****************
+* GAME CONTEXT *
+****************
 
 set_game_context:
 	jbsr	load_tiles_file_244000
@@ -3374,7 +3390,8 @@ nb_tile_planes_24a000:
 	.word	0
 nb_tile_colors_24a000:
 	.word	0
-	
+letters_colors:
+	.long	0
 sprite_table_base:
 	.long	0
 tile_data_24d000:
