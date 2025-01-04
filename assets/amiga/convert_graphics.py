@@ -360,14 +360,15 @@ def dump_tiles(file_radix,palette,tile_table,tile_plane_cache,add_dimension_info
         f.write("base:\n")
         for i,tile_entry in enumerate(tile_table):
             f.write("\tdc.l\t")
-            if tile_entry:
+
+            if any(tile_entry):
                 f.write(f"tile_{i:02x}-base")
             else:
                 f.write("0")
-            f.write("\n")
+            f.write(f"\t; ${i:04x}\n")
 
         for i,tile_entry in enumerate(tile_table):
-            if tile_entry:
+            if any(tile_entry):
                 tile_base = f"tile_{i:02x}"
                 f.write(f"{tile_base}:\n")
                 for j,t in enumerate(tile_entry):
@@ -471,7 +472,7 @@ if lfp<8:
 
 # tiles
 
-if False:
+if True:
     tile_244000_cache = {}
     fg_palette = [(0x10,0x20,0x30)]*56 + fg_palette
 
