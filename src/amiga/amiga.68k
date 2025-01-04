@@ -1528,13 +1528,15 @@ update_bobs:
 	bra.b	2f
 11:
 
-	moveq	#0,d1
 	move.w	(TARGET_SPRITE_Y,a0),d1  | sprite Y
 	beq.b	2f			| Y set to 0: not shown
 	move.w	#0xF00,0xDFF180
 	bclr	#15,d1		| remove bit 15 which is set
-	not.w	d1
-	add.w	#0x100,d1
+	* correct X/Y: 240-x
+	neg.w	d1
+	add.w	#240,d1
+	neg.w	d0
+	add.w	#240,d0
 	
 	*move.w	(TARGET_SPRITE_X,a0),d0  | sprite X, already read & masked
 	.ifne	SPRITE_Y_CORRECTION
@@ -1543,8 +1545,6 @@ update_bobs:
 	.ifne	SPRITE_X_CORRECTION
 	add.w	#SPRITE_X_CORRECTION,d0
 	.endif
-	not.w	d0
-	add.w	#0x100,d0
 
 *	move.b	(TARGET_SPRITE_ATTRIBUTES,a0),d3
 	* todo yflip
@@ -1563,7 +1563,7 @@ update_bobs:
 	* D0 and D1 are already set
 	move.l	(NB_PLAYFIELD_PLANES*4,a0),d2
 	beq.b	2f		| mask is zero: blank tile => skip
-	move.l	d2,a3
+	move.l	d2,a3	| mask bitplane
 	moveq	#0,d2	| no y-clip
 	* note down that this bob will have to be erased
 	move.w	d0,(a6)+			| store current sprite attributes to previous ones
@@ -1573,7 +1573,7 @@ update_bobs:
 	
 	move.w	d5,d2			| width in bytes, 4 for 16 pixels+shift
 	moveq	#0,d5			| Y-offset
-	moveq	#NB_PLAYFIELD_PLANES,d3		| 4 planes
+	moveq	#NB_PLAYFIELD_PLANES,d3
 	bsr		blit_planes_any_internal_cookie_cut
 	move.l	(a7)+,a0
 	bra.b	3f

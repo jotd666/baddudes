@@ -11,25 +11,30 @@ import PIL.Image,pathlib
 
 this_dir = pathlib.Path(__file__).absolute().parent
 
-tiles_dir = this_dir /"sheets"/"tiles_244000_black"
-tiles_out_dir = this_dir /"sheets"/"tiles_244000"
+def fix_tileset(name,black_reveal_palette_index):
 
-transparent_color = (255,0,255)
-black_color = (0,0,0)
+    tiles_dir = this_dir /"sheets"/f"{name}_black"
+    tiles_out_dir = this_dir /"sheets"/name
 
-shadow_pic = "pal_04.png"
+    transparent_color = (255,0,255)
+    black_color = (0,0,0)
 
-pic = PIL.Image.open(tiles_dir / shadow_pic)
+    shadow_pic = f"pal_{black_reveal_palette_index:02x}.png"
 
-outline_coords = {(x,y) for x in range(pic.size[0]) for y in range(pic.size[1]) if pic.getpixel((x,y)) == (159,90,56)}
+    pic = PIL.Image.open(tiles_dir / shadow_pic)
 
-for img in tiles_dir.iterdir():
-    pic = PIL.Image.open(img)
-    out_pic_name = tiles_out_dir / img.name
-    for x in range(pic.size[0]):
-        for y in range(pic.size[1]):
-            if pic.getpixel((x,y)) == black_color:
-                pic.putpixel((x,y),transparent_color)
-            if (x,y) in outline_coords:
-                pic.putpixel((x,y),black_color)
-    pic.save(out_pic_name)
+    outline_coords = {(x,y) for x in range(pic.size[0]) for y in range(pic.size[1]) if pic.getpixel((x,y)) == (159,90,56)}
+
+    for img in tiles_dir.iterdir():
+        pic = PIL.Image.open(img)
+        out_pic_name = tiles_out_dir / img.name
+        for x in range(pic.size[0]):
+            for y in range(pic.size[1]):
+                if pic.getpixel((x,y)) == black_color:
+                    pic.putpixel((x,y),transparent_color)
+                if (x,y) in outline_coords:
+                    pic.putpixel((x,y),black_color)
+        pic.save(out_pic_name)
+
+fix_tileset("tiles_244000",4)
+fix_tileset("sprites",0)

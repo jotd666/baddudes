@@ -309,6 +309,7 @@ def read_tileset(img_set_list,palette,cache,is_bob,generate_mask):
                             if generate_mask:
                                 actual_nb_planes += 1
                             plane_size = len(bitplane_data) // actual_nb_planes
+
                             bitplane_plane_ids = []
                             for j in range(actual_nb_planes):
                                 offset = j*plane_size
@@ -422,12 +423,12 @@ def process_tile_context(context_name,tile_sheet_dict,nb_colors,is_bob=False,nb_
 
     tile_24a000_set_list,bg_palette = load_contexted_tileset(tile_sheet_dict,context_name,nb_colors,is_bob)
     tile_24a000_cache = {}
-    tile_24a000_table = read_tileset(tile_24a000_set_list,bg_palette,cache=tile_24a000_cache, is_bob=is_bob, generate_mask=is_bob)
-    prefix = "sprites_" if is_bob else "tiles_"
-
     if nb_previous_colors:
         # got to fill with completely unrelated previous colors (tiles)
         bg_palette = ([(0x10,0x20,0x30)]*nb_previous_colors) + bg_palette
+    tile_24a000_table = read_tileset(tile_24a000_set_list,bg_palette,cache=tile_24a000_cache, is_bob=is_bob, generate_mask=is_bob)
+    prefix = "sprites_" if is_bob else "tiles_"
+
     dump_tiles(prefix+context_name,bg_palette,tile_24a000_table,tile_24a000_cache,add_dimension_info=is_bob)
 
 
@@ -470,7 +471,7 @@ if lfp<8:
 
 # tiles
 
-if True:
+if False:
     tile_244000_cache = {}
     fg_palette = [(0x10,0x20,0x30)]*56 + fg_palette
 
@@ -490,7 +491,7 @@ if True:
 # sprites
     process_tile_context("title_24a000",title_tile_24a000_sheet_dict,16)
 
-
+#use_transparent_color
 process_tile_context("game_intro",sprite_sheet_dict,32,is_bob=True,nb_previous_colors=32)
 
 
