@@ -8,13 +8,14 @@ vgmrip: https://vgmrips.net/packs/pack/bad-dudes-vs-dragonninja-data-east
   * hack palette carefully so ninjas (red/blue/grey) only use 5*3 colors together
   * hack palette carefully so bad dudes trouser colors are located on powers of 2 to save
     memory duplication (2 player mode)
-  * log used sprites for various levels
   * possible context change on some given X/Y (rounded) scroll values to load/unload sprites (boss fights)
     or just patch the game at 00eca (initialize boss)
   * patch display_multi_tile_object_028c6 to include special cases where
     object is fully displayed (no multi-tile shit), ex ninjas, create extended sprite codes
 	for those cases, cars: whole block
-
+  * to save memory, log used tiles per level (ex: no climbing ninjas in non-truck/train levels, no cars,
+    on the other hand, no gray sabre men on truck, or dogs)
+	
 - tile/sprite set: if not used, put 0 and don't dump empty clut list with only zeroes!
 	
 - rip a few sounds  
@@ -22,6 +23,7 @@ vgmrip: https://vgmrips.net/packs/pack/bad-dudes-vs-dragonninja-data-east
 - rip 24D000 & 24A000 tiles
 - scrolling!!! 
 
+- if possible, hack lamps/trees (from 244000 layer) with hardware sprites
 
 - write letters: should "cookie cut": generate tiles mask too, fix "bad dudes" 
   almost OK, still small glitches
