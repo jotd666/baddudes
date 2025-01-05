@@ -28,7 +28,7 @@ for n in os.listdir(tiles_dir):
     with open(tiles_file,"rb") as f:
         contents = f.read()
 
-    used_tiles = collections.defaultdict(list)
+    used_tiles = collections.defaultdict(lambda : collections.defaultdict(list))
 
     tile_index = 0
     for offset in range(0,len(contents),16):
@@ -42,7 +42,7 @@ for n in os.listdir(tiles_dir):
                         # flash but renders ugly and eats a lot of colors for nothing
                         pass
                     else:
-                        used_tiles[tile_index].append(i)
+                        used_tiles[tile_index]["cluts"].append(i)
         tile_index += 1
 
     used_dict[n] = used_tiles
@@ -50,9 +50,9 @@ for n in os.listdir(tiles_dir):
 # force use of clut 0 for all letters & numbers in tileset 244000
 n = "title_244000"
 for i in range(ord("A"),ord("Z")+1):
-    used_dict[n][i].append(0)
+    used_dict[n][i]["cluts"].append(0)
 for i in range(ord("0"),ord("9")+1):
-    used_dict[n][i].append(0)
+    used_dict[n][i]["cluts"].append(0)
 
 
 with open(used_cluts_file,"w") as f:

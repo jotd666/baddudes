@@ -1,5 +1,5 @@
 from PIL import Image,ImageOps
-import os,struct,glob,bitplanelib
+import os,struct,glob,bitplanelib,json
 
 #dev 1 set 0: sprites:
 #pal 0: player 1, white ninja
@@ -78,6 +78,8 @@ for subdir in ["unknown","known"]:
 dev = 1
 st = 0
 blue_ninja_pal = 2
+
+# this script reads the binary ROM and decodes the assembled pics made of sprites into images
 
 with open(r"K:\jff\AmigaHD\PROJETS\GameRelocs\BadDudes\bad_dudes_ref","rb") as f:
     prog = f.read()
@@ -633,7 +635,7 @@ def decode_sprite(offset):
     blocks = result[2:]
 
 
-
+    sprite_codes = {}
     sprite_objects = []
     spritelist = []
 
@@ -657,8 +659,7 @@ def decode_sprite(offset):
         h = (1 << ((data0 & 0x1800) >> 11))
         w = (1 << ((data0 & 0x0600) >>  9))
 
-        if h!=1 or w!=1:
-            print(h,w)
+
         sx = data2 & 0x01ff;
         sy = data0 & 0x01ff;
         if (sx >= 256):
@@ -751,6 +752,7 @@ def decode_sprite(offset):
     for so in sprite_objects:
         for i in range(so.height):
             img = tile_set[so.code[i]]
+            sprite_codes[so.code[i]] = sprite_name
             x = so.x[i]
             y = so.y[i]
             if y > 128:
@@ -771,8 +773,12 @@ def decode_sprite(offset):
     _,sprite_image = bitplanelib.autocrop_x(bitplanelib.autocrop_y(sprite_image)[1])
     sprite_image.save(os.path.join(dump_dir,subdir,f"{sprite_name}_{offset:x}.png"))
 
+    return sprite_codes
 
+sprite_name_code = {}
 for offset in assembled_sprites:
-    decode_sprite(offset)
+    sprite_name_code.update(decode_sprite(offset))
 
+with open(os.path.join(this_dir,"sprite_code_names.json"),"w") as f:
+    json.dump(sprite_name_code,f,indent=2)
 #decode_sprite(0x52f8a)

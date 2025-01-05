@@ -4,9 +4,17 @@ import os,sys,bitplanelib,subprocess,json,pathlib
 from shared import *
 
 sprite_names = dict()
+palette_dict = dict()
+
+def reformat_subdict(d):
+    rval = {"cluts":set(d["cluts"])}
+    attribs = d.get("attributes")
+    if attribs:
+        rval["attributes"] = attribs
+    return rval
 
 def reformat_dict(d):
-    return {k:{int(k2):set(v2) for k2,v2 in v.items()} for k,v in d.items()}
+    return {k:{int(k2):reformat_subdict(v2) for k2,v2 in v.items()} for k,v in d.items()}
 
 with open(os.path.join(this_dir,"used_tile_cluts.json")) as f:
     # set proper types
@@ -42,7 +50,10 @@ def dump_asm_bytes(*args,**kwargs):
     bitplanelib.dump_asm_bytes(*args,**kwargs)
 
 
-def load_tileset(image_name,palette_index,side,tileset_name,dumpdir,dump=False,name_dict=None,cluts=None):
+# in that implementation, we have to provide a cluts dict as without it it would dump the whole set
+# of tiles/sprites and it's pretty huge in games like BadDudes or other "big" games.
+def load_tileset(image_name,palette_index,side,tileset_name,dumpdir,cluts,dump=False,name_dict=None):
+
 
     if isinstance(image_name,(str,pathlib.Path)):
         full_image_path = os.path.join(this_dir,os.path.pardir,"sheets",image_name)
@@ -61,19 +72,25 @@ def load_tileset(image_name,palette_index,side,tileset_name,dumpdir,dump=False,n
             ensure_empty(dump_subdir)
 
     tile_number = 0
-    empty_list = []
+    empty_list = {"cluts":[]}
     palette = set()
 
     for j in range(nb_rows):
         for i in range(nb_cols):
-
-            if cluts and palette_index not in cluts.get(tile_number,empty_list):
+            cd = cluts.get(tile_number,empty_list)
+            if palette_index not in cd["cluts"]:
                 # no clut declared for that tile
                 tileset_1.append(None)
 
             else:
-                img = Image.new("RGB",(side,side))
-                img.paste(tiles_1,(-i*side,-j*side))
+                width = side
+                height = side
+
+                attributes = cd.get("attributes")
+                if attributes:
+                    print("attribs!!! ",i,cd)
+                img = Image.new("RGB",(width,height))
+                img.paste(tiles_1,(-i*width,-j*height))
 
                 # only consider colors of used tiles
                 palette.update(set(bitplanelib.palette_extract(img)))
@@ -207,7 +224,7 @@ level_1_tile_24a000_sheet_dict = {i:sheets_path / "tiles_24a000" / "level_1" / f
 tile_0_sheet_dict = {i:sheets_path / "tiles_244000" / f"pal_{i:02x}.png" for i in range(15)}
 sprite_sheet_dict = {i:sheets_path / "sprites" / f"pal_{i:02x}.png" for i in range(16)}
 
-def load_contexted_tileset(tile_sheet_dict,context,nb_colors,is_bob):
+def load_contexted_tileset(tile_sheet_dict,context,nb_colors,is_bob,reuse_colors=set()):
     tile_palette = set()
     tile_24a000_set_list = []
 
@@ -217,7 +234,7 @@ def load_contexted_tileset(tile_sheet_dict,context,nb_colors,is_bob):
     for i in range(16):
         tsd = tile_sheet_dict.get(i)
         if tsd:
-            tp,tile_set = load_tileset(tsd,i,16,context_dir,dump_dir,dump=dump_it,name_dict=None,cluts=used_cluts_dict[context])
+            tp,tile_set = load_tileset(tsd,i,16,context_dir,dump_dir,dump=dump_it,cluts=used_cluts_dict[context])
             tile_24a000_set_list.append(tile_set)
             tile_palette.update(tp)
         else:
@@ -225,13 +242,16 @@ def load_contexted_tileset(tile_sheet_dict,context,nb_colors,is_bob):
 
     if (0,0,0) not in tile_palette:
         tile_palette.add((0,0,0))
-    bg_palette = sorted(tile_palette)
+
+    # subtract the colors contained in "reuse_colors"
+    bg_palette = sorted(tile_palette - reuse_colors)
 
     lfp = len(bg_palette)
     if lfp==1:
         raise Exception(f"{context}: no colors found, empty tiles?")
     if lfp>nb_colors:
         print(f"{context}: Too many colors {lfp} max {nb_colors}, quantizing")
+
         quantized = quantize_palette(bg_palette,context,nb_colors)
 
 
@@ -239,8 +259,8 @@ def load_contexted_tileset(tile_sheet_dict,context,nb_colors,is_bob):
             apply_quantize(tile_set,quantized)
 
 
-        # put transparent color first
-        bg_palette = sorted(set(quantized.values()))
+        # put transparent color first, re-inject reused colors
+        bg_palette = sorted(set(quantized.values()) | reuse_colors)
 
 ##        if dump_it:
 ##            dump_subdir = dump_dir / "tiles/244000/quantized"
@@ -418,21 +438,24 @@ def dump_tiles(file_radix,palette,tile_table,tile_plane_cache,add_dimension_info
     tiles_1_bin = os.path.join(data_dir,os.path.basename(os.path.splitext(tiles_1_src)[0])+".bin")
     asm2bin(tiles_1_src,tiles_1_bin)
 
-def process_tile_context(context_name,tile_sheet_dict,nb_colors,is_bob=False,nb_previous_colors=0):
+def process_tile_context(context_name,tile_sheet_dict,nb_colors,is_bob=False,use_palette_colors=None):
 
+    # use previous colors (tiles) to maximize the chance of not quantizing colors
+    reuse_colors = palette_dict[use_palette_colors] if use_palette_colors else []
 
-
-    tile_24a000_set_list,bg_palette = load_contexted_tileset(tile_sheet_dict,context_name,nb_colors,is_bob)
+    tile_24a000_set_list,bg_palette = load_contexted_tileset(tile_sheet_dict,context_name,nb_colors,is_bob) #,reuse_colors=set(reuse_colors))
     tile_24a000_cache = {}
-    if nb_previous_colors:
-        # got to fill with completely unrelated previous colors (tiles)
-        bg_palette = ([(0x10,0x20,0x30)]*nb_previous_colors) + bg_palette
+
+    if reuse_colors:
+        # temp: just fill with as many dummy colors as in reuse_colors
+        bg_palette = [(0x10,0x20,0x30)]*len(reuse_colors) + bg_palette
+
     tile_24a000_table = read_tileset(tile_24a000_set_list,bg_palette,cache=tile_24a000_cache, is_bob=is_bob, generate_mask=is_bob)
     prefix = "sprites_" if is_bob else "tiles_"
 
     dump_tiles(prefix+context_name,bg_palette,tile_24a000_table,tile_24a000_cache,add_dimension_info=is_bob)
 
-
+    palette_dict[context_name] = bg_palette
 
 tile_palette = set()
 tile_244000_set_list = []
@@ -444,7 +467,7 @@ replace_by = (0, 0, 123)
 for i in range(16):
     tsd = tile_0_sheet_dict.get(i)
     if tsd:
-        tp,tile_set = load_tileset(tsd,i,8,"tiles/244000",dump_dir,dump=dump_it,name_dict=None,cluts=used_tile_cluts["title_244000"])
+        tp,tile_set = load_tileset(tsd,i,8,"tiles/244000",dump_dir,dump=dump_it,cluts=used_tile_cluts["title_244000"])
         for tile in tile_set:
             if tile:
                 bitplanelib.replace_color(tile,{to_replace},replace_by)
@@ -472,7 +495,7 @@ if lfp<8:
 
 # tiles
 
-if True:
+if False:
     tile_244000_cache = {}
     fg_palette = [(0x10,0x20,0x30)]*56 + fg_palette
 
@@ -491,9 +514,12 @@ if True:
 
 # sprites
     process_tile_context("title_24a000",title_tile_24a000_sheet_dict,16)
+else:
+    process_tile_context("game_intro_24a000",game_intro_tile_24a000_sheet_dict,32)
+    process_tile_context("level_1_24a000",level_1_tile_24a000_sheet_dict,32)
 
-#use_transparent_color
-process_tile_context("game_intro",sprite_sheet_dict,32,is_bob=True,nb_previous_colors=32)
+# game intro. Not gaining any colors by passing the associated screen tile colors...
+process_tile_context("game_intro",sprite_sheet_dict,32,is_bob=True,use_palette_colors="game_intro_24a000")
 
-
+#process_tile_context("sprites_level_1",sprite_sheet_dict,32,is_bob=True,nb_previous_colors=32)
 
