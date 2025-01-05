@@ -1,0 +1,2874 @@
+	.macro	STORE_REGS
+	move.w	d7,-(a7)
+	move.l	a6,-(a7)
+	.endm
+	.macro	RESTORE_REGS
+	move.l	(a7)+,a6
+	move.w	(a7)+,d7
+	.endm
+
+ram_relocs:
+	.long	0x000000+0	| ext_00ffc000
+	.long	0x000292+4	| ram_ff8000
+	.long	0x00029a+4	| ext_00ff8002
+	.long	0x0002aa+2	| ram_ff8000
+	.long	0x0002b0+2	| ext_00ff8006
+	.long	0x0002c2+2	| ext_00ff8006
+	.long	0x0002d8+2	| ext_00ff800a
+	.long	0x00032c+2	| ext_00ffa846
+	.long	0x000332+2	| stage_control_flags_00ff8216
+	.long	0x000338+2	| sync_flags_00ff8217
+	.long	0x00033e+4	| is_actual_game_played_00ff8215
+	.long	0x000346+4	| is_actual_game_played_00ff8215
+	.long	0x00034e+2	| ext_00ff81cc
+	.long	0x000354+2	| ext_00ff81d0
+	.long	0x00035a+2	| ext_00ffa364
+	.long	0x000366+2	| ext_00ffa224
+	.long	0x000388+4	| sync_flags_00ff8217
+	.long	0x0003c0+2	| ext_00ff8202
+	.long	0x0003c6+2	| ext_00ff8210
+	.long	0x0003dc+4	| sync_flags_00ff8217
+	.long	0x0003f0+4	| sync_flags_00ff8217
+	.long	0x0003fa+2	| ext_00ff8212
+	.long	0x00041c+2	| ext_00ff821f
+	.long	0x000426+2	| ext_00ff821f
+	.long	0x00042c+2	| ext_00ff8220
+	.long	0x00045a+2	| credit_inserted_flag_00ffa8c0
+	.long	0x000460+2	| nb_credits_00ffa8c1
+	.long	0x000472+2	| credit_inserted_flag_00ffa8c0
+	.long	0x000478+2	| nb_credits_00ffa8c1
+	.long	0x000488+2	| credit_inserted_flag_00ffa8c0
+	.long	0x000492+2	| is_actual_game_played_00ff8215
+	.long	0x000498+2	| ext_00ff8220
+	.long	0x0004ba+4	| ext_00ffa846
+	.long	0x0004de+4	| ext_00ffa846
+	.long	0x0004ea+2	| is_actual_game_played_00ff8215
+	.long	0x0004fc+4	| ext_00ffa846
+	.long	0x000514+4	| credit_inserted_flag_00ffa8c0
+	.long	0x000522+4	| ext_00ffa846
+	.long	0x00052a+4	| ext_00ffa846
+	.long	0x000536+2	| is_actual_game_played_00ff8215
+	.long	0x00055c+2	| credit_inserted_flag_00ffa8c0
+	.long	0x000562+2	| nb_credits_00ffa8c1
+	.long	0x000572+2	| credit_inserted_flag_00ffa8c0
+	.long	0x000578+2	| nb_credits_00ffa8c1
+	.long	0x00058e+4	| ext_00ff820e
+	.long	0x0005b4+2	| copy_of_inputs_00ff80f4
+	.long	0x0005b4+6	| prev_inputs_00ff80f6
+	.long	0x0005be+2	| copy_of_inputs_00ff80f4
+	.long	0x0005c4+4	| copy_of_inputs_00ff80f4
+	.long	0x0005cc+2	| copy_of_inputs_00ff80f4
+	.long	0x0005d6+2	| copy_of_inputs_00ff80f4
+	.long	0x0005dc+2	| prev_inputs_00ff80f6
+	.long	0x0005e4+2	| ext_00ff8100
+	.long	0x0005ee+2	| ext_00ff80f5
+	.long	0x0005fc+2	| ext_00ff80f5
+	.long	0x000602+2	| copy_of_inputs_00ff80f4
+	.long	0x000610+2	| copy_of_inputs_00ff80f4
+	.long	0x000618+2	| copy_of_inputs_00ff80f4
+	.long	0x000620+2	| prev_inputs_00ff80f6
+	.long	0x00063e+2	| ext_00ff80f8
+	.long	0x000646+2	| copy_of_inputs_00ff80f4
+	.long	0x000650+2	| ext_00ff80ce
+	.long	0x000656+2	| ext_00ff8100
+	.long	0x00065c+2	| copy_of_inputs_00ff80f4
+	.long	0x000668+2	| ext_00ff80be
+	.long	0x00066e+2	| ext_00ff80be
+	.long	0x00067a+2	| ext_00ff80ce
+	.long	0x000680+2	| ext_00ff80f8
+	.long	0x000686+2	| ext_00ff80fa
+	.long	0x00068c+2	| ext_00ff80bf
+	.long	0x000698+2	| ext_00ff80cf
+	.long	0x00069e+2	| ext_00ff80f9
+	.long	0x0006a4+2	| ext_00ff80fb
+	.long	0x0006ac+2	| ext_00ff80f8
+	.long	0x0006c6+2	| ext_00ff80f9
+	.long	0x0006e0+2	| ext_00ff8108
+	.long	0x0006e8+6	| copy_of_dsw_msb_00ff810a
+	.long	0x0006f2+2	| copy_of_dsw_msb_00ff810a
+	.long	0x00074a+4	| ext_00ff8170
+	.long	0x000758+2	| ext_00ff8170
+	.long	0x00076c+4	| ext_00ff8170
+	.long	0x000774+4	| ext_00ffa8e0
+	.long	0x00083a+4	| ext_00ffa8e0
+	.long	0x0009d8+4	| ext_00ffa8e0
+	.long	0x000d32+4	| ext_00ffa8e0
+	.long	0x000ddc+4	| ext_00ff8170
+	.long	0x000eb2+2	| ext_00ffa8e0
+	.long	0x00137c+2	| ext_00ff820e
+	.long	0x00138a+6	| ext_00ff8206
+	.long	0x0013a6+6	| ext_00ff820a
+	.long	0x0013c0+6	| ext_00ff8204
+	.long	0x0013d4+2	| ext_00ff820e
+	.long	0x0013e8+2	| ram_ff8000
+	.long	0x0013fc+2	| ram_ff8000
+	.long	0x001410+2	| ram_ff8000
+	.long	0x001422+2	| ext_00ffc000
+	.long	0x001498+2	| ext_00ff810c
+	.long	0x0019a6+2	| ext_00ffc000
+	.long	0x0019b2+2	| ext_00ffc000
+	.long	0x0019c8+4	| is_actual_game_played_00ff8215
+	.long	0x0019d0+2	| ext_00ffa846
+	.long	0x0019d6+2	| stage_control_flags_00ff8216
+	.long	0x0019dc+2	| sync_flags_00ff8217
+	.long	0x0019e2+2	| current_stage_00ff821d
+	.long	0x0019e8+2	| ext_00ffa847
+	.long	0x0019ee+2	| ext_00ff81cc
+	.long	0x0019f4+2	| ext_00ff81d0
+	.long	0x0019fa+2	| ext_00ffa364
+	.long	0x001a06+2	| ext_00ffa224
+	.long	0x001a18+4	| ext_00ff8170
+	.long	0x001a46+6	| ext_00ff8206
+	.long	0x001a50+4	| ext_00ff8202
+	.long	0x001a58+4	| ext_00ff8202
+	.long	0x001a66+4	| is_actual_game_played_00ff8215
+	.long	0x001a70+2	| ext_00ffc000
+	.long	0x001a9c+2	| is_actual_game_played_00ff8215
+	.long	0x001ac6+4	| stage_control_flags_00ff8216
+	.long	0x001b06+4	| stage_control_flags_00ff8216
+	.long	0x001b0e+2	| is_actual_game_played_00ff8215
+	.long	0x001b18+2	| p1_nb_lives_00ffa39a
+	.long	0x001b1e+2	| p2_nb_lives_00ffa25a
+	.long	0x001b2a+4	| ext_00ffa8c6
+	.long	0x001b6e+2	| is_actual_game_played_00ff8215
+	.long	0x001b7c+4	| is_actual_game_played_00ff8215
+	.long	0x001b86+4	| stage_control_flags_00ff8216
+	.long	0x001b94+2	| current_stage_00ff821d
+	.long	0x001b9a+4	| current_stage_00ff821d
+	.long	0x001bb8+4	| current_stage_00ff821d
+	.long	0x001bca+2	| is_actual_game_played_00ff8215
+	.long	0x001c1a+2	| is_actual_game_played_00ff8215
+	.long	0x001c24+2	| demo_stage_index_00ffa848
+	.long	0x001c2c+2	| demo_stage_index_00ffa848
+	.long	0x001c3c+2	| demo_stage_index_00ffa848
+	.long	0x001c48+4	| current_stage_00ff821d
+	.long	0x001c52+4	| current_stage_00ff821d
+	.long	0x001c64+6	| ext_00ff81d8
+	.long	0x001c6e+6	| ext_00ff81dc
+	.long	0x001caa+2	| current_stage_00ff821d
+	.long	0x001cbe+2	| current_stage_00ff821d
+	.long	0x001d0a+6	| ext_00ff814c
+	.long	0x001d14+6	| ext_00ff8150
+	.long	0x001d34+2	| ext_00ff8114
+	.long	0x001d40+2	| ext_00ff8118
+	.long	0x001dc4+2	| spriteram_00ffc000
+	.long	0x001dde+2	| ext_00ff8128
+	.long	0x001dea+2	| ext_00ff812c
+	.long	0x001e30+2	| ext_00ff813c
+	.long	0x001e3c+2	| ext_00ff8140
+	.long	0x001e98+6	| ext_00ff8114
+	.long	0x001ea8+6	| ext_00ff8118
+	.long	0x001eb8+6	| ext_00ff8128
+	.long	0x001ec8+6	| ext_00ff812c
+	.long	0x001ed8+6	| ext_00ff813c
+	.long	0x001ee8+6	| ext_00ff8140
+	.long	0x001f12+2	| ext_00ff8244
+	.long	0x001f32+4	| ext_00ff8108
+	.long	0x001f3a+4	| ext_00ff80f8
+	.long	0x001f42+4	| ext_00ff8102
+	.long	0x001f4a+4	| ext_00ffa8ee
+	.long	0x001f52+6	| ext_00ffa8fa
+	.long	0x001f5c+4	| ext_00ff80fc
+	.long	0x001f68+2	| ext_00ffa7c4
+	.long	0x002038+2	| ext_00ff801e
+	.long	0x00203e+2	| ext_00ff8128
+	.long	0x002048+2	| ext_00ff812c
+	.long	0x00204e+2	| ext_00ff801e
+	.long	0x002054+2	| ext_00ff802e
+	.long	0x002062+6	| ext_00ff8032
+	.long	0x00206c+2	| ext_00ff801e
+	.long	0x002072+2	| ext_00ff813c
+	.long	0x00207c+2	| ext_00ff8140
+	.long	0x002082+2	| ext_00ff801e
+	.long	0x002088+2	| ext_00ff803e
+	.long	0x002096+6	| ext_00ff8042
+	.long	0x0020a0+2	| ext_00ff802e
+	.long	0x0020b4+2	| ext_00ff803e
+	.long	0x0020ca+2	| ext_00ff801e
+	.long	0x0020da+2	| ext_00ff801e
+	.long	0x0020e0+2	| ext_00ff802e
+	.long	0x0020f6+6	| ext_00ff8032
+	.long	0x002100+2	| ext_00ff801e
+	.long	0x002110+2	| ext_00ff801e
+	.long	0x002116+2	| ext_00ff803e
+	.long	0x002124+6	| ext_00ff8042
+	.long	0x00212e+2	| ext_00ff802e
+	.long	0x002142+2	| ext_00ff803e
+	.long	0x00215a+4	| p1_energy_00ffa380
+	.long	0x002166+2	| p1_energy_00ffa380
+	.long	0x002178+4	| p2_energy_00ffa240
+	.long	0x002184+2	| p2_energy_00ffa240
+	.long	0x002366+2	| ext_00ff810c
+	.long	0x002372+2	| ext_00ff810e
+	.long	0x00237e+2	| ext_00ff8110
+	.long	0x00238a+2	| ext_00ff8112
+	.long	0x002396+2	| ext_00ff8114
+	.long	0x0023a2+2	| ext_00ff8118
+	.long	0x0023ae+2	| ext_00ff811c
+	.long	0x0023ba+2	| ext_00ff811e
+	.long	0x0023d8+2	| ext_00ff8120
+	.long	0x0023e4+2	| ext_00ff8122
+	.long	0x0023f0+2	| ext_00ff8124
+	.long	0x0023fc+2	| ext_00ff8126
+	.long	0x002408+2	| ext_00ff8128
+	.long	0x002414+2	| ext_00ff812c
+	.long	0x002420+2	| ext_00ff8130
+	.long	0x00242c+2	| ext_00ff8132
+	.long	0x00244a+2	| ext_00ff8134
+	.long	0x002456+2	| ext_00ff8136
+	.long	0x002462+2	| ext_00ff8138
+	.long	0x00246e+2	| ext_00ff813a
+	.long	0x00247a+2	| ext_00ff813c
+	.long	0x002486+2	| ext_00ff8140
+	.long	0x002492+2	| ext_00ff8144
+	.long	0x00249e+2	| ext_00ff8146
+	.long	0x0024aa+2	| ext_00ff8114
+	.long	0x0024b6+2	| ext_00ff81f2
+	.long	0x0024d0+2	| ext_00ff81f2
+	.long	0x0024dc+2	| ext_00ff8114
+	.long	0x002552+2	| ext_00ff8114
+	.long	0x0025a6+2	| state_00ffa8f0
+	.long	0x0025f6+2	| spriteram_00ffc000
+	.long	0x0025fc+2	| #ext_00ff81f4
+	.long	0x00260c+2	| #ext_00ff8834
+	.long	0x00261c+2	| #ext_00ffa1d4
+	.long	0x00262c+2	| #ext_00ffa454
+	.long	0x002640+4	| sync_flags_00ff8217
+	.long	0x002650+2	| spriteram_00ffc000
+	.long	0x002656+2	| #ext_00ff81f4
+	.long	0x002666+2	| #ext_00ff8834
+	.long	0x002676+2	| #ext_00ff8514
+	.long	0x002686+2	| #ext_00ffa1d4
+	.long	0x002696+2	| #ext_00ffa454
+	.long	0x0026aa+4	| sync_flags_00ff8217
+	.long	0x0026ba+2	| spriteram_00ffc000
+	.long	0x0026c0+2	| #ext_00ff81f4
+	.long	0x0026d0+2	| #ext_00ff8834
+	.long	0x0026e0+2	| #ext_00ffa1d4
+	.long	0x0026f0+2	| #ext_00ff8514
+	.long	0x002700+2	| #ext_00ffa454
+	.long	0x002714+4	| sync_flags_00ff8217
+	.long	0x002724+2	| spriteram_00ffc000
+	.long	0x00272a+2	| #ext_00ff81f4
+	.long	0x00273a+2	| #ext_00ff9eb4
+	.long	0x00274a+2	| #ext_00ff8834
+	.long	0x00275a+2	| #ext_00ffa1d4
+	.long	0x00276a+2	| #ext_00ffa454
+	.long	0x00277e+4	| sync_flags_00ff8217
+	.long	0x00279e+2	| ext_00ff8148
+	.long	0x0027a8+2	| ext_00ff823e
+	.long	0x0027b2+2	| ext_00ffa8f6
+	.long	0x0027bc+2	| ext_00ffa8f2
+	.long	0x0027f6+2	| ext_00ffa852
+	.long	0x002800+2	| ext_00ff80e2
+	.long	0x002806+2	| ext_00ffa856
+	.long	0x002810+2	| ext_00ff80e4
+	.long	0x002822+2	| ext_00ffa852
+	.long	0x002838+2	| ext_00ffa856
+	.long	0x002854+2	| ext_00ff80e2
+	.long	0x002890+2	| ext_00ff80e4
+	.long	0x0029ca+2	| #ext_00ff81f4
+	.long	0x0029d0+4	| ext_00ff80f2
+	.long	0x0029d8+4	| ext_00ff80f2
+	.long	0x002a04+2	| ext_00ff80f2
+	.long	0x002cc2+4	| current_stage_00ff821d
+	.long	0x002d14+4	| ext_00ff9644
+	.long	0x002d1c+4	| ext_00ff9646
+	.long	0x002d3e+4	| current_stage_00ff821d
+	.long	0x002e46+4	| current_stage_00ff821d
+	.long	0x002e52+4	| ext_00ffa8ee
+	.long	0x002e5e+2	| ext_00ff8222
+	.long	0x002e70+2	| ext_00ffa856
+	.long	0x002e8a+2	| ext_00ff8884
+	.long	0x002ea6+6	| ext_00ff8222
+	.long	0x002eb2+2	| ext_00ff9f04
+	.long	0x002ee4+6	| ext_00ff8222
+	.long	0x002ef0+2	| ext_00ff8222
+	.long	0x002f00+2	| ext_00ffa856
+	.long	0x002f16+2	| ext_00ff8884
+	.long	0x002f30+6	| ext_00ff8222
+	.long	0x002f3e+2	| ext_00ff8226
+	.long	0x002f50+2	| ext_00ffa856
+	.long	0x002f60+2	| ext_00ff8244
+	.long	0x002f7c+6	| ext_00ff8226
+	.long	0x002f88+4	| current_stage_00ff821d
+	.long	0x002f94+4	| ext_00ffa8ee
+	.long	0x002fa0+2	| ext_00ff822a
+	.long	0x002fb2+2	| ext_00ffa856
+	.long	0x002fcc+2	| ext_00ff8884
+	.long	0x002fe8+6	| ext_00ff822a
+	.long	0x002ff4+2	| ext_00ff9f04
+	.long	0x003028+6	| ext_00ff822a
+	.long	0x003034+2	| ext_00ff822a
+	.long	0x003044+2	| ext_00ffa856
+	.long	0x00305a+2	| ext_00ff8884
+	.long	0x003074+6	| ext_00ff822a
+	.long	0x003082+2	| ext_00ff822e
+	.long	0x003094+2	| ext_00ff813c
+	.long	0x0030a4+2	| ext_00ff8884
+	.long	0x0030c0+6	| ext_00ff822e
+	.long	0x0030ca+2	| ext_00ffa856
+	.long	0x0030da+2	| ext_00ff8236
+	.long	0x0030ec+2	| ext_00ffa856
+	.long	0x0030fc+2	| ext_00ff98c4
+	.long	0x00311a+6	| ext_00ff8236
+	.long	0x003124+2	| ext_00ff8236
+	.long	0x003132+2	| ext_00ff8884
+	.long	0x003148+2	| ext_00ff8236
+	.long	0x003158+6	| ext_00ff8236
+	.long	0x003164+6	| ext_00ff8236
+	.long	0x00316e+2	| ext_00ff8236
+	.long	0x00317a+6	| ext_00ff8236
+	.long	0x003186+2	| ext_00ff823a
+	.long	0x003194+4	| current_stage_00ff821d
+	.long	0x0031a0+4	| ext_00ffa8ee
+	.long	0x0031b0+2	| ext_00ffa856
+	.long	0x0031c0+2	| ext_00ff95a4
+	.long	0x0031e0+2	| ext_00ffa7c4
+	.long	0x0031ee+4	| copy_of_dsw_msb_00ff810a
+	.long	0x003224+6	| ext_00ff823a
+	.long	0x003238+2	| ext_00ffa8e0
+	.long	0x00323e+4	| ext_00ffa8e0
+	.long	0x00324c+2	| ext_00ffa856
+	.long	0x00325a+2	| ext_00ff95a4
+	.long	0x003296+6	| ext_00ff823a
+	.long	0x0032aa+2	| ext_00ffa8e0
+	.long	0x0032b0+4	| ext_00ffa8e0
+	.long	0x0032c6+2	| ext_00ff8232
+	.long	0x0032d8+2	| ext_00ff813c
+	.long	0x0032e8+2	| ext_00ff8884
+	.long	0x003308+2	| ext_00ff8128
+	.long	0x003316+6	| ext_00ff8232
+	.long	0x0033a6+6	| ext_00ff8222
+	.long	0x0033b0+6	| ext_00ff822a
+	.long	0x0033ba+6	| ext_00ff823a
+	.long	0x0033ca+2	| ext_00ff8244
+	.long	0x0033d4+2	| ext_00ff8294
+	.long	0x0033de+2	| ext_00ff82e4
+	.long	0x0033e8+2	| ext_00ff8334
+	.long	0x003400+2	| ext_00ff81f4
+	.long	0x003426+4	| ext_00ffa8e0
+	.long	0x003436+2	| ext_00ff9eb4
+	.long	0x00345a+2	| ext_00ffa634
+	.long	0x003472+2	| ext_00ff8564
+	.long	0x003484+4	| ext_00ffa8e0
+	.long	0x00351e+2	| ext_00ffa8d7
+	.long	0x00352a+2	| ext_00ffa8d6
+	.long	0x00353c+2	| ext_00ffa856
+	.long	0x003548+2	| ext_00ff8212
+	.long	0x003550+2	| ext_00ffa8d7
+	.long	0x003560+2	| ext_00ff8884
+	.long	0x00358a+2	| ext_00ffa852
+	.long	0x0035c2+4	| ext_00ffa8d6
+	.long	0x00380c+4	| ext_00ffa8ee
+	.long	0x003818+4	| ext_00ffa8fa
+	.long	0x003824+4	| ext_00ff95a6
+	.long	0x00383e+4	| ext_00ffa8fc
+	.long	0x003846+4	| ext_00ffa8fc
+	.long	0x003852+4	| ext_00ffa8fc
+	.long	0x00385a+4	| ext_00ffa8fb
+	.long	0x003862+2	| ext_00ff8884
+	.long	0x00387e+2	| ext_00ffa8fb
+	.long	0x00389c+2	| ext_00ffa856
+	.long	0x0038bc+2	| ext_00ff8212
+	.long	0x0038dc+4	| ext_00ff95a7
+	.long	0x0038e8+4	| ext_00ffa8fa
+	.long	0x0038f8+2	| ext_00ff8884
+	.long	0x00391e+4	| current_stage_00ff821d
+	.long	0x003940+2	| ext_00ff8042
+	.long	0x003996+2	| ext_00ff8042
+	.long	0x0039c8+2	| ext_00ff8040
+	.long	0x003a26+2	| ext_00ff8040
+	.long	0x003a84+2	| ext_00ff8040
+	.long	0x003be8+4	| ext_00ffa846
+	.long	0x003f9e+2	| ext_00ff801e
+	.long	0x003fdc+4	| ext_00ff801e
+	.long	0x00419c+2	| ext_00ff801e
+	.long	0x0041da+4	| ext_00ff801e
+	.long	0x004322+6	| ext_00ffa88a
+	.long	0x004364+2	| ext_00ff8040
+	.long	0x0043ea+2	| ext_00ff803e
+	.long	0x004438+2	| ext_00ff8884
+	.long	0x0044a2+4	| ext_00ff80fd
+	.long	0x0044ae+4	| ext_00ff80fd
+	.long	0x0044fc+4	| ext_00ff80fd
+	.long	0x00453c+4	| ext_00ff80fd
+	.long	0x004544+4	| stage_control_flags_00ff8216
+	.long	0x00474e+2	| ext_00ff803e
+	.long	0x004810+2	| ext_00ff98c4
+	.long	0x004834+2	| ext_00ff8212
+	.long	0x0048ac+2	| ext_00ffa364
+	.long	0x0048bc+2	| ext_00ffa224
+	.long	0x004922+2	| ext_00ff803e
+	.long	0x00497c+4	| ext_00ff803e
+	.long	0x0049c6+2	| ext_00ff803e
+	.long	0x004a06+4	| ext_00ff803e
+	.long	0x004a50+2	| ext_00ff803e
+	.long	0x004af4+2	| ext_00ffa374
+	.long	0x004b60+4	| current_stage_00ff821d
+	.long	0x004ba2+2	| ext_00ffa364
+	.long	0x004bb2+2	| ext_00ffa224
+	.long	0x004c0c+2	| ext_00ff803e
+	.long	0x004c6e+4	| ext_00ff803e
+	.long	0x004c8c+4	| ext_00ff801e
+	.long	0x004ca8+4	| ext_00ff801e
+	.long	0x004cb4+2	| ext_00ff801e
+	.long	0x004eec+2	| ext_00ff9694
+	.long	0x005088+4	| current_stage_00ff821d
+	.long	0x005094+4	| stage_control_flags_00ff8216
+	.long	0x0050bc+4	| ext_00ffa845
+	.long	0x0050c6+2	| ext_00ff9644
+	.long	0x0050cc+2	| ext_00ff966e
+	.long	0x0050d2+4	| ext_00ff9646
+	.long	0x00517a+2	| ext_00ff9644
+	.long	0x005180+2	| ext_00ff966e
+	.long	0x005186+4	| ext_00ff9646
+	.long	0x005232+4	| ext_00ff9644
+	.long	0x005298+4	| ext_00ff9644
+	.long	0x0052ba+4	| current_stage_00ff821d
+	.long	0x0052c6+4	| stage_control_flags_00ff8216
+	.long	0x0052ee+4	| ext_00ffa845
+	.long	0x0054f2+4	| ext_00ff8040
+	.long	0x00554a+2	| ext_00ffa364
+	.long	0x00555a+2	| ext_00ffa224
+	.long	0x005610+2	| ext_00ff803e
+	.long	0x005640+2	| ext_00ff8040
+	.long	0x00566a+4	| ext_00ff803e
+	.long	0x005676+2	| ext_00ff8040
+	.long	0x0056a8+2	| ext_00ff8040
+	.long	0x00572a+2	| ext_00ff8212
+	.long	0x005738+4	| ext_00ff8020
+	.long	0x0057f2+4	| ext_00ff8212
+	.long	0x00580e+2	| ext_00ff8042
+	.long	0x00582c+2	| ext_00ff8212
+	.long	0x00588e+2	| ext_00ff8042
+	.long	0x0058c2+2	| ext_00ffa364
+	.long	0x0058d2+2	| ext_00ffa224
+	.long	0x005974+2	| ext_00ff803e
+	.long	0x0059a4+2	| ext_00ff8040
+	.long	0x0059ce+4	| ext_00ff803e
+	.long	0x0059da+2	| ext_00ff8040
+	.long	0x005a1e+2	| ext_00ff8040
+	.long	0x005ae0+2	| ext_00ff8042
+	.long	0x005af6+2	| ext_00ff8212
+	.long	0x005b56+2	| ext_00ff8042
+	.long	0x005b6c+2	| ext_00ff8212
+	.long	0x005be0+2	| ext_00ff8212
+	.long	0x005c68+6	| ext_00ff80e2
+	.long	0x005c84+2	| ext_00ff80e6
+	.long	0x005c8a+2	| ext_00ff80e7
+	.long	0x005c96+2	| ext_00ff809e
+	.long	0x005cca+4	| ext_00ff80e2
+	.long	0x005cea+2	| ext_00ff80e6
+	.long	0x005cf4+2	| ext_00ff80e7
+	.long	0x005d00+2	| ext_00ff80e8
+	.long	0x005d06+2	| ext_00ff80e6
+	.long	0x005d10+2	| ext_00ff80e7
+	.long	0x005d1e+2	| ext_00ff80e8
+	.long	0x005d24+2	| ext_00ff80e6
+	.long	0x005d38+2	| ext_00ff80e8
+	.long	0x005d50+2	| ext_00ff80e2
+	.long	0x005d56+2	| ext_00ff809e
+	.long	0x005d64+6	| ext_00ff80e2
+	.long	0x005d9c+2	| ext_00ff80e6
+	.long	0x005da2+2	| ext_00ff80e7
+	.long	0x005dae+2	| ext_00ff80e8
+	.long	0x005db4+2	| ext_00ff80e6
+	.long	0x005dba+2	| ext_00ff80e7
+	.long	0x005dc8+2	| ext_00ff80e8
+	.long	0x005dce+2	| ext_00ff80e6
+	.long	0x005dde+2	| ext_00ff80e8
+	.long	0x005de4+2	| ext_00ff809e
+	.long	0x005e1c+4	| ext_00ff80e2
+	.long	0x005e30+2	| ext_00ff80e2
+	.long	0x005e38+2	| ext_00ff809e
+	.long	0x005e62+4	| ext_00ff80e2
+	.long	0x005e7c+6	| ext_00ff80e2
+	.long	0x005e8c+4	| ext_00ff80e6
+	.long	0x005e94+2	| ext_00ff80e6
+	.long	0x005ea4+2	| ext_00ff809e
+	.long	0x005eb2+4	| ext_00ff80e2
+	.long	0x005eba+2	| ext_00ff80e2
+	.long	0x005ec2+2	| ext_00ff809e
+	.long	0x005ee4+2	| ext_00ff80e6
+	.long	0x005eea+4	| ext_00ff80e7
+	.long	0x005efc+2	| ext_00ff80e7
+	.long	0x005f14+2	| ext_00ff80e6
+	.long	0x005f1a+4	| ext_00ff80e7
+	.long	0x005f8a+2	| ext_00ffa36c
+	.long	0x005fa8+2	| ext_00ffa374
+	.long	0x005fae+2	| ext_00ff8243
+	.long	0x005fb8+2	| ext_00ffa22c
+	.long	0x005fd6+2	| ext_00ffa234
+	.long	0x005fdc+2	| ext_00ff8242
+	.long	0x006094+2	| ext_00ffa36c
+	.long	0x0060a0+2	| ext_00ffa374
+	.long	0x0060aa+2	| ext_00ffa22c
+	.long	0x0060b6+2	| ext_00ffa234
+	.long	0x0060c8+4	| ext_00ffa364
+	.long	0x0060d6+4	| ext_00ffa224
+	.long	0x0060f6+2	| ext_00ff803e
+	.long	0x0060fc+2	| #ext_00ffa364
+	.long	0x0060fc+6	| ext_00ff8042
+	.long	0x00610c+2	| ext_00ff803e
+	.long	0x006112+2	| #ext_00ffa224
+	.long	0x006112+6	| ext_00ff8042
+	.long	0x006196+4	| stage_control_flags_00ff8216
+	.long	0x0061a4+2	| current_stage_00ff821d
+	.long	0x0061e4+2	| ext_00ff815c
+	.long	0x0061e4+6	| ext_00ff823e
+	.long	0x0061ee+2	| ext_00ff8160
+	.long	0x0061ee+6	| ext_00ffa8f2
+	.long	0x0061f8+2	| ext_00ff815c
+	.long	0x0061fe+2	| ext_00ff8160
+	.long	0x006204+2	| ext_00ff8128
+	.long	0x006214+6	| ext_00ff815c
+	.long	0x00621e+6	| ext_00ff8160
+	.long	0x006234+2	| ext_00ff8164
+	.long	0x006234+6	| ext_00ff8148
+	.long	0x00623e+2	| ext_00ff8168
+	.long	0x00623e+6	| ext_00ffa8f6
+	.long	0x006248+2	| ext_00ff8164
+	.long	0x00624e+2	| ext_00ff8168
+	.long	0x006254+2	| ext_00ff813c
+	.long	0x006264+6	| ext_00ff8164
+	.long	0x00626e+6	| ext_00ff8168
+	.long	0x0062a4+2	| ext_00ff81c6
+	.long	0x0062d8+2	| ext_00ff81c8
+	.long	0x00632c+2	| ext_00ff81c8
+	.long	0x006332+2	| ext_00ff81c6
+	.long	0x00633c+2	| ext_00ff81ca
+	.long	0x006386+2	| ext_00ffa890
+	.long	0x00638c+2	| ext_00ff8186
+	.long	0x006392+2	| ext_00ff80de
+	.long	0x006398+2	| ext_00ff8176
+	.long	0x0063a6+2	| ext_00ffa890
+	.long	0x0063ac+2	| ext_00ff8186
+	.long	0x0063b2+2	| ext_00ff8176
+	.long	0x0063ca+2	| ext_00ff80de
+	.long	0x0063de+2	| ext_00ffa890
+	.long	0x0063e4+2	| ext_00ff818a
+	.long	0x0063ea+2	| ext_00ff80de
+	.long	0x0063f0+2	| ext_00ff817a
+	.long	0x0063fe+2	| ext_00ffa890
+	.long	0x006404+2	| ext_00ff818a
+	.long	0x00640a+2	| ext_00ff817a
+	.long	0x006422+2	| ext_00ff80de
+	.long	0x006436+2	| ext_00ffa890
+	.long	0x00643c+2	| ext_00ff818e
+	.long	0x006442+2	| ext_00ff80de
+	.long	0x006448+2	| ext_00ff817e
+	.long	0x006456+2	| ext_00ffa890
+	.long	0x00645c+2	| ext_00ff818e
+	.long	0x006462+2	| ext_00ff817e
+	.long	0x00647a+2	| ext_00ff80de
+	.long	0x00648e+2	| ext_00ffa890
+	.long	0x006494+2	| ext_00ff8192
+	.long	0x00649a+2	| ext_00ff80de
+	.long	0x0064a0+2	| ext_00ff8182
+	.long	0x0064ae+2	| ext_00ffa890
+	.long	0x0064b4+2	| ext_00ff8192
+	.long	0x0064ba+2	| ext_00ff8182
+	.long	0x0064d2+2	| ext_00ff80de
+	.long	0x0064e6+2	| ext_00ff80de
+	.long	0x006502+2	| ext_00ff80de
+	.long	0x00650e+2	| ext_00ff80de
+	.long	0x00652a+2	| ext_00ff80de
+	.long	0x006638+2	| ext_00ff8176
+	.long	0x006642+2	| ext_00ff8176
+	.long	0x006648+2	| ext_00ff8186
+	.long	0x00664e+2	| ext_00ff817a
+	.long	0x006658+2	| ext_00ff817a
+	.long	0x00665e+2	| ext_00ff818a
+	.long	0x006664+2	| ext_00ff817e
+	.long	0x00666e+2	| ext_00ff817e
+	.long	0x006674+2	| ext_00ff818e
+	.long	0x00667a+2	| ext_00ff8182
+	.long	0x006684+2	| ext_00ff8182
+	.long	0x00668a+2	| ext_00ff8192
+	.long	0x006692+2	| ext_00ff8176
+	.long	0x00669c+2	| ext_00ff8176
+	.long	0x0066a2+2	| ext_00ff8186
+	.long	0x0066a8+2	| ext_00ff817a
+	.long	0x0066b2+2	| ext_00ff817a
+	.long	0x0066b8+2	| ext_00ff818a
+	.long	0x0066be+2	| ext_00ff817e
+	.long	0x0066c8+2	| ext_00ff817e
+	.long	0x0066ce+2	| ext_00ff818e
+	.long	0x0066d4+2	| ext_00ff8182
+	.long	0x0066de+2	| ext_00ff8182
+	.long	0x0066e4+2	| ext_00ff8192
+	.long	0x0066ec+2	| ext_00ff8176
+	.long	0x0066f6+2	| ext_00ff8176
+	.long	0x0066fc+2	| ext_00ff8186
+	.long	0x006702+2	| ext_00ff817a
+	.long	0x00670c+2	| ext_00ff817a
+	.long	0x006712+2	| ext_00ff818a
+	.long	0x006718+2	| ext_00ff817e
+	.long	0x006722+2	| ext_00ff817e
+	.long	0x006728+2	| ext_00ff818e
+	.long	0x00672e+2	| ext_00ff8182
+	.long	0x006738+2	| ext_00ff8182
+	.long	0x00673e+2	| ext_00ff8192
+	.long	0x006746+2	| ext_00ff8176
+	.long	0x006750+2	| ext_00ff8176
+	.long	0x006756+2	| ext_00ff8186
+	.long	0x00675c+2	| ext_00ff817a
+	.long	0x006766+2	| ext_00ff817a
+	.long	0x00676c+2	| ext_00ff818a
+	.long	0x006772+2	| ext_00ff817e
+	.long	0x00677c+2	| ext_00ff817e
+	.long	0x006782+2	| ext_00ff818e
+	.long	0x006788+2	| ext_00ff8182
+	.long	0x006792+2	| ext_00ff8182
+	.long	0x006798+2	| ext_00ff8192
+	.long	0x0067f2+2	| ext_00ffa894
+	.long	0x0067f8+2	| ext_00ff81a6
+	.long	0x0067fe+2	| ext_00ff80de
+	.long	0x006804+2	| ext_00ff8196
+	.long	0x006812+2	| ext_00ffa894
+	.long	0x006818+2	| ext_00ff81a6
+	.long	0x00681e+2	| ext_00ff8196
+	.long	0x006836+2	| ext_00ff80de
+	.long	0x00684a+2	| ext_00ffa894
+	.long	0x006850+2	| ext_00ff81aa
+	.long	0x006856+2	| ext_00ff80de
+	.long	0x00685c+2	| ext_00ff819a
+	.long	0x00686a+2	| ext_00ffa894
+	.long	0x006870+2	| ext_00ff81aa
+	.long	0x006876+2	| ext_00ff819a
+	.long	0x00688e+2	| ext_00ff80de
+	.long	0x0068a2+2	| ext_00ffa894
+	.long	0x0068a8+2	| ext_00ff81ae
+	.long	0x0068ae+2	| ext_00ff80de
+	.long	0x0068b4+2	| ext_00ff819e
+	.long	0x0068c2+2	| ext_00ffa894
+	.long	0x0068c8+2	| ext_00ff81ae
+	.long	0x0068ce+2	| ext_00ff819e
+	.long	0x0068e6+2	| ext_00ff80de
+	.long	0x0068fa+2	| ext_00ffa894
+	.long	0x006900+2	| ext_00ff81b2
+	.long	0x006906+2	| ext_00ff80de
+	.long	0x00690c+2	| ext_00ff81a2
+	.long	0x00691a+2	| ext_00ffa894
+	.long	0x006920+2	| ext_00ff81b2
+	.long	0x006926+2	| ext_00ff81a2
+	.long	0x00693e+2	| ext_00ff80de
+	.long	0x006952+2	| ext_00ff8196
+	.long	0x00695c+2	| ext_00ff8196
+	.long	0x006962+2	| ext_00ff81a6
+	.long	0x006968+2	| ext_00ff819a
+	.long	0x006972+2	| ext_00ff819a
+	.long	0x006978+2	| ext_00ff81aa
+	.long	0x00697e+2	| ext_00ff819e
+	.long	0x006988+2	| ext_00ff819e
+	.long	0x00698e+2	| ext_00ff81ae
+	.long	0x006994+2	| ext_00ff81a2
+	.long	0x00699e+2	| ext_00ff81a2
+	.long	0x0069a4+2	| ext_00ff81b2
+	.long	0x0069ac+2	| ext_00ff8196
+	.long	0x0069b6+2	| ext_00ff8196
+	.long	0x0069bc+2	| ext_00ff81a6
+	.long	0x0069c2+2	| ext_00ff819a
+	.long	0x0069cc+2	| ext_00ff819a
+	.long	0x0069d2+2	| ext_00ff81aa
+	.long	0x0069d8+2	| ext_00ff819e
+	.long	0x0069e2+2	| ext_00ff819e
+	.long	0x0069e8+2	| ext_00ff81ae
+	.long	0x0069ee+2	| ext_00ff81a2
+	.long	0x0069f8+2	| ext_00ff81a2
+	.long	0x0069fe+2	| ext_00ff81b2
+	.long	0x006a06+2	| ext_00ff8196
+	.long	0x006a10+2	| ext_00ff8196
+	.long	0x006a16+2	| ext_00ff81a6
+	.long	0x006a1c+2	| ext_00ff819a
+	.long	0x006a26+2	| ext_00ff819a
+	.long	0x006a2c+2	| ext_00ff81aa
+	.long	0x006a32+2	| ext_00ff819e
+	.long	0x006a3c+2	| ext_00ff819e
+	.long	0x006a42+2	| ext_00ff81ae
+	.long	0x006a48+2	| ext_00ff81a2
+	.long	0x006a52+2	| ext_00ff81a2
+	.long	0x006a58+2	| ext_00ff81b2
+	.long	0x006a60+2	| ext_00ff8196
+	.long	0x006a6a+2	| ext_00ff8196
+	.long	0x006a70+2	| ext_00ff81a6
+	.long	0x006a76+2	| ext_00ff819a
+	.long	0x006a80+2	| ext_00ff819a
+	.long	0x006a86+2	| ext_00ff81aa
+	.long	0x006a8c+2	| ext_00ff819e
+	.long	0x006a96+2	| ext_00ff819e
+	.long	0x006a9c+2	| ext_00ff81ae
+	.long	0x006aa2+2	| ext_00ff81a2
+	.long	0x006aac+2	| ext_00ff81a2
+	.long	0x006ab2+2	| ext_00ff81b2
+	.long	0x006ad2+2	| ext_00ff815c
+	.long	0x006ad8+2	| ext_00ff8160
+	.long	0x006ade+2	| ext_00ff8128
+	.long	0x006af8+2	| ext_00ff816c
+	.long	0x006afe+2	| ext_00ff814c
+	.long	0x006b04+2	| ext_00ff814c
+	.long	0x006b16+2	| ext_00ff8150
+	.long	0x006b1c+2	| ext_00ff8128
+	.long	0x006b22+2	| ext_00ff814c
+	.long	0x006b28+2	| ext_00ff8150
+	.long	0x006b2e+2	| ext_00ff8150
+	.long	0x006b46+6	| ext_00ff815c
+	.long	0x006b54+6	| ext_00ff8164
+	.long	0x006b5e+6	| ext_00ff816c
+	.long	0x006b6a+2	| ext_00ff81b6
+	.long	0x006b70+2	| ext_00ff81be
+	.long	0x006b8c+2	| ext_00ff81b6
+	.long	0x006b96+2	| ext_00ff81b6
+	.long	0x006b9c+2	| ext_00ff81be
+	.long	0x006ba6+2	| ext_00ff81be
+	.long	0x006bae+2	| ext_00ff81ba
+	.long	0x006bb4+2	| ext_00ff81c2
+	.long	0x006bd0+2	| ext_00ff81ba
+	.long	0x006bda+2	| ext_00ff81ba
+	.long	0x006be0+2	| ext_00ff81c2
+	.long	0x006bea+2	| ext_00ff81c2
+	.long	0x006bf2+2	| ext_00ffa890
+	.long	0x006c16+2	| ext_00ffa890
+	.long	0x006c32+2	| ext_00ff815c
+	.long	0x006c38+2	| ext_00ff8160
+	.long	0x006c3e+2	| ext_00ff8128
+	.long	0x006c58+6	| ext_00ff815c
+	.long	0x006c66+6	| ext_00ff8164
+	.long	0x006c72+2	| ext_00ff81b6
+	.long	0x006c78+2	| ext_00ff81be
+	.long	0x006c94+2	| ext_00ff81b6
+	.long	0x006c9e+2	| ext_00ff81b6
+	.long	0x006ca4+2	| ext_00ff81be
+	.long	0x006cae+2	| ext_00ff81be
+	.long	0x006cb6+2	| ext_00ffa890
+	.long	0x006cda+2	| ext_00ffa890
+	.long	0x006cfe+2	| ext_00ff815c
+	.long	0x006d04+2	| ext_00ff8160
+	.long	0x006d0a+2	| ext_00ff8128
+	.long	0x006d24+2	| ext_00ff816c
+	.long	0x006d2a+2	| ext_00ff814c
+	.long	0x006d30+2	| ext_00ff814c
+	.long	0x006d42+2	| ext_00ff8150
+	.long	0x006d48+2	| ext_00ff8128
+	.long	0x006d4e+2	| ext_00ff814c
+	.long	0x006d54+2	| ext_00ff8150
+	.long	0x006d5a+2	| ext_00ff8150
+	.long	0x006d72+6	| ext_00ff815c
+	.long	0x006d80+6	| ext_00ff8164
+	.long	0x006d8a+6	| ext_00ff816c
+	.long	0x006d96+2	| ext_00ff81b6
+	.long	0x006d9c+2	| ext_00ff81be
+	.long	0x006db8+2	| ext_00ff81b6
+	.long	0x006dc2+2	| ext_00ff81b6
+	.long	0x006dc8+2	| ext_00ff81be
+	.long	0x006dd2+2	| ext_00ff81be
+	.long	0x006dda+2	| ext_00ff81ba
+	.long	0x006de0+2	| ext_00ff81c2
+	.long	0x006dfc+2	| ext_00ff81ba
+	.long	0x006e06+2	| ext_00ff81ba
+	.long	0x006e0c+2	| ext_00ff81c2
+	.long	0x006e16+2	| ext_00ff81c2
+	.long	0x006e1e+2	| ext_00ffa890
+	.long	0x006e42+2	| ext_00ffa890
+	.long	0x006e60+2	| current_stage_00ff821d
+	.long	0x006e9c+6	| ext_00ff8186
+	.long	0x006ea6+6	| ext_00ff81a6
+	.long	0x006ec2+2	| ext_00ff8128
+	.long	0x006ecc+2	| ext_00ff812c
+	.long	0x006ed6+2	| ext_00ff813c
+	.long	0x006ee0+2	| ext_00ff8140
+	.long	0x006ef2+6	| ext_00ff8186
+	.long	0x006efc+6	| ext_00ff81a6
+	.long	0x006f26+6	| ext_00ff8186
+	.long	0x006f30+6	| ext_00ff81a6
+	.long	0x006f5a+6	| ext_00ff8186
+	.long	0x006f64+6	| ext_00ff81a6
+	.long	0x006fb2+2	| current_stage_00ff821d
+	.long	0x006fc4+2	| ext_00ff8176
+	.long	0x006ff6+6	| ext_00ff81b6
+	.long	0x007000+2	| ext_00ffa890
+	.long	0x00700e+2	| ext_00ff81be
+	.long	0x007014+6	| ext_00ff81ba
+	.long	0x00701e+2	| ext_00ffa890
+	.long	0x00702c+2	| ext_00ff81c2
+	.long	0x007034+6	| ext_00ff81b6
+	.long	0x00703e+2	| ext_00ffa890
+	.long	0x007052+2	| ext_00ff81be
+	.long	0x007058+6	| ext_00ff81ba
+	.long	0x007062+2	| ext_00ffa890
+	.long	0x007076+2	| ext_00ff81c2
+	.long	0x00707e+6	| ext_00ff81b6
+	.long	0x007088+2	| ext_00ffa890
+	.long	0x007096+2	| ext_00ff81be
+	.long	0x007288+0	| ext_00ff81d8
+	.long	0x00728c+0	| ext_00ff81dc
+	.long	0x007290+2	| ext_00ff81d0
+	.long	0x007298+2	| ext_00ff81dc
+	.long	0x0072a8+6	| ext_00ff81d8
+	.long	0x0072b2+2	| ext_00ff81d4
+	.long	0x0072ba+2	| ext_00ff81e0
+	.long	0x0072ca+6	| ext_00ff81dc
+	.long	0x0072d6+2	| ext_00ff8062
+	.long	0x0072dc+2	| ext_00ff805e
+	.long	0x0072e2+2	| ext_00ff8062
+	.long	0x0072ea+2	| ext_00ff8066
+	.long	0x0072fa+2	| ext_00ff8062
+	.long	0x007302+2	| ext_00ff8066
+	.long	0x007312+2	| ext_00ff8062
+	.long	0x00731a+2	| ext_00ff8066
+	.long	0x00732a+2	| ext_00ff805e
+	.long	0x007340+2	| ext_00ff81d4
+	.long	0x00734a+2	| ext_00ff81d4
+	.long	0x00736a+2	| ext_00ff81cc
+	.long	0x007370+2	| ext_00ff801e
+	.long	0x007382+2	| ext_00ff801f
+	.long	0x007392+2	| ext_00ff8020
+	.long	0x0073a4+2	| ext_00ff81d0
+	.long	0x0073aa+2	| ext_00ff801e
+	.long	0x0073bc+2	| ext_00ff801f
+	.long	0x0073cc+2	| ext_00ff8020
+	.long	0x0073de+2	| ext_00ff81d4
+	.long	0x0073e4+2	| ext_00ff801e
+	.long	0x0073f6+2	| ext_00ff801f
+	.long	0x007406+2	| ext_00ff8020
+	.long	0x007ada+2	| credit_inserted_flag_00ffa8c0
+	.long	0x007b00+2	| credit_inserted_flag_00ffa8c0
+	.long	0x007b08+4	| ext_00ffa9af
+	.long	0x007b10+4	| ext_00ffa9b9
+	.long	0x007b22+4	| ext_00ffa9af
+	.long	0x007b2a+4	| ext_00ffa9b9
+	.long	0x007bae+2	| ext_00ffa8fe
+	.long	0x007c5a+2	| ext_00ffa8fe
+	.long	0x007c66+6	| ext_00ff81d4
+	.long	0x007c70+6	| ext_00ff81d5
+	.long	0x007c7a+6	| ext_00ff81d6
+	.long	0x007c84+6	| ext_00ff81d7
+	.long	0x007c90+2	| ext_00ffa9af
+	.long	0x007c9c+2	| ext_00ffa9b9
+	.long	0x007ca8+2	| ext_00ffa9a6
+	.long	0x007cbc+2	| ext_00ffa9a6
+	.long	0x007d3c+2	| ext_00ffa9bc
+	.long	0x007d42+4	| ext_00ffa9bb
+	.long	0x007d4e+4	| is_actual_game_played_00ff8215
+	.long	0x007d58+4	| ext_00ffa9bb
+	.long	0x007d62+2	| ext_00ffa999
+	.long	0x007d6a+2	| ext_00ffa99a
+	.long	0x007d72+2	| ext_00ffa99b
+	.long	0x007d7a+2	| ext_00ffa99c
+	.long	0x007d80+2	| ext_00ff81cc
+	.long	0x007d8e+4	| ext_00ffa9bb
+	.long	0x007d9a+4	| is_actual_game_played_00ff8215
+	.long	0x007da4+4	| ext_00ffa9bb
+	.long	0x007dae+2	| ext_00ffa999
+	.long	0x007db6+2	| ext_00ffa99a
+	.long	0x007dbe+2	| ext_00ffa99b
+	.long	0x007dc6+2	| ext_00ffa99c
+	.long	0x007dcc+2	| ext_00ff81d0
+	.long	0x007df8+2	| ext_00ffa9bb
+	.long	0x007e58+2	| credit_inserted_flag_00ffa8c0
+	.long	0x007e74+0	| ext_00ffa9a7
+	.long	0x007e78+0	| ext_00ffa9b1
+	.long	0x007e7c+2	| ext_00ffa9bb
+	.long	0x007ede+2	| ext_00ffa9bc
+	.long	0x007f26+2	| ext_00ffa996
+	.long	0x007f7c+2	| ext_00ffa996
+	.long	0x007f82+2	| ext_00ffa99e
+	.long	0x007fde+2	| current_stage_00ff821d
+	.long	0x007ff2+2	| ext_00ffa9bb
+	.long	0x007ffa+2	| ext_00ffa9bb
+	.long	0x00804c+0	| ext_00ff81cc
+	.long	0x008050+0	| ext_00ff81d0
+	.long	0x008074+2	| copy_of_inputs_00ff80f4
+	.long	0x00825e+2	| ext_00ffa9af
+	.long	0x008264+2	| ext_00ffa9b9
+	.long	0x00829c+2	| credit_inserted_flag_00ffa8c0
+	.long	0x0082c2+2	| credit_inserted_flag_00ffa8c0
+	.long	0x0082f0+2	| credit_inserted_flag_00ffa8c0
+	.long	0x008312+2	| credit_inserted_flag_00ffa8c0
+	.long	0x008358+2	| credit_inserted_flag_00ffa8c0
+	.long	0x0083f0+2	| credit_inserted_flag_00ffa8c0
+	.long	0x008410+2	| ext_00ffa9af
+	.long	0x008416+2	| ext_00ffa9b9
+	.long	0x00845a+2	| ext_00ff801e
+	.long	0x008460+2	| ext_00ff801e
+	.long	0x008468+2	| credit_inserted_flag_00ffa8c0
+	.long	0x008488+4	| ext_00ff801e
+	.long	0x00849c+4	| ext_00ff801e
+	.long	0x0084a6+2	| ext_00ff801e
+	.long	0x0084b2+4	| ext_00ff8170
+	.long	0x0084d0+4	| ext_00ff801e
+	.long	0x0084d8+4	| ext_00ff8020
+	.long	0x0084e6+4	| ext_00ff802e
+	.long	0x0084fc+4	| ext_00ff802e
+	.long	0x008516+4	| ext_00ff802e
+	.long	0x008528+4	| ext_00ff801e
+	.long	0x008536+2	| is_actual_game_played_00ff8215
+	.long	0x008546+2	| ext_00ff80f7
+	.long	0x008554+2	| prev_inputs_00ff80f6
+	.long	0x008568+4	| ext_00ff8020
+	.long	0x008574+4	| ext_00ff8020
+	.long	0x008586+2	| ext_00ff805e
+	.long	0x008592+4	| ext_00ff802e
+	.long	0x0085a0+4	| ext_00ff802e
+	.long	0x0085c4+2	| sync_flags_00ff8217
+	.long	0x0085d2+2	| spriteram_00ffc000
+	.long	0x0085d8+2	| ext_00ff801e
+	.long	0x008600+2	| ext_00ff805e
+	.long	0x008668+4	| sync_flags_00ff8217
+	.long	0x008672+2	| ext_00ff801e
+	.long	0x0086a6+2	| ext_00ff801e
+	.long	0x0086f4+4	| ext_00ff801e
+	.long	0x00870a+2	| is_actual_game_played_00ff8215
+	.long	0x00871a+2	| ext_00ff80f7
+	.long	0x008728+2	| prev_inputs_00ff80f6
+	.long	0x008736+2	| ext_00ff802e
+	.long	0x00874a+2	| ext_00ff802e
+	.long	0x008754+2	| sync_flags_00ff8217
+	.long	0x008762+2	| spriteram_00ffc000
+	.long	0x008768+4	| ext_00ff802f
+	.long	0x0087be+4	| sync_flags_00ff8217
+	.long	0x0087c8+6	| ext_00ff805e
+	.long	0x0087d2+6	| ext_00ff8062
+	.long	0x0087dc+2	| ext_00ff8062
+	.long	0x0087dc+6	| ext_00ff8066
+	.long	0x0087e6+4	| ext_00ff806a
+	.long	0x0087f0+4	| ext_00ff806a
+	.long	0x0087f8+2	| ext_00ff806a
+	.long	0x008802+4	| ext_00ff806a
+	.long	0x008812+2	| ext_00ff805e
+	.long	0x008818+2	| ext_00ff8062
+	.long	0x008826+6	| ext_00ff8066
+	.long	0x008830+2	| ext_00ff8066
+	.long	0x008830+6	| ext_00ff8062
+	.long	0x008840+2	| ext_00ff805e
+	.long	0x00884e+2	| ext_00ff805e
+	.long	0x008854+2	| ext_00ff8062
+	.long	0x00886e+4	| ext_00ff801e
+	.long	0x009236+2	| ext_00ff813c
+	.long	0x00923c+2	| ext_00ff8140
+	.long	0x009242+4	| ext_00ff8170
+	.long	0x0097e2+4	| ext_00ffa836
+	.long	0x0097ee+4	| ext_00ffa836
+	.long	0x009800+4	| ext_00ffa836
+	.long	0x00980c+2	| ext_00ffa8d6
+	.long	0x009812+2	| ext_00ff8212
+	.long	0x009818+2	| ext_00ffa834
+	.long	0x009826+2	| ext_00ffa834
+	.long	0x009848+2	| mcu_result_copy_00ffa8d5
+	.long	0x009854+2	| ext_00ff8884
+	.long	0x00986e+2	| ext_00ff95a4
+	.long	0x009882+2	| ext_00ff9f04
+	.long	0x009896+4	| ext_00ffa8d6
+	.long	0x00989e+2	| ext_00ffa8cc
+	.long	0x0098a8+2	| ext_00ffa8ca
+	.long	0x0098ae+2	| ext_00ffa8cc
+	.long	0x0098b6+2	| current_stage_00ff821d
+	.long	0x0098be+2	| ext_00ff8212
+	.long	0x0098d6+4	| ext_00ffa8d6
+	.long	0x0098e2+2	| ext_00ffa8ca
+	.long	0x0098e2+6	| ext_00ffa8cc
+	.long	0x0098ec+4	| ext_00ffa8d6
+	.long	0x009976+4	| copy_of_dsw_lsb_00ff810b
+	.long	0x009982+4	| ext_00ff810d
+	.long	0x00998e+4	| ext_00ff810d
+	.long	0x00999c+2	| copy_of_dsw_msb_00ff810a
+	.long	0x0099ae+4	| ext_00ffa846
+	.long	0x0099ba+4	| ext_00ffa846
+	.long	0x0099c2+4	| copy_of_dsw_msb_00ff810a
+	.long	0x0099ce+4	| stage_control_flags_00ff8216
+	.long	0x0099da+4	| stage_control_flags_00ff8216
+	.long	0x009a12+2	| credit_inserted_flag_00ffa8c0
+	.long	0x009a6e+2	| credit_inserted_flag_00ffa8c0
+	.long	0x009a8c+2	| ext_00ff8114
+	.long	0x009a92+2	| ext_00ff8118
+	.long	0x009ac0+2	| current_stage_00ff821d
+	.long	0x009ace+2	| ext_00ffa8c6
+	.long	0x009ad6+2	| ext_00ffa8aa
+	.long	0x009adc+4	| is_actual_game_played_00ff8215
+	.long	0x009ae8+2	| ext_00ffa8aa
+	.long	0x009ae8+6	| ext_00ff81d8
+	.long	0x009afa+4	| is_actual_game_played_00ff8215
+	.long	0x009b06+2	| ext_00ffa8aa
+	.long	0x009b06+6	| ext_00ff81dc
+	.long	0x009b34+4	| current_stage_00ff821d
+	.long	0x009b54+4	| ext_00ffa846
+	.long	0x009b60+4	| is_actual_game_played_00ff8215
+	.long	0x009b6e+4	| is_actual_game_played_00ff8215
+	.long	0x009b76+2	| ext_00ffa8bc
+	.long	0x009b80+4	| ext_00ffa846
+	.long	0x009b88+4	| ext_00ffa846
+	.long	0x009b90+4	| ext_00ffa8ba
+	.long	0x009b98+4	| ext_00ffa846
+	.long	0x009ba4+4	| is_actual_game_played_00ff8215
+	.long	0x009bb2+4	| is_actual_game_played_00ff8215
+	.long	0x009bba+2	| ext_00ffa8be
+	.long	0x009bc4+4	| ext_00ffa846
+	.long	0x009bcc+4	| ext_00ffa846
+	.long	0x009bd4+4	| ext_00ffa8ba
+	.long	0x009be0+2	| is_actual_game_played_00ff8215
+	.long	0x009be6+2	| ext_00ffa846
+	.long	0x009bf6+2	| ext_00ffa846
+	.long	0x009c62+4	| ext_00ffa9bb
+	.long	0x009c6e+2	| credit_inserted_flag_00ffa8c0
+	.long	0x009c8c+4	| ext_00ffa9bb
+	.long	0x009c98+2	| credit_inserted_flag_00ffa8c0
+	.long	0x009cba+4	| stage_control_flags_00ff8216
+	.long	0x009cc6+2	| ext_00ffa8ba
+	.long	0x009ce0+2	| ext_00ffa8ba
+	.long	0x009cf6+2	| ext_00ffa8ba
+	.long	0x009d02+2	| is_actual_game_played_00ff8215
+	.long	0x009d20+4	| is_actual_game_played_00ff8215
+	.long	0x009d28+4	| ext_00ffa846
+	.long	0x009d34+4	| ext_00ffa9bb
+	.long	0x009d3c+4	| ext_00ffa846
+	.long	0x009d48+4	| ext_00ffa9bb
+	.long	0x009d50+4	| ext_00ffa846
+	.long	0x009d58+4	| ext_00ffa846
+	.long	0x009d7a+2	| ext_00ffa9bb
+	.long	0x009d86+4	| is_actual_game_played_00ff8215
+	.long	0x009d92+2	| ext_00ff8202
+	.long	0x009db0+2	| current_stage_00ff821d
+	.long	0x009ddc+2	| ext_00ffa364
+	.long	0x009dea+2	| ext_00ffa8aa
+	.long	0x009df0+2	| ext_00ff80f5
+	.long	0x009df6+2	| ext_00ff80f9
+	.long	0x009dfe+2	| ext_00ff8243
+	.long	0x009e06+2	| ext_00ffa84b
+	.long	0x009e16+2	| ext_00ffa224
+	.long	0x009e24+2	| ext_00ffa8aa
+	.long	0x009e2a+2	| copy_of_inputs_00ff80f4
+	.long	0x009e30+2	| ext_00ff80f8
+	.long	0x009e38+2	| ext_00ff8242
+	.long	0x009e40+2	| ext_00ffa84a
+	.long	0x009e78+2	| ext_00ff8242
+	.long	0x009e7e+2	| ext_00ffa84a
+	.long	0x009fbc+2	| ext_00ffa364
+	.long	0x009fc6+4	| is_actual_game_played_00ff8215
+	.long	0x009fe4+4	| is_actual_game_played_00ff8215
+	.long	0x009fec+4	| ext_00ffa846
+	.long	0x009ff4+4	| ext_00ffa846
+	.long	0x009ffc+2	| ext_00ffa224
+	.long	0x00a006+4	| is_actual_game_played_00ff8215
+	.long	0x00a030+4	| is_actual_game_played_00ff8215
+	.long	0x00a038+4	| ext_00ffa846
+	.long	0x00a040+4	| ext_00ffa846
+	.long	0x00a04a+2	| ext_00ff81cc
+	.long	0x00a050+2	| ext_00ff81d0
+	.long	0x00a058+2	| is_actual_game_played_00ff8215
+	.long	0x00a06e+4	| ext_00ffa846
+	.long	0x00a07a+2	| ext_00ffa364
+	.long	0x00a09a+4	| current_stage_00ff821d
+	.long	0x00a0b2+4	| is_actual_game_played_00ff8215
+	.long	0x00a0ba+4	| ext_00ffa846
+	.long	0x00a0c2+4	| ext_00ffa846
+	.long	0x00a0ea+4	| ext_00ffa846
+	.long	0x00a0f6+2	| ext_00ffa224
+	.long	0x00a122+4	| current_stage_00ff821d
+	.long	0x00a13a+4	| is_actual_game_played_00ff8215
+	.long	0x00a142+4	| ext_00ffa846
+	.long	0x00a14a+4	| ext_00ffa846
+	.long	0x00a164+2	| is_actual_game_played_00ff8215
+	.long	0x00a16c+2	| current_stage_00ff821d
+	.long	0x00a188+2	| ext_00ffa364
+	.long	0x00a1a0+4	| current_stage_00ff821d
+	.long	0x00a1c0+2	| ext_00ffa224
+	.long	0x00a1da+4	| current_stage_00ff821d
+	.long	0x00a286+2	| ext_00ffa8aa
+	.long	0x00a2a2+2	| ext_00ffa8aa
+	.long	0x00a2fa+2	| ext_00ffa852
+	.long	0x00a30a+2	| ext_00ffa856
+	.long	0x00a33e+2	| copy_of_dsw_msb_00ff810a
+	.long	0x00a350+4	| ext_00ffa846
+	.long	0x00a35c+4	| ext_00ffa846
+	.long	0x00a378+2	| copy_of_dsw_msb_00ff810a
+	.long	0x00a980+4	| stage_control_flags_00ff8216
+	.long	0x00a9ac+2	| ext_00ff8212
+	.long	0x00a9b2+2	| ext_00ff8212
+	.long	0x00a9f6+2	| ext_00ffa364
+	.long	0x00a9fc+2	| ext_00ffa224
+	.long	0x00aa56+4	| stage_control_flags_00ff8216
+	.long	0x00aa5e+4	| is_actual_game_played_00ff8215
+	.long	0x00aa68+2	| ext_00ffa364
+	.long	0x00aa7c+4	| ext_00ffa846
+	.long	0x00aa84+4	| is_actual_game_played_00ff8215
+	.long	0x00aa8c+4	| ext_00ffa8bc
+	.long	0x00aa96+2	| ext_00ffa224
+	.long	0x00aaa8+4	| ext_00ffa846
+	.long	0x00aab0+4	| is_actual_game_played_00ff8215
+	.long	0x00aab8+4	| ext_00ffa8be
+	.long	0x00aac2+4	| ext_00ffa364
+	.long	0x00bab6+4	| ext_00ffa846
+	.long	0x00bed8+4	| ext_00ffa38c
+	.long	0x00bee4+4	| ext_00ffa24c
+	.long	0x00bf00+4	| ext_00ffa38c
+	.long	0x00bf0c+4	| ext_00ffa24c
+	.long	0x00c3fe+2	| ext_00ffa88a
+	.long	0x00c42e+2	| ext_00ffa88a
+	.long	0x00c442+2	| ext_00ffa87a
+	.long	0x00c44e+2	| ext_00ffa87e
+	.long	0x00c45a+2	| ext_00ffa882
+	.long	0x00c466+2	| ext_00ffa886
+	.long	0x00c4ba+2	| ext_00ffa364
+	.long	0x00c4c0+2	| ext_00ffa224
+	.long	0x00c4fc+2	| ext_00ffa852
+	.long	0x00c50c+2	| ext_00ffa856
+	.long	0x00c520+2	| ext_00ffa852
+	.long	0x00c530+2	| ext_00ffa856
+	.long	0x00c54a+2	| ext_00ff81ee
+	.long	0x00c558+2	| ext_00ff81f0
+	.long	0x00c566+2	| ext_00ff81ef
+	.long	0x00c574+2	| ext_00ff81f1
+	.long	0x00c57c+2	| ext_00ffa856
+	.long	0x00c5be+2	| ext_00ffa852
+	.long	0x00c602+2	| ext_00ff81ee
+	.long	0x00c60c+2	| ext_00ff81f0
+	.long	0x00c616+2	| ext_00ff81ef
+	.long	0x00c61e+2	| ext_00ff81f1
+	.long	0x00c6b4+2	| ext_00ffa8a2
+	.long	0x00ca5c+4	| ext_00ffa85a
+	.long	0x00ca72+4	| ext_00ffa85a
+	.long	0x00ca84+4	| ext_00ffa85e
+	.long	0x00ca9a+4	| ext_00ffa85e
+	.long	0x00cade+2	| ext_00ffa364
+	.long	0x00cae4+2	| ext_00ffa224
+	.long	0x00cb2c+2	| ext_00ffa852
+	.long	0x00cb32+2	| ext_00ffa856
+	.long	0x00cb38+2	| ext_00ffa364
+	.long	0x00cb42+2	| ext_00ffa224
+	.long	0x00cbe8+2	| ext_00ff801e
+	.long	0x00cbee+2	| ext_00ff802e
+	.long	0x00cbfc+4	| ext_00ffa842
+	.long	0x00cc38+2	| ext_00ffa898
+	.long	0x00cc46+4	| ext_00ffa842
+	.long	0x00cc52+4	| ext_00ffa84e
+	.long	0x00cc5e+2	| ext_00ffa852
+	.long	0x00cc64+2	| ext_00ffa856
+	.long	0x00cc6e+2	| ext_00ff813c
+	.long	0x00cc74+2	| ext_00ff8140
+	.long	0x00cca6+2	| ext_00ffa89c
+	.long	0x00ccb8+2	| current_stage_00ff821d
+	.long	0x00cccc+2	| ext_00ffa84e
+	.long	0x00ccd2+2	| ext_00ffa852
+	.long	0x00ccd8+2	| ext_00ffa862
+	.long	0x00ccde+2	| ext_00ffa86a
+	.long	0x00cce4+2	| ext_00ffa856
+	.long	0x00ccea+2	| ext_00ffa866
+	.long	0x00ccf0+2	| ext_00ffa86e
+	.long	0x00ccf6+2	| ext_00ffa87a
+	.long	0x00ccfc+2	| ext_00ffa87e
+	.long	0x00cd02+2	| ext_00ffa882
+	.long	0x00cd08+2	| ext_00ffa886
+	.long	0x00cd0e+2	| ext_00ffa88a
+	.long	0x00cd14+2	| ext_00ffa890
+	.long	0x00cd1a+2	| ext_00ff812c
+	.long	0x00cd20+2	| ext_00ff8128
+	.long	0x00cd26+2	| ext_00ffa894
+	.long	0x00cd2c+2	| ext_00ff8140
+	.long	0x00cd32+2	| ext_00ff813c
+	.long	0x00cd38+2	| ext_00ff8170
+	.long	0x00cd44+2	| ext_00ff8222
+	.long	0x00cd4a+2	| ext_00ff822a
+	.long	0x00cd50+2	| ext_00ff8226
+	.long	0x00cd56+2	| ext_00ff822e
+	.long	0x00cd5c+2	| ext_00ff8232
+	.long	0x00cd62+2	| ext_00ff8236
+	.long	0x00cd68+2	| ext_00ff823a
+	.long	0x00cd6e+2	| ext_00ffa8a2
+	.long	0x00cd74+2	| ext_00ffa8c6
+	.long	0x00cd7a+2	| ext_00ffa842
+	.long	0x00cd80+2	| ext_00ffa8a0
+	.long	0x00cd86+2	| ext_00ff814c
+	.long	0x00cd8c+2	| ext_00ff8150
+	.long	0x00cd92+2	| ext_00ffa8c8
+	.long	0x00cd98+2	| ext_00ffa843
+	.long	0x00cd9e+2	| ext_00ffa844
+	.long	0x00cda4+2	| ext_00ffa845
+	.long	0x00cdaa+2	| ext_00ffa8cc
+	.long	0x00cdb6+2	| current_stage_00ff821d
+	.long	0x00cdc0+2	| ext_00ffa8ca
+	.long	0x00cdce+2	| current_stage_00ff821d
+	.long	0x00cdd8+4	| ext_00ffa898
+	.long	0x00cde8+2	| current_stage_00ff821d
+	.long	0x00cdf2+4	| ext_00ffa89c
+	.long	0x00d10e+2	| ext_00ffa84e
+	.long	0x00d116+2	| ext_00ffa852
+	.long	0x00d11c+2	| ext_00ffa856
+	.long	0x00d122+2	| ext_00ffa85a
+	.long	0x00d128+2	| ext_00ffa85e
+	.long	0x00d148+2	| ext_00ff8160
+	.long	0x00d154+2	| ext_00ff815c
+	.long	0x00d16c+2	| ext_00ff8168
+	.long	0x00d178+2	| ext_00ff8164
+	.long	0x00d186+2	| ext_00ff8160
+	.long	0x00d18c+2	| ext_00ff8164
+	.long	0x00d1a4+2	| ext_00ff815c
+	.long	0x00d1b6+2	| ext_00ff8168
+	.long	0x00d1bc+2	| ext_00ff815c
+	.long	0x00d1d4+2	| ext_00ff8164
+	.long	0x00d1e4+2	| ext_00ffa87a
+	.long	0x00d1ea+2	| ext_00ff8160
+	.long	0x00d1f2+2	| ext_00ffa87e
+	.long	0x00d1f8+2	| ext_00ff815c
+	.long	0x00d20c+2	| ext_00ffa882
+	.long	0x00d212+2	| ext_00ff8168
+	.long	0x00d21a+2	| ext_00ffa886
+	.long	0x00d220+2	| ext_00ff8164
+	.long	0x00d22e+2	| ext_00ffa87a
+	.long	0x00d22e+6	| ext_00ff8160
+	.long	0x00d238+2	| ext_00ffa87e
+	.long	0x00d238+6	| ext_00ff815c
+	.long	0x00d24a+2	| ext_00ffa87a
+	.long	0x00d250+2	| ext_00ffa852
+	.long	0x00d25a+2	| ext_00ffa86a
+	.long	0x00d25a+6	| ext_00ffa852
+	.long	0x00d264+2	| ext_00ffa87e
+	.long	0x00d26a+2	| ext_00ffa856
+	.long	0x00d278+2	| ext_00ffa882
+	.long	0x00d278+6	| ext_00ff8168
+	.long	0x00d282+2	| ext_00ffa886
+	.long	0x00d282+6	| ext_00ff8164
+	.long	0x00d294+2	| ext_00ffa882
+	.long	0x00d29a+2	| ext_00ffa852
+	.long	0x00d2a0+2	| ext_00ffa886
+	.long	0x00d2a6+2	| ext_00ffa856
+	.long	0x00d2b4+2	| ext_00ffa87a
+	.long	0x00d2b4+6	| ext_00ff8160
+	.long	0x00d2be+2	| ext_00ffa87e
+	.long	0x00d2be+6	| ext_00ff815c
+	.long	0x00d2c8+2	| ext_00ffa88a
+	.long	0x00d2c8+6	| ext_00ff816c
+	.long	0x00d2da+2	| ext_00ffa87a
+	.long	0x00d2e0+2	| ext_00ffa852
+	.long	0x00d2e6+2	| ext_00ffa87e
+	.long	0x00d2ec+2	| ext_00ffa856
+	.long	0x00d2fa+2	| ext_00ffa882
+	.long	0x00d2fa+6	| ext_00ff8168
+	.long	0x00d304+2	| ext_00ffa886
+	.long	0x00d304+6	| ext_00ff8164
+	.long	0x00d30e+2	| ext_00ffa88a
+	.long	0x00d30e+6	| ext_00ff816c
+	.long	0x00d320+2	| ext_00ffa882
+	.long	0x00d326+2	| ext_00ffa852
+	.long	0x00d32c+2	| ext_00ffa886
+	.long	0x00d332+2	| ext_00ffa856
+	.long	0x00d338+4	| current_stage_00ff821d
+	.long	0x00d344+2	| ext_00ffa856
+	.long	0x00d34a+2	| ext_00ffa8a6
+	.long	0x00d352+2	| ext_00ffa8a6
+	.long	0x00d35a+2	| ext_00ffa856
+	.long	0x00d360+2	| ext_00ff815c
+	.long	0x00d366+2	| ext_00ff8164
+	.long	0x00d36c+2	| ext_00ffa85a
+	.long	0x00d372+2	| ext_00ffa85e
+	.long	0x00d37e+2	| ext_00ffa86a
+	.long	0x00d386+2	| ext_00ffa86a
+	.long	0x00d390+2	| ext_00ffa86a
+	.long	0x00d398+2	| ext_00ffa852
+	.long	0x00d3a4+2	| ext_00ffa86e
+	.long	0x00d3ac+2	| ext_00ffa86e
+	.long	0x00d3b6+2	| ext_00ffa86e
+	.long	0x00d3be+2	| ext_00ffa856
+	.long	0x00d3c8+2	| current_stage_00ff821d
+	.long	0x00d3da+2	| ext_00ffa8a0
+	.long	0x00d430+4	| ext_00ffa856
+	.long	0x00d43c+4	| ext_00ffa850
+	.long	0x00d444+2	| ext_00ffa8a0
+	.long	0x00d462+2	| ext_00ffa856
+	.long	0x00d462+6	| ext_00ffa86e
+	.long	0x00d474+2	| ext_00ffa856
+	.long	0x00d47a+2	| ext_00ff8128
+	.long	0x00d480+4	| ext_00ffa850
+	.long	0x00d4aa+6	| ext_00ffa856
+	.long	0x00d4b8+6	| ext_00ffa886
+	.long	0x00d4c2+4	| ext_00ffa88e
+	.long	0x00d4ca+2	| ext_00ffa8a0
+	.long	0x00d4d4+2	| ext_00ffa88e
+	.long	0x00d4de+2	| ext_00ffa8a0
+	.long	0x00d4e6+6	| ext_00ffa88a
+	.long	0x00d4f4+2	| ext_00ffa87e
+	.long	0x00d4fa+2	| ext_00ffa886
+	.long	0x00d500+2	| ext_00ff816c
+	.long	0x00d506+2	| ext_00ffa856
+	.long	0x00d506+6	| ext_00ffa86e
+	.long	0x00d510+4	| ext_00ffa850
+	.long	0x00d518+2	| ext_00ffa8a0
+	.long	0x00d52e+4	| ext_00ffa850
+	.long	0x00d53c+2	| ext_00ffa882
+	.long	0x00d542+2	| ext_00ffa886
+	.long	0x00d548+4	| ext_00ffa850
+	.long	0x00d550+4	| ext_00ffa8a2
+	.long	0x00d55a+4	| ext_00ffa850
+	.long	0x00d5b2+2	| ext_00ffa856
+	.long	0x00d5b2+6	| ext_00ffa86e
+	.long	0x00d5c4+2	| ext_00ffa856
+	.long	0x00d5ca+2	| ext_00ff813c
+	.long	0x00d5d0+4	| ext_00ffa850
+	.long	0x00d64e+2	| ext_00ffa87a
+	.long	0x00d654+2	| ext_00ffa87e
+	.long	0x00d65a+4	| ext_00ffa850
+	.long	0x00d662+4	| ext_00ffa8a2
+	.long	0x00d68e+2	| ext_00ffa856
+	.long	0x00d68e+6	| ext_00ffa86e
+	.long	0x00d6a0+2	| ext_00ffa856
+	.long	0x00d6a6+2	| ext_00ff8128
+	.long	0x00d6ac+4	| ext_00ffa850
+	.long	0x00d6d8+6	| ext_00ffa886
+	.long	0x00d784+2	| ext_00ffa856
+	.long	0x00d784+6	| ext_00ffa86e
+	.long	0x00d796+2	| ext_00ffa856
+	.long	0x00d79c+2	| ext_00ff8128
+	.long	0x00d7a2+4	| ext_00ffa850
+	.long	0x00d82c+6	| ext_00ffa8a6
+	.long	0x00d84e+2	| ext_00ffa84e
+	.long	0x00d84e+6	| ext_00ffa850
+	.long	0x00d870+2	| ext_00ffa84e
+	.long	0x00d870+6	| ext_00ffa850
+	.long	0x00d892+2	| ext_00ffa84e
+	.long	0x00d892+6	| ext_00ffa850
+	.long	0x00d8ba+2	| ext_00ffa856
+	.long	0x00d8ba+6	| ext_00ffa86e
+	.long	0x00d8d0+2	| ext_00ffa856
+	.long	0x00d8d6+2	| ext_00ff8128
+	.long	0x00d8dc+4	| ext_00ffa850
+	.long	0x00d8e4+4	| ext_00ffa845
+	.long	0x00d8f0+4	| ext_00ffa843
+	.long	0x00d8f8+2	| ext_00ffa8a0
+	.long	0x00d900+2	| ext_00ffa843
+	.long	0x00d908+2	| ext_00ffa8a0
+	.long	0x00d90e+4	| ext_00ffa844
+	.long	0x00d924+4	| ext_00ffa88e
+	.long	0x00d92c+2	| ext_00ffa8a0
+	.long	0x00d93a+2	| ext_00ffa88e
+	.long	0x00d944+4	| ext_00ffa843
+	.long	0x00d94c+2	| ext_00ffa8a0
+	.long	0x00d95a+4	| ext_00ffa843
+	.long	0x00d966+2	| ext_00ffa8a0
+	.long	0x00d972+4	| ext_00ffa843
+	.long	0x00d97a+4	| ext_00ffa850
+	.long	0x00d982+4	| ext_00ffa842
+	.long	0x00d98a+4	| ext_00ffa8a2
+	.long	0x00d992+6	| ext_00ffa86a
+	.long	0x00d99c+2	| ext_00ffa8a0
+	.long	0x00d9a8+6	| ext_00ffa87a
+	.long	0x00d9b2+6	| ext_00ffa87a
+	.long	0x00d9be+2	| ext_00ffa8a0
+	.long	0x00d9c6+6	| ext_00ff812c
+	.long	0x00d9d2+2	| ext_00ffa8a0
+	.long	0x00d9de+6	| ext_00ffa87a
+	.long	0x00d9ea+2	| ext_00ffa8a0
+	.long	0x00d9f6+4	| ext_00ffa843
+	.long	0x00da04+2	| ext_00ffa852
+	.long	0x00da0a+2	| ext_00ff812c
+	.long	0x00da14+2	| ext_00ffa8a0
+	.long	0x00da1c+4	| ext_00ffa843
+	.long	0x00da28+2	| ext_00ffa8a0
+	.long	0x00da38+4	| ext_00ffa8ee
+	.long	0x00da40+4	| ext_00ffa844
+	.long	0x00da48+4	| ext_00ffa8a2
+	.long	0x00da50+6	| ext_00ffa86e
+	.long	0x00da5a+4	| ext_00ffa850
+	.long	0x00da62+4	| ext_00ffa842
+	.long	0x00da6a+2	| ext_00ffa8a0
+	.long	0x00da72+2	| ext_00ffa856
+	.long	0x00da72+6	| ext_00ffa8a6
+	.long	0x00da7c+4	| ext_00ffa845
+	.long	0x00da88+6	| ext_00ffa86e
+	.long	0x00da92+2	| ext_00ffa8a0
+	.long	0x00da9a+2	| ext_00ffa856
+	.long	0x00da9a+6	| ext_00ffa8a6
+	.long	0x00daa4+4	| ext_00ffa845
+	.long	0x00dab0+6	| ext_00ffa86e
+	.long	0x00daba+2	| ext_00ffa8a0
+	.long	0x00dac2+2	| ext_00ffa856
+	.long	0x00dac2+6	| ext_00ffa8a6
+	.long	0x00dacc+4	| ext_00ffa845
+	.long	0x00dad8+6	| ext_00ffa86e
+	.long	0x00dae2+2	| ext_00ffa8a0
+	.long	0x00daea+2	| ext_00ffa856
+	.long	0x00daea+6	| ext_00ffa8a6
+	.long	0x00daf4+4	| ext_00ffa845
+	.long	0x00db00+6	| ext_00ffa86e
+	.long	0x00db0a+4	| ext_00ffa842
+	.long	0x00db12+2	| ext_00ffa8a0
+	.long	0x00db1a+2	| ext_00ffa856
+	.long	0x00db1a+6	| ext_00ffa8a6
+	.long	0x00db24+4	| ext_00ffa856
+	.long	0x00db2e+2	| ext_00ffa8a0
+	.long	0x00db36+6	| ext_00ffa8a6
+	.long	0x00db40+4	| ext_00ffa850
+	.long	0x00db48+2	| ext_00ffa8a0
+	.long	0x00db7a+2	| ext_00ffa87a
+	.long	0x00db80+2	| ext_00ffa87e
+	.long	0x00db86+2	| ext_00ffa84e
+	.long	0x00db86+6	| ext_00ffa850
+	.long	0x00db90+4	| ext_00ffa8a2
+	.long	0x00db9c+2	| ext_00ffa852
+	.long	0x00dba8+2	| ext_00ffa856
+	.long	0x00dba8+6	| ext_00ffa86e
+	.long	0x00dbb2+2	| ext_00ffa8a0
+	.long	0x00dbbe+2	| ext_00ffa856
+	.long	0x00dbca+2	| ext_00ffa86e
+	.long	0x00dbd0+2	| ext_00ffa8a0
+	.long	0x00dbdc+2	| ext_00ffa856
+	.long	0x00dbe8+2	| ext_00ffa86e
+	.long	0x00dbee+2	| ext_00ffa8a0
+	.long	0x00dc04+2	| ext_00ffa87a
+	.long	0x00dc0a+2	| ext_00ffa882
+	.long	0x00dc16+2	| ext_00ffa87e
+	.long	0x00dc1c+2	| ext_00ffa886
+	.long	0x00dc28+2	| ext_00ffa87a
+	.long	0x00dc2e+2	| ext_00ffa87e
+	.long	0x00dc34+2	| ext_00ffa882
+	.long	0x00dc3a+2	| ext_00ffa886
+	.long	0x00dc4c+4	| ext_00ffa850
+	.long	0x00dc54+6	| ext_00ffa87a
+	.long	0x00dc5e+6	| ext_00ffa87e
+	.long	0x00dc6c+2	| ext_00ffa87a
+	.long	0x00dc72+2	| ext_00ffa87e
+	.long	0x00dc84+4	| ext_00ffa850
+	.long	0x00dc8c+6	| ext_00ffa87a
+	.long	0x00dc96+6	| ext_00ffa87e
+	.long	0x00dca4+2	| ext_00ffa87a
+	.long	0x00dcaa+2	| ext_00ffa87e
+	.long	0x00dcb4+2	| ext_00ffa856
+	.long	0x00dcc0+2	| is_actual_game_played_00ff8215
+	.long	0x00dcce+2	| ext_00ffa374
+	.long	0x00dce2+2	| ext_00ffa234
+	.long	0x00dcf4+4	| is_actual_game_played_00ff8215
+	.long	0x00dd00+2	| ext_00ffa364
+	.long	0x00dd26+4	| ext_00ffa844
+	.long	0x00dd2e+2	| copy_of_inputs_00ff80f4
+	.long	0x00dd34+2	| ext_00ff80f8
+	.long	0x00dd3a+4	| is_actual_game_played_00ff8215
+	.long	0x00dd46+2	| ext_00ffa224
+	.long	0x00dd6a+4	| ext_00ffa844
+	.long	0x00dd72+2	| copy_of_inputs_00ff80f4
+	.long	0x00dd78+2	| ext_00ff80f8
+	.long	0x00dd7e+2	| is_actual_game_played_00ff8215
+	.long	0x00dd86+2	| ext_00ffa844
+	.long	0x00ddae+2	| copy_of_inputs_00ff80f4
+	.long	0x00ddb4+2	| ext_00ff80f8
+	.long	0x00ddba+4	| ext_00ffa9bb
+	.long	0x00ddce+4	| ext_00ffa9bb
+	.long	0x00dde2+2	| copy_of_inputs_00ff80f4
+	.long	0x00dde8+2	| ext_00ff80f8
+	.long	0x00de00+4	| ext_00ffa364
+	.long	0x00de12+2	| ext_00ffa364
+	.long	0x00de2c+4	| ext_00ffa224
+	.long	0x00de3e+2	| ext_00ffa224
+	.long	0x00de52+2	| ext_00ffa84a
+	.long	0x00de8c+2	| ext_00ffa8c6
+	.long	0x00de9c+2	| ext_00ffa8c6
+	.long	0x00def0+2	| is_actual_game_played_00ff8215
+	.long	0x00defa+4	| copy_of_dsw_lsb_00ff810b
+	.long	0x00e018+4	| stage_control_flags_00ff8216
+	.long	0x00e024+2	| ext_00ffa8c8
+	.long	0x00e032+2	| ext_00ffa8c6
+	.long	0x00e03e+2	| is_actual_game_played_00ff8215
+	.long	0x00e054+2	| ext_00ffa38c
+	.long	0x00e05a+2	| ext_00ffa24c
+	.long	0x00e060+4	| stage_control_flags_00ff8216
+	.long	0x00e068+4	| ext_00ffa8c8
+	.long	0x00e086+2	| ext_00ffa8c6
+	.long	0x00e08c+4	| ext_00ffa8c8
+	.long	0x00e09a+2	| ext_00ffa8c6
+	.long	0x00e0b4+2	| ext_00ffa8c8
+	.long	0x00e0bc+2	| ext_00ffa8c7
+	.long	0x00e0bc+6	| ext_00ffa8c6
+	.long	0x00e0d0+4	| stage_control_flags_00ff8216
+	.long	0x00e0da+2	| ext_00ffa8c7
+	.long	0x00e0da+6	| ext_00ffa8c6
+	.long	0x00e0e4+4	| ext_00ffa8c8
+	.long	0x00e0f0+4	| is_actual_game_played_00ff8215
+	.long	0x00e102+2	| p1_nb_lives_00ffa39a
+	.long	0x00e10a+4	| is_actual_game_played_00ff8215
+	.long	0x00e11c+2	| p2_nb_lives_00ffa25a
+	.long	0x00e15a+2	| copy_of_dsw_msb_00ff810a
+	.long	0x00e160+2	| is_actual_game_played_00ff8215
+	.long	0x00e170+4	| copy_of_dsw_msb_00ff810a
+	.long	0x00e178+2	| ext_00ffa8ea
+	.long	0x00e180+2	| ext_00ffa8e8
+	.long	0x00e188+2	| ext_00ffa8e2
+	.long	0x00e18e+2	| ext_00ffa8e6
+	.long	0x00e194+2	| ext_00ffa8e8
+	.long	0x00e19a+2	| ext_00ffa8e2
+	.long	0x00e1a0+2	| ext_00ffa8e6
+	.long	0x00e1a6+2	| ext_00ffa8e8
+	.long	0x00e1b4+2	| ext_00ffa8e2
+	.long	0x00e1ba+2	| #ext_00ffa8e2
+	.long	0x00e1f0+2	| current_stage_00ff821d
+	.long	0x00e204+2	| ext_00ffa8e2
+	.long	0x00e20a+2	| ext_00ffa8e6
+	.long	0x00e210+2	| ext_00ffa8ea
+	.long	0x00e240+2	| counter_00ffa8d4
+	.long	0x00e246+2	| ext_00ffa8ce
+	.long	0x00e24c+2	| ext_00ffa8d2
+	.long	0x00e252+2	| current_stage_00ff821d
+	.long	0x00e296+2	| ext_00ffa856
+	.long	0x00e29c+2	| ext_00ffa8d0
+	.long	0x00e2a2+4	| ext_00ffa8ce
+	.long	0x00e2c2+4	| ext_00ffa8ce
+	.long	0x00e31c+2	| counter_00ffa8d4
+	.long	0x00e328+2	| mcu_result_copy_00ffa8d5
+	.long	0x00e336+2	| ext_00ffa8ce
+	.long	0x00e340+2	| current_stage_00ff821d
+	.long	0x00e358+2	| counter_00ffa8d4
+	.long	0x00e376+4	| counter_00ffa8d4
+	.long	0x00e390+2	| current_stage_00ff821d
+	.long	0x00e3c0+2	| counter_00ffa8d4
+	.long	0x00e3c6+4	| counter_00ffa8d4
+	.long	0x00e3f0+2	| ext_00ff8150
+	.long	0x00e410+2	| ext_00ffa856
+	.long	0x00e422+2	| ext_00ffa856
+	.long	0x00e42e+2	| ext_00ffa8d0
+	.long	0x00e444+2	| ext_00ffa8d0
+	.long	0x00e6f8+2	| ext_00ffa8c4
+	.long	0x00e704+2	| ext_00ffa8c4
+	.long	0x00e718+2	| #ext_00ffa8c2
+	.long	0x00e754+2	| credit_inserted_flag_00ffa8c0
+	.long	0x00e766+2	| credit_inserted_flag_00ffa8c0
+	.long	0x011dc8+2	| ext_00ff8f64
+	.long	0x011df0+2	| #ext_00ffa364
+	.long	0x011df8+2	| #ext_00ffa224
+	.long	0x012326+2	| p1_weapon_type_00ffa365
+	.long	0x01233c+2	| p2_weapon_type_00ffa225
+	.long	0x0124ae+4	| ext_00ffa364
+	.long	0x0124c0+2	| p1_weapon_type_00ffa365
+	.long	0x0124d2+4	| ext_00ffa224
+	.long	0x0124e4+2	| p2_weapon_type_00ffa225
+	.long	0x012556+4	| ext_00ffa364
+	.long	0x012568+4	| ext_00ffa224
+	.long	0x0125dc+2	| p1_weapon_type_00ffa365
+	.long	0x0125e6+2	| p2_weapon_type_00ffa225
+	.long	0x0128ec+4	| ext_00ffa364
+	.long	0x0128fa+4	| ext_00ffa224
+	.long	0x01290c+2	| ext_00ff8f64
+	.long	0x012a34+2	| ext_00ff8f64
+	.long	0x012ae0+4	| ext_00ffa846
+	.long	0x0132de+4	| ext_00ffa846
+	.long	0x01360c+4	| ext_00ffa846
+	.long	0x01391a+4	| ext_00ffa364
+	.long	0x013938+4	| ext_00ffa224
+	.long	0x013ae4+2	| ext_00ff8212
+	.long	0x013bee+4	| ext_00ffa364
+	.long	0x013c0c+4	| ext_00ffa224
+	.long	0x013c68+4	| ext_00ffa364
+	.long	0x013c7a+4	| ext_00ffa224
+	.long	0x013cea+2	| p1_weapon_type_00ffa365
+	.long	0x013cf4+2	| p2_weapon_type_00ffa225
+	.long	0x013ec8+4	| ext_00ffa846
+	.long	0x014252+4	| ext_00ffa846
+	.long	0x014456+4	| ext_00ffa843
+	.long	0x01455c+4	| ext_00ffa364
+	.long	0x01457a+4	| ext_00ffa224
+	.long	0x0145ac+2	| ext_00ff8212
+	.long	0x01460e+4	| ext_00ffa364
+	.long	0x014620+4	| ext_00ffa224
+	.long	0x0146c8+2	| p1_weapon_type_00ffa365
+	.long	0x0146d2+2	| p2_weapon_type_00ffa225
+	.long	0x014754+2	| ext_00ff8212
+	.long	0x01483e+2	| ext_00ff8212
+	.long	0x014950+2	| ext_00ff8212
+	.long	0x0149fa+4	| ext_00ffa843
+	.long	0x014a86+4	| current_stage_00ff821d
+	.long	0x014f38+4	| current_stage_00ff821d
+	.long	0x014f94+4	| stage_control_flags_00ff8216
+	.long	0x014fba+2	| ext_00ffa882
+	.long	0x014fc4+4	| ext_00ffa7c4
+	.long	0x014fd2+2	| ext_00ffa886
+	.long	0x0150c6+4	| ext_00ffa364
+	.long	0x0150e4+4	| ext_00ffa224
+	.long	0x01516a+2	| ext_00ff8212
+	.long	0x0151da+4	| ext_00ffa364
+	.long	0x0151ec+4	| ext_00ffa224
+	.long	0x01529e+2	| ext_00ff8212
+	.long	0x015368+4	| ext_00ffa7c4
+	.long	0x015370+4	| ext_00ffa842
+	.long	0x01537a+2	| ext_00ff8212
+	.long	0x015400+4	| ext_00ffa7c4
+	.long	0x01540a+4	| ext_00ff80fd
+	.long	0x01541c+2	| ext_00ff8212
+	.long	0x015456+2	| ext_00ff8f64
+	.long	0x0154ba+2	| ext_00ffa364
+	.long	0x0154c2+2	| ext_00ffa224
+	.long	0x0154fa+2	| ext_00ff8f64
+	.long	0x015536+2	| ext_00ff8f64
+	.long	0x01599a+2	| ext_00ff812c
+	.long	0x015a22+2	| ext_00ffa7c4
+	.long	0x015aa0+4	| ext_00ffa882
+	.long	0x015aa8+4	| ext_00ffa886
+	.long	0x015aea+2	| ext_00ffa882
+	.long	0x015af0+2	| ext_00ffa886
+	.long	0x015af6+2	| ext_00ff8212
+	.long	0x015b24+4	| ext_00ff8140
+	.long	0x015b32+2	| ext_00ffa882
+	.long	0x015b38+2	| ext_00ffa886
+	.long	0x015b40+6	| ext_00ffa882
+	.long	0x015b4a+4	| ext_00ff813c
+	.long	0x015b54+4	| ext_00ff813c
+	.long	0x015b60+6	| ext_00ffa886
+	.long	0x015b6c+6	| ext_00ffa886
+	.long	0x015c8a+4	| ext_00ffa7c4
+	.long	0x015cc8+2	| ext_00ffa882
+	.long	0x015cd2+2	| ext_00ffa886
+	.long	0x015d5e+4	| ext_00ffa7c4
+	.long	0x015d9c+2	| ext_00ffa882
+	.long	0x015da6+2	| ext_00ffa886
+	.long	0x015e32+4	| ext_00ffa7c4
+	.long	0x015e70+2	| ext_00ffa882
+	.long	0x015e7a+2	| ext_00ffa886
+	.long	0x015f06+4	| ext_00ffa7c4
+	.long	0x015f44+2	| ext_00ffa882
+	.long	0x015f4e+2	| ext_00ffa886
+	.long	0x015f9c+4	| ext_00ffa844
+	.long	0x015fae+2	| ext_00ffa364
+	.long	0x015fb6+4	| p1_state_flags_00ffa386
+	.long	0x015fc6+2	| ext_00ffa224
+	.long	0x015fce+4	| p2_state_flags_00ffa246
+	.long	0x015fde+2	| ext_00ffa364
+	.long	0x015fec+2	| ext_00ffa224
+	.long	0x015ffa+2	| ext_00ffa404
+	.long	0x016008+2	| ext_00ffa2c4
+	.long	0x016056+2	| ext_00ff802e
+	.long	0x01606c+2	| ext_00ff801e
+	.long	0x016072+2	| ext_00ff8022
+	.long	0x016078+2	| ext_00ff8026
+	.long	0x01607e+2	| ext_00ff801f
+	.long	0x016084+2	| ext_00ff8021
+	.long	0x016090+2	| ext_00ff8022
+	.long	0x016096+2	| ext_00ff8022
+	.long	0x016096+6	| ext_00ff8026
+	.long	0x0160a4+2	| ext_00ff8022
+	.long	0x0160aa+2	| ext_00ff8025
+	.long	0x0160b6+2	| ext_00ff8025
+	.long	0x0160bc+2	| ext_00ff8025
+	.long	0x0160c6+2	| ext_00ff8024
+	.long	0x0160cc+2	| ext_00ff8024
+	.long	0x0160cc+6	| ext_00ff8028
+	.long	0x0160da+2	| ext_00ff8024
+	.long	0x0160ea+2	| ext_00ffa367
+	.long	0x0160f0+2	| ext_00ffa368
+	.long	0x016122+2	| ext_00ffa36c
+	.long	0x01612e+4	| ext_00ffa364
+	.long	0x01613e+2	| ext_00ffa374
+	.long	0x01615c+4	| p1_state_flags_00ffa386
+	.long	0x01616a+4	| ext_00ffa3a4
+	.long	0x01618e+2	| ext_00ffa36c
+	.long	0x01619a+4	| ext_00ffa364
+	.long	0x0161aa+2	| ext_00ffa374
+	.long	0x0161c8+4	| p1_state_flags_00ffa386
+	.long	0x0161d6+4	| ext_00ffa3a4
+	.long	0x016212+2	| ext_00ff802e
+	.long	0x016228+2	| ext_00ff801e
+	.long	0x01622e+2	| ext_00ff8022
+	.long	0x016234+2	| ext_00ff8026
+	.long	0x01623a+2	| ext_00ff801f
+	.long	0x016240+2	| ext_00ff8021
+	.long	0x01624c+2	| ext_00ff8022
+	.long	0x016252+2	| ext_00ff8022
+	.long	0x016252+6	| ext_00ff8026
+	.long	0x016260+2	| ext_00ff8022
+	.long	0x016266+2	| ext_00ff8025
+	.long	0x016272+2	| ext_00ff8025
+	.long	0x016278+2	| ext_00ff8025
+	.long	0x016282+2	| ext_00ff8024
+	.long	0x016288+2	| ext_00ff8024
+	.long	0x016288+6	| ext_00ff8028
+	.long	0x016296+2	| ext_00ff8024
+	.long	0x0162a6+2	| ext_00ffa227
+	.long	0x0162ac+2	| ext_00ffa228
+	.long	0x0162de+2	| ext_00ffa22c
+	.long	0x0162ea+4	| ext_00ffa224
+	.long	0x0162fa+2	| ext_00ffa234
+	.long	0x016318+4	| p2_state_flags_00ffa246
+	.long	0x016326+4	| ext_00ffa264
+	.long	0x01634a+2	| ext_00ffa22c
+	.long	0x016356+4	| ext_00ffa224
+	.long	0x016366+2	| ext_00ffa234
+	.long	0x016384+4	| p2_state_flags_00ffa246
+	.long	0x016392+4	| ext_00ffa264
+	.long	0x0163ae+2	| ext_00ffa367
+	.long	0x0163b4+2	| ext_00ffa368
+	.long	0x0163c6+2	| ext_00ff802e
+	.long	0x0163dc+2	| ext_00ff801e
+	.long	0x0163e2+2	| ext_00ff8022
+	.long	0x0163e8+2	| ext_00ff8026
+	.long	0x0163ee+2	| ext_00ff801f
+	.long	0x0163f4+2	| ext_00ff8021
+	.long	0x016400+2	| ext_00ff8022
+	.long	0x016406+2	| ext_00ff8022
+	.long	0x016406+6	| ext_00ff8026
+	.long	0x016410+2	| ext_00ffa36c
+	.long	0x016416+2	| ext_00ff8022
+	.long	0x01641c+2	| ext_00ff8025
+	.long	0x016422+4	| ext_00ffa364
+	.long	0x01642c+2	| ext_00ff8025
+	.long	0x016432+2	| ext_00ff8025
+	.long	0x01643c+2	| ext_00ff8024
+	.long	0x016442+2	| ext_00ff8024
+	.long	0x016442+6	| ext_00ff8028
+	.long	0x01644c+2	| ext_00ffa374
+	.long	0x016452+2	| ext_00ff8024
+	.long	0x0164d8+4	| p1_state_flags_00ffa386
+	.long	0x0164e0+2	| ext_00ffa366
+	.long	0x01653a+4	| p1_state_flags_00ffa386
+	.long	0x016542+2	| ext_00ffa366
+	.long	0x01655e+2	| ext_00ffa227
+	.long	0x016564+2	| ext_00ffa228
+	.long	0x016576+2	| ext_00ff802e
+	.long	0x01658c+2	| ext_00ff801e
+	.long	0x016592+2	| ext_00ff8022
+	.long	0x016598+2	| ext_00ff8026
+	.long	0x01659e+2	| ext_00ff801f
+	.long	0x0165a4+2	| ext_00ff8021
+	.long	0x0165b0+2	| ext_00ff8022
+	.long	0x0165b6+2	| ext_00ff8022
+	.long	0x0165b6+6	| ext_00ff8026
+	.long	0x0165c0+2	| ext_00ffa22c
+	.long	0x0165c6+2	| ext_00ff8022
+	.long	0x0165cc+2	| ext_00ff8025
+	.long	0x0165d2+4	| ext_00ffa224
+	.long	0x0165dc+2	| ext_00ff8025
+	.long	0x0165e2+2	| ext_00ff8025
+	.long	0x0165ec+2	| ext_00ff8024
+	.long	0x0165f2+2	| ext_00ff8024
+	.long	0x0165f2+6	| ext_00ff8028
+	.long	0x0165fc+2	| ext_00ffa234
+	.long	0x016602+2	| ext_00ff8024
+	.long	0x016688+4	| p2_state_flags_00ffa246
+	.long	0x016690+2	| ext_00ffa226
+	.long	0x0166ea+4	| p2_state_flags_00ffa246
+	.long	0x0166f2+2	| ext_00ffa226
+	.long	0x01670e+2	| ext_00ffa407
+	.long	0x016714+2	| ext_00ffa408
+	.long	0x016726+2	| ext_00ff802e
+	.long	0x01673c+2	| ext_00ff801e
+	.long	0x016742+2	| ext_00ff8022
+	.long	0x016748+2	| ext_00ff8026
+	.long	0x01674e+2	| ext_00ff801f
+	.long	0x016754+2	| ext_00ff8021
+	.long	0x016760+2	| ext_00ff8022
+	.long	0x016766+2	| ext_00ff8022
+	.long	0x016766+6	| ext_00ff8026
+	.long	0x016770+2	| ext_00ffa40c
+	.long	0x016776+2	| ext_00ff8022
+	.long	0x01677c+2	| ext_00ff8025
+	.long	0x016782+4	| ext_00ffa404
+	.long	0x01678c+2	| ext_00ff8025
+	.long	0x016792+2	| ext_00ff8025
+	.long	0x01679c+2	| ext_00ff8024
+	.long	0x0167a2+2	| ext_00ff8024
+	.long	0x0167a2+6	| ext_00ff8028
+	.long	0x0167ac+2	| ext_00ffa414
+	.long	0x0167b2+2	| ext_00ff8024
+	.long	0x016838+4	| ext_00ffa426
+	.long	0x016840+2	| ext_00ffa406
+	.long	0x01689a+4	| ext_00ffa426
+	.long	0x0168a2+2	| ext_00ffa406
+	.long	0x0168be+2	| ext_00ffa2c7
+	.long	0x0168c4+2	| ext_00ffa2c8
+	.long	0x0168d6+2	| ext_00ff802e
+	.long	0x0168ec+2	| ext_00ff801e
+	.long	0x0168f2+2	| ext_00ff8022
+	.long	0x0168f8+2	| ext_00ff8026
+	.long	0x0168fe+2	| ext_00ff801f
+	.long	0x016904+2	| ext_00ff8021
+	.long	0x016910+2	| ext_00ff8022
+	.long	0x016916+2	| ext_00ff8022
+	.long	0x016916+6	| ext_00ff8026
+	.long	0x016920+2	| ext_00ffa2cc
+	.long	0x016926+2	| ext_00ff8022
+	.long	0x01692c+2	| ext_00ff8025
+	.long	0x016932+4	| ext_00ffa2c4
+	.long	0x01693c+2	| ext_00ff8025
+	.long	0x016942+2	| ext_00ff8025
+	.long	0x01694c+2	| ext_00ff8024
+	.long	0x016952+2	| ext_00ff8024
+	.long	0x016952+6	| ext_00ff8028
+	.long	0x01695c+2	| ext_00ffa2d4
+	.long	0x016962+2	| ext_00ff8024
+	.long	0x0169e8+4	| ext_00ffa2e6
+	.long	0x0169f0+2	| ext_00ffa2c6
+	.long	0x016a4a+4	| ext_00ffa2e6
+	.long	0x016a52+2	| ext_00ffa2c6
+	.long	0x016a68+2	| ext_00ffa366
+	.long	0x016a6e+2	| ext_00ffa367
+	.long	0x016a8a+2	| ext_00ff8027
+	.long	0x016a8a+6	| ext_00ffa38a
+	.long	0x016a94+2	| ext_00ff8029
+	.long	0x016a94+6	| ext_00ffa38b
+	.long	0x016aa4+2	| ext_00ffa226
+	.long	0x016aaa+2	| ext_00ffa227
+	.long	0x016ac6+2	| ext_00ff8027
+	.long	0x016ac6+6	| ext_00ffa24a
+	.long	0x016ad0+2	| ext_00ff8029
+	.long	0x016ad0+6	| ext_00ffa24b
+	.long	0x016ae0+2	| ext_00ffa406
+	.long	0x016ae6+2	| ext_00ffa407
+	.long	0x016b02+2	| ext_00ff8027
+	.long	0x016b02+6	| ext_00ffa42a
+	.long	0x016b0c+2	| ext_00ff8029
+	.long	0x016b0c+6	| ext_00ffa42b
+	.long	0x016b1c+2	| ext_00ffa2c6
+	.long	0x016b22+2	| ext_00ffa2c7
+	.long	0x016b3e+2	| ext_00ff8027
+	.long	0x016b3e+6	| ext_00ffa2ea
+	.long	0x016b48+2	| ext_00ff8029
+	.long	0x016b48+6	| ext_00ffa2eb
+	.long	0x016b72+2	| ext_00ffa388
+	.long	0x016b78+2	| ext_00ff8027
+	.long	0x016b80+2	| ext_00ff8029
+	.long	0x016b88+2	| ext_00ffa374
+	.long	0x016b94+4	| p1_state_flags_00ffa386
+	.long	0x016b9e+4	| p1_state_flags_00ffa386
+	.long	0x016bc6+2	| ext_00ffa248
+	.long	0x016bcc+2	| ext_00ff8027
+	.long	0x016bd4+2	| ext_00ff8029
+	.long	0x016bdc+2	| ext_00ffa234
+	.long	0x016be8+4	| p2_state_flags_00ffa246
+	.long	0x016bf2+4	| p2_state_flags_00ffa246
+	.long	0x016bfc+2	| ext_00ff801e
+	.long	0x016c02+2	| ext_00ff8020
+	.long	0x016c08+2	| ext_00ff8022
+	.long	0x016c16+2	| ext_00ff8024
+	.long	0x018c84+2	| ext_00ffa852
+	.long	0x018d9c+4	| ext_00ffa364
+	.long	0x018da6+4	| ext_00ffa224
+	.long	0x018db2+4	| ext_00ffa224
+	.long	0x018dc0+2	| ext_00ffa374
+	.long	0x018dda+2	| ext_00ffa234
+	.long	0x018df4+2	| ext_00ffa374
+	.long	0x018e04+2	| ext_00ffa234
+	.long	0x018ea6+4	| ext_00ffa364
+	.long	0x018eb0+4	| ext_00ffa224
+	.long	0x018fa4+4	| ext_00ffa846
+	.long	0x01904e+4	| ext_00ffa846
+	.long	0x019194+4	| ext_00ffa364
+	.long	0x01919e+4	| ext_00ffa224
+	.long	0x0191b0+4	| ext_00ffa224
+	.long	0x0191e6+2	| ext_00ffa374
+	.long	0x0191fc+2	| ext_00ffa36c
+	.long	0x019230+2	| ext_00ffa234
+	.long	0x01924a+2	| ext_00ffa22c
+	.long	0x019852+4	| current_stage_00ff821d
+	.long	0x01986a+2	| ext_00ffa852
+	.long	0x01994c+4	| ext_00ffa364
+	.long	0x019956+4	| ext_00ffa224
+	.long	0x0199a4+4	| ext_00ffa364
+	.long	0x0199ae+4	| ext_00ffa224
+	.long	0x019b3c+2	| ext_00ffa856
+	.long	0x019bf2+2	| ext_00ffa856
+	.long	0x019c90+4	| ext_00ff8212
+	.long	0x019cda+4	| ext_00ffa364
+	.long	0x019ce4+4	| ext_00ffa224
+	.long	0x019cfc+4	| ext_00ffa224
+	.long	0x019d32+4	| ext_00ffa367
+	.long	0x019d3c+4	| ext_00ffa367
+	.long	0x019d4c+4	| ext_00ffa227
+	.long	0x019d56+4	| ext_00ffa227
+	.long	0x019db8+4	| ext_00ffa367
+	.long	0x019dc2+4	| ext_00ffa367
+	.long	0x019e24+4	| ext_00ffa227
+	.long	0x019e2e+4	| ext_00ffa227
+	.long	0x019e94+2	| ext_00ffa374
+	.long	0x019eaa+2	| ext_00ffa36c
+	.long	0x019ede+2	| ext_00ffa234
+	.long	0x019ef8+2	| ext_00ffa22c
+	.long	0x01a02a+2	| ext_00ff8212
+	.long	0x01a53e+4	| current_stage_00ff821d
+	.long	0x01a55a+4	| stage_control_flags_00ff8216
+	.long	0x01a586+4	| ext_00ffa845
+	.long	0x01a596+4	| current_stage_00ff821d
+	.long	0x01a5c8+4	| current_stage_00ff821d
+	.long	0x01a5e0+2	| ext_00ffa852
+	.long	0x01a6f4+4	| ext_00ffa364
+	.long	0x01a6fe+4	| ext_00ffa224
+	.long	0x01a74c+4	| ext_00ffa364
+	.long	0x01a756+4	| ext_00ffa224
+	.long	0x01a8f4+2	| ext_00ffa856
+	.long	0x01a9aa+2	| ext_00ffa856
+	.long	0x01aa4c+4	| p2_weapon_type_00ffa225
+	.long	0x01aa58+4	| p1_weapon_type_00ffa365
+	.long	0x01aa74+4	| ext_00ff8212
+	.long	0x01abce+4	| p1_weapon_type_00ffa365
+	.long	0x01abda+4	| p2_weapon_type_00ffa225
+	.long	0x01acea+2	| ext_00ff8203
+	.long	0x01ad58+2	| ext_00ff8203
+	.long	0x01adea+2	| ext_00ff8203
+	.long	0x01ae3a+2	| ext_00ff8203
+	.long	0x01b156+4	| current_stage_00ff821d
+	.long	0x01b172+4	| stage_control_flags_00ff8216
+	.long	0x01b19e+4	| ext_00ffa845
+	.long	0x01b1ae+4	| current_stage_00ff821d
+	.long	0x01b1e2+4	| ext_00ffa7c4
+	.long	0x01b1f2+4	| ext_00ffa7c4
+	.long	0x01b1fa+2	| ext_00ffa7c4
+	.long	0x01b23a+2	| is_actual_game_played_00ff8215
+	.long	0x01b23a+6	| ext_00ffa7d4
+	.long	0x01b244+4	| is_actual_game_played_00ff8215
+	.long	0x01b24c+2	| ext_00ffa856
+	.long	0x01b252+2	| ext_00ffa852
+	.long	0x01b258+4	| ext_00ff8170
+	.long	0x01b260+4	| ext_00ff8120
+	.long	0x01b268+4	| ext_00ff8128
+	.long	0x01b270+4	| ext_00ff812c
+	.long	0x01b278+4	| ext_00ff813c
+	.long	0x01b280+4	| ext_00ff8140
+	.long	0x01b2a8+4	| ext_00ff8112
+	.long	0x01b2b6+4	| ext_00ff8126
+	.long	0x01b35e+4	| ext_00ffa7c5
+	.long	0x01b378+4	| ext_00ffa7c8
+	.long	0x01b380+4	| ext_00ffa7c5
+	.long	0x01b388+2	| ext_00ffa7c8
+	.long	0x01b390+4	| ext_00ffa7c5
+	.long	0x01b398+4	| ext_00ffa7c4
+	.long	0x01b3a0+6	| ext_00ffa4a4
+	.long	0x01b3aa+6	| ext_00ffa4ac
+	.long	0x01b3b4+6	| ext_00ffa4b4
+	.long	0x01b3be+4	| ext_00ffa4c4
+	.long	0x01b3c8+4	| ext_00ffa7c5
+	.long	0x01b3d2+2	| ext_00ffa7d0
+	.long	0x01b3d8+4	| ext_00ffa7c5
+	.long	0x01b3e0+4	| ext_00ffa7c4
+	.long	0x01b3ec+2	| ext_00ffa7c8
+	.long	0x01b3fc+2	| ext_00ffa7d0
+	.long	0x01b410+4	| ext_00ffa7c4
+	.long	0x01b418+4	| ext_00ffa7c8
+	.long	0x01b420+4	| ext_00ffa7c5
+	.long	0x01b430+2	| ext_00ffa7d0
+	.long	0x01b436+4	| ext_00ffa7c8
+	.long	0x01b446+2	| ext_00ffa7cb
+	.long	0x01b44c+4	| ext_00ffa7cb
+	.long	0x01b456+4	| ext_00ffa7c5
+	.long	0x01b460+4	| ext_00ffa7c5
+	.long	0x01b468+4	| ext_00ffa7c8
+	.long	0x01b472+2	| ext_00ffa7c8
+	.long	0x01b47a+4	| ext_00ffa7c4
+	.long	0x01b482+4	| ext_00ffa7c4
+	.long	0x01b48a+4	| ext_00ffa7c5
+	.long	0x01b494+4	| ext_00ffa7c5
+	.long	0x01b49e+6	| ext_00ffa4a4
+	.long	0x01b4aa+6	| ext_00ffa4a4
+	.long	0x01b4b4+6	| ext_00ffa4ac
+	.long	0x01b4be+6	| ext_00ffa4b4
+	.long	0x01b4c8+4	| ext_00ffa4c4
+	.long	0x01b4d2+4	| ext_00ffa7c5
+	.long	0x01b4e8+4	| ext_00ffa7c5
+	.long	0x01b4f0+4	| ext_00ffa7c5
+	.long	0x01b4f8+4	| ext_00ffa7c5
+	.long	0x01b508+2	| ext_00ffa7d4
+	.long	0x01b51a+2	| ext_00ffa7d6
+	.long	0x01b524+4	| ext_00ffa7c5
+	.long	0x01b52c+4	| ext_00ffa7c4
+	.long	0x01b538+4	| ext_00ffa7c5
+	.long	0x01b548+6	| ext_00ffa7cc
+	.long	0x01b552+2	| ext_00ffa7cc
+	.long	0x01b564+4	| ext_00ffa7d2
+	.long	0x01b56c+4	| ext_00ffa7c5
+	.long	0x01b576+4	| ext_00ffa7d2
+	.long	0x01b580+4	| ext_00ffa7d2
+	.long	0x01b59a+2	| ext_00ffa7d2
+	.long	0x01b5a2+4	| ext_00ffa7c4
+	.long	0x01b5ba+4	| ext_00ffa7c4
+	.long	0x01b5c4+4	| ext_00ffa7c5
+	.long	0x01b5cc+4	| ext_00ffa7c4
+	.long	0x01b5d4+4	| ext_00ffa7c4
+	.long	0x01b5e2+2	| ext_00ffa7d4
+	.long	0x01b606+6	| ext_00ffa4f4
+	.long	0x01b610+6	| ext_00ffa4fc
+	.long	0x01b61a+6	| ext_00ffa504
+	.long	0x01b624+4	| ext_00ffa514
+	.long	0x01b62c+6	| ext_00ffa594
+	.long	0x01b636+6	| ext_00ffa59c
+	.long	0x01b640+6	| ext_00ffa5a4
+	.long	0x01b64a+4	| ext_00ffa5b4
+	.long	0x01b654+6	| ext_00ffa544
+	.long	0x01b65e+6	| ext_00ffa54c
+	.long	0x01b668+6	| ext_00ffa554
+	.long	0x01b672+4	| ext_00ffa564
+	.long	0x01b67a+6	| ext_00ffa594
+	.long	0x01b684+6	| ext_00ffa59c
+	.long	0x01b68e+6	| ext_00ffa5a4
+	.long	0x01b698+4	| ext_00ffa5b4
+	.long	0x01b6a2+6	| ext_00ffa4f4
+	.long	0x01b6ac+6	| ext_00ffa4fc
+	.long	0x01b6b6+6	| ext_00ffa504
+	.long	0x01b6c0+4	| ext_00ffa514
+	.long	0x01b6c8+6	| ext_00ffa544
+	.long	0x01b6d2+6	| ext_00ffa54c
+	.long	0x01b6dc+6	| ext_00ffa554
+	.long	0x01b6e6+4	| ext_00ffa564
+	.long	0x01b6ee+6	| ext_00ffa594
+	.long	0x01b6f8+6	| ext_00ffa59c
+	.long	0x01b702+6	| ext_00ffa5a4
+	.long	0x01b70c+4	| ext_00ffa5b4
+	.long	0x01b72c+4	| ext_00ff810c
+	.long	0x01b7b6+2	| ext_00ffa7ca
+	.long	0x01b7f4+2	| ext_00ffa4a4
+	.long	0x01b800+6	| ext_00ffa4ac
+	.long	0x01b80a+6	| ext_00ffa4b4
+	.long	0x01b81a+2	| ext_00ffa4a7
+	.long	0x01b828+2	| ext_00ffa4c4
+	.long	0x01ba78+2	| ext_00ffa4a4
+	.long	0x01ba8a+4	| ext_00ff8170
+	.long	0x01ba92+4	| ext_00ffa7d6
+	.long	0x01baa2+4	| ext_00ff810c
+	.long	0x01bab0+4	| ext_00ff8112
+	.long	0x01babe+4	| ext_00ff8114
+	.long	0x01bacc+4	| ext_00ff8118
+	.long	0x01bada+4	| ext_00ff811e
+	.long	0x01bae8+4	| ext_00ff811c
+	.long	0x01baf6+4	| ext_00ff8134
+	.long	0x01bb04+4	| ext_00ff813c
+	.long	0x01bb12+4	| ext_00ff8140
+	.long	0x01bb20+4	| ext_00ff813a
+	.long	0x01bba8+2	| ext_00ffa7d4
+	.long	0x01bbb2+2	| ext_00ffa9bb
+	.long	0x01bbca+2	| ext_00ffa9bb
+	.long	0x01bbd6+4	| ext_00ffa4a4
+	.long	0x01bbde+4	| ext_00ffa4f4
+	.long	0x01bbe6+4	| ext_00ffa544
+	.long	0x01bbee+4	| ext_00ffa594
+	.long	0x01bc02+2	| spriteram_00ffc000
+	.long	0x01bc08+2	| #ext_00ffa454
+	.long	0x01bc1e+4	| sync_flags_00ff8217
+	.long	0x01bc7e+2	| ext_00ffa7d0
+	.long	0x01d242+4	| ext_00ffa846
+	.long	0x01db9a+2	| current_stage_00ff821d
+	.long	0x01dbe8+2	| ext_00ff80f2
+	.long	0x01dc28+2	| ext_00ffa7c4
+	.long	0x01dc3c+2	| ext_00ffa364
+	.long	0x01dc4e+2	| ext_00ffa224
+	.long	0x01dc64+2	| ext_00ffa364
+	.long	0x01dc76+2	| ext_00ffa224
+	.long	0x01dd4c+2	| ext_00ffa7ce
+	.long	0x01e554+2	| ext_00ff8212
+	.long	0x01e5b6+2	| ext_00ffa7c4
+	.long	0x01e5d2+2	| ext_00ff8212
+	.long	0x01e620+2	| ext_00ffa7c4
+	.long	0x01e63c+2	| ext_00ff8212
+	.long	0x01ed2a+2	| ext_00ffa7ce
+	.long	0x01ed30+4	| ext_00ffa7ce
+	.long	0x01ed62+2	| ext_00ffa7ce
+	.long	0x01ee48+2	| ext_00ff8212
+	.long	0x01ee5e+4	| ext_00ffa7c4
+	.long	0x01efec+2	| current_stage_00ff821d
+	.long	0x01f016+2	| current_stage_00ff821d
+	.long	0x01f022+4	| ext_00ffa845
+	.long	0x01f032+4	| stage_control_flags_00ff8216
+	.long	0x01f198+2	| ext_00ff8212
+	.long	0x01f364+4	| ext_00ffa843
+	.long	0x01f3b0+4	| ext_00ffa843
+	.long	0x01f3e8+0	| ext_00ff8884
+	.long	0x01f3ec+0	| ext_00ff8f64
+	.long	0x01f3f0+0	| ext_00ff9f04
+	.long	0x01f3f4+0	| ext_00ffa224
+	.long	0x01f412+4	| state_00ffa8f0
+	.long	0x01f45c+4	| ext_00ffa8e0
+	.long	0x01f464+4	| ext_00ffa843
+	.long	0x01f470+2	| ext_00ffa852
+	.long	0x01f4ca+0	| ext_00ff85b4
+	.long	0x01f4ce+0	| ext_00ff8244
+	.long	0x01f4d2+0	| ext_00ff95f4
+	.long	0x01f536+4	| ext_00ffa843
+	.long	0x01f57e+4	| ext_00ffa843
+	.long	0x01f594+4	| ext_00ffa364
+	.long	0x01f59c+4	| ext_00ffa224
+	.long	0x01f602+4	| ext_00ffa843
+	.long	0x01f60c+4	| ext_00ffa364
+	.long	0x01f614+4	| ext_00ffa224
+	.long	0x01f61c+4	| ext_00ffa843
+	.long	0x01f628+2	| ext_00ffa852
+	.long	0x01f67e+4	| ext_00ffa843
+	.long	0x01f738+4	| state_00ffa8f0
+	.long	0x01f740+4	| ext_00ffa843
+	.long	0x01f748+4	| ext_00ffa843
+	.long	0x01f7c4+4	| ext_00ffa843
+	.long	0x01f7ea+4	| ext_00ff95a4
+	.long	0x01f7fe+4	| state_00ffa8f0
+	.long	0x01f846+4	| ext_00ffa843
+	.long	0x01f84e+4	| ext_00ffa843
+	.long	-1
+patchlist:
+	PL_START
+	PL_I	0x000100	| spurious interrupt
+	PL_I	0x00031c	| infinite loop
+	PL_P	0x000372,osd_enable_interrupts	| mcu shit and enable interrupts
+	PL_PS	0x000378,read_word_0030c008_to_D0
+	PL_PS	0x000394,write_word_D0_to_0030c012
+	PL_S	0x0003d0,0x03dc-0x03d0-2	| skip unneeded vblank wait
+	PL_PS	0x0003e4,write_word_D0_to_0030c018
+	PL_R	0x0003ee	| turn RTE to RTS in irq
+	PL_PS	0x00040e,read_word_0030c002_to_D0
+	PL_PS	0x000588,write_word_D0_to_0030c018
+	PL_P	0x000596,osd_enable_interrupts
+	PL_PSS	0x0006e8,read_word_0030c004_to_copy_of_dsw_msb_00ff810a,4
+	PL_P	0x0007be,copy_to_palette_007be	| copy palette subroutine
+	PL_PSS	0x0013dc,write_word_imm_0003_to_0030c01e,2
+	PL_S	0x0013e4,0x1422-0x13e4-2	| skip ram test
+	PL_NOP	0x001422,6	| set stack
+	PL_PSS	0x001438,write_word_imm_0000_to_0030c010,2
+	PL_PS	0x001454,set_palette_a2
+	PL_PS	0x00146a,set_palette_a2
+	PL_PS	0x001476,enable_interrupts_01476
+	PL_S	0x00147c,0x148e-0x147c-2	| skip hw control stuff
+	PL_PSS	0x001486,write_word_imm_0000_to_0030c01e,2
+	PL_R	0x0014ee	| service mode test
+	PL_PS	0x001502,clear_sound
+	PL_PS	0x00157e,read_byte_0030c003_to_D0
+	PL_PS	0x0015ac,read_word_0030c004_to_D1
+	PL_PS	0x0015d0,read_word_00300000_to_D1
+	PL_PS	0x0015e0,read_word_00300008_to_D1
+	PL_NOP	0x001652,8
+	PL_B	0x00165a,96
+	PL_I	0x00166e	| reset
+	PL_PS	0x001696,read_word_0030c004_to_D1
+	PL_PS	0x0016ba,read_word_00300000_to_D1
+	PL_PS	0x0016ca,read_word_00300008_to_D1
+	PL_NOP	0x00173c,8
+	PL_B	0x001744,96
+	PL_PSS	0x00174c,test_input_bit_d1,2
+	PL_PS	0x001756,write_word_D0_to_0030c012
+	PL_PSS	0x00175c,test_input_bit_d1,2
+	PL_PS	0x0017aa,read_word_0030c000_to_D1
+	PL_PS	0x0017ba,read_word_0030c002_to_D1
+	PL_PS	0x001ab0,set_game_context_1ab0
+	PL_PS	0x001c90,read_byte_0030c005_to_D0
+	PL_PS	0x001c9e,read_byte_0030c004_to_D0
+	PL_PS	0x001cc6,read_byte_0030c004_to_D0
+	PL_PSS	0x001cfa,write_word_imm_0000_to_0024841c,2
+	PL_PSS	0x001d02,write_word_imm_0000_to_0024841e,2
+	PL_P	0x001d5c,videoram_write_loop_d1_d0
+	PL_P	0x001d70,videoram_write_loop_d1_d0
+	PL_P	0x001d84,videoram_write_loop_d1_d0
+	PL_P	0x001d98,videoram_write_loop_d1_d0
+	PL_PS	0x001daa,videoram_write_loop_d0_d1
+	PL_P	0x001dba,videoram_write_loop_d0_d1
+	PL_R	0x001dc2	| skip spriteram clear
+	PL_PS	0x001dd4,write_word_D0_to_0030c012
+	PL_PS	0x001e00,videoram_write_loop_d0_d1
+	PL_PS	0x001e16,videoram_write_loop_d0_d1
+	PL_P	0x001e26,videoram_write_loop_d0_d1
+	PL_PS	0x001e52,videoram_write_loop_d0_d1
+	PL_PS	0x001e68,set_scroll_values	| set column scroll
+	PL_PS	0x001e78,set_scroll_values	| set column scroll
+	PL_R	0x001e80
+	PL_P	0x001fa2,copy_to_tile_0_01fa2
+	PL_P	0x001fca,videoram_write_01fca
+	PL_P	0x001ff8,videoram_clear_01ff8
+	PL_P	0x0021e8,videoram_write_021e8
+	PL_PSS	0x002366,write_word_ext_00ff810c_to_00240000,4
+	PL_PSS	0x002372,write_word_ext_00ff810e_to_00240002,4
+	PL_PSS	0x00237e,write_word_ext_00ff8110_to_00240004,4
+	PL_PSS	0x00238a,write_word_ext_00ff8112_to_00240006,4
+	PL_PSS	0x002396,write_word_ext_00ff8114_to_00240010,4
+	PL_PSS	0x0023a2,write_word_ext_00ff8118_to_00240012,4
+	PL_PSS	0x0023ae,write_word_ext_00ff811c_to_00240014,4
+	PL_PSS	0x0023ba,write_word_ext_00ff811e_to_00240016,4
+	PL_PSS	0x0023d8,write_word_ext_00ff8120_to_00246000,4
+	PL_PSS	0x0023e4,write_word_ext_00ff8122_to_00246002,4
+	PL_PSS	0x0023f0,write_word_ext_00ff8124_to_00246004,4
+	PL_PSS	0x0023fc,write_word_ext_00ff8126_to_00246006,4
+	PL_PSS	0x002408,write_word_ext_00ff8128_to_00246010,4
+	PL_PSS	0x002414,write_word_ext_00ff812c_to_00246012,4
+	PL_PSS	0x002420,write_word_ext_00ff8130_to_00246014,4
+	PL_PSS	0x00242c,write_word_ext_00ff8132_to_00246016,4
+	PL_PSS	0x00244a,write_word_ext_00ff8134_to_0024c000,4
+	PL_PSS	0x002456,write_word_ext_00ff8136_to_0024c002,4
+	PL_PSS	0x002462,write_word_ext_00ff8138_to_0024c004,4
+	PL_PSS	0x00246e,write_word_ext_00ff813a_to_0024c006,4
+	PL_PSS	0x00247a,write_word_ext_00ff813c_to_0024c010,4
+	PL_PSS	0x002486,write_word_ext_00ff8140_to_0024c012,4
+	PL_PSS	0x002492,write_word_ext_00ff8144_to_0024c014,4
+	PL_PSS	0x00249e,write_word_ext_00ff8146_to_0024c016,4
+	PL_PS	0x0062ae,videoram_write_062ae
+	PL_PS	0x0062e2,videoram_write_062e2
+	PL_PS	0x0064f6,copy_to_tile_064f6
+	PL_PS	0x00651e,copy_to_tile_0651e
+	PL_PSS	0x006aca,write_word_imm_0004_to_00246016,2
+	PL_PS	0x006b0a,write_word_D4_to_0024841c
+	PL_PS	0x006b10,write_word_D4_to_0024841e
+	PL_PSS	0x006c82,videoram_write_06c82,12
+	PL_PSS	0x006cf6,write_word_imm_0004_to_00246016,2
+	PL_PS	0x006d36,write_word_D4_to_0024841c
+	PL_PS	0x006d3c,write_word_D4_to_0024841e
+	PL_PSS	0x006ec2,write_word_ext_00ff8128_to_00246010,4
+	PL_PSS	0x006ecc,write_word_ext_00ff812c_to_00246012,4
+	PL_PSS	0x006ed6,write_word_ext_00ff813c_to_0024c010,4
+	PL_PSS	0x006ee0,write_word_ext_00ff8140_to_0024c012,4
+	PL_P	0x007b9a,display_scores_loop_07b9a
+	PL_PSS	0x007e66,test_input_bit_d1,2
+	PL_PSS	0x00826e,write_word_imm_0004_to_0030c010,2
+	PL_PSS	0x008326,write_word_imm_0000_to_0030c010,2
+	PL_PS	0x00834a,write_ninja_message_0834A
+	PL_P	0x00837c,copy_memory_to_tiles_0837c
+	PL_PS	0x0083ac,write_to_tile_0_083ac
+	PL_S	0x0083b2,0x83c6-0x83b2-2
+	PL_PS	0x0083ce,set_video_attribute_083ce
+	PL_S	0x0083d4,0x83e8-0x83d4-2
+	PL_PSS	0x008420,write_word_imm_0004_to_0030c010,2
+	PL_PS	0x0084c4,set_game_intro_context_084c4
+	PL_PS	0x008848,videoram_write_08848
+	PL_PSS	0x00924e,write_word_imm_0000_to_0030c010,2
+	PL_P	0x009592,copy_highscore_tiles_loop_09592
+	PL_R	0x00979a	| mcu reply test
+	PL_R	0x0097a4	| skipping some hardware init shit
+	PL_PS	0x0097a8,write_word_D0_to_0030c016
+	PL_PSS	0x0097ae,test_input_bit_7,2
+	PL_PSS	0x0097b8,test_input_bit_7,2
+	PL_PSS	0x0097c2,test_input_bit_7,2
+	PL_PS	0x0097d0,write_word_D0_to_0030c016
+	PL_PSS	0x009826,write_word_ext_00ffa834_to_0030c016,4
+	PL_PS	0x009836,read_word_0030c008_to_D0
+	PL_PSS	0x0099f0,copy_tiles_099f0,4
+	PL_PS	0x009a50,write_long_D2_to_002446f4
+	PL_PS	0x009ac6,write_word_D0_to_00244420
+	PL_PS	0x009cfc,write_word_D0_to_0024476a
+	PL_PS	0x009d18,write_word_D0_to_0024476a
+	PL_PS	0x009d68,write_word_D0_to_00244902
+	PL_PS	0x00cd3e,write_word_a0plus_to_0030c010	| manual
+	PL_P	0x00def0,play_sound_0def0
+	PL_PS	0x00df2a,write_word_D0_to_0030c014
+	PL_PS	0x00df34,write_word_D0_to_0030c014
+	PL_PS	0x00e07e,videoram_write_loop_0e07e
+	PL_P	0x00e0ac,videoram_write_0e0ac
+	PL_P	0x00e122,display_lives_0e122
+	PL_PS	0x00e152,read_word_0030c004_to_D0
+	PL_PS	0x00e168,read_word_0030c000_to_D0
+	PL_PS	0x00e1ae,read_word_0030c000_to_D0
+	PL_PS	0x00e238,read_word_0030c008_to_D0
+	PL_PSS	0x00e266,write_word_imm_0900_to_0030c016,2
+	PL_PSS	0x00e30e,write_to_tiles_0e30e,4
+	PL_NOP	0x00e32e,2
+	PL_PS	0x00e370,write_word_D1_to_0030c016
+	PL_PS	0x00e382,read_word_0030c000_to_D3
+	PL_P	0x00e402,videoram_write_loop_d1_d0
+	PL_PS	0x00e6e8,read_word_0030c002_to_D0
+	PL_PS	0x00e72c,read_word_0030c004_to_D2
+	PL_PSS	0x00e76c,write_byte_imm_05_to_0030c015,2
+	PL_L	0x018cb8,0x48E7FFFE	| fix movem.w
+	PL_L	0x018cc4,0x4CDF7FFF	| fix movem.w
+	PL_L	0x0192de,0x48E7FFFE	| fix movem.w
+	PL_L	0x0192e8,0x4CDF7FFF	| fix movem.w
+	PL_L	0x01931e,0x48E7FFFE	| fix movem.w
+	PL_L	0x01932a,0x4CDF7FFF	| fix movem.w
+	PL_L	0x019520,0x48E7FFFE	| fix movem.w
+	PL_L	0x01952a,0x4CDF7FFF	| fix movem.w
+	PL_L	0x01953a,0x48E7FFFE	| fix movem.w
+	PL_L	0x019546,0x4CDF7FFF	| fix movem.w
+	PL_L	0x019600,0x48E7FFFE	| fix movem.w
+	PL_L	0x01960c,0x4CDF7FFF	| fix movem.w
+	PL_L	0x0198b2,0x48E7FFFE	| fix movem.w
+	PL_L	0x0198be,0x4CDF7FFF	| fix movem.w
+	PL_L	0x019f9a,0x48E7FFFE	| fix movem.w
+	PL_L	0x019fa4,0x4CDF7FFF	| fix movem.w
+	PL_L	0x019fbc,0x48E7FFFE	| fix movem.w
+	PL_L	0x019fc8,0x4CDF7FFF	| fix movem.w
+	PL_L	0x01a004,0x48E7FFFE	| fix movem.w
+	PL_L	0x01a010,0x4CDF7FFF	| fix movem.w
+	PL_L	0x01a1e2,0x48E7FFFE	| fix movem.w
+	PL_L	0x01a1ec,0x4CDF7FFF	| fix movem.w
+	PL_L	0x01a1fc,0x48E7FFFE	| fix movem.w
+	PL_L	0x01a208,0x4CDF7FFF	| fix movem.w
+	PL_L	0x01a2a4,0x48E7FFFE	| fix movem.w
+	PL_L	0x01a2b0,0x4CDF7FFF	| fix movem.w
+	PL_L	0x01a62c,0x48E7FFFE	| fix movem.w
+	PL_L	0x01a638,0x4CDF7FFF	| fix movem.w
+	PL_L	0x01ab26,0x48E7FFFE	| fix movem.w
+	PL_L	0x01ab30,0x4CDF7FFF	| fix movem.w
+	PL_L	0x01ab42,0x48E7FFFE	| fix movem.w
+	PL_L	0x01ab4e,0x4CDF7FFF	| fix movem.w
+	PL_L	0x01ab94,0x48E7FFFE	| fix movem.w
+	PL_L	0x01aba0,0x4CDF7FFF	| fix movem.w
+	PL_L	0x01acf6,0x48E7FFFE	| fix movem.w
+	PL_L	0x01ad02,0x4CDF7FFF	| fix movem.w
+	PL_L	0x01ad64,0x48E7FFFE	| fix movem.w
+	PL_L	0x01ad70,0x4CDF7FFF	| fix movem.w
+	PL_L	0x01adf6,0x48E7FFFE	| fix movem.w
+	PL_L	0x01ae02,0x4CDF7FFF	| fix movem.w
+	PL_L	0x01ae46,0x48E7FFFE	| fix movem.w
+	PL_L	0x01ae52,0x4CDF7FFF	| fix movem.w
+	PL_L	0x01afcc,0x48E7FFFE	| fix movem.w
+	PL_L	0x01afd8,0x4CDF7FFF	| fix movem.w
+	PL_L	0x01b078,0x48E7FFFE	| fix movem.w
+	PL_L	0x01b084,0x4CDF7FFF	| fix movem.w
+	PL_PSS	0x01b288,write_word_imm_0000_to_00246010,2
+	PL_PSS	0x01b290,write_word_imm_0000_to_00246012,2
+	PL_PSS	0x01b298,write_word_imm_0000_to_0024c010,2
+	PL_PSS	0x01b2a0,write_word_imm_0000_to_0024c012,2
+	PL_PSS	0x01b2c4,write_word_imm_0004_to_0030c010,2
+	PL_L	0x01b2fe,0x48E7FFFE	| fix movem.w
+	PL_L	0x01b30a,0x4CDF7FFF	| fix movem.w
+	PL_PS	0x01b310,copy_rom_to_video_1b310
+	PL_L	0x01b368,0x48E7FFFE	| fix movem.w
+	PL_L	0x01b374,0x4CDF7FFF	| fix movem.w
+	PL_L	0x01b58a,0x48E7FFFE	| fix movem.w
+	PL_L	0x01b596,0x4CDF7FFF	| fix movem.w
+	PL_PSS	0x01bb2e,write_word_imm_0000_to_0030c010,2
+	PL_END
+
+read_byte_0030c003_to_D0:
+	STORE_REGS
+	lea	0x0030c003,a6
+	jbsr	osd_read_byte
+	move.b	d7,D0
+	RESTORE_REGS
+	rts
+
+read_byte_0030c004_to_D0:
+	STORE_REGS
+	lea	0x0030c004,a6
+	jbsr	osd_read_byte
+	move.b	d7,D0
+	RESTORE_REGS
+	rts
+
+read_byte_0030c005_to_D0:
+	STORE_REGS
+	lea	0x0030c005,a6
+	jbsr	osd_read_byte
+	move.b	d7,D0
+	RESTORE_REGS
+	rts
+
+read_word_00300000_to_D1:
+	STORE_REGS
+	lea	0x00300000,a6
+	jbsr	osd_read_word
+	move.w	d7,D1
+	RESTORE_REGS
+	rts
+
+read_word_00300008_to_D1:
+	STORE_REGS
+	lea	0x00300008,a6
+	jbsr	osd_read_word
+	move.w	d7,D1
+	RESTORE_REGS
+	rts
+
+read_word_0030c000_to_D0:
+	STORE_REGS
+	lea	0x0030c000,a6
+	jbsr	osd_read_word
+	move.w	d7,D0
+	RESTORE_REGS
+	rts
+
+read_word_0030c000_to_D1:
+	STORE_REGS
+	lea	0x0030c000,a6
+	jbsr	osd_read_word
+	move.w	d7,D1
+	RESTORE_REGS
+	rts
+
+read_word_0030c000_to_D3:
+	STORE_REGS
+	lea	0x0030c000,a6
+	jbsr	osd_read_word
+	add.w	d7,D3
+	RESTORE_REGS
+	rts
+
+read_word_0030c002_to_D0:
+	STORE_REGS
+	lea	0x0030c002,a6
+	jbsr	osd_read_word
+	move.w	d7,D0
+	RESTORE_REGS
+	rts
+
+read_word_0030c002_to_D1:
+	STORE_REGS
+	lea	0x0030c002,a6
+	jbsr	osd_read_word
+	move.w	d7,D1
+	RESTORE_REGS
+	rts
+
+read_word_0030c004_to_D0:
+	STORE_REGS
+	lea	0x0030c004,a6
+	jbsr	osd_read_word
+	move.w	d7,D0
+	RESTORE_REGS
+	rts
+
+read_word_0030c004_to_D1:
+	STORE_REGS
+	lea	0x0030c004,a6
+	jbsr	osd_read_word
+	move.w	d7,D1
+	RESTORE_REGS
+	rts
+
+read_word_0030c004_to_D2:
+	STORE_REGS
+	lea	0x0030c004,a6
+	jbsr	osd_read_word
+	move.w	d7,D2
+	RESTORE_REGS
+	rts
+
+read_word_0030c004_to_copy_of_dsw_msb_00ff810a:
+	STORE_REGS
+	lea	0x0030c004,a6
+	jbsr	osd_read_word
+	lea	0x00ff810a,a6
+	jbsr	osd_real_ram_address
+	move.w	d7,(a6)
+	RESTORE_REGS
+	rts
+
+read_word_0030c008_to_D0:
+	STORE_REGS
+	lea	0x0030c008,a6
+	jbsr	osd_read_word
+	move.w	d7,D0
+	RESTORE_REGS
+	rts
+
+write_byte_imm_05_to_0030c015:
+	STORE_REGS
+	move.b	#0x05,d7
+	lea	0x0030c015,a6
+	jbsr	osd_write_byte
+	RESTORE_REGS
+	rts
+
+write_long_D2_to_002446f4:
+	STORE_REGS
+	move.l	D2,d7
+	lea	0x002446f4,a6
+	jbsr	osd_write_long
+	RESTORE_REGS
+	rts
+
+write_word_D0_to_00244420:
+	STORE_REGS
+	move.w	D0,d7
+	lea	0x00244420,a6
+	jbsr	osd_write_word
+	RESTORE_REGS
+	rts
+
+write_word_D0_to_0024476a:
+	STORE_REGS
+	move.w	D0,d7
+	lea	0x0024476a,a6
+	jbsr	osd_write_word
+	RESTORE_REGS
+	rts
+
+write_word_D0_to_00244902:
+	STORE_REGS
+	move.w	D0,d7
+	lea	0x00244902,a6
+	jbsr	osd_write_word
+	RESTORE_REGS
+	rts
+
+write_word_D0_to_0030c012:
+	STORE_REGS
+	move.w	D0,d7
+	lea	0x0030c012,a6
+	jbsr	osd_write_word
+	RESTORE_REGS
+	rts
+
+write_word_D0_to_0030c014:
+	STORE_REGS
+	move.w	D0,d7
+	lea	0x0030c014,a6
+	jbsr	osd_write_word
+	RESTORE_REGS
+	rts
+
+write_word_D0_to_0030c016:
+	STORE_REGS
+	move.w	D0,d7
+	lea	0x0030c016,a6
+	jbsr	osd_write_word
+	RESTORE_REGS
+	rts
+
+write_word_D0_to_0030c018:
+	STORE_REGS
+	move.w	D0,d7
+	lea	0x0030c018,a6
+	jbsr	osd_write_word
+	RESTORE_REGS
+	rts
+
+write_word_D1_to_0030c016:
+	STORE_REGS
+	move.w	D1,d7
+	lea	0x0030c016,a6
+	jbsr	osd_write_word
+	RESTORE_REGS
+	rts
+
+write_word_D4_to_0024841c:
+	STORE_REGS
+	move.w	D4,d7
+	lea	0x0024841c,a6
+	jbsr	osd_write_word
+	RESTORE_REGS
+	rts
+
+write_word_D4_to_0024841e:
+	STORE_REGS
+	move.w	D4,d7
+	lea	0x0024841e,a6
+	jbsr	osd_write_word
+	RESTORE_REGS
+	rts
+
+write_word_ext_00ff810c_to_00240000:
+	STORE_REGS
+	lea	0x00ff810c,a6
+	jbsr	osd_real_ram_address
+	move.w	(a6),d7
+	lea	0x00240000,a6
+	jbsr	osd_write_word
+	RESTORE_REGS
+	rts
+
+write_word_ext_00ff810e_to_00240002:
+	STORE_REGS
+	lea	0x00ff810e,a6
+	jbsr	osd_real_ram_address
+	move.w	(a6),d7
+	lea	0x00240002,a6
+	jbsr	osd_write_word
+	RESTORE_REGS
+	rts
+
+write_word_ext_00ff8110_to_00240004:
+	STORE_REGS
+	lea	0x00ff8110,a6
+	jbsr	osd_real_ram_address
+	move.w	(a6),d7
+	lea	0x00240004,a6
+	jbsr	osd_write_word
+	RESTORE_REGS
+	rts
+
+write_word_ext_00ff8112_to_00240006:
+	STORE_REGS
+	lea	0x00ff8112,a6
+	jbsr	osd_real_ram_address
+	move.w	(a6),d7
+	lea	0x00240006,a6
+	jbsr	osd_write_word
+	RESTORE_REGS
+	rts
+
+write_word_ext_00ff8114_to_00240010:
+	STORE_REGS
+	lea	0x00ff8114,a6
+	jbsr	osd_real_ram_address
+	move.w	(a6),d7
+	lea	0x00240010,a6
+	jbsr	osd_write_word
+	RESTORE_REGS
+	rts
+
+write_word_ext_00ff8118_to_00240012:
+	STORE_REGS
+	lea	0x00ff8118,a6
+	jbsr	osd_real_ram_address
+	move.w	(a6),d7
+	lea	0x00240012,a6
+	jbsr	osd_write_word
+	RESTORE_REGS
+	rts
+
+write_word_ext_00ff811c_to_00240014:
+	STORE_REGS
+	lea	0x00ff811c,a6
+	jbsr	osd_real_ram_address
+	move.w	(a6),d7
+	lea	0x00240014,a6
+	jbsr	osd_write_word
+	RESTORE_REGS
+	rts
+
+write_word_ext_00ff811e_to_00240016:
+	STORE_REGS
+	lea	0x00ff811e,a6
+	jbsr	osd_real_ram_address
+	move.w	(a6),d7
+	lea	0x00240016,a6
+	jbsr	osd_write_word
+	RESTORE_REGS
+	rts
+
+write_word_ext_00ff8120_to_00246000:
+	STORE_REGS
+	lea	0x00ff8120,a6
+	jbsr	osd_real_ram_address
+	move.w	(a6),d7
+	lea	0x00246000,a6
+	jbsr	osd_write_word
+	RESTORE_REGS
+	rts
+
+write_word_ext_00ff8122_to_00246002:
+	STORE_REGS
+	lea	0x00ff8122,a6
+	jbsr	osd_real_ram_address
+	move.w	(a6),d7
+	lea	0x00246002,a6
+	jbsr	osd_write_word
+	RESTORE_REGS
+	rts
+
+write_word_ext_00ff8124_to_00246004:
+	STORE_REGS
+	lea	0x00ff8124,a6
+	jbsr	osd_real_ram_address
+	move.w	(a6),d7
+	lea	0x00246004,a6
+	jbsr	osd_write_word
+	RESTORE_REGS
+	rts
+
+write_word_ext_00ff8126_to_00246006:
+	STORE_REGS
+	lea	0x00ff8126,a6
+	jbsr	osd_real_ram_address
+	move.w	(a6),d7
+	lea	0x00246006,a6
+	jbsr	osd_write_word
+	RESTORE_REGS
+	rts
+
+write_word_ext_00ff8128_to_00246010:
+	STORE_REGS
+	lea	0x00ff8128,a6
+	jbsr	osd_real_ram_address
+	move.w	(a6),d7
+	lea	0x00246010,a6
+	jbsr	osd_write_word
+	RESTORE_REGS
+	rts
+
+write_word_ext_00ff812c_to_00246012:
+	STORE_REGS
+	lea	0x00ff812c,a6
+	jbsr	osd_real_ram_address
+	move.w	(a6),d7
+	lea	0x00246012,a6
+	jbsr	osd_write_word
+	RESTORE_REGS
+	rts
+
+write_word_ext_00ff8130_to_00246014:
+	STORE_REGS
+	lea	0x00ff8130,a6
+	jbsr	osd_real_ram_address
+	move.w	(a6),d7
+	lea	0x00246014,a6
+	jbsr	osd_write_word
+	RESTORE_REGS
+	rts
+
+write_word_ext_00ff8132_to_00246016:
+	STORE_REGS
+	lea	0x00ff8132,a6
+	jbsr	osd_real_ram_address
+	move.w	(a6),d7
+	lea	0x00246016,a6
+	jbsr	osd_write_word
+	RESTORE_REGS
+	rts
+
+write_word_ext_00ff8134_to_0024c000:
+	STORE_REGS
+	lea	0x00ff8134,a6
+	jbsr	osd_real_ram_address
+	move.w	(a6),d7
+	lea	0x0024c000,a6
+	jbsr	osd_write_word
+	RESTORE_REGS
+	rts
+
+write_word_ext_00ff8136_to_0024c002:
+	STORE_REGS
+	lea	0x00ff8136,a6
+	jbsr	osd_real_ram_address
+	move.w	(a6),d7
+	lea	0x0024c002,a6
+	jbsr	osd_write_word
+	RESTORE_REGS
+	rts
+
+write_word_ext_00ff8138_to_0024c004:
+	STORE_REGS
+	lea	0x00ff8138,a6
+	jbsr	osd_real_ram_address
+	move.w	(a6),d7
+	lea	0x0024c004,a6
+	jbsr	osd_write_word
+	RESTORE_REGS
+	rts
+
+write_word_ext_00ff813a_to_0024c006:
+	STORE_REGS
+	lea	0x00ff813a,a6
+	jbsr	osd_real_ram_address
+	move.w	(a6),d7
+	lea	0x0024c006,a6
+	jbsr	osd_write_word
+	RESTORE_REGS
+	rts
+
+write_word_ext_00ff813c_to_0024c010:
+	STORE_REGS
+	lea	0x00ff813c,a6
+	jbsr	osd_real_ram_address
+	move.w	(a6),d7
+	lea	0x0024c010,a6
+	jbsr	osd_write_word
+	RESTORE_REGS
+	rts
+
+write_word_ext_00ff8140_to_0024c012:
+	STORE_REGS
+	lea	0x00ff8140,a6
+	jbsr	osd_real_ram_address
+	move.w	(a6),d7
+	lea	0x0024c012,a6
+	jbsr	osd_write_word
+	RESTORE_REGS
+	rts
+
+write_word_ext_00ff8144_to_0024c014:
+	STORE_REGS
+	lea	0x00ff8144,a6
+	jbsr	osd_real_ram_address
+	move.w	(a6),d7
+	lea	0x0024c014,a6
+	jbsr	osd_write_word
+	RESTORE_REGS
+	rts
+
+write_word_ext_00ff8146_to_0024c016:
+	STORE_REGS
+	lea	0x00ff8146,a6
+	jbsr	osd_real_ram_address
+	move.w	(a6),d7
+	lea	0x0024c016,a6
+	jbsr	osd_write_word
+	RESTORE_REGS
+	rts
+
+write_word_ext_00ffa834_to_0030c016:
+	STORE_REGS
+	lea	0x00ffa834,a6
+	jbsr	osd_real_ram_address
+	move.w	(a6),d7
+	lea	0x0030c016,a6
+	jbsr	osd_write_word
+	RESTORE_REGS
+	rts
+
+write_word_imm_0000_to_00246010:
+	STORE_REGS
+	move.w	#0x0000,d7
+	lea	0x00246010,a6
+	jbsr	osd_write_word
+	RESTORE_REGS
+	rts
+
+write_word_imm_0000_to_00246012:
+	STORE_REGS
+	move.w	#0x0000,d7
+	lea	0x00246012,a6
+	jbsr	osd_write_word
+	RESTORE_REGS
+	rts
+
+write_word_imm_0000_to_0024841c:
+	STORE_REGS
+	move.w	#0x0000,d7
+	lea	0x0024841c,a6
+	jbsr	osd_write_word
+	RESTORE_REGS
+	rts
+
+write_word_imm_0000_to_0024841e:
+	STORE_REGS
+	move.w	#0x0000,d7
+	lea	0x0024841e,a6
+	jbsr	osd_write_word
+	RESTORE_REGS
+	rts
+
+write_word_imm_0000_to_0024c010:
+	STORE_REGS
+	move.w	#0x0000,d7
+	lea	0x0024c010,a6
+	jbsr	osd_write_word
+	RESTORE_REGS
+	rts
+
+write_word_imm_0000_to_0024c012:
+	STORE_REGS
+	move.w	#0x0000,d7
+	lea	0x0024c012,a6
+	jbsr	osd_write_word
+	RESTORE_REGS
+	rts
+
+write_word_imm_0000_to_0030c010:
+	STORE_REGS
+	move.w	#0x0000,d7
+	lea	0x0030c010,a6
+	jbsr	osd_write_word
+	RESTORE_REGS
+	rts
+
+write_word_imm_0000_to_0030c01e:
+	STORE_REGS
+	move.w	#0x0000,d7
+	lea	0x0030c01e,a6
+	jbsr	osd_write_word
+	RESTORE_REGS
+	rts
+
+write_word_imm_0003_to_0030c01e:
+	STORE_REGS
+	move.w	#0x0003,d7
+	lea	0x0030c01e,a6
+	jbsr	osd_write_word
+	RESTORE_REGS
+	rts
+
+write_word_imm_0004_to_00246016:
+	STORE_REGS
+	move.w	#0x0004,d7
+	lea	0x00246016,a6
+	jbsr	osd_write_word
+	RESTORE_REGS
+	rts
+
+write_word_imm_0004_to_0030c010:
+	STORE_REGS
+	move.w	#0x0004,d7
+	lea	0x0030c010,a6
+	jbsr	osd_write_word
+	RESTORE_REGS
+	rts
+
+write_word_imm_0900_to_0030c016:
+	STORE_REGS
+	move.w	#0x0900,d7
+	lea	0x0030c016,a6
+	jbsr	osd_write_word
+	RESTORE_REGS
+	rts
+

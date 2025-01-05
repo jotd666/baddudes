@@ -21,7 +21,7 @@ AFB_68020 = 1
 	.endm
 
 TOTAL_PUBLIC_MEMORY_SIZE = 350000
-TOTAL_CHIP_MEMORY_SIZE = 300000
+TOTAL_CHIP_MEMORY_SIZE = 500000
 
 PREVIOUS_SPRITE_SIZE = 8
 BORDERBLANK = 1
@@ -1621,19 +1621,12 @@ update_bobs:
 0:
 	move.w	d1,d6		| Y coord + attributes
 	move.w	d6,d2		| copy full attributes in D2
-	and.w	#0x7E00,d6
-	lsr.w	#7,d6		| data0 height properly times 16
+	rol.w	#5,d6		| data0 height properly times 16
+	and.w	#0x3,d6
 	and.w	#0x1FF,d1	| remove attribute bits from sprite Y
 	btst	#8,d1
 	jeq		0f
 	sub.w	#0x200,d1
-0:
-	tst.b	d6
-	jeq		0f
-	moveq	#0,d5
-	bset	d6,d5		| 16,32,64...
-	sub.w	#16,d5
-	sub.w	d5,d1
 0:
 	* this game sprite system uses 16,32 and 64 (1,2,4x) heights
 	* there's also a 8x possible but not there. when displaying
@@ -1647,6 +1640,11 @@ update_bobs:
 	neg.w	d0
 	add.w	#240,d0
 	
+	tst.b	d6
+	jeq		0f
+	lea		y_correction_table(pc),a3
+	sub.w	(a3,d6.w*2),d1
+0:
 	*move.w	(TARGET_SPRITE_X,a0),d0  | sprite X, already read & masked
 	.ifne	SPRITE_Y_CORRECTION
 	add.w	#SPRITE_Y_CORRECTION,d1
@@ -1663,6 +1661,12 @@ update_bobs:
 	move.l	a0,-(a7)
 	move.l	d4,a0
 	move.l	(a0,d3.w*4),a0	| structure
+	btst	#13,d2
+	jeq		0f
+	* X-flip
+
+	add.w	#6+(NB_PLAYFIELD_PLANES+1)*4,a0
+0:
 	move.w	(a0)+,d4		| height
 	move.w	(a0)+,d5		| width
 	add.w	(a0)+,d1		| add offset to Y
@@ -1694,7 +1698,12 @@ update_bobs:
 	
 	rts
 
-
+y_correction_table:
+	.word	0
+	.word	16
+	.word	48
+	.word	48
+	
 * < A5: custom
 * < D0,D1: x,y
 * < A1: plane pointer
@@ -1964,8 +1973,9 @@ start_process_1_plane:
 blit_background:
 	movem.l	d2-d6/a0/a2-a5,-(a7)
 	lea		_custom,a5
-	* adjust offset X: X//8
-	lsr.w	#3,d0
+	* adjust offset X: X//8 even rounded
+	lsr.w	#4,d0
+	add.w	d0,d0
 	lea		mulNB_BYTES_PER_ROW_table,a4
 	add.w	d1,d1
 	* add Y offset: Y*40
@@ -3068,8 +3078,9 @@ load_sprite_file:
 	add.l	d2,d3			| add to displacement: pointer becomes absolute
 	move.l	d3,(-4,a1)		| store
 	* now relocate each bitplane
-	move.w	#NB_PLAYFIELD_PLANES*2-1,d5  | standard + mirror (bobs)
 	move.l	d3,a2
+	.rept	2
+	move.w	#NB_PLAYFIELD_PLANES+1-1,d5  | standard + mirror (bobs) with mask
 	addq	#6,a2		| skip h,w,y offset!
 20:
 	move.l	(a2)+,d4
@@ -3078,6 +3089,7 @@ load_sprite_file:
 	move.l	d4,(-4,a2)		| store
 3:
 	dbf	d5,20b
+	.endr
 2:
 	dbf	d6,10b			| next clut
 1:
