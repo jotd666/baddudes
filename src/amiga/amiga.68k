@@ -3096,6 +3096,8 @@ set_game_context:
 	jbsr	load_intro_palette
 	
 	* stuck level 1
+	lea		sprites_game_level_1_file,a0
+	jbsr 	load_sprite_file
 	
 
 	rts
@@ -3397,6 +3399,8 @@ main_scroll_value:
 	
 cheat_used:
 	.byte	0
+sprites_game_level_1_file:
+	.asciz	"sprites_game_level_1.bin"
 sprites_game_intro_file:
 	.asciz	"sprites_game_intro.bin"
 tiles_title_244000_file:

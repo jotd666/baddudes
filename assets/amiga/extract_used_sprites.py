@@ -27,7 +27,7 @@ for n in os.listdir(tiles_dir):
             for i,c in enumerate(block):
                 if c:
                     used_tiles[tile_index]["cluts"].append(i)
-                    used_tiles[tile_index]["attributes"] = c
+                    used_tiles[tile_index]["attributes"] = c & 0x7F  # discard bit 7
 
         tile_index += 1
 

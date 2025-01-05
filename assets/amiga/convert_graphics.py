@@ -49,6 +49,14 @@ def ensure_empty(d):
 def dump_asm_bytes(*args,**kwargs):
     bitplanelib.dump_asm_bytes(*args,**kwargs)
 
+def process_multi_tiled_sprite(img,tiles_1,i,j,nb_cols,h,w,flipx):
+    side = 16
+    for hi in range(h):
+        img.paste(tiles_1,(-i*side,-j*side))
+##        i += 1
+##        if i==nb_cols:
+##            i=0
+##            j+=1
 
 # in that implementation, we have to provide a cluts dict as without it it would dump the whole set
 # of tiles/sprites and it's pretty huge in games like BadDudes or other "big" games.
@@ -62,7 +70,13 @@ def load_tileset(image_name,palette_index,side,tileset_name,dumpdir,cluts,dump=F
         tiles_1 = image_name
     nb_rows = tiles_1.size[1] // side
     nb_cols = tiles_1.size[0] // side
-
+    full_tileset = []
+    # first, brutally read tileset from sheet so indices are linear
+    for j in range(nb_rows):
+        for i in range(nb_cols):
+            img = Image.new("RGB",(side,side))
+            img.paste(tiles_1,(-i*side,-j*side))
+            full_tileset.append(img)
 
     tileset_1 = []
 
@@ -71,12 +85,13 @@ def load_tileset(image_name,palette_index,side,tileset_name,dumpdir,cluts,dump=F
         if palette_index == 0:
             ensure_empty(dump_subdir)
 
-    tile_number = 0
+    # now we have an array of small images, way more convenient to work with
+    # specially if the attributes make the sprite multi-tiled
+
     empty_list = {"cluts":[]}
     palette = set()
 
-    for j in range(nb_rows):
-        for i in range(nb_cols):
+    for tile_number,tile_img in enumerate(full_tileset):
             cd = cluts.get(tile_number,empty_list)
             if palette_index not in cd["cluts"]:
                 # no clut declared for that tile
@@ -88,9 +103,22 @@ def load_tileset(image_name,palette_index,side,tileset_name,dumpdir,cluts,dump=F
 
                 attributes = cd.get("attributes")
                 if attributes:
-                    print("attribs!!! ",i,cd)
+                    data0 = attributes << 8
+                    h = (1 << ((data0 & 0x1800) >> 11))
+                    w = (1 << ((data0 & 0x0600) >>  9))
+                    flipx = bool(data0 & 0x2000)
+                    flipy = bool(data0 & 0x4000)
+                    #print("attribs!!! ",tile_number,cd["cluts"],hex(attributes),h,w,flipx,flipy)
+
+                    height *= h
+                    width *= w
+
                 img = Image.new("RGB",(width,height))
-                img.paste(tiles_1,(-i*width,-j*height))
+                if False: #attributes:
+                    process_multi_tiled_sprite(img,tile_number,full_tileset,h,w,flipx)
+                else:
+                    # simple case
+                    img.paste(tile_img)
 
                 # only consider colors of used tiles
                 palette.update(set(bitplanelib.palette_extract(img)))
@@ -106,7 +134,6 @@ def load_tileset(image_name,palette_index,side,tileset_name,dumpdir,cluts,dump=F
 
                     img.save(os.path.join(dump_subdir,f"{name}_{tile_number:02x}_{palette_index:02x}.png"))
 
-            tile_number += 1
 
     return sorted(set(palette)),tileset_1
 
@@ -521,5 +548,5 @@ else:
 # game intro. Not gaining any colors by passing the associated screen tile colors...
 process_tile_context("game_intro",sprite_sheet_dict,32,is_bob=True,use_palette_colors="game_intro_24a000")
 
-#process_tile_context("sprites_level_1",sprite_sheet_dict,32,is_bob=True,nb_previous_colors=32)
+process_tile_context("game_level_1",sprite_sheet_dict,32,is_bob=True,use_palette_colors="level_1_24a000")
 

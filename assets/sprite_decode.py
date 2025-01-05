@@ -681,7 +681,7 @@ def decode_sprite(offset):
             # maybe, birdie try appears to specify the base code for each part..
             code = spriteram[offs + 1] & 0x1fff
 
-            code &= ~(h - 1)
+            code &= ~(h - 1)   # align code on height, make it start in a round number (maybe not necessary!)
 
             # not affected by flipscreen
             if (parentFlipY): # in the case of multi-width sprites the y flip bit is set by the parent

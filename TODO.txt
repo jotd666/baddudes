@@ -4,7 +4,6 @@ vgmrip: https://vgmrips.net/packs/pack/bad-dudes-vs-dragonninja-data-east
 
 - mockup game sprites from a sprite memory capture at game start (display dude!)
 - implement sprites
-  * log displayed sprites with modifiers & cluts
   * fully implement sprite system
   * possible context change on some given X/Y (rounded) scroll values to load/unload sprites (boss fights)
     or just patch the game at 00eca (initialize boss)
