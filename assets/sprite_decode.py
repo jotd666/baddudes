@@ -767,6 +767,8 @@ def decode_sprite(offset):
     sprite_image = ImageOps.scale(sprite_image,5,resample=Image.Resampling.NEAREST)
 
     subdir = "unknown" if 'unknown' in sprite_name else "known"
+
+    _,sprite_image = bitplanelib.autocrop_x(bitplanelib.autocrop_y(sprite_image)[1])
     sprite_image.save(os.path.join(dump_dir,subdir,f"{sprite_name}_{offset:x}.png"))
 
 

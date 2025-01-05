@@ -4,6 +4,7 @@ vgmrip: https://vgmrips.net/packs/pack/bad-dudes-vs-dragonninja-data-east
 
 - mockup game sprites from a sprite memory capture at game start (display dude!)
 - implement sprites
+  * log displayed sprites with modifiers & cluts
   * fully implement sprite system
   * possible context change on some given X/Y (rounded) scroll values to load/unload sprites (boss fights)
     or just patch the game at 00eca (initialize boss)
@@ -13,7 +14,10 @@ vgmrip: https://vgmrips.net/packs/pack/bad-dudes-vs-dragonninja-data-east
   * to save memory, log used tiles per level (ex: no climbing ninjas in non-truck/train levels, no cars,
     on the other hand, no gray sabre men on truck, or dogs), flipping/flaming ninjas only
 	on levels 4 (and 6?)
-
+  * to save memory, tag the sprites/sprite tiles that can be displayed mirrored, and also specifically the ones
+    that can be drawn just once on screen at a time (bosses, maybe possibly main player, dogs... sabreman)
+	so we can mirror them dynamically on demand (add specific orientation property at the	cached bitplane level)
+	
 - still undetected real black on enemies (Karnov...) OK on Bad dude.
   
 - rip a few sounds  

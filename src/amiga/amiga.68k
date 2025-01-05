@@ -1566,6 +1566,9 @@ update_bobs:
 	
 	GET_RAM_START_IN_A6
 	lea	(0x4000,a6),a0		| sprites
+	.ifne	OPT_ENABLE_LOGGING
+	move.l	a0,0x20			| store address in zero page
+	.endif
 	
     lea _custom,A5
 	move.l	bob_previous_drawed_sprites,a6
@@ -1583,27 +1586,44 @@ update_bobs:
 	move.w	d0,d3
 	rol.w	#4,d3
 	and.w	#0xF,d3		| color code
-	and.w	#0xFFF,d0	| sprite X
+	move.w	(TARGET_SPRITE_Y,a0),d1  | sprite Y & attributes
 
-* alt color:  #2,(TARGET_SPRITE_ATTRIBUTES,a0)
-* flipy:  #1,(TARGET_SPRITE_ATTRIBUTES,a0)
-*	btst.b	#1,(TARGET_SPRITE_ATTRIBUTES,a0)
-*	beq.b	0f
-*0:
-	move.l	(a4,d2.w*4),d4	| test pointer
-	jmi		2f			| legal but skipped
-	bne.b	11f
-	.ifndef	RELEASE
-	* not known/registered: we should log that!
-	move.w	(TARGET_SPRITE_CODE,a0),d3
-	move.w	#0xF00,0xDFF180
+
+	.ifne	OPT_ENABLE_LOGGING
+	lea		sprite_log_table_ffc000,a2
+	move.l	a2,0x24		| store address in zero page
+	movem.w	d1/d2,-(a7)
+	lsl.w	#4,d2		| 16 cluts
+	add.w	d3,d2		| clut offset
+	rol.w	#8,d1
+	bset	#7,d1		| probably set, but at least won't be 0
+	or.b	d1,(a2,d2.w)	| merge/log as used, with properties
+	movem.w	(a7)+,d1/d2
 	.endif
-	bra.b	2f
-11:
 
-	move.w	(TARGET_SPRITE_Y,a0),d1  | sprite Y
-	beq.b	2f			| Y set to 0: not shown
-	bclr	#15,d1		| remove bit 15 which is set
+
+	move.l	(a4,d2.w*4),d4	| test pointer
+	jeq		2f			| zero: skipped
+
+
+*       data2 = X.W
+*       data0 = Y.W
+*		const bool flash = data2 & 0x800;
+*		int flipx = data0 & 0x2000;
+*		parentFlipY = flipy = data0 & 0x4000;
+*		const int h = (1 << ((data0 & 0x1800) >> 11));   /* 1x, 2x, 4x, 8x height */
+*		const int w = (1 << ((data0 & 0x0600) >>  9));   /* 1x, 2x, 4x, 8x width */
+	and.w	#0x1FF,d0	| remove attribute bits from sprite X
+	btst	#8,d0
+	jeq		0f
+	sub.w	#0x200,d0
+0:
+
+	and.w	#0x1FF,d1	| remove attribute bits from sprite Y
+	btst	#8,d1
+	jeq		0f
+	sub.w	#0x200,d1
+0:
 	* correct X/Y: 240-x
 	neg.w	d1
 	add.w	#240,d1
@@ -3430,6 +3450,11 @@ tile_log_table_24d000:		| make sure it's contiguous to prev table
 	* 16 cluts, 2048 tiles
 	* a lot of combinations aren't used (fortunately!)
 	.skip	0x10000
+sprite_log_table_ffc000:
+	* 16 cluts, 4096 tiles
+	* a lot of combinations aren't used (fortunately!)
+	.skip	0x20000
+
 tile_log_table_end:
 	.endif
 	.endif
