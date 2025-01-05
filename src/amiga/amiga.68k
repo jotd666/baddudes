@@ -39,8 +39,8 @@ BASE_BPLCON2_VALUE = 0x0200  | killehb (we're using 6 real bitplanes)
 SCREEN_ADDRESS = 0x244000
 
 * set both to nonzero for full static screen, no scroll, 1 screen tile
-OPT_NO_SCROLLING_X = 0
-OPT_NO_SCROLLING_Y = 0
+OPT_NO_SCROLLING_X = 1
+OPT_NO_SCROLLING_Y = 1
 
 * if the alloc_sprite & update_sprite routines
 * are reused, changing those offsets can make
@@ -1605,6 +1605,7 @@ update_bobs:
 	move.l	(a4,d2.w*4),d4	| test pointer
 	jeq		2f			| zero: skipped
 
+	* we can use scratch registers D2,D5,D6 for attribute computation
 
 *       data2 = X.W
 *       data0 = Y.W
@@ -1618,12 +1619,28 @@ update_bobs:
 	jeq		0f
 	sub.w	#0x200,d0
 0:
-
+	move.w	d1,d6		| Y coord + attributes
+	move.w	d6,d2		| copy full attributes in D2
+	and.w	#0x7E00,d6
+	lsr.w	#7,d6		| data0 height properly times 16
 	and.w	#0x1FF,d1	| remove attribute bits from sprite Y
 	btst	#8,d1
 	jeq		0f
 	sub.w	#0x200,d1
 0:
+	tst.b	d6
+	jeq		0f
+	moveq	#0,d5
+	bset	d6,d5		| 16,32,64...
+	sub.w	#16,d5
+	sub.w	d5,d1
+0:
+	* this game sprite system uses 16,32 and 64 (1,2,4x) heights
+	* there's also a 8x possible but not there. when displaying
+	* a 16-high tile, the coord is OK, but when displaying a 32-high tile
+	* we need to subtract 16, and 48 for a 64-high tile
+	* we cannot rely on sprite height as it could have been cropped to optimize
+	
 	* correct X/Y: 240-x
 	neg.w	d1
 	add.w	#240,d1

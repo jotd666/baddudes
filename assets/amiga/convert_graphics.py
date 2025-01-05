@@ -49,14 +49,23 @@ def ensure_empty(d):
 def dump_asm_bytes(*args,**kwargs):
     bitplanelib.dump_asm_bytes(*args,**kwargs)
 
-def process_multi_tiled_sprite(img,tiles_1,i,j,nb_cols,h,w,flipx):
+def process_multi_tiled_sprite(img,tile_number,full_tileset,h,w,flipx):
     side = 16
-    for hi in range(h):
-        img.paste(tiles_1,(-i*side,-j*side))
-##        i += 1
-##        if i==nb_cols:
-##            i=0
-##            j+=1
+    x_start = 0
+    y_start = 0
+    if w!=1 and h!=1:
+        print(tile_number)
+        dddd
+    if h>1:
+        for hi in range(h):
+            img.paste(full_tileset[tile_number],(side*x_start,side*y_start))
+            tile_number += 1
+            y_start += 1
+    if w>1:
+        for hi in range(w):
+            img.paste(full_tileset[tile_number],(side*x_start,side*y_start))
+            tile_number += 1
+            x_start += 1
 
 # in that implementation, we have to provide a cluts dict as without it it would dump the whole set
 # of tiles/sprites and it's pretty huge in games like BadDudes or other "big" games.
@@ -114,7 +123,7 @@ def load_tileset(image_name,palette_index,side,tileset_name,dumpdir,cluts,dump=F
                     width *= w
 
                 img = Image.new("RGB",(width,height))
-                if False: #attributes:
+                if attributes and (h!=1 or w!=1):
                     process_multi_tiled_sprite(img,tile_number,full_tileset,h,w,flipx)
                 else:
                     # simple case
