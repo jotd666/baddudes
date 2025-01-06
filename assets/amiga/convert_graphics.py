@@ -55,7 +55,7 @@ def process_multi_tiled_sprite(img,tile_number,full_tileset,h,w,flipx):
     y_start = 0
     if w!=1 and h!=1:
         print(tile_number)
-        dddd
+
     if h>1:
         for hi in range(h):
             img.paste(full_tileset[tile_number],(side*x_start,side*y_start))

@@ -111,7 +111,8 @@ RESTORE_SCREEN_SIZE = RESTORE_SCREEN_PLANE_SIZE*6   | max 5 planes, can be 4 too
 
 NB_HOST_SPRITES = 8
 
-NB_TARGET_SPRITES = 256
+* MAME driver only uses 0x400 bytes of sprite ram, 8 bytes per sprite
+NB_TARGET_SPRITES = 128
 
 SPRITE_X = 0
 SPRITE_Y = 1
@@ -1575,17 +1576,17 @@ update_bobs:
 	*add.w	#(NB_TARGET_SPRITES-1)*4,a0		| start by the end (drawing priority)
 	move.w	#NB_TARGET_SPRITES-1,d7
 1:
+	move.w	(TARGET_SPRITE_Y,a0),d1  | sprite Y & attributes
+	btst	#15,d1
+	jeq		3f						 | if bit 15 not set, then slot is free
+	
 	move.w	(TARGET_SPRITE_X,a0),d0  | sprite X
 *	cmp.b	#230,d0
 *	jcc		2f 						| don't draw sprites too far right
-	* code = 0 and clut = 0 => disabled ?? to check
-	moveq	#0,d2
 	move.w	(TARGET_SPRITE_CODE,a0),d2
-	jeq	2f
 	move.w	d0,d3
 	rol.w	#4,d3
 	and.w	#0xF,d3		| color code
-	move.w	(TARGET_SPRITE_Y,a0),d1  | sprite Y & attributes
 
 
 	.ifne	OPT_ENABLE_LOGGING
@@ -1602,7 +1603,7 @@ update_bobs:
 
 
 	move.l	(a4,d2.w*4),d4	| test pointer
-	jeq		2f			| zero: skipped
+	jeq		3f			| zero: skipped
 
 	* we can use scratch registers D2,D5,D6 for attribute computation
 
@@ -1688,9 +1689,6 @@ update_bobs:
 	moveq	#NB_PLAYFIELD_PLANES,d3
 	bsr		blit_planes_any_internal_cookie_cut
 	move.l	(a7)+,a0
-	bra.b	3f
-2:
-	addq.w	#8,a6
 3:
 	addq.w	#TARGET_SPRITE_SIZE,a0
 	dbf		d7,1b
@@ -3473,19 +3471,19 @@ sprite_table:
 tile_log_table_244000:
 	* 16 cluts, 2048 tiles
 	* a lot of combinations aren't used (fortunately!)
-	.skip	0x10000
+	.skip	0x8000
 tile_log_table_24a000:		| make sure it's contiguous to prev table
 	* 16 cluts, 2048 tiles
 	* a lot of combinations aren't used (fortunately!)
-	.skip	0x10000
+	.skip	0x8000
 tile_log_table_24d000:		| make sure it's contiguous to prev table
 	* 16 cluts, 2048 tiles
 	* a lot of combinations aren't used (fortunately!)
-	.skip	0x10000
+	.skip	0x8000
 sprite_log_table_ffc000:
 	* 16 cluts, 4096 tiles
 	* a lot of combinations aren't used (fortunately!)
-	.skip	0x20000
+	.skip	0x10000
 
 tile_log_table_end:
 	.endif

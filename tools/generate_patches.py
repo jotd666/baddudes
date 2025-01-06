@@ -10,7 +10,7 @@ af = ira_asm_tools.AsmFile(asmfile)
 
 relocated_ram_offsets = {}
 
-RAM_TOP = 0x00ffc000
+RAM_TOP = 0x00ffc800
 
 def is_in_ram(ext_address):
     return 0xff8000 <= ext_address <= RAM_TOP
@@ -181,8 +181,7 @@ add_p("videoram_write_0e0ac")
 add_p("videoram_write_01fca")
 add_p("videoram_write_021e8")
 add_p("videoram_clear_01ff8")
-add_r(0x01dc2,"skip spriteram clear")  # temp
-add_r(0x1e80)  # temp sprite attribute change
+
 add_r(0x0979a,"mcu reply test")
 add_p(0x372,"osd_enable_interrupts","mcu shit and enable interrupts")
 add_r(0x14ee,"service mode test")

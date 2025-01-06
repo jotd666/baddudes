@@ -156,6 +156,7 @@ ram_relocs:
 	.long	0x001dea+2	| ext_00ff812c
 	.long	0x001e30+2	| ext_00ff813c
 	.long	0x001e3c+2	| ext_00ff8140
+	.long	0x001e84+2	| #spriteram_end_00ffc7f8
 	.long	0x001e98+6	| ext_00ff8114
 	.long	0x001ea8+6	| ext_00ff8118
 	.long	0x001eb8+6	| ext_00ff8128
@@ -2145,7 +2146,6 @@ patchlist:
 	PL_P	0x001d98,videoram_write_loop_d1_d0
 	PL_PS	0x001daa,videoram_write_loop_d0_d1
 	PL_P	0x001dba,videoram_write_loop_d0_d1
-	PL_R	0x001dc2	| skip spriteram clear
 	PL_PS	0x001dd4,write_word_D0_to_0030c012
 	PL_PS	0x001e00,videoram_write_loop_d0_d1
 	PL_PS	0x001e16,videoram_write_loop_d0_d1
@@ -2153,7 +2153,6 @@ patchlist:
 	PL_PS	0x001e52,videoram_write_loop_d0_d1
 	PL_PS	0x001e68,set_scroll_values	| set column scroll
 	PL_PS	0x001e78,set_scroll_values	| set column scroll
-	PL_R	0x001e80
 	PL_P	0x001fa2,copy_to_tile_0_01fa2
 	PL_P	0x001fca,videoram_write_01fca
 	PL_P	0x001ff8,videoram_clear_01ff8
