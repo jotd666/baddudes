@@ -1538,7 +1538,6 @@ update_bobs:
 	and.w	#0x1F0,d0		| align on 16 lower bound
 	* clear area where the sprite was
 	move.l	fg_drawed_screen_ptr,a1
-	move.w	#4,d2
 	moveq	#NB_PLAYFIELD_PLANES,d3
 	clr.l	(a4)+ 			| ack deletion
 	move.w	(a4),d2			| width in bytes (16 pixels: 4 bytes)
@@ -1558,12 +1557,12 @@ update_bobs:
 	move.w	d5,-(a7)
 	jbsr	clear_fg_planes_any_blitter_internal
 	move.w	(a7)+,d5
-	bra.b	12f
-11:
-	addq	#8,a4
-12:
 	dbf		d7,1b
-	
+	jra		12f
+11:
+	addq	#PREVIOUS_SPRITE_SIZE,a4
+	dbf		d7,1b
+12:	
 	GET_RAM_START_IN_A6
 	lea	(0x4000,a6),a0		| sprites
 	.ifne	OPT_ENABLE_LOGGING
@@ -1615,19 +1614,19 @@ update_bobs:
 *		const int h = (1 << ((data0 & 0x1800) >> 11));   /* 1x, 2x, 4x, 8x height */
 *		const int w = (1 << ((data0 & 0x0600) >>  9));   /* 1x, 2x, 4x, 8x width */
 	and.w	#0x1FF,d0	| remove attribute bits from sprite X
-	btst	#8,d0
-	jeq		0f
-	sub.w	#0x200,d0
-0:
+*	btst	#8,d0
+*	jeq		0f
+*	sub.w	#0x200,d0
+*0:
 	move.w	d1,d6		| Y coord + attributes
 	move.w	d6,d2		| copy full attributes in D2
 	rol.w	#5,d6		| data0 height properly times 16
 	and.w	#0x3,d6
 	and.w	#0x1FF,d1	| remove attribute bits from sprite Y
-	btst	#8,d1
-	jeq		0f
-	sub.w	#0x200,d1
-0:
+*	btst	#8,d1
+*	jeq		0f
+*	sub.w	#0x200,d1
+*0:
 	* this game sprite system uses 16,32 and 64 (1,2,4x) heights
 	* there's also a 8x possible but not there. when displaying
 	* a 16-high tile, the coord is OK, but when displaying a 32-high tile
