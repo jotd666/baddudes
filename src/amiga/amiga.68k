@@ -2714,7 +2714,7 @@ read_controls:
 0:
 	tst.b	(0x4D,a0)		| "down" key
 	beq.b	0f
-	bclr	#JPB_BTN_DOWN,d0
+	bclr	#BIT_DOWN,d0
 0:
 	tst.b	(0x4F,a0)		| "<-" key
 	beq.b	0f

@@ -2222,6 +2222,7 @@ patchlist:
 	PL_PS	0x009836,read_word_0030c008_to_D0
 	PL_PSS	0x0099f0,copy_tiles_099f0,4
 	PL_PS	0x009a50,write_long_D2_to_002446f4
+	PL_PSS	0x009aa6,videoram_write_09aa6,4
 	PL_PS	0x009ac6,write_word_D0_to_00244420
 	PL_PS	0x009cfc,write_word_D0_to_0024476a
 	PL_PS	0x009d18,write_word_D0_to_0024476a

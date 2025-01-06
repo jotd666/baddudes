@@ -629,6 +629,17 @@ videoram_write_06c82:
 	RESTORE_REGS
 	RTS				
 	
+videoram_write_09aa6:
+	STORE_REGS
+	exg		a6,a2
+	MOVE.L	D0,D7
+0:
+	WRITE_WORD_AND_PLUS
+	CMPA.L	#0x244740,A6
+	BNE.S	0b
+	exg		a6,a2
+	RESTORE_REGS
+	RTS				
 	
 videoram_write_0e3ba:
 	STORE_REGS

@@ -1,6 +1,8 @@
+import os
 used_name = "game_level_1"
 
-with open(used_name,"rb") as f:
+used_dump = os.path.join(r"C:\Users\Public\Documents\Amiga Files\WinUAE",used_name)
+with open(used_dump,"rb") as f:
     new_contents = f.read()
 
 with open("sprites/"+used_name,"rb") as f:
