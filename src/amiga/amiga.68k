@@ -78,7 +78,7 @@ OPT_ENABLE_MULTIPLEXED_SPRITES = 0
 
 NB_PLAYFIELD_PLANES = 6
 *TOTAL_NB_COLORS = 1<<NB_PLAYFIELD_PLANES
-NB_BYTES_PER_ROW = 64
+NB_BYTES_PER_ROW = 32*2
 
 * fmode=0b11xx => 3, 0b01xx => 2
 SPRITE_FMODE = 1
@@ -92,16 +92,8 @@ SPRITE_POWER_OF_2 = 2
 	.endif
 	.endif
 	
-NB_BYTES_PER_SPRITE_ROW = 1<<SPRITE_POWER_OF_2
-NB_LINES = 512
-NB_PLAYFIELD_LINES = NB_LINES
 
-SPRITE_DISPLAYED_HEIGHT = 240
-SPRITE_HEIGHT = NB_LINES*2
-* sprite band: 64 bit * 2 planes * 2*screen size + control words
-SPRITE_SIZE = NB_BYTES_PER_SPRITE_ROW*(2*SPRITE_HEIGHT+2)
-
-SPRITE_STRUCT_SIZE = 1<<(SPRITE_POWER_OF_2+3)
+NB_PLAYFIELD_LINES = 256
 
 SCREEN_PLANE_SIZE = NB_BYTES_PER_ROW*NB_PLAYFIELD_LINES*2
 SCREEN_SIZE =  SCREEN_PLANE_SIZE*NB_PLAYFIELD_PLANES
@@ -111,8 +103,9 @@ RESTORE_SCREEN_SIZE = RESTORE_SCREEN_PLANE_SIZE*6   | max 5 planes, can be 4 too
 
 NB_HOST_SPRITES = 8
 
-* MAME driver only uses 0x400 bytes of sprite ram, 8 bytes per sprite
-NB_TARGET_SPRITES = 128
+* MAME driver uses 0x800 bytes of sprite ram, 8 bytes per sprite, let's hope
+* that the game doesn't use them all!
+NB_TARGET_SPRITES = 256
 
 SPRITE_X = 0
 SPRITE_Y = 1
@@ -1736,8 +1729,12 @@ clear_fg_planes_any_blitter_internal:
 	rts
 0:
     lea mulNB_BYTES_PER_ROW_table,a2
+	.ifdef	NO68020
     add.w   d1,d1
     move.w  (a2,d1.w),d1
+	.else
+    move.w  (a2,d1.w*2),d1
+	.endif
 1:
 	moveq	#1,d5
 	ror.l	#8,d5     | AKA move.l  #0x01000000,d5   | minterm useD & rect clear (0xA) 
@@ -3460,9 +3457,6 @@ _end_of_ng_code:
   
 
 	.align 2
-sprite_table:
-	.skip	SPRITE_STRUCT_SIZE*8
-	
 
 
 
@@ -3657,11 +3651,7 @@ background_restore_buffer:
 
 chip_memory_block:
 	.skip	TOTAL_CHIP_MEMORY_SIZE
-		
-sprite_buffer:
-	.skip	(SPRITE_SIZE+(1<<SPRITE_POWER_OF_2))*8		| 32 more bytes for control word and end zeroes
-	.skip	8
-	.skip	8
+	
 		
 fg_screen_buffer_1:
 	.skip	SCREEN_SIZE
