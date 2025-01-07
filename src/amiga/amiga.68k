@@ -78,7 +78,7 @@ OPT_ENABLE_MULTIPLEXED_SPRITES = 0
 
 NB_PLAYFIELD_PLANES = 6
 *TOTAL_NB_COLORS = 1<<NB_PLAYFIELD_PLANES
-NB_BYTES_PER_ROW = 32*2
+NB_BYTES_PER_ROW = 32*3
 
 * fmode=0b11xx => 3, 0b01xx => 2
 SPRITE_FMODE = 1
@@ -95,6 +95,8 @@ SPRITE_POWER_OF_2 = 2
 
 NB_PLAYFIELD_LINES = 256
 
+* the screen plane size is pretty huge, so the offset can go beyond 0x8000 and
+* the word add on address registers won't work
 SCREEN_PLANE_SIZE = NB_BYTES_PER_ROW*NB_PLAYFIELD_LINES*2
 SCREEN_SIZE =  SCREEN_PLANE_SIZE*NB_PLAYFIELD_PLANES
 RESTORE_SCREEN_PLANE_SIZE = SCREEN_PLANE_SIZE
@@ -1223,6 +1225,7 @@ addr_24Axxx_tile_layer_op:
 0:
 	movem.l	a0-a4/d2-d6,-(a7)
 10:
+
 	move.w	d2,-(a7)
 	lea		video_ram_24a000,a0
 	add.w	d2,a0
@@ -1237,13 +1240,13 @@ addr_24Axxx_tile_layer_op:
 
 	move.w	d7,(a0)	| set value in memory first
 	* then draw the 16x16 tile
+	moveq	#0,d3			| D3.L!!
 	move.w	d2,d3
 	and.w	#0x1F,D3		| this is X
 	move.w	d2,d4
-	and.w	#0x1FF,d4
-	lsr.w	#5,D4			| this is Y
-	lsl.w	#4,d4			| times 16
-	
+	and.w	#0x1E0,d4
+	lsr.w	#1,D4			| this is Y
+
 
 	* now compute quadrant.
 	sub.w	#0x200,d2
@@ -1271,14 +1274,16 @@ addr_24Axxx_tile_layer_op:
 	.ifeq	OPT_NO_SCROLLING_Y	
 	add.w	#16*16,d4
 	.endif
-20:	
+20:
 	move.l	fg_drawed_screen_ptr,a1
 	lea		background_restore_buffer,a4
 	lea		mulNB_BYTES_PER_ROW_table,a2
+	moveq	#0,d5
 	move.w	(a2,d4.w*2),d5
-	add.w	d3,d5
-	add.w	d5,a1			| screen dest address on playfield
-	add.w	d5,a4			| screen dest address on restore playfield
+	add.l	d3,d5
+	add.l	d5,a1			| screen dest address on playfield
+	add.l	d5,a4			| screen dest address on restore playfield
+	
 	move.w	d7,d5			| save code
 	move.w	d7,d6			| tile code
 	and.w	#0x7FF,d6
@@ -1846,6 +1851,10 @@ blit_planes_any_internal_cookie_cut:
     move.w  (a4,d1.w*2),d1	| y times 40
 	.endif
 2:
+	swap	d1
+	clr.w	d1
+	swap	d1
+	
 	lea		cookie_cut_blit_table,a4
 	
     move.w  d0,d6
@@ -1863,12 +1872,12 @@ blit_planes_any_internal_cookie_cut:
 	move.l	(a4,d6.w*4),d6
 	.endif
 3:   
-    add.w   d0,d1
+    add.l   d0,d1
 4:
     * make offset even. Blitter will ignore odd address
     * but a 68000 CPU doesn't and since we RETURN A1...
     *bclr    #0,d1
-    add.w   d1,a1       | plane position (D1 < 0x7FFF, 288*40=0x2D00)
+    add.l   d1,a1       | plane position (D1 can be 0x7FFF, up to 0xC000)
 	move.w	#NB_BYTES_PER_ROW,d0
 	tst.w	d4
 	bpl.b	5f
@@ -1970,13 +1979,23 @@ restore_background:
 	* adjust offset X: X//8 even rounded
 	lsr.w	#4,d0
 	add.w	d0,d0
+	swap	d0
+	clr.w	d0
+	swap	d0
+	
 	lea		mulNB_BYTES_PER_ROW_table,a4
+	.ifdef	NO68020
 	add.w	d1,d1
 	* add Y offset: Y*40
-	add.w	(a4,d1.w),d0
+	move.w	(a4,d1.w),d3
+	.else
+	move.w	(a4,d1.w*2),d3
+	.endif
+	
+	add.l	d3,d0		| long add, we have a big buffer > 0x8000
 	* same offset for source and destination
-	add.w	d0,a1
-	add.w	d0,a0
+	add.l	d0,a1
+	add.l	d0,a0
 	
 
     move.l  #0x09f00000,d3    | A->D copy, ascending mode	

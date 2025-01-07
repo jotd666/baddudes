@@ -1,8 +1,8 @@
 
 vgmrip: https://vgmrips.net/packs/pack/bad-dudes-vs-dragonninja-data-east
 
-- scrolling!!!: check quadrants, check write a given tile (address filtering)
-  see if it displays?
+- scrolling finish !
+- double crouch kick not displayed, why?? seems logged
 
 - implement sprites
   * possible context change on some given X/Y (rounded) scroll values to load/unload sprites (boss fights)
