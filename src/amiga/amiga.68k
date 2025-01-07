@@ -39,8 +39,8 @@ BASE_BPLCON2_VALUE = 0x0200  | killehb (we're using 6 real bitplanes)
 SCREEN_ADDRESS = 0x244000
 
 * set both to nonzero for full static screen, no scroll, 1 screen tile
-OPT_NO_SCROLLING_X = 1
-OPT_NO_SCROLLING_Y = 1
+OPT_NO_SCROLLING_X = 0
+OPT_NO_SCROLLING_Y = 0
 
 * if the alloc_sprite & update_sprite routines
 * are reused, changing those offsets can make
@@ -730,10 +730,10 @@ _vblank:
 	move.w	(a2)+,d2			| width
 	lsr.w	#3,d2				| divide by 8 to get len in bytes
 	move.w	(a2)+,d4			| height
-	jbsr	blit_background
+	jbsr	restore_background
 	lea	(SCREEN_PLANE_SIZE,a1),a1
 	* remaining planes need to be simply cleared
-	* when exiting from blit_background, A1 points
+	* when exiting from restore_background, A1 points
 	* to the exact next erase position so D0=0, D1=0 here
 	move.w	nb_tile_planes_24a000,d3
 	neg.w	d3
@@ -1494,11 +1494,6 @@ osd_wait:
 
 
 
-really_update_sprites:
-
-	bsr		update_bobs
-
-	rts
 	
 is_game_playing:
 	movem.l	d0/a6,-(a7)
@@ -1519,7 +1514,7 @@ is_game_playing:
 	
 
 
-update_bobs:
+really_update_sprites:
 	move.l	bob_previous_drawed_sprites,a4
 	lea		_custom,a5
 	
@@ -1533,9 +1528,9 @@ update_bobs:
 	addq.w	#NB_PLAYFIELD_PLANES,d5
 	
 1:
-	move.w	(2,a4),d1
-	beq.b	11f		| y=0: inactive
 	move.w	(a4),d0
+	beq.b	12f		| y=0: inactive and end of list (let's hope it works!)
+	move.w	(2,a4),d1
 	and.w	#0x1F0,d0		| align on 16 lower bound
 	* clear area where the sprite was
 	move.l	fg_drawed_screen_ptr,a1
@@ -1546,10 +1541,10 @@ update_bobs:
 	clr.l	(a4)+			| ack deletion
 	* restore background
 	lea		background_restore_buffer,a0
-	jbsr	blit_background
+	jbsr	restore_background
 	* clear the rest of the planes (background can be 4 or 5 planes, we need to
 	* clear the rest 1 or 2 planes)
-	* a1 is returned by blit_background as the last cleared start address
+	* a1 is returned by restore_background as the last cleared start address
 	* go to next plane and use 0,0 coords to avoid more computations
 	lea		(SCREEN_PLANE_SIZE,a1),a1
 	moveq	#0,d0
@@ -1558,10 +1553,6 @@ update_bobs:
 	move.w	d5,-(a7)
 	jbsr	clear_fg_planes_any_blitter_internal
 	move.w	(a7)+,d5
-	dbf		d7,1b
-	jra		12f
-11:
-	addq	#PREVIOUS_SPRITE_SIZE,a4
 	dbf		d7,1b
 12:	
 	GET_RAM_START_IN_A6
@@ -1670,6 +1661,15 @@ update_bobs:
 	move.w	(a0)+,d4		| height
 	move.w	(a0)+,d5		| width
 	add.w	(a0)+,d1		| add offset to Y
+	
+	.ifeq	OPT_NO_SCROLLING_X
+	add.w	x_scroll_value(pc),d0
+	.endif 
+	.ifeq	OPT_NO_SCROLLING_Y
+	add.w	y_scroll_value(pc),d1
+	.endif 
+	
+	
 	* now A0 points on the first bitplane of the bob
 
 	move.l		fg_drawed_screen_ptr,a1
@@ -1967,7 +1967,7 @@ start_process_1_plane:
 * > A1: last clear position address
 * trashes: D0-D1
 
-blit_background:
+restore_background:
 	movem.l	d2-d6/a0/a2-a5,-(a7)
 	lea		_custom,a5
 	* adjust offset X: X//8 even rounded
@@ -2575,11 +2575,15 @@ set_playfield_bitplanes:
 	move.w	y_scroll_value,d0
 	*and.w	#0x1FF,d0		| wrap just in case
 	lea		mulNB_BYTES_PER_ROW_table,a2
-	move.w	(a2,d0.w*2),d0
+	move.w	(a2,d0.w*2),d0		| compute Y offset
 	move.w	x_scroll_value,d2	
 	lea		scroll_table,a2
 	move.w	(a2,d2.w*4),fine_x_scroll_value
 	add.w	(2,a2,d2.w*4),d0
+	* TEMP TEMP
+	*lsr.w	#3,d2
+	*BCLR	#0,d2
+	*add.w	d2,d0
 	
     add.l	fg_drawed_screen_ptr,d0
 	
@@ -3240,7 +3244,7 @@ beamdelay:
 	rts
 
 	
-	MUL_TABLE	NB_BYTES_PER_ROW,256
+	MUL_TABLE	NB_BYTES_PER_ROW,512
 
 	.align	4		| leave this long word alignment
 program_args:	ds.l	64,0

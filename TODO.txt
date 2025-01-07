@@ -13,18 +13,16 @@ vgmrip: https://vgmrips.net/packs/pack/bad-dudes-vs-dragonninja-data-east
 	ATM all sprites are mirrored but this isn't viable!!
 
 - check crash .whdl
-- some sprite draw have h>1 and w>1
-- sprite log seems defective
 - still undetected real black on enemies (Karnov...) (almost) OK on Bad dude.
 - magenta in game intro sprite sheet...
 - reuse color: not working yet, but promising to get even more colors and avoid sprite quantize
-
-- relocs? 0ce40 and others 0x4xxxx
 
 - rip a few sounds  
 - rip more 244000 tiles (for demo)
 - rip 24D000 & 24A000 tiles
 
+- optim with restore_background or clear_fg_planes...: if blitter if busy,
+  use the cpu to process that plane
 - hack lamps/trees/fire hydrants (from 244000 layer) with hardware sprites
 
 - "bad dudes" title still small glitches
