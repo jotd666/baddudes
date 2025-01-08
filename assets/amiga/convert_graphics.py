@@ -54,7 +54,7 @@ def process_multi_tiled_sprite(img,tile_number,full_tileset,h,w,flipx):
     x_start = 0
     y_start = 0
     if w!=1 and h!=1:
-        print(tile_number)
+        print("multiwideeee!!!! ",tile_number)
 
     if h>1:
         for hi in range(h):
@@ -197,7 +197,7 @@ def quantize_palette(rgb_tuples,img_type,nb_quantize,transparent=None):
         reduced_colors_clut_img.save(dump_dir / "{}_colors_quantized.png".format(img_type))
 
     result_nb = len(set(reduced_palette))
-    if nb_quantize != result_nb:
+    if nb_quantize < result_nb:
         raise Exception(f"quantize: {img_type}: {nb_quantize} expected, found {result_nb}")
     # return it
     return rval
@@ -294,9 +294,11 @@ def load_contexted_tileset(tile_sheet_dict,context,nb_colors,is_bob,reuse_colors
         for tile_set in tile_24a000_set_list:
             apply_quantize(tile_set,quantized)
 
+        qc = set(quantized.values())
+        lfp = len(qc)       # update nb colors
 
         # put transparent color first, re-inject reused colors
-        bg_palette = sorted(set(quantized.values()) | reuse_colors)
+        bg_palette = sorted(qc | reuse_colors)
 
 ##        if dump_it:
 ##            dump_subdir = dump_dir / "tiles/244000/quantized"
@@ -404,8 +406,10 @@ def dump_tiles(file_radix,palette,tile_table,tile_plane_cache,add_dimension_info
 
     tiles_1_src = src_gen_dir / f"{file_radix}.68k"
 
+    nb_planes_blocks = len(tile_plane_cache)
     with open(tiles_1_src,"w") as f:
         f.write(f"\tdc.w\t{nb_planes}   ; nb planes \n")
+        f.write(f"\tdc.w\t{nb_planes_blocks}   ; nb plane blocks \n")
         f.write("palette:\n")
         palette_copy = palette.copy()
         # avoid that sometimes screen flashes purple when in fact it should be black
@@ -531,7 +535,7 @@ if lfp<8:
 
 # tiles
 
-if False:
+if True:
     tile_244000_cache = {}
     fg_palette = [(0x10,0x20,0x30)]*56 + fg_palette
 

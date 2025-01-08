@@ -1,5 +1,5 @@
 from PIL import Image,ImageOps
-import os,struct,glob,bitplanelib,json
+import os,struct,glob,bitplanelib,json,collections
 
 #dev 1 set 0: sprites:
 #pal 0: player 1, white ninja
@@ -7,6 +7,9 @@ import os,struct,glob,bitplanelib,json
 #pal 2: blue ninjas
 #pal 3: gray ninjas
 #pal F: red ninjas, karnov
+
+dump_images = True
+
 
 def load_tileset(image_name,side,tileset_name,dumpdir,used_tiles=None,dump=False,name_dict=None):
 
@@ -614,11 +617,12 @@ apply_tileset("dragonninja",red_ninja_tiles)
 apply_tileset("on_fire",red_ninja_tiles)
 
 class SpritePtr:
-    def __init__(self,h):
+    def __init__(self,h,offset):
         self.height = h
         self.x = [0]*h
         self.y = [0]*h
         self.code = [0]*h
+        self.offset = offset
         pass
 
 
@@ -634,7 +638,7 @@ def decode_sprite(offset):
 
     blocks = result[2:]
 
-
+    sprite_used_by_entry = collections.defaultdict(list)
     sprite_codes = {}
     sprite_objects = []
     spritelist = []
@@ -673,7 +677,7 @@ def decode_sprite(offset):
 
         if (not (spriteram[offs] & 0x8000)):
                 offs += 4
-                raise Exception("doesn't happen, good")
+                raise Exception("end of sprite list") # doesn't happen here
 
 
         for x in range(w):
@@ -692,7 +696,7 @@ def decode_sprite(offset):
                 incy = 1
 
 
-            sprite_ptr = SpritePtr(h)
+            sprite_ptr = SpritePtr(h,offset)
             if True: # (not flash or (screen.frame_number() & 1))
 
 
@@ -752,7 +756,8 @@ def decode_sprite(offset):
     for so in sprite_objects:
         for i in range(so.height):
             img = tile_set[so.code[i]]
-            sprite_codes[so.code[i]] = sprite_name
+            sprite_codes[hex(so.code[i])] = sprite_name
+            sprite_used_by_entry[hex(so.offset)].append(hex(so.code[i]))
             x = so.x[i]
             y = so.y[i]
             if y > 128:
@@ -766,19 +771,23 @@ def decode_sprite(offset):
 
             sprite_image.paste(img,(x,y))
 
-    sprite_image = ImageOps.scale(sprite_image,5,resample=Image.Resampling.NEAREST)
 
-    subdir = "unknown" if 'unknown' in sprite_name else "known"
+    if dump_images:
+        sprite_image = ImageOps.scale(sprite_image,5,resample=Image.Resampling.NEAREST)
 
-    _,sprite_image = bitplanelib.autocrop_x(bitplanelib.autocrop_y(sprite_image)[1])
-    sprite_image.save(os.path.join(dump_dir,subdir,f"{sprite_name}_{offset:x}.png"))
+        subdir = "unknown" if 'unknown' in sprite_name else "known"
+        _,sprite_image = bitplanelib.autocrop_x(bitplanelib.autocrop_y(sprite_image)[1])
+        sprite_image.save(os.path.join(dump_dir,subdir,f"{sprite_name}_{offset:x}.png"))
 
-    return sprite_codes
+    return sprite_codes,sprite_used_by_entry
 
 sprite_name_code = {}
+sprite_used_by_entry = {}
 for offset in assembled_sprites:
-    sprite_name_code.update(decode_sprite(offset))
+    sprite_codes,sue = decode_sprite(offset)
+    sprite_name_code.update(sprite_codes)
+    sprite_used_by_entry.update(sue)
 
 with open(os.path.join(this_dir,"sprite_code_names.json"),"w") as f:
-    json.dump(sprite_name_code,f,indent=2)
+    json.dump({"codes_names":sprite_name_code,"sprite_used_by_entry":sprite_used_by_entry},f,indent=2)
 #decode_sprite(0x52f8a)
