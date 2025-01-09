@@ -111,7 +111,7 @@ NB_PLAYFIELD_LINES = 256
 * the screen plane size is pretty huge, so the offset can go beyond 0x8000 and
 * the word add on address registers won't work
 SCREEN_PLANE_SIZE = NB_BYTES_PER_ROW*NB_PLAYFIELD_LINES*2
-RESTORE_SCREEN_PLANE_SIZE = NB_BYTES_PER_SCREEN*2*NB_PLAYFIELD_LINES*2
+RESTORE_SCREEN_PLANE_SIZE = NB_BYTES_PER_SCREEN*3*NB_PLAYFIELD_LINES*2
 SCREEN_SIZE =  SCREEN_PLANE_SIZE*NB_PLAYFIELD_PLANES
 RESTORE_SCREEN_SIZE = RESTORE_SCREEN_PLANE_SIZE*6   | max 5 planes, can be 4 too ATM 6 for convenience (8x8 fonts)
 
@@ -1227,6 +1227,7 @@ addr_246xxx_op:
 	.set	offset,0
 	.rept	16
 	clr.w	(offset+NB_BYTES_PER_SCREEN*2,a1)
+	clr.w	(offset+NB_BYTES_PER_SCREEN*2,a4)
 	.set	offset,offset+NB_BYTES_PER_ROW
 	.endr
 	.endm
@@ -1362,6 +1363,7 @@ addr_24Axxx_tile_layer_op:
 	move.w	d5,(offset,a1)
 	move.w	d5,(offset+NB_BYTES_PER_SCREEN*2,a1)
 	move.w	d5,(offset,a4)
+	move.w	d5,(offset+NB_BYTES_PER_SCREEN*2,a4)
 	.set	offset,offset+NB_BYTES_PER_ROW
 	.endr	
 	
@@ -1634,14 +1636,26 @@ really_update_sprites:
 	.ifne	OPT_ENABLE_LOGGING
 	lea		sprite_log_table_ffc000,a2
 	move.l	a2,0x24		| store address in zero page
-	movem.w	d1/d2,-(a7)
+	movem.w	d1/d2/d4,-(a7)
 	lsl.w	#4,d2		| 16 cluts
 	add.w	d3,d2		| clut offset
 	rol.w	#8,d1
 	bset	#7,d1		| probably set, but at least won't be 0
 	and.l	#0xFFFF,d2	| can't go higher, but may be > 0x8000!
-	or.b	d1,(a2,d2.l)	| merge/log as used, with properties
-	movem.w	(a7)+,d1/d2
+	cmp.w	#0x3083,d2  | gray ninja
+	jne		0f
+	TMPBREAK
+0:
+	move.b	(a2,d2.l),d4
+	or.b	d1,d4
+	cmp.b	(a2,d2.l),d4
+	jeq		0f
+	* called only when a new sprite config is discovered, so will flash
+	* only then
+	move.w	#0x0F0,_custom+color
+	move.b	d4,(a2,d2.l)	| merge/log as used, with properties
+0:
+	movem.w	(a7)+,d1/d2/d4
 	.endif
 
 
@@ -1692,8 +1706,10 @@ really_update_sprites:
 	* correct X/Y: 240-x
 	neg.w	d1
 	add.w	#240,d1
+	jmi		3f		| negative: no can do
 	neg.w	d0
 	add.w	#240,d0
+	jmi		3f		| negative: no can do
 	
 	tst.b	d6
 	jeq		0f
@@ -2040,7 +2056,6 @@ start_process_1_plane:
 * trashes: D0-D1
 
 restore_background:
-	TMPWRITE
 	movem.l	d2-d6/a0/a2-a5,-(a7)
 	lea		_custom,a5
 	* adjust offset X: X//8 even rounded

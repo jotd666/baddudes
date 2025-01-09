@@ -1,12 +1,13 @@
 
 vgmrip: https://vgmrips.net/packs/pack/bad-dudes-vs-dragonninja-data-east
 
-- scrolling finish !
+- crash when gray ninja appears (or does something?)
+
 - sommersault frames look inverted
 - quantize should be improved: sometimes get less colors than max and should
   definitely consider color weights/frequencies
 
-- add infos to header: nb cached planes
+
 
 - implement sprites
   * possible context change on some given X/Y (rounded) scroll values to load/unload sprites (boss fights)
@@ -25,9 +26,13 @@ vgmrip: https://vgmrips.net/packs/pack/bad-dudes-vs-dragonninja-data-east
 - rip more 244000 tiles (for demo)
 - rip 24D000 & 24A000 tiles
 
+- restore buffer uses 3 horizontal playfields, they should use only 2 plus a few tiles
+  to restore bobs that "wrap"
+  alternative: if bob X + width wrap, clip it and perform 2 restores (but 2x as blits!)
 - optim with restore_background or clear_fg_planes...: if blitter if busy,
   use the cpu to process that plane
-- hack lamps/trees/fire hydrants (from 244000 layer) with hardware sprites
+- hack lamps/trees/fire hydrants (from 244000 layer) with hardware sprites:
+  figure out first layer row scroll registers, "trigger" tile to display / undisplay sprite
 
 - "bad dudes" title still small glitches
 - "CREDIT" not written when coin inserted
