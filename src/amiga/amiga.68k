@@ -16,10 +16,22 @@ AttnFlags = 0x128
 AFB_68010 = 0
 AFB_68020 = 1
 
+	.ifdef	RELEASE
+	.macro	TMPBREAK
+	.error  "stray TMPBREAK macro"
+	.endm
+	.macro	TMPWRITE
+	.error  "stray TMPWRITE macro"
+	.endm
+	.else
 	.macro	TMPBREAK
 	BREAKPOINT	"work breakpoint"
 	.endm
-
+	.macro	TMPWRITE
+	move.b	#0,0x100		| 0x100 is used but only for exceptions
+	.endm
+	.endif
+	
 TOTAL_PUBLIC_MEMORY_SIZE = 350000
 TOTAL_CHIP_MEMORY_SIZE = 600000
 
@@ -1214,7 +1226,7 @@ addr_246xxx_op:
 	.macro	CLR_MIRROR_PLANE
 	.set	offset,0
 	.rept	16
-	clr.w	(offset+NB_BYTES_PER_SCREEN,a1)
+	clr.w	(offset+NB_BYTES_PER_SCREEN*2,a1)
 	.set	offset,offset+NB_BYTES_PER_ROW
 	.endr
 	.endm
@@ -1348,7 +1360,7 @@ addr_24Axxx_tile_layer_op:
 	.rept	16
 	move.w	(a2)+,d5
 	move.w	d5,(offset,a1)
-	move.w	d5,(offset+NB_BYTES_PER_SCREEN,a1)
+	move.w	d5,(offset+NB_BYTES_PER_SCREEN*2,a1)
 	move.w	d5,(offset,a4)
 	.set	offset,offset+NB_BYTES_PER_ROW
 	.endr	
@@ -1570,10 +1582,9 @@ really_update_sprites:
 	move.w	(a4),d0
 	beq.b	12f		| y=0: inactive and end of list (let's hope it works!)
 	move.w	(2,a4),d1
-	and.w	#0x1F0,d0		| align on 16 lower bound
+	and.w	#0x3F0,d0		| align on 16 lower bound (there are potentially 3 screens!)
 	* clear area where the sprite was
 	move.l	fg_drawed_screen_ptr,a1
-	moveq	#NB_PLAYFIELD_PLANES,d3
 	clr.l	(a4)+ 			| ack deletion
 	move.w	(a4),d2			| width in bytes (16 pixels: 4 bytes)
 	move.w	(2,a4),d4		| height
@@ -1636,6 +1647,18 @@ really_update_sprites:
 	move.l	(a4,d2.w*4),d4	| test pointer
 	jeq		3f			| zero: skipped
 
+	.ifne	OPT_ENABLE_LOGGING
+	* log sprite params in zero page
+	move.l	a6,-(a7)
+	lea		0x30,a6
+	move.w	D0,(a6)+
+	move.w	D1,(a6)+
+	move.w	D2,(a6)+
+	move.l	D4,(a6)+
+	move.w	#0xDEAD,(a6)+
+	move.l	(a7)+,a6
+	.endif
+	
 	* we can use scratch registers D2,D5,D6 for attribute computation
 
 *       data2 = X.W
@@ -2016,29 +2039,33 @@ start_process_1_plane:
 * trashes: D0-D1
 
 restore_background:
+	TMPWRITE
 	movem.l	d2-d6/a0/a2-a5,-(a7)
 	lea		_custom,a5
 	* adjust offset X: X//8 even rounded
 	lsr.w	#4,d0
 	add.w	d0,d0
-	swap	d0
-	clr.w	d0
-	swap	d0
+
 	
 	lea		mulNB_BYTES_PER_ROW_table,a4
+	moveq	#0,d3
 	.ifdef	NO68020
 	add.w	d1,d1
-	* add Y offset: Y*40
+	* add Y offset: Y*NB_BYTES_PER_ROW
 	move.w	(a4,d1.w),d3
 	.else
 	move.w	(a4,d1.w*2),d3
 	.endif
 	
-	add.l	d3,d0		| long add, we have a big buffer > 0x8000
+	* !!long adds, we have a big buffer > 0x8000!!
 	* same offset for source and destination
-	add.l	d0,a1
-	add.l	d0,a0
-	
+	* except if X coord > 0x200 (because background restore buffer
+	* doesn't duplicate like the background which needs 3 screens)
+	add.l	d3,a1
+	add.l	d3,a0
+	add.w	d0,a1	| real coord (can be > 0x2xx)
+	and.w	#0x3F,d0
+	add.w	d0,a0	| wraps
 
     move.l  #0x09f00000,d3    | A->D copy, ascending mode	
 	move.w	#NB_BYTES_PER_ROW,d1		| blit modulo
