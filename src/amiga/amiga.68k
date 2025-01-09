@@ -111,8 +111,8 @@ NB_PLAYFIELD_LINES = 256
 * the screen plane size is pretty huge, so the offset can go beyond 0x8000 and
 * the word add on address registers won't work
 SCREEN_PLANE_SIZE = NB_BYTES_PER_ROW*NB_PLAYFIELD_LINES*2
+RESTORE_SCREEN_PLANE_SIZE = NB_BYTES_PER_SCREEN*2*NB_PLAYFIELD_LINES*2
 SCREEN_SIZE =  SCREEN_PLANE_SIZE*NB_PLAYFIELD_PLANES
-RESTORE_SCREEN_PLANE_SIZE = SCREEN_PLANE_SIZE
 RESTORE_SCREEN_SIZE = RESTORE_SCREEN_PLANE_SIZE*6   | max 5 planes, can be 4 too ATM 6 for convenience (8x8 fonts)
 
 
@@ -1212,7 +1212,7 @@ addr_246xxx_op:
 	
 	.macro	NEXT_PLANES
 	lea		(SCREEN_PLANE_SIZE,a1),a1
-	lea		(SCREEN_PLANE_SIZE,a4),a4	
+	lea		(RESTORE_SCREEN_PLANE_SIZE,a4),a4	
 	.endm
 	.macro	CLR_PLANE
 	.set	offset,0
@@ -1263,7 +1263,7 @@ addr_24Axxx_tile_layer_op:
 	* then draw the 16x16 tile
 	moveq	#0,d3			| D3.L!!
 	move.w	d2,d3
-	and.w	#0x1F,D3		| this is X
+	and.w	#0x1E,D3		| this is X times 2 (tiles are 16 bits wide
 	move.w	d2,d4
 	and.w	#0x1E0,d4
 	lsr.w	#1,D4			| this is Y
@@ -1276,17 +1276,17 @@ addr_24Axxx_tile_layer_op:
 	sub.w	#0x200,d2
 	jpl		21f	
 	.ifeq	OPT_NO_SCROLLING_X	
-	* 200-400: add to X
-	add.w	#0x20,D3
+	* 200-400: add to Y
+	add.w	#16*16,d4
+	st		first_half_flag
 	.endif
 	jra		20f
 21:
 	sub.w	#0x200,d2
 	jpl		22f	
-	st		first_half_flag
-	* 400-600: add to Y
+	* 400-600: add to X
 	.ifeq	OPT_NO_SCROLLING_Y	
-	add.w	#16*16,d4
+	add.w	#0x20,D3
 	.endif
 	jra		20f
 22:
@@ -1625,6 +1625,7 @@ really_update_sprites:
 *	cmp.b	#230,d0
 *	jcc		2f 						| don't draw sprites too far right
 	move.w	(TARGET_SPRITE_CODE,a0),d2
+	and.w	#0xFFF,d2				| MAME masks the code to 1FFF, but here we go up to FFF
 	move.w	d0,d3
 	rol.w	#4,d3
 	and.w	#0xF,d3		| color code
@@ -1638,7 +1639,7 @@ really_update_sprites:
 	add.w	d3,d2		| clut offset
 	rol.w	#8,d1
 	bset	#7,d1		| probably set, but at least won't be 0
-	and.w	#0xFFFF,d2	| can't go higher, but may be > 0x8000!
+	and.l	#0xFFFF,d2	| can't go higher, but may be > 0x8000!
 	or.b	d1,(a2,d2.l)	| merge/log as used, with properties
 	movem.w	(a7)+,d1/d2
 	.endif
