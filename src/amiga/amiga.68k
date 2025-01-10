@@ -1724,10 +1724,7 @@ really_update_sprites:
 	add.w	#SPRITE_X_CORRECTION,d0
 	.endif
 
-*	move.b	(TARGET_SPRITE_ATTRIBUTES,a0),d3
-	* todo yflip
-*	and.b	#0x0F,d3	| get attributes
-
+	moveq	#0,d6
 	
 	move.l	a0,-(a7)
 	move.l	d4,a0
@@ -1736,7 +1733,12 @@ really_update_sprites:
 	jeq		0f
 	* X-flip
 
-	add.w	#6+(NB_PLAYFIELD_PLANES+1)*4,a0
+	move.w	#6+(NB_PLAYFIELD_PLANES+1)*4,d4
+	tst.w	(a0,d4.w)
+	jeq		0f			| not flip is not pre-computed
+	* pre-computed! all right!! just add offset to plane pointers
+	st		d6			| d6 != 0: means we're pre-computed
+	add.w	d4,a0
 0:
 	move.w	(a0)+,d4		| height
 	move.w	(a0)+,d5		| width
@@ -1749,9 +1751,8 @@ really_update_sprites:
 	add.w	y_scroll_value(pc),d1
 	.endif 
 	
-	
 	* now A0 points on the first bitplane of the bob
-
+	* if bitplanes aren't pre-computed
 	move.l		fg_drawed_screen_ptr,a1
 	* D0 and D1 are already set
 	move.l	(NB_PLAYFIELD_PLANES*4,a0),d2
@@ -3152,7 +3153,11 @@ load_sprite_file:
 	move.l	d0,sprites_memory
 	move.l	d0,a0
 	move.w	(a0)+,d0	| nb planes (6) ignore
-	move.w	(a0)+,d1	| nb plane blocks
+	moveq	#0,d0
+	move.w	(a0)+,d0	| nb plane blocks
+	jbsr	allocate_memory
+	move.l	d0,sprite_mirror_state
+	
 	lea	(0x40,a0),a0	| skip 32 first colors
 	move.l	a0,a1
 	add.w	#0x40,a1
@@ -3185,6 +3190,10 @@ load_sprite_file:
 	move.l	d3,a2
 	.rept	2
 	move.w	#NB_PLAYFIELD_PLANES+1-1,d5  | standard + mirror (bobs) with mask
+	tst.w	(a2)
+	* h=0 means this orientation is not computed, ATM only last (mirror) can be
+	* computed or not, so this is a bit sketchy but who cares for now
+	jeq		4f			
 	addq	#6,a2		| skip h,w,y offset!
 20:
 	move.l	(a2)+,d4
@@ -3193,6 +3202,7 @@ load_sprite_file:
 	move.l	d4,(-4,a2)		| store
 3:
 	dbf	d5,20b
+4:
 	.endr
 2:
 	dbf	d6,10b			| next clut
@@ -3613,7 +3623,8 @@ dude_pics:
 	.long	0
 sprites_memory:
 	.long	0
-	
+sprite_mirror_state:
+	.long	0
 tile_data_24a000:
 	.long	0
 tile_data_244000:

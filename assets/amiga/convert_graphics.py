@@ -6,6 +6,10 @@ from shared import *
 sprite_names = dict()
 palette_dict = dict()
 
+# blue ninja tiles are pre-mirrored as there are a lot of them
+# at the same time
+pre_mirrored_sprites = {k:{2} for k in range(0x200,0x348)}
+
 def reformat_subdict(d):
     rval = {"cluts":set(d["cluts"])}
     attribs = d.get("attributes")
@@ -346,6 +350,15 @@ def read_tileset(img_set_list,palette,cache,is_bob,generate_mask):
 
                     for b,(plane_name,plane_func) in zip(plane_orientation_flags,plane_orientations):
                         if b:
+                            if plane_name == "mirror":
+                                # check if we must pre-generate mirror plane
+                                pms_clut = pre_mirrored_sprites.get(i)
+                                if pms_clut and n in pms_clut:
+                                    pass
+                                else:
+                                    # don't pre-compute mirror unless explicitly set
+                                    entry[plane_name] = None
+                                    continue
 
                             actual_nb_planes = nb_planes
                             wtile = plane_func(tile)
@@ -450,20 +463,30 @@ def dump_tiles(file_radix,palette,tile_table,tile_plane_cache,add_dimension_info
                         for orientation,_ in plane_orientations:
                             f.write("* <{}>\n".format(orientation))
                             if orientation in t:
+
                                 data = t[orientation]
-                                if add_dimension_info:
-                                    # find h,w,yoffset
-                                    f.write("\tdc.w\t{height},{width},{y_start}  ; h,w,y offset\n".format(**data))
-                                for bitplane_id in data["bitplanes"]:
-                                    f.write("\tdc.l\t")
-                                    if bitplane_id:
-                                        f.write(f"tile_plane_{bitplane_id:02d}-{tile_base}")
-                                    else:
-                                        f.write("0")
-                                    f.write("\n")
-                                if len(t)==1:
-                                    # optim: only standard
-                                    break
+                                if data:
+                                    if orientation=="mirror":
+                                        print(i,j,data)
+                                    if add_dimension_info:
+                                        # find h,w,yoffset
+                                        f.write("\tdc.w\t{height},{width},{y_start}  ; h,w,y offset\n".format(**data))
+                                    for bitplane_id in data["bitplanes"]:
+                                        f.write("\tdc.l\t")
+                                        if bitplane_id:
+                                            f.write(f"tile_plane_{bitplane_id:02d}-{tile_base}")
+                                        else:
+                                            f.write("0")
+                                        f.write("\n")
+                                    if len(t)==1:
+                                        # optim: only standard
+                                        break
+                                else:
+                                    # no data:
+                                    # don't pre-compute mirror unless explicitly set
+                                    f.write("\tdc.w\t0   | no pre-computed mirror\n")
+
+
                             else:
                                 for _ in range(nb_planes):
                                     f.write("\tdc.l\t0\n")

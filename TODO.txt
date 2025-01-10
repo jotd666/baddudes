@@ -7,7 +7,7 @@ vgmrip: https://vgmrips.net/packs/pack/bad-dudes-vs-dragonninja-data-east
 - quantize should be improved: sometimes get less colors than max and should
   definitely consider color weights/frequencies
 
-
+- double buffering
 
 - implement sprites
   * possible context change on some given X/Y (rounded) scroll values to load/unload sprites (boss fights)
