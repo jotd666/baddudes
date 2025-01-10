@@ -2708,11 +2708,7 @@ set_game_bitplanes:
     rts
 		
 
-* 2 words: first shift (as bplcon value), then
-* offset in bytes
 
-scroll_table:
-	.include	"scroll_table.68k"
 
 
 
@@ -3640,7 +3636,14 @@ sprite_table_base:
 tile_data_24d000:
 	.long	0
 	
-	.ascii	"CODE_END"
+* 2 words: first shift (as bplcon value), then
+* offset in bytes
+scroll_table:
+	.include	"scroll_table.68k"
+* 65536 word values to flip bits. Costs 128k of memory but worth it
+* as it saves a lot of chip and it's way faster than byte per byte swap
+mirror_table:
+	.include	"mirror_table.68k"
 
 
 	.section	.datachip
