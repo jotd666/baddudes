@@ -466,8 +466,6 @@ def dump_tiles(file_radix,palette,tile_table,tile_plane_cache,add_dimension_info
 
                                 data = t[orientation]
                                 if data:
-                                    if orientation=="mirror":
-                                        print(i,j,data)
                                     if add_dimension_info:
                                         # find h,w,yoffset
                                         f.write("\tdc.w\t{height},{width},{y_start}  ; h,w,y offset\n".format(**data))
@@ -495,7 +493,8 @@ def dump_tiles(file_radix,palette,tile_table,tile_plane_cache,add_dimension_info
                         #dump_asm_bytes(t["bitmap"],f)
 
         for k,v in tile_plane_cache.items():
-            f.write(f"tile_plane_{v:02d}:")
+            f.write(f"\tdc.w\t0   ; plane {v:02d} orientation\n")
+            f.write(f"tile_plane_{v:02d}:\n")
             dump_asm_bytes(k,f)
     # now convert the asm file to full binary
     tiles_1_bin = os.path.join(data_dir,os.path.basename(os.path.splitext(tiles_1_src)[0])+".bin")

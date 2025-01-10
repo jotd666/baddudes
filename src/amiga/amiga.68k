@@ -1755,11 +1755,7 @@ really_update_sprites:
 	* now A0 points on the first bitplane of the bob
 	tst.b	d6
 	jeq		0f
-	* bitplanes aren't pre-computed: check bitplanes current orientation and swap
-	* if required. This is slow but saves memory
-	lea		mirror_table,a1
-	move.l	sprite_mirror_state,a3
-	* TODO FUCK d3: flip on
+	jbsr	mirror_planes
 0:
 	move.l		fg_drawed_screen_ptr,a1
 	* D0 and D1 are already set
@@ -1784,6 +1780,23 @@ really_update_sprites:
 	
 	rts
 
+mirror_planes:
+	* bitplanes aren't pre-computed: check bitplanes current orientation and swap
+	* if required. This is slow but saves memory
+	lea		mirror_table,a1
+	move.l		a0,a3		| save a0
+	moveq	#NB_PLAYFIELD_PLANES+1-1,d6
+0:
+	cmp.b	(-2,a0),d3
+	jeq		1f
+	* not the proper orientation: change it
+	move.b	d3,(-2,a0)
+1:
+	addq	#4,a0
+	dbf		d6,0b
+	move.l		a3,a0		| restore a0
+	rts
+	
 y_correction_table:
 	.word	0
 	.word	16
@@ -3158,9 +3171,8 @@ load_sprite_file:
 	move.l	d0,a0
 	move.w	(a0)+,d0	| nb planes (6) ignore
 	moveq	#0,d0
-	move.w	(a0)+,d0	| nb plane blocks
-	jbsr	allocate_memory
-	move.l	d0,sprite_mirror_state
+	move.w	(a0)+,d0	| nb plane blocks (ignore)
+
 	
 	lea	(0x40,a0),a0	| skip 32 first colors
 	move.l	a0,a1
@@ -3602,8 +3614,6 @@ tiles_palette_24d000:		| address 0x24D000
 dude_pics:
 	.long	0
 sprites_memory:
-	.long	0
-sprite_mirror_state:
 	.long	0
 tile_data_24a000:
 	.long	0
