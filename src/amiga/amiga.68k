@@ -1642,10 +1642,7 @@ really_update_sprites:
 	rol.w	#8,d1
 	bset	#7,d1		| probably set, but at least won't be 0
 	and.l	#0xFFFF,d2	| can't go higher, but may be > 0x8000!
-	cmp.w	#0x3083,d2  | gray ninja
-	jne		0f
-	TMPBREAK
-0:
+
 	move.b	(a2,d2.l),d4
 	or.b	d1,d4
 	cmp.b	(a2,d2.l),d4
@@ -1736,7 +1733,7 @@ really_update_sprites:
 	st		d3		| x-flip on
 	move.w	#6+(NB_PLAYFIELD_PLANES+1)*4,d4
 	tst.w	(a0,d4.w)
-	jeq		0f			| not flip is not pre-computed
+	jeq		0f			| flip is not pre-computed
 	* pre-computed! all right!! just add offset to plane pointers
 	st		d6			| d6 != 0: means we're pre-computed
 	add.w	d4,a0
@@ -1754,7 +1751,7 @@ really_update_sprites:
 	
 	* now A0 points on the first bitplane of the bob
 	tst.b	d6
-	jeq		0f
+	jne		0f
 	jbsr	mirror_planes
 0:
 	move.l		fg_drawed_screen_ptr,a1
@@ -1780,22 +1777,54 @@ really_update_sprites:
 	
 	rts
 
+* < A0: plane list
+* < D4: height
+* < D5: width (bytes)
 mirror_planes:
+	movem.l	d0/d1/d5/a0,-(a7)
 	* bitplanes aren't pre-computed: check bitplanes current orientation and swap
 	* if required. This is slow but saves memory
 	lea		mirror_table,a1
-	move.l		a0,a3		| save a0
+	moveq	#0,d2
 	moveq	#NB_PLAYFIELD_PLANES+1-1,d6
 0:
-	cmp.b	(-2,a0),d3
+	move.l	(a0)+,d1		| current plane data
+	jeq		1f				| no data: skip
+	move.l	d1,a2
+	cmp.b	(-2,a2),d3		| 2 bytes before: mirror flag
 	jeq		1f
 	* not the proper orientation: change it
-	move.b	d3,(-2,a0)
+	move.b	d3,(-2,a2)
+	move.w	d4,d1		| height
+	subq	#1,d1		| minus one for dbf
+11:
+	move.w	d5,d0       | number of byte values (4: 16 bits + shifting)
+	cmp.w	#4,d0		| most common
+	jeq		13f
+	lsr.w	#1,d0		| divide by 2
+	subq	#1,d0		| remove shifting
+	
+*10:
+*	move.w	(a2)+,d2
+*	move.w	(a1,d2.l*2),(-2,a2)		| get mirror value
+*12:
+*	dbf		d0,10b
+*	addq	#2,a2					| skip shift zero pad
+	dbf		d1,11b
 1:
-	addq	#4,a0
+	* next bitplane
 	dbf		d6,0b
-	move.l		a3,a0		| restore a0
+	movem.l	(a7)+,d0/d1/d5/a0
 	rts
+	* 16-bit wide: much faster, and common
+13:
+	move.w	(a2)+,d2
+	jeq		14f					| zero: optim
+	move.w	(a1,d2.l*2),(-2,a2)
+14:
+	addq	#2,a2					| skip zero pad
+	dbf		d1,13b						| next
+	jra		1b
 	
 y_correction_table:
 	.word	0
