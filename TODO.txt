@@ -12,11 +12,8 @@ vgmrip: https://vgmrips.net/packs/pack/bad-dudes-vs-dragonninja-data-east
 - implement sprites
   * possible context change on some given X/Y (rounded) scroll values to load/unload sprites (boss fights)
     or just patch the game at 00eca (initialize boss)
-  * to save memory, tag the sprites/sprite tiles that can be displayed mirrored, and also specifically the ones
-    that can be drawn just once on screen at a time (bosses, maybe possibly main player, dogs... sabreman)
-	so we can mirror them dynamically on demand (add specific orientation property at the	cached bitplane level)
-	ATM all sprites are mirrored but this isn't viable!!
-
+  * mirror_planes: mirroring with width != 16 to implement: test on 32 then make a special case for 32 bits (d0=6)
+  
 - check crash .whdl
 - still undetected real black on enemies (Karnov...) (almost) OK on Bad dude.
 - magenta in game intro sprite sheet...

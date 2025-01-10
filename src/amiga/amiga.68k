@@ -1724,7 +1724,9 @@ really_update_sprites:
 	
 	move.l	a0,-(a7)
 	move.l	d4,a0
-	move.l	(a0,d3.w*4),a0	| structure
+	move.l	(a0,d3.w*4),d4	| structure
+	jeq		3f				| valid sprite but not clut: skip
+	move.l	d4,a0
 	moveq	#0,d3
 	moveq	#0,d6
 	btst	#13,d2
@@ -1752,6 +1754,10 @@ really_update_sprites:
 	* now A0 points on the first bitplane of the bob
 	tst.b	d6
 	jne		0f
+	cmp.l	#6,a0
+	jne		100f
+	TMPBREAK
+100:
 	jbsr	mirror_planes
 0:
 	move.l		fg_drawed_screen_ptr,a1
@@ -1780,6 +1786,8 @@ really_update_sprites:
 * < A0: plane list
 * < D4: height
 * < D5: width (bytes)
+* trashes: only unused registers :)
+
 mirror_planes:
 	movem.l	d0/d1/d5/a0,-(a7)
 	* bitplanes aren't pre-computed: check bitplanes current orientation and swap
@@ -1799,17 +1807,20 @@ mirror_planes:
 	subq	#1,d1		| minus one for dbf
 11:
 	move.w	d5,d0       | number of byte values (4: 16 bits + shifting)
-	cmp.w	#4,d0		| most common
+	cmp.w	#4,d0		| most common: will be faster
 	jeq		13f
-	lsr.w	#1,d0		| divide by 2
-	subq	#1,d0		| remove shifting
-	
-*10:
-*	move.w	(a2)+,d2
-*	move.w	(a1,d2.l*2),(-2,a2)		| get mirror value
-*12:
-*	dbf		d0,10b
-*	addq	#2,a2					| skip shift zero pad
+	* 32->64 bits
+	* note that 32 bits + shifting still amounts to 1 iteration (D0=0 for loop)
+	lea		(a2,d0.w),a3	| position ourselves at the end
+	subq	#2,d0			| remove shift word (at zero)
+	lsr.w	#2,d0			| divide by 4: meet at half
+	subq	#1,d0			| minus one for dbf
+10:
+	move.w	(a2)+,d2
+	move.w	(a1,d2.l*2),-(a3)		| get mirror value
+12:
+	dbf		d0,10b
+	addq	#2,a2					| skip shift zero pad
 	dbf		d1,11b
 1:
 	* next bitplane
@@ -1822,7 +1833,7 @@ mirror_planes:
 	jeq		14f					| zero: optim
 	move.w	(a1,d2.l*2),(-2,a2)
 14:
-	addq	#2,a2					| skip zero pad
+	addq	#2,a2					    | skip zero pad
 	dbf		d1,13b						| next
 	jra		1b
 	
