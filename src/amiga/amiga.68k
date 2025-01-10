@@ -1724,15 +1724,16 @@ really_update_sprites:
 	add.w	#SPRITE_X_CORRECTION,d0
 	.endif
 
-	moveq	#0,d6
 	
 	move.l	a0,-(a7)
 	move.l	d4,a0
 	move.l	(a0,d3.w*4),a0	| structure
+	moveq	#0,d3
+	moveq	#0,d6
 	btst	#13,d2
 	jeq		0f
 	* X-flip
-
+	st		d3		| x-flip on
 	move.w	#6+(NB_PLAYFIELD_PLANES+1)*4,d4
 	tst.w	(a0,d4.w)
 	jeq		0f			| not flip is not pre-computed
@@ -1752,11 +1753,18 @@ really_update_sprites:
 	.endif 
 	
 	* now A0 points on the first bitplane of the bob
-	* if bitplanes aren't pre-computed
+	tst.b	d6
+	jeq		0f
+	* bitplanes aren't pre-computed: check bitplanes current orientation and swap
+	* if required. This is slow but saves memory
+	lea		mirror_table,a1
+	move.l	sprite_mirror_state,a3
+	* TODO FUCK d3: flip on
+0:
 	move.l		fg_drawed_screen_ptr,a1
 	* D0 and D1 are already set
 	move.l	(NB_PLAYFIELD_PLANES*4,a0),d2
-	beq.b	2f		| mask is zero: blank tile => skip
+	beq.b	3f		| mask is zero: blank tile => skip
 	move.l	d2,a3	| mask bitplane
 	moveq	#0,d2	| no y-clip
 	* note down that this bob will have to be erased
