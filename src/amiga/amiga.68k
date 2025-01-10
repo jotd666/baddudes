@@ -3572,32 +3572,8 @@ _end_of_ng_code:
 
 
 
-	.ifndef	RELEASE
-	* easier to debug game to have memory aligned on 0x10000
 
-	.ifne	OPT_ENABLE_LOGGING
-	.section	.bss
-	.ascii	"TILE"
-tile_log_table_244000:
-	* 16 cluts, 2048 tiles
-	* a lot of combinations aren't used (fortunately!)
-	.skip	0x8000
-tile_log_table_24a000:		| make sure it's contiguous to prev table
-	* 16 cluts, 2048 tiles
-	* a lot of combinations aren't used (fortunately!)
-	.skip	0x8000
-tile_log_table_24d000:		| make sure it's contiguous to prev table
-	* 16 cluts, 2048 tiles
-	* a lot of combinations aren't used (fortunately!)
-	.skip	0x8000
-sprite_log_table_ffc000:
-	* 16 cluts, 4096 tiles
-	* a lot of combinations aren't used (fortunately!)
-	.skip	0x10000
 
-tile_log_table_end:
-	.endif
-	.endif
 	
 public_memory_current_ptr:
 	.long	0
@@ -3644,6 +3620,29 @@ scroll_table:
 * as it saves a lot of chip and it's way faster than byte per byte swap
 mirror_table:
 	.include	"mirror_table.68k"
+	.ifndef	RELEASE
+	* easier to debug game to have memory aligned on 0x10000
+	.ifne	OPT_ENABLE_LOGGING
+	.section	.bss
+tile_log_table_244000:
+	* 16 cluts, 2048 tiles
+	* a lot of combinations aren't used (fortunately!)
+	.skip	0x8000
+tile_log_table_24a000:		| make sure it's contiguous to prev table
+	* 16 cluts, 2048 tiles
+	* a lot of combinations aren't used (fortunately!)
+	.skip	0x8000
+tile_log_table_24d000:		| make sure it's contiguous to prev table
+	* 16 cluts, 2048 tiles
+	* a lot of combinations aren't used (fortunately!)
+	.skip	0x8000
+sprite_log_table_ffc000:
+	* 16 cluts, 4096 tiles
+	* a lot of combinations aren't used (fortunately!)
+	.skip	0x10000
+tile_log_table_end:
+	.endif
+	.endif
 
 
 	.section	.datachip
