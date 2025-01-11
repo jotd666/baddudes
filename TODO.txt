@@ -3,18 +3,23 @@ vgmrip: https://vgmrips.net/packs/pack/bad-dudes-vs-dragonninja-data-east
 
 - crash when gray ninja appears (or does something?)
 
-- sommersault frames look inverted
+- sommersault frames look inverted / Karnov too. Mockup with Karnov
 - quantize should be improved: sometimes get less colors than max and should
   definitely consider color weights/frequencies
-
 - double buffering
+- try to reinstate status & score somewhere
+- hack lamps/trees/fire hydrants (from 244000 layer) with hardware sprites:
+  figure out first layer row scroll registers, "trigger" tile to display / undisplay sprite
+- find context change for level 2
+- ninja truck display, maybe using just 8 colors with 3 planes and try to make a fake ghost effect
+  with the bars...
 
 - implement sprites
   * possible context change on some given X/Y (rounded) scroll values to load/unload sprites (boss fights)
     or just patch the game at 00eca (initialize boss)
   * mirror_planes: mirroring with width != 16 to implement: test on 32 then make a special case for 32 bits (d0=6)
   
-- check crash .whdl
+
 - still undetected real black on enemies (Karnov...) (almost) OK on Bad dude.
 - magenta in game intro sprite sheet...
 - reuse color: not working yet, but promising to get even more colors and avoid sprite quantize
@@ -28,8 +33,6 @@ vgmrip: https://vgmrips.net/packs/pack/bad-dudes-vs-dragonninja-data-east
   alternative: if bob X + width wrap, clip it and perform 2 restores (but 2x as blits!)
 - optim with restore_background or clear_fg_planes...: if blitter if busy,
   use the cpu to process that plane
-- hack lamps/trees/fire hydrants (from 244000 layer) with hardware sprites:
-  figure out first layer row scroll registers, "trigger" tile to display / undisplay sprite
 
 - "bad dudes" title still small glitches
 - "CREDIT" not written when coin inserted

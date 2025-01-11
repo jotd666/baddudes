@@ -33,7 +33,7 @@ AFB_68020 = 1
 	.endif
 	
 TOTAL_PUBLIC_MEMORY_SIZE = 350000
-TOTAL_CHIP_MEMORY_SIZE = 600000
+TOTAL_CHIP_MEMORY_SIZE = 720000
 
 PREVIOUS_SPRITE_SIZE = 8
 BORDERBLANK = 1
@@ -1621,11 +1621,11 @@ really_update_sprites:
 1:
 	move.w	(TARGET_SPRITE_Y,a0),d1  | sprite Y & attributes
 	btst	#15,d1
-	jeq		3f						 | if bit 15 not set, then slot is free
+	jeq		30f						 | if bit 15 not set, then slot is free
 	
 	move.w	(TARGET_SPRITE_X,a0),d0  | sprite X
 *	cmp.b	#230,d0
-*	jcc		2f 						| don't draw sprites too far right
+*	jcc		30f 						| don't draw sprites too far right
 	move.w	(TARGET_SPRITE_CODE,a0),d2
 	and.w	#0xFFF,d2				| MAME masks the code to 1FFF, but here we go up to FFF
 	move.w	d0,d3
@@ -1657,16 +1657,16 @@ really_update_sprites:
 
 
 	move.l	(a4,d2.w*4),d4	| test pointer
-	jeq		3f			| zero: skipped
+	jeq		30f			| zero: skipped
 
 	.ifne	OPT_ENABLE_LOGGING
 	* log sprite params in zero page
 	move.l	a6,-(a7)
 	lea		0x30,a6
-	move.w	D0,(a6)+
-	move.w	D1,(a6)+
-	move.w	D2,(a6)+
-	move.l	D4,(a6)+
+	move.w	D0,(a6)+    | sprite X and flags
+	move.w	D1,(a6)+    | sprite Y and flags (bit 15 set: sprite active)
+	move.w	D2,(a6)+    | sprite code 0-0x1000
+	move.l	D4,(a6)+	| pointer on sprite clut table
 	move.w	#0xDEAD,(a6)+
 	move.l	(a7)+,a6
 	.endif
@@ -1703,10 +1703,10 @@ really_update_sprites:
 	* correct X/Y: 240-x
 	neg.w	d1
 	add.w	#240,d1
-	jmi		3f		| negative: no can do
+	jmi		30f		| negative: no can do
 	neg.w	d0
 	add.w	#240,d0
-	jmi		3f		| negative: no can do
+	jmi		30f		| negative: no can do
 	
 	tst.b	d6
 	jeq		0f
@@ -1725,7 +1725,7 @@ really_update_sprites:
 	move.l	a0,-(a7)
 	move.l	d4,a0
 	move.l	(a0,d3.w*4),d4	| structure
-	jeq		3f				| valid sprite but not clut: skip
+	jeq		29f				| valid sprite but not clut: skip
 	move.l	d4,a0
 	moveq	#0,d3
 	moveq	#0,d6
@@ -1753,17 +1753,14 @@ really_update_sprites:
 	
 	* now A0 points on the first bitplane of the bob
 	tst.b	d6
-	jne		0f
-	cmp.l	#6,a0
-	jne		100f
-	TMPBREAK
-100:
+	jne		0f			| pre-computed, no need to check/perform mirroring
+
 	jbsr	mirror_planes
 0:
 	move.l		fg_drawed_screen_ptr,a1
 	* D0 and D1 are already set
 	move.l	(NB_PLAYFIELD_PLANES*4,a0),d2
-	beq.b	3f		| mask is zero: blank tile => skip
+	beq.b	29f		| mask is zero: blank tile => skip
 	move.l	d2,a3	| mask bitplane
 	moveq	#0,d2	| no y-clip
 	* note down that this bob will have to be erased
@@ -1776,11 +1773,11 @@ really_update_sprites:
 	moveq	#0,d5			| Y-offset
 	moveq	#NB_PLAYFIELD_PLANES,d3
 	bsr		blit_planes_any_internal_cookie_cut
+29:
 	move.l	(a7)+,a0
-3:
+30:
 	addq.w	#TARGET_SPRITE_SIZE,a0
 	dbf		d7,1b
-	
 	rts
 
 * < A0: plane list
@@ -2622,9 +2619,16 @@ allocate_memory:
 	movem.l	(a7)+,d2-d4/a0-a1
 	rts
 	
+
 out_of_memory:
+	tst.b	d1
+	jeq		0f
+	BREAKPOINT	"out of chip memory"
+	jra		quit_to_os
+0:
 	BREAKPOINT	"out of memory"
-	illegal
+	jra		quit_to_os
+
 
 	
 * < D0: 0 any, 1 chip	
@@ -3206,6 +3210,7 @@ set_game_intro_context:
 	rts
 	
 load_sprite_file:
+	jbsr	osd_disable_interrupts
 	jbsr	allocate_and_load_chip_mem_file
 	move.l	d0,sprites_memory
 	move.l	d0,a0
@@ -3264,6 +3269,7 @@ load_sprite_file:
 	dbf	d6,10b			| next clut
 1:
 	dbf	d7,0b			| next sprite
+	jbsr	osd_enable_interrupts
 	rts
 	
 **********************
