@@ -1,7 +1,7 @@
 
 vgmrip: https://vgmrips.net/packs/pack/bad-dudes-vs-dragonninja-data-east
 
-- crash when gray ninja appears (or does something?)
+- global palette between tiles and sprites when there are sprites
 
 - sommersault frames look inverted / Karnov too. Mockup with Karnov
 - quantize should be improved: sometimes get less colors than max and should
@@ -11,7 +11,7 @@ vgmrip: https://vgmrips.net/packs/pack/bad-dudes-vs-dragonninja-data-east
 - hack lamps/trees/fire hydrants (from 244000 layer) with hardware sprites:
   figure out first layer row scroll registers, "trigger" tile to display / undisplay sprite
 - find context change for level 2
-- ninja truck display, maybe using just 8 colors with 3 planes and try to make a fake ghost effect
+- ninja truck display would work using just 8 colors with 3 planes and try to make a fake ghost effect
   with the bars...
 
 - implement sprites

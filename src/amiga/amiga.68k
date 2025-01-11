@@ -33,7 +33,7 @@ AFB_68020 = 1
 	.endif
 	
 TOTAL_PUBLIC_MEMORY_SIZE = 350000
-TOTAL_CHIP_MEMORY_SIZE = 720000
+TOTAL_CHIP_MEMORY_SIZE = 750000
 
 PREVIOUS_SPRITE_SIZE = 8
 BORDERBLANK = 1
@@ -79,7 +79,7 @@ ONE_TICK = 1
 	.endif
 	
 
-OPT_ENABLE_DOUBLE_BUFFERING = 0
+OPT_ENABLE_DOUBLE_BUFFERING = 1
 
 _custom = 0xDFF000
 
@@ -786,10 +786,11 @@ _vblank:
 	
 1100:
 	
-	
+	eor.b	#1,flip_flop
+	jeq		1f
 	bsr		really_update_sprites
-	
 	* double buffering only in-game
+1:
 	cmp.w	#CTX_GAME,global_context
 	jcs		23f
 	bsr		switch_screen_buffers
@@ -1213,12 +1214,19 @@ addr_246xxx_op:
 	.macro	NEXT_PLANES
 	lea		(SCREEN_PLANE_SIZE,a1),a1
 	lea		(RESTORE_SCREEN_PLANE_SIZE,a4),a4	
+	.ifne	OPT_ENABLE_DOUBLE_BUFFERING
+	lea		(SCREEN_PLANE_SIZE,a5),a5
+	.endif	
 	.endm
+	
 	.macro	CLR_PLANE
 	.set	offset,0
 	.rept	16
 	clr.w	(offset,a1)
 	clr.w	(offset,a4)
+	.ifne	OPT_ENABLE_DOUBLE_BUFFERING
+	clr.w	(offset,a5)
+	.endif	
 	.set	offset,offset+NB_BYTES_PER_ROW
 	.endr
 	.endm
@@ -1228,6 +1236,9 @@ addr_246xxx_op:
 	.rept	16
 	clr.w	(offset+NB_BYTES_PER_SCREEN*2,a1)
 	clr.w	(offset+NB_BYTES_PER_SCREEN*2,a4)
+	.ifne	OPT_ENABLE_DOUBLE_BUFFERING
+	clr.w	(offset+NB_BYTES_PER_SCREEN*2,a5)
+	.endif	
 	.set	offset,offset+NB_BYTES_PER_ROW
 	.endr
 	.endm
@@ -1245,7 +1256,7 @@ addr_24Axxx_tile_layer_op:
 	* byte op: ignore
 	rts
 0:
-	movem.l	a0-a4/d2-d6,-(a7)
+	movem.l	a0-a5/d2-d6,-(a7)
 10:
 
 	move.w	d2,-(a7)
@@ -1300,6 +1311,9 @@ addr_24Axxx_tile_layer_op:
 	.endif
 20:
 	move.l	fg_drawed_screen_ptr,a1
+	.ifne	OPT_ENABLE_DOUBLE_BUFFERING
+	move.l	fg_displayed_screen_ptr,a5
+	.endif
 	lea		background_restore_buffer,a4
 	lea		mulNB_BYTES_PER_ROW_table,a2
 	moveq	#0,d5
@@ -1307,6 +1321,9 @@ addr_24Axxx_tile_layer_op:
 	add.l	d3,d5
 	add.l	d5,a1			| screen dest address on playfield
 	add.l	d5,a4			| screen dest address on restore playfield
+	.ifne	OPT_ENABLE_DOUBLE_BUFFERING
+	add.l	d5,a5
+	.endif
 	
 	move.w	d7,d5			| save code
 	move.w	d7,d6			| tile code
@@ -1364,6 +1381,10 @@ addr_24Axxx_tile_layer_op:
 	move.w	d5,(offset+NB_BYTES_PER_SCREEN*2,a1)
 	move.w	d5,(offset,a4)
 	move.w	d5,(offset+NB_BYTES_PER_SCREEN*2,a4)
+	.ifne	OPT_ENABLE_DOUBLE_BUFFERING
+	move.w	d5,(offset,a5)
+	move.w	d5,(offset+NB_BYTES_PER_SCREEN*2,a5)
+	.endif
 	.set	offset,offset+NB_BYTES_PER_ROW
 	.endr	
 	
@@ -1377,6 +1398,9 @@ addr_24Axxx_tile_layer_op:
 	move.w	(a2)+,d5
 	move.w	d5,(offset,a1)
 	move.w	d5,(offset,a4)
+	.ifne	OPT_ENABLE_DOUBLE_BUFFERING
+	move.w	d5,(offset,a5)
+	.endif
 	.set	offset,offset+NB_BYTES_PER_ROW
 	.endr	
 1:
@@ -1389,7 +1413,7 @@ addr_24Axxx_tile_layer_op:
 	swap	d7
 	dbf		d0,10b		| next word (if longword write)
 101:
-	movem.l	(a7)+,a0-a4/d2-d6
+	movem.l	(a7)+,a0-a5/d2-d6
 	rts
 2:
 	CLR_PLANE
@@ -2321,7 +2345,7 @@ switch_screen_buffers:
 	move.l	a5,fg_displayed_screen_ptr
 	move.l	a2,bob_previous_drawed_sprites
 
-	lea		bobs_bitplanes_game+2,a0
+	lea		bitplanes_intro+2,a0
 	jbsr		set_playfield_bitplanes
 	.endif
 	
