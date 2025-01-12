@@ -511,9 +511,16 @@ lb_0e130:
 play_sound_0def0:
 	rts
 	
-set_game_context_1ab0:
+set_game_context_1ac6:
+	* original code
+	STORE_REGS
+	lea	0x00ff8216,a6
+	jbsr	osd_real_ram_address
+	BCLR	#5,(a6)
+	* patch
 	move.w	#CTX_GAME,d0
 	jbsr	osd_set_context
+	RESTORE_REGS
 	rts
 	
 write_to_tiles_0e30e:

@@ -1,6 +1,7 @@
 
 vgmrip: https://vgmrips.net/packs/pack/bad-dudes-vs-dragonninja-data-east
 
+- turn off copper DMA when setting bitplanes (on other double buffered games too!!)
 - global palette between tiles and sprites when there are sprites
 - auto 50/25 FPS depending on how many objects on screen
 - try to pull the jump+up kick move to log it
@@ -45,7 +46,7 @@ vgmrip: https://vgmrips.net/packs/pack/bad-dudes-vs-dragonninja-data-east
 - osd_write_byte not working properly
 - maybe blit 16x16 tiles at some point instead of using CPU
 
-
+first level: blank with sky: fill $24A000,$800,w.$822E
 
 reverse lb_024dc
 reverse jump tables (like in pooyan): get dc.l  lb_xxxxx and set breakpoints

@@ -209,7 +209,8 @@ add_ps("set_video_attribute_083ce")
 add_s(0x083ce+6,0x083e8)
 add_p("copy_highscore_tiles_loop_09592")
 add_p("display_scores_loop_07b9a")
-add_ps("set_game_context_1ab0")  # there are NOPs there
+#add_ps("set_game_context_1ab0")  # there are NOPs there
+add_pss("set_game_context_1ac6",fill=2)
 add_p("play_sound_0def0")
 add_pss("copy_tiles_099f0",fill=4)
 add_ps("videoram_write_08848")

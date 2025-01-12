@@ -128,6 +128,7 @@ SPRITE_CODE = 2
 SPRITE_CLUT = 3
 SPRITE_SIZEOF = 4
 
+NB_BYTES_PER_SPRITE_ROW = 8   | fmode=3: 64 pixels wide sprites!
 
 .macro	GET_RAM_START_IN_A6	
 	.ifdef	RELEASE
@@ -177,6 +178,27 @@ w\@:
 	beq.b	w\@
 	blitz_bypass
 .endm
+
+	.macro	NEXT_SPRITE_OFFSET
+	.set	offset,offset+NB_BYTES_PER_SPRITE_ROW*2	
+	.endm
+	
+	.macro	CLEAR_SPRITE_TILE_ROW
+	clr.b	(offset,a3)
+	.set	offset,offset+NB_BYTES_PER_SPRITE_ROW	
+	.endm
+	
+	* < A0: first tile plane
+	* < A1: second tile plane
+	* < A3: sprite data
+	.macro	COPY_SPRITE_TILE_ROW
+	move.b	(a0)+,d0
+	move.b	d0,(offset,a3)
+	move.b	(a1)+,d0
+	move.b	d0,(NB_BYTES_PER_SPRITE_ROW+offset,a3)
+	NEXT_SPRITE_OFFSET
+	.endm
+	
 
 start:
 	move.l	a7,old_stack
@@ -1191,7 +1213,28 @@ erase_tile_8:
 addr_248xxx_op:
 	rts	| to_implement
 	
-* scroll registers
+* scroll registers of layer at 24A000
+* 00246010: X-scroll (wraps at 0x200)
+* 00246012: Y-scroll
+addr_24Cxxx_op:
+	cmp.w	#0xC010,d2
+	jeq		0f
+	cmp.w	#0xC012,d2
+	jeq		1f
+	* unsupported, also not useful & ignored
+	rts
+0:
+	and.w	#0x1FF,d7
+	move.w	d7,d0
+	jbsr	set_scroll_x_24d000_layer
+	rts
+1:
+	and.w	#0x1FF,d7
+	move.w	d7,d0
+	jbsr	set_scroll_y_24d000_layer
+	rts
+	
+* scroll registers of layer at 24A000
 * 00246010: X-scroll (wraps at 0x200)
 * 00246012: Y-scroll
 addr_246xxx_op:
@@ -1204,12 +1247,12 @@ addr_246xxx_op:
 0:
 	and.w	#0x1FF,d7
 	move.w	d7,d0
-	jbsr	set_scroll_x
+	jbsr	set_scroll_x_24a000_layer
 	rts
 1:
 	and.w	#0x1FF,d7
 	move.w	d7,d0
-	jbsr	set_scroll_y
+	jbsr	set_scroll_y_24a000_layer
 	rts
 	
 	.macro	NEXT_PLANES
@@ -1442,10 +1485,6 @@ erase_tile_twice:
 	dbf		d6,0b
 	jra		100b
 	
-addr_24Cxxx_op:
-	* happens at start, see if needed
-	*BREAKPOINT	"word read/write from 24Cxxx (in D2)"
-	rts	      | to_implement
 * 16x16 tile layer TODO NOP
 addr_24Dxxx_tile_layer_2_op:
 	*BREAKPOINT	"word read/write from 24Dxxx (in D2)"
@@ -1770,10 +1809,10 @@ really_update_sprites:
 	add.w	(a0)+,d1		| add offset to Y
 	
 	.ifeq	OPT_NO_SCROLLING_X
-	add.w	x_scroll_value(pc),d0
+	add.w	x_scroll_value_24a000(pc),d0
 	.endif 
 	.ifeq	OPT_NO_SCROLLING_Y
-	add.w	y_scroll_value(pc),d1
+	add.w	y_scroll_value_24a000(pc),d1
 	.endif 
 	
 	* now A0 points on the first bitplane of the bob
@@ -2739,8 +2778,8 @@ osd_disable_interrupts:
 
 	
 
-set_scroll_x:
-	move.w	x_scroll_value,d1
+set_scroll_x_24a000_layer:
+	move.w	x_scroll_value_24a000,d1
 	cmp.w	d1,d0
 	jne		0f
 	rts
@@ -2748,11 +2787,11 @@ set_scroll_x:
 	.ifne	OPT_NO_SCROLLING_X
 	rts
 	.endif
-	move.w	d0,x_scroll_value
+	move.w	d0,x_scroll_value_24a000
 	rts
 
-set_scroll_y:
-	move.w	y_scroll_value,d1
+set_scroll_y_24a000_layer:
+	move.w	y_scroll_value_24a000,d1
 	cmp.w	d1,d0
 	jne		0f
 	rts
@@ -2760,18 +2799,44 @@ set_scroll_y:
 	.ifne	OPT_NO_SCROLLING_Y
 	rts
 	.endif
-	move.w	d0,y_scroll_value
+	move.w	d0,y_scroll_value_24a000
+	rts
+
+* usually set to control big objects on screen, except at level 3
+* where the entire background uses this layer
+set_scroll_x_24d000_layer:
+	move.w	x_scroll_value_24d000,d1
+	cmp.w	d1,d0
+	jne		0f
+	rts
+0:
+	.ifne	OPT_NO_SCROLLING_X
+	rts
+	.endif
+	move.w	d0,x_scroll_value_24d000
+	rts
+
+set_scroll_y_24d000_layer:
+	move.w	y_scroll_value_24d000,d1
+	cmp.w	d1,d0
+	jne		0f
+	rts
+0:
+	.ifne	OPT_NO_SCROLLING_Y
+	rts
+	.endif
+	move.w	d0,y_scroll_value_24d000
 	rts
 	
 
 set_playfield_bitplanes:
 	* set bitplanes
     moveq #NB_PLAYFIELD_PLANES-1,d1
-	move.w	y_scroll_value,d0
+	move.w	y_scroll_value_24a000,d0
 	*and.w	#0x1FF,d0		| wrap just in case
 	lea		mulNB_BYTES_PER_ROW_table,a2
 	move.w	(a2,d0.w*2),d0		| compute Y offset
-	move.w	x_scroll_value,d2	
+	move.w	x_scroll_value_24a000,d2	
 	lea		scroll_table,a2
 	move.w	(a2,d2.w*4),fine_x_scroll_value
 	add.w	(2,a2,d2.w*4),d0
@@ -3323,6 +3388,8 @@ set_high_score_context:
 ****************
 
 set_game_context:
+	jbsr	get_current_level
+	TMPBREAK
 	jbsr	load_tiles_file_244000
 	
 	lea		tiles_level_1_24a000_file,a0
@@ -3408,6 +3475,14 @@ load_intro_palette:
 	
 remove_dudes:
 	* clear dudes pics (basically lower part of screen)
+
+get_current_level:
+	move.l	a6,-(a7)
+	lea	0xff821d,a6
+	jbsr	osd_real_ram_address
+	move.b	(a6),d0
+	move.l	(a7)+,a6
+	rts
 	
 * < A5: custom
 * < D0,D1: x,y
@@ -3499,9 +3574,13 @@ global_context:
 	.word	0
 display_dudes:
 	.word	0
-x_scroll_value:
+x_scroll_value_24a000:
 	.word	0
-y_scroll_value:
+y_scroll_value_24a000:
+	.word	0
+x_scroll_value_24d000:
+	.word	0
+y_scroll_value_24d000:
 	.word	0
 first_half_flag:
 	.word	0
