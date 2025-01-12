@@ -361,7 +361,6 @@ _user:
 	lea		fg_screen_buffer_2,a0
 	bsr		align_for_fmode
 	move.l	a0,fg_screen_data_2
-	move.l	a0,fg_displayed_screen_ptr
 	.endif
 	
 	lea		_custom,a5
@@ -788,14 +787,16 @@ _vblank:
 	
 	eor.b	#1,flip_flop
 	jeq		1f
-	bsr		really_update_sprites
-	* double buffering only in-game
-1:
+
 	cmp.w	#CTX_GAME,global_context
 	jcs		23f
 	bsr		switch_screen_buffers
 
 23:
+
+	bsr		really_update_sprites
+	* double buffering only in-game
+1:
 	* don't blit, but update hw sprites as it doesn't cost a lot
 
 
@@ -1333,7 +1334,7 @@ addr_24Axxx_tile_layer_op:
 	and.w	#0xF,d5			| tile clut
 
 	.ifne	OPT_ENABLE_LOGGING
-	cmp.w	#0x7FF,d6			| when logging on title: 1FF, else increase!
+	cmp.w	#0x800,d6			| when logging on title: 1FF, else increase!
 	jcc		0f
 	lea		tile_log_table_24a000,a2
 	move.l 	#video_ram_24a000,0xC
@@ -2328,6 +2329,8 @@ switch_screen_buffers:
 	* let's switch screen buffers, background (chars)
 	* toggle fg planes (double buffering)
 	* also toggle previous sprite positions
+	TMPWRITE
+	
 	lea		fg_drawed_screen_ptr,a0
 	lea		bob_previous_positions_1,a2
 	lea		bob_previous_positions_2,a3
@@ -2493,7 +2496,7 @@ platform_init:
 *0:
 
  	*         VVHH
-    move.w #0x2481,diwstrt(a5)
+    move.w #0x2CA0,diwstrt(a5)
     move.w #0x24A0-0x800,diwstop(a5)
     move.w #0x0038,ddfstrt(a5)
     move.w #0x00D0,ddfstop(a5)
@@ -2746,7 +2749,7 @@ set_scroll_x:
 	rts
 	.endif
 	move.w	d0,x_scroll_value
-	jra		set_game_bitplanes
+	rts
 
 set_scroll_y:
 	move.w	y_scroll_value,d1
@@ -2758,7 +2761,8 @@ set_scroll_y:
 	rts
 	.endif
 	move.w	d0,y_scroll_value
-	jra		set_game_bitplanes
+	rts
+	
 
 set_playfield_bitplanes:
 	* set bitplanes
@@ -2776,7 +2780,7 @@ set_playfield_bitplanes:
 	*BCLR	#0,d2
 	*add.w	d2,d0
 	
-    add.l	fg_drawed_screen_ptr,d0
+    add.l	fg_displayed_screen_ptr,d0
 	
 	move.l	#SCREEN_PLANE_SIZE,d2
 0:
@@ -3135,6 +3139,8 @@ osd_set_context:
 	cmp.w	global_context,d0
 	jeq		1f
 
+	* no double buffering
+	move.l	fg_drawed_screen_ptr,fg_displayed_screen_ptr
 	move.w	d0,global_context
 	jbsr	free_all_memory
 	jbsr	clear_log_memory
@@ -3328,7 +3334,11 @@ set_game_context:
 	lea		sprites_game_level_1_file,a0
 	jbsr 	load_sprite_file
 	
-
+	.ifne	OPT_ENABLE_DOUBLE_BUFFERING
+	move.l	fg_screen_data_1,fg_drawed_screen_ptr
+	move.l	fg_screen_data_2,fg_displayed_screen_ptr
+	.endif
+	
 	rts
 
 
@@ -3413,7 +3423,7 @@ remove_dudes:
 	sub.w	d1,d4
 	move.w	#NB_BYTES_PER_ROW,d2
 	move.w	#NB_PLAYFIELD_PLANES,d3		| all planes
-	move.l	fg_displayed_screen_ptr,a1
+	move.l	fg_drawed_screen_ptr,a1
 	jbsr	clear_fg_planes_any_blitter_internal
 	
 	moveq	#0,d0
@@ -3550,7 +3560,8 @@ keyboard_table:
 	
 interrupt_mode:
 	.byte	0
-
+	.align	2
+	
 pause_flag:
 	.word	0
 
@@ -3578,41 +3589,11 @@ fg_screen_data_1:
 fg_screen_data_2:
 	.long	0
 	
-	* macro to define a color0 change, synced with baddudes shafts
-	* thanks to ross for finetuning this part, it was tricky!
-	.macro	 DYN_COLOR_ROW	hpos
-    .word    0x35+(\hpos<<8),0xFFFE
-    .word    color,0
-    .word    0x55+(\hpos<<8),0xFFFE
-    .word    color,0
-    .word    0x01fe,0xFFFE
-    .word    color,0
-    .word    0x75+(\hpos<<8),0xFFFE
-    .word    color,0
-    .word    0x01fe,0xFFFE
-    .word    color,0
-    .word    0x95+(\hpos<<8),0xFFFE
-    .word    color,0
-    .word    0x01fe,0xFFFE
-    .word    color,0
-    .word    0xB5+(\hpos<<8),0xFFFE
-    .word    color,0
- 	.word	 0x01+((\hpos+1)<<8),0xFFFE
-  	.endm
-	
-	* just to get the size of the color row
-color_row_start:
-	DYN_COLOR_ROW	0
-color_row_end:
 
 fg_drawed_screen_ptr:
 	.long	0
 fg_displayed_screen_ptr:
-	.ifne	OPT_ENABLE_DOUBLE_BUFFERING
 	.long	0
-	.else
-	.long	0
-	.endif
 
 
 	.include	"sound_entries.68k"

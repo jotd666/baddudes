@@ -2,17 +2,20 @@
 vgmrip: https://vgmrips.net/packs/pack/bad-dudes-vs-dragonninja-data-east
 
 - global palette between tiles and sprites when there are sprites
-
+- auto 50/25 FPS depending on how many objects on screen
+- try to pull the jump+up kick move to log it
+- multiplexed sprites for scores / lamps / status
+- still undetected real black on enemies (Karnov...) (almost) OK on Bad dude.
 - sommersault frames look inverted / Karnov too. Mockup with Karnov
 - quantize should be improved: sometimes get less colors than max and should
   definitely consider color weights/frequencies
-- double buffering
+- when setting scroll, do not change copperlist when running, do it in vblank
 - try to reinstate status & score somewhere
 - hack lamps/trees/fire hydrants (from 244000 layer) with hardware sprites:
   figure out first layer row scroll registers, "trigger" tile to display / undisplay sprite
 - find context change for level 2
 - ninja truck display would work using just 8 colors with 3 planes and try to make a fake ghost effect
-  with the bars...
+  with the bars... Palette would need to be rearranged with truck colors first...
 
 - implement sprites
   * possible context change on some given X/Y (rounded) scroll values to load/unload sprites (boss fights)
@@ -20,7 +23,6 @@ vgmrip: https://vgmrips.net/packs/pack/bad-dudes-vs-dragonninja-data-east
   * mirror_planes: mirroring with width != 16 to implement: test on 32 then make a special case for 32 bits (d0=6)
   
 
-- still undetected real black on enemies (Karnov...) (almost) OK on Bad dude.
 - magenta in game intro sprite sheet...
 - reuse color: not working yet, but promising to get even more colors and avoid sprite quantize
 
