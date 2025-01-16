@@ -11,6 +11,7 @@
 .include "dos_lvos.i"
 .include "graphics_lvos.i"
 .include "baddudes.inc"
+.include "sounds.inc"
 
 AttnFlags = 0x128
 AFB_68010 = 0
@@ -679,7 +680,7 @@ _vblank:
 
 	move.w	d1,music_tick
 	bne.b	13f
-	jbsr		osd_sound_stop
+	jbsr		osd_music_stop
 13:
 	
 	* ack vbl twice (040/pistorm bug)
@@ -2950,11 +2951,6 @@ read_system_inputs:
 	movem.l	(a7)+,a0/d1
 	rts
 	
-osd_sound_stop:
-	rts
-	
-osd_sound_start:
-	rts
 
 save_highscores:
 	rts
@@ -3526,7 +3522,148 @@ beamdelay:
 	dbf	d0,0b
 	rts
 
+osd_music_stop:
+
+	tst.b	music_playing
+	jne		force_sound_stop
+	rts
+
+force_sound_stop:
+	movem.l	d0-d1/a0/a6,-(a7)
+	lea		_custom,a6
+	move.b	#-1,music_track_start_number
+    clr.w   music_tick   | not playing anymore
+	clr.b	music_playing
+	clr.b	looped_sound_enabled
+    jsr		_mt_end
+0:
+	movem.l	(a7)+,d0-d1/a0/a6
+	rts
 	
+* tunes sounds are: sound index followed by 0x15,0x16,0x17 (that we ignore!)
+osd_sound_start:
+	movem.l	d0/d1/a0/a6,-(a7)
+	lea		_custom,a6
+	and.w	#0xFF,d0
+	jne		0f
+	* null sound: stop
+	jbsr	osd_music_stop
+	jra		10f
+0:
+	* original sound stop commands have bit 7 set. But if we follow them, they'll kill the
+	btst	#7,d0
+	jeq		1f
+	clr.b	looped_sound_enabled
+	moveq	#2,d0		| the loop channel?
+	jbsr	_mt_stopfx
+	jra		10f
+1:
+	
+	* ongoing sfx when killing the music, so we have to ignore them and use a hack
+	jbsr		is_game_playing
+	jne		1f
+	cmp.b	#CREDIT_SND,d0
+	jne		1f
+	jbsr	osd_music_stop
+1:
+
+	lsl.w	#3,d0
+	lea		sound_table,a0
+
+	move.w	(a0,d0.w),d1	| sound type
+	beq.b	10f		| no sound
+
+2:
+	cmp.w	#1,d1
+	bne.b	4f		| music module
+	move.w	(2,a0,d0.w),d1
+	move.l	(4,a0,d0.w),a0
+	lea		_custom,a6
+	tst.w	d1
+	beq.b	3f
+	tst.b	looped_sound_enabled
+	bne.b	3f
+	* looped sound
+	st.b	looped_sound_enabled
+	jsr		_mt_loopfx
+	bra.b	10f
+3:
+	jsr		_mt_playfx
+10:
+	movem.l	(a7)+,d0/d1/a0/a6
+	rts
+
+	* music
+4:
+	* don't play if already playing
+	* (music_tick value is not important for looped tunes
+	* as long as it's not zero)
+
+
+	* here we allow music to override another looping music
+	*tst.w	music_tick
+	*bne.b	10b
+	* play the proper module pattern
+	* load up the countdown if loop
+	
+	move.w	(2,a0,d0.w),d1	| pattern number in .mod file
+	* since it's not zero, next vbl tick will play the music
+	
+	cmp.b	music_track_start_number(pc),d1
+	beq.b	10b		| same track, skip
+
+    movem.l d0-a6,-(a7)
+	bsr		force_sound_stop
+    lea _custom,a6
+ 	movem.l	d0/a0,-(a7)
+	*lea	pooyan_tunes,a0
+
+	
+	move.b	d1,music_track_start_number
+	move.w	d1,d0
+    sub.l   a1,a1		| samples are in the module
+    jsr _mt_init
+	movem.l	(a7)+,d0/a0
+
+    * set master volume a little less loud if needed
+	move.b	(6,a0,d0.w),music_volume
+	move.b	(7,a0,d0.w),music_loops
+	move.w	(2,a0,d0.w),music_pattern	| pattern number in .mod file
+	move.w	(4,a0,d0.w),d2
+
+	move.w	d2,music_duration
+	move.w	d2,music_tick
+
+    moveq	#0,d0
+	move.b	music_volume(pc),d0
+    jsr	_mt_mastervol
+	st.b	music_playing
+    jsr _mt_start
+    movem.l (a7)+,d0-a6
+	
+6:
+	jra	10b
+
+	
+
+	
+music_playing:
+	.byte	0
+looped_sound_enabled:
+	.byte	0
+music_loops:
+	.byte	0
+music_volume:
+	.byte	0
+music_track_start_number:
+	.word	0
+music_pattern:
+	.word	0
+music_tick:
+	.word	0
+
+music_duration:
+	.word	0	
 	MUL_TABLE	NB_BYTES_PER_ROW,512
 
 	.align	4		| leave this long word alignment
@@ -3657,8 +3794,7 @@ _gfxbase:
 	.long	0
 _dosbase:
 	.long	0
-music_tick:
-	.word	0
+
 delay_timer:
 	.word	0
 one_out_of_five:
