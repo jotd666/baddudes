@@ -8,7 +8,7 @@ endif
 
 # Bebbo's package usually installs itself there
 GCC_BIN = C:\amiga-gcc\bin
-ASM_BASE = $(GCC_BIN)/m68k-amigaos-as -c --defsym __amiga__=1
+ASM_BASE = m68k-amigaos-as -c --defsym __amiga__=1
 ASM_020 = $(ASM_BASE) -m68020 $(OPT_RELEASE) 
 ASM = $(ASM_020)
 MAIN_OBJ = amiga.o
@@ -44,7 +44,7 @@ clean:
 #	del $(OBJS)\sound_entries.o
 	
 $(MAIN): $(OBJS)
-	$(GCC_BIN)/m68k-amigaos-ld -o $(MAIN) $(OBJS)
+	m68k-amigaos-ld -o $(MAIN) $(OBJS)
 
 patchlist.68k: $(GENPATCHES_PY)
 	cmd /c $(GENPATCHES_PY)

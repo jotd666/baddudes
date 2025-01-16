@@ -714,3 +714,6 @@ lb_1b320:
 	move.w	(a7)+,d7
     RTS
 	
+play_credit_sound_0e76c:
+	rts
+	

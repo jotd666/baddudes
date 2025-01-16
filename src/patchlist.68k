@@ -2246,7 +2246,7 @@ patchlist:
 	PL_P	0x00e402,videoram_write_loop_d1_d0
 	PL_PS	0x00e6e8,read_word_0030c002_to_D0
 	PL_PS	0x00e72c,read_word_0030c004_to_D2
-	PL_PSS	0x00e76c,write_byte_imm_05_to_0030c015,2
+	PL_P	0x00e76c,play_credit_sound_0e76c
 	PL_L	0x018cb8,0x48E7FFFE	| fix movem.w
 	PL_L	0x018cc4,0x4CDF7FFF	| fix movem.w
 	PL_L	0x0192de,0x48E7FFFE	| fix movem.w

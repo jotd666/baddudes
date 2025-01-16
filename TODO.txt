@@ -1,20 +1,31 @@
+Hi,
 
-vgmrip: https://vgmrips.net/packs/pack/bad-dudes-vs-dragonninja-data-east
+I'm making good progress on Bad Dudes vs Dragonninja. There's an amiga version which has some okay music but
 
-- turn off copper DMA when setting bitplanes (on other double buffered games too!!)
+- it's incomplete
+- the instruments used may be okay or very shitty (ST-00...)
+
+The tunes are available as MP3 or vgmrip: https://vgmrips.net/packs/pack/bad-dudes-vs-dragonninja-data-east
+
+Could you try to create close versions of the tunes, maybe using some instruments of the amiga modules? The tunes would use 3 channels, except for the
+"game completed" tune which can use all 4 channels.
+
+I'm expecting a "big" hit so I'd share a good percentage of the donations with you.
+
+Not sure that all tunes could fit in one module. Level 1 and level 2 could use separate modules if instruments are too different, in order to save chipmem.
+As opposed as other smaller games, I'm using files & per-level loading or I couldn't make it happen with 2MB chip. ATM code is 300Kb in chipmem, and since the game
+needs fastmem, those 300k could easily contain the tunes if the exe was relocated.
+
+
 - global palette between tiles and sprites when there are sprites
-- auto 50/25 FPS depending on how many objects on screen
-- try to pull the jump+up kick move to log it
 - multiplexed sprites for scores / lamps / status
 - still undetected real black on enemies (Karnov...) (almost) OK on Bad dude.
-- sommersault frames look inverted / Karnov too. Mockup with Karnov
+- IN PROGRESS: sommersault frames look inverted / Karnov too. Mockup with Karnov
 - quantize should be improved: sometimes get less colors than max and should
   definitely consider color weights/frequencies
-- when setting scroll, do not change copperlist when running, do it in vblank
 - try to reinstate status & score somewhere
 - hack lamps/trees/fire hydrants (from 244000 layer) with hardware sprites:
   figure out first layer row scroll registers, "trigger" tile to display / undisplay sprite
-- find context change for level 2
 - ninja truck display would work using just 8 colors with 3 planes and try to make a fake ghost effect
   with the bars... Palette would need to be rearranged with truck colors first...
 
@@ -23,6 +34,12 @@ vgmrip: https://vgmrips.net/packs/pack/bad-dudes-vs-dragonninja-data-east
     or just patch the game at 00eca (initialize boss)
   * mirror_planes: mirroring with width != 16 to implement: test on 32 then make a special case for 32 bits (d0=6)
   
+- use wrap for vertical scrolling (level 7)
+- level 4 backgruond trees: get image: then use static 3 color sprite image with 3 greens
+  or 3 browns with dynamic color change, use sprites 4-7 with priority: behind playfields
+- level 4: maybe remove foreground trees if possible
+- level 6: same
+- level 6 background cave maybe OK with 3 grays
 
 - magenta in game intro sprite sheet...
 - reuse color: not working yet, but promising to get even more colors and avoid sprite quantize
@@ -46,7 +63,7 @@ vgmrip: https://vgmrips.net/packs/pack/bad-dudes-vs-dragonninja-data-east
 - osd_write_byte not working properly
 - maybe blit 16x16 tiles at some point instead of using CPU
 
-first level: blank with sky: fill $24A000,$800,w.$822E
+- skip music level 1: bpset 0df2a,D0==$1F,{CURPC=$13DA;g}
 
 reverse lb_024dc
 reverse jump tables (like in pooyan): get dc.l  lb_xxxxx and set breakpoints
