@@ -41,7 +41,7 @@ clean:
 #$(AMIGASRC)/sounds.68k: $(ASSETS)/convert_sounds.py $(ASSETS)/../sounds/$(PROGNAME)_conv.mod
 $(AMIGASRC)/sounds.68k: $(ASSETS)/convert_sounds.py 
 	cmd /c $(ASSETS)\convert_sounds.py
-	del $(OBJS)\sound_entries.o
+	del sound_entries.o sounds.o
 	
 $(MAIN): $(OBJS)
 	m68k-amigaos-ld -o $(MAIN) $(OBJS)

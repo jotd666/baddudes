@@ -21,7 +21,7 @@ def convert():
     sndfile = os.path.join(src_dir,"sound_entries.68k")
 
 
-    hq_sample_rate = 18004  #{"aga":18004,"ecs":12000,"ocs":11025}[mode]
+    hq_sample_rate = 12000  #{"aga":18004,"ecs":12000,"ocs":11025}[mode]
     lq_sample_rate = hq_sample_rate//2 # if aga_mode else 8000
 
 
@@ -30,11 +30,27 @@ def convert():
     EMPTY_SND = "EMPTY_SND"
     sound_dict = {
 
-    "CREDIT_SND"               :{"index":93,"channel":3,"sample_rate":hq_sample_rate,"priority":40},
-    "SIREN_SND"               :{"index":89,"channel":3,"sample_rate":hq_sample_rate,"priority":40},
+    "CREDIT_SND"               :{"index":5,"channel":3,"sample_rate":hq_sample_rate,"priority":40},
+    "SIREN_SND"               :{"index":0x1D,"channel":3,"sample_rate":hq_sample_rate,"priority":40},
+    "TYPEWRITER_SND"               :{"index":0x3D,"channel":3,"sample_rate":hq_sample_rate,"priority":40},
+    "PLAYER_HIT_SND"               :{"index":0x2A,"channel":3,"sample_rate":hq_sample_rate,"priority":40},
+    "IN_FIRE_SND"               :{"index":0x2D,"channel":3,"sample_rate":hq_sample_rate,"priority":40},
+    "FIRE_PUNCH_SND"               :{"index":0x37,"channel":3,"sample_rate":hq_sample_rate,"priority":40},
+    "GIRL_SCREAM_SND"               :{"index":0x32,"channel":3,"sample_rate":hq_sample_rate,"priority":40},
+    "JUMP_KICK_SND"               :{"index":0x29,"channel":3,"sample_rate":hq_sample_rate,"priority":40},
+    #"HELI_KICK_SND"               :{"index":0x1C,"channel":3,"sample_rate":hq_sample_rate,"priority":40},
+    #"FLAME_THROW_SND"               :{"index":0xD,"channel":3,"sample_rate":hq_sample_rate,"priority":40},
+    "BLOW_SND"               :{"index":0x27,"channel":3,"sample_rate":hq_sample_rate,"priority":30},
+    #"SABRE_SND"               :{"index":0xB,"channel":3,"sample_rate":hq_sample_rate,"priority":30},
+    #"PLAYER_LAND_SND"               :{"index":0x11,"channel":3,"sample_rate":hq_sample_rate,"priority":30},
+    "GOT_IT_SND"               :{"index":0x35,"channel":3,"sample_rate":hq_sample_rate,"priority":40},
+    #"PLAYER_DIE_SND"               :{"index":0x2B,"channel":3,"sample_rate":hq_sample_rate,"priority":50},
+    #"DOG_BARK_SND"               :{"index":0x33,"channel":3,"sample_rate":hq_sample_rate,"priority":30},
+    #"DOG_DIE_SND"               :{"index":0x34,"channel":3,"sample_rate":hq_sample_rate,"priority":30},
+    #"NINJA_STAR_THROW_SND"               :{"index":0x9,"channel":3,"sample_rate":hq_sample_rate,"priority":30},
+  #  "MAN_SCREAM_SND"               :{"index":0x2C,"channel":3,"sample_rate":hq_sample_rate,"priority":30},
 
-#    "GAME_OVER_TUNE_SND"                :{"index":0x1D,"pattern":0x13,"volume":32,'loops':False,"ticks":180},
-#    "BONUS_STAGE_TUNE_SND"                :{"index":0x28,"pattern":0x15,"volume":32,'loops':True},
+#    "LEVEL_1_TUNE_SND"                :{"index":0x1F,"pattern":0x13,"volume":32,'loops':False,"ticks":180},
 
 
     }

@@ -80,7 +80,7 @@ ONE_TICK = 1
 	.endif
 	
 
-OPT_ENABLE_DOUBLE_BUFFERING = 1
+OPT_ENABLE_DOUBLE_BUFFERING = 0
 
 _custom = 0xDFF000
 
@@ -380,11 +380,9 @@ _user:
 	move.l	a0,fg_displayed_screen_ptr
 	
 	
-	.ifne	OPT_ENABLE_DOUBLE_BUFFERING
 	lea		fg_screen_buffer_2,a0
 	bsr		align_for_fmode
 	move.l	a0,fg_screen_data_2
-	.endif
 	
 	lea		_custom,a5
 	
@@ -813,12 +811,11 @@ _vblank:
 
 	cmp.w	#CTX_GAME,global_context
 	jcs		23f
-	bsr		switch_screen_buffers
-
-23:
-
-	bsr		really_update_sprites
 	* double buffering only in-game
+	bsr		switch_screen_buffers
+23:
+	
+	bsr		really_update_sprites
 1:
 	* don't blit, but update hw sprites as it doesn't cost a lot
 
@@ -890,7 +887,7 @@ ports_ram_op:
 	jeq		an_ports
 	* 0x30Cxxx, 0->0x19: atm do nothing
 	and.w	#0x1F,d2
-	lea		addr_30c00xx_table_op,a0
+	lea		addr_30c0xx_table_op,a0
 	jsr		([a0,d2.w*4])
 
 	jra		special_memory_op_out
@@ -909,13 +906,13 @@ palette_and_sprites_ram_op:
 	jra		special_memory_op_out
 	
 * actual inputs
-addr_30c0000_op:
+addr_30c000_op:
 	jbsr	read_controls
 	move.w	d0,d7
 	rts
 	
 * system (start/coin and also vblank - which is stubbed)
-addr_30c0002_op:
+addr_30c002_op:
 	tst.b	D1
 	jne		0f
 	jbsr	read_system_inputs
@@ -923,11 +920,11 @@ addr_30c0002_op:
 	
 	rts
 0:
-	BREAKPOINT	"unexpected write to 30c0002"
+	BREAKPOINT	"unexpected write to 30c002"
 	rts
 	
 	
-addr_30c00xx_op:
+addr_30c0xx_op:
 	rts
 	
 addr_24xxxx_table_op:
@@ -948,42 +945,58 @@ addr_24xxxx_table_op:
 	.long	addr_unmapped_op
 	.long	addr_unmapped_op
 	
-addr_30c00xx_table_op:
-	.long	addr_30c0000_op   | 0x00
-	.long	addr_30c00xx_op   | 0x01
-	.long	addr_30c0002_op   | 0x02
-	.long	addr_30c00xx_op   | 0x03
-	.long	addr_30c00xx_op   | 0x04
-	.long	addr_30c00xx_op   | 0x05
-	.long	addr_30c00xx_op   | 0x06
-	.long	addr_30c00xx_op   | 0x07
-	.long	addr_30c00xx_op   | 0x08
-	.long	addr_30c00xx_op   | 0x09
-	.long	addr_30c00xx_op   | 0x0a
-	.long	addr_30c00xx_op   | 0x0b
-	.long	addr_30c00xx_op   | 0x0c
-	.long	addr_30c00xx_op   | 0x0d
-	.long	addr_30c00xx_op   | 0x0e
-	.long	addr_30c00xx_op   | 0x0f
-	.long	addr_30c00xx_op   | 0x10
-	.long	addr_30c00xx_op   | 0x11
-	.long	addr_30c00xx_op   | 0x12
-	.long	addr_30c00xx_op   | 0x13
-	.long	addr_30c00xx_op   | 0x14
-	.long	addr_30c00xx_op   | 0x15
-	.long	addr_30c00xx_op   | 0x16
-	.long	addr_30c00xx_op   | 0x17
-	.long	addr_30c00xx_op   | 0x18
-	.long	addr_30c00xx_op   | 0x19
-	.long	addr_30c00xx_op   | 0x1a
-	.long	addr_30c00xx_op   | 0x1b
-	.long	addr_30c00xx_op   | 0x1c
-	.long	addr_30c00xx_op   | 0x1d
-	.long	addr_30c00xx_op   | 0x1e
-	.long	addr_30c00xx_op   | 0x1f
+addr_30c0xx_table_op:
+	.long	addr_30c000_op   | 0x00
+	.long	addr_30c0xx_op   | 0x01
+	.long	addr_30c002_op   | 0x02
+	.long	addr_30c0xx_op   | 0x03
+	.long	addr_30c0xx_op   | 0x04
+	.long	addr_30c0xx_op   | 0x05
+	.long	addr_30c0xx_op   | 0x06
+	.long	addr_30c0xx_op   | 0x07
+	.long	addr_30c0xx_op   | 0x08
+	.long	addr_30c0xx_op   | 0x09
+	.long	addr_30c0xx_op   | 0x0a
+	.long	addr_30c0xx_op   | 0x0b
+	.long	addr_30c0xx_op   | 0x0c
+	.long	addr_30c0xx_op   | 0x0d
+	.long	addr_30c0xx_op   | 0x0e
+	.long	addr_30c0xx_op   | 0x0f
+	.long	addr_30c0xx_op   | 0x10
+	.long	addr_30c0xx_op   | 0x11
+	.long	addr_30c0xx_op   | 0x12
+	.long	addr_30c0xx_op   | 0x13
+	.long	addr_30c014_op   | 0x14
+	.long	addr_30c015_op   | 0x15
+	.long	addr_30c0xx_op   | 0x16
+	.long	addr_30c0xx_op   | 0x17
+	.long	addr_30c0xx_op   | 0x18
+	.long	addr_30c0xx_op   | 0x19
+	.long	addr_30c0xx_op   | 0x1a
+	.long	addr_30c0xx_op   | 0x1b
+	.long	addr_30c0xx_op   | 0x1c
+	.long	addr_30c0xx_op   | 0x1d
+	.long	addr_30c0xx_op   | 0x1e
+	.long	addr_30c0xx_op   | 0x1f
 
+addr_30c014_op:
+	move.w	d0,-(a7)
+	move.w	d7,d0
+	jbsr	osd_sound_start
+	move.w	(a7)+,d0
+	rts
 
-
+addr_30c015_op:
+	cmp.b	#5,d7
+	jeq		0f
+	BREAKPOINT	"unexpected write value in 30c0015"
+0:
+	move.w	d0,-(a7)
+	move.w	#CREDIT_SND,d0
+	jbsr	osd_sound_start
+	move.w	(a7)+,d0
+	rts
+	
 addr_unmapped_op:
 	BREAKPOINT		"unmapped memory (in d2)"
 	rts
@@ -1616,7 +1629,7 @@ osd_wait:
 is_game_playing:
 	movem.l	d0/a6,-(a7)
 	GET_RAM_START_IN_A6
-	tst.b	(0x215,a6)
+	tst.b	(0x215,a6)	| POOYAN!!
 	jpl		0f			| negative: game in play
 	moveq	#1,d0
 	jra		1f
@@ -2369,7 +2382,6 @@ switch_screen_buffers:
 	* let's switch screen buffers, background (chars)
 	* toggle fg planes (double buffering)
 	* also toggle previous sprite positions
-	TMPWRITE
 	
 	lea		fg_drawed_screen_ptr,a0
 	lea		bob_previous_positions_1,a2
@@ -2387,10 +2399,10 @@ switch_screen_buffers:
 	move.l	a1,(a0)
 	move.l	a5,fg_displayed_screen_ptr
 	move.l	a2,bob_previous_drawed_sprites
+	.endif
 
 	lea		bitplanes_intro+2,a0
 	jbsr		set_playfield_bitplanes
-	.endif
 	
 	rts
 	
@@ -2841,10 +2853,7 @@ set_playfield_bitplanes:
 	lea		scroll_table,a2
 	move.w	(a2,d2.w*4),fine_x_scroll_value
 	add.w	(2,a2,d2.w*4),d0
-	* TEMP TEMP
-	*lsr.w	#3,d2
-	*BCLR	#0,d2
-	*add.w	d2,d0
+
 	
     add.l	fg_displayed_screen_ptr,d0
 	
@@ -3397,10 +3406,9 @@ set_game_context:
 	lea		sprites_game_level_1_file,a0
 	jbsr 	load_sprite_file
 	
-	.ifne	OPT_ENABLE_DOUBLE_BUFFERING
 	move.l	fg_screen_data_1,fg_drawed_screen_ptr
 	move.l	fg_screen_data_2,fg_displayed_screen_ptr
-	.endif
+
 	
 	rts
 
@@ -3552,18 +3560,8 @@ osd_sound_start:
 	jbsr	osd_music_stop
 	jra		10f
 0:
-	* original sound stop commands have bit 7 set. But if we follow them, they'll kill the
-	btst	#7,d0
-	jeq		1f
-	clr.b	looped_sound_enabled
-	moveq	#2,d0		| the loop channel?
-	jbsr	_mt_stopfx
-	jra		10f
-1:
-	
-	* ongoing sfx when killing the music, so we have to ignore them and use a hack
-	jbsr		is_game_playing
-	jne		1f
+
+
 	cmp.b	#CREDIT_SND,d0
 	jne		1f
 	jbsr	osd_music_stop
@@ -4057,17 +4055,16 @@ background_restore_buffer:
 chip_memory_block:
 	.skip	TOTAL_CHIP_MEMORY_SIZE
 	
-		
+fg_screen_buffer_2:
+	.ifne  OPT_ENABLE_DOUBLE_BUFFERING
+	.skip	SCREEN_SIZE
+	.skip	NB_BYTES_PER_ROW*12*3
+	.skip	8
+	.endif	
 fg_screen_buffer_1:
 	.skip	SCREEN_SIZE
 	.skip	NB_BYTES_PER_ROW*12*3
 	.skip	8
-	.ifne  OPT_ENABLE_DOUBLE_BUFFERING
-fg_screen_buffer_2:
-	.skip	SCREEN_SIZE
-	.skip	NB_BYTES_PER_ROW*12*3
-	.skip	8
-	.endif
 
 
 		

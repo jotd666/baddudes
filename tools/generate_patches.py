@@ -211,12 +211,12 @@ add_p("copy_highscore_tiles_loop_09592")
 add_p("display_scores_loop_07b9a")
 #add_ps("set_game_context_1ab0")  # there are NOPs there
 add_pss("set_game_context_1ac6",fill=2)
-add_p("play_sound_0def0")
+
 add_pss("copy_tiles_099f0",fill=4)
 add_ps("videoram_write_08848")
 add_ps("set_game_intro_context_084c4")
 add_pss("videoram_write_09aa6",fill=4)
-add_p("play_credit_sound_0e76c")
+
 add_nop(0x0e32e,2)  # nonsensical / protection (?) code
 for offset in [0x0174c,0x0175c,0x07e66]:
     add_pss(offset,"test_input_bit_d1",2)
