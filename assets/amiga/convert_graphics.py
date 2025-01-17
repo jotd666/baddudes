@@ -285,6 +285,9 @@ def load_contexted_tileset(tile_sheet_dict,context,nb_colors,is_bob):
 
     # convert to rgb4
     # subtract the colors contained in "reuse_colors"
+    tile_palette.discard(transparent)
+    # demote to rgb4 to avoid quantization
+    # tile_palette = {bitplanelib.rgb4_to_rgb_triplet(bitplanelib.to_rgb4_color(x)) for x in tile_palette}
     bg_palette = sorted(tile_palette)
 
     lfp = len(bg_palette)
@@ -293,9 +296,8 @@ def load_contexted_tileset(tile_sheet_dict,context,nb_colors,is_bob):
     if lfp>nb_colors:
         print(f"{context}: Too many colors {lfp} max {nb_colors}, quantizing")
 
-        print(transparent in bg_palette)
-        print(bg_palette.count((0,0,0)))
         nb_colors_to_try = nb_colors
+        prev_quantized = None
         while True:
             # quantize requires several passes to optimize number of colors
             quantized = quantize_palette(bg_palette,context,nb_colors_to_try)
@@ -304,8 +306,15 @@ def load_contexted_tileset(tile_sheet_dict,context,nb_colors,is_bob):
             if len(qc) < nb_colors:
                 print(f"retry: {len(qc)} < {nb_colors}, try with {nb_colors_to_try}")
                 nb_colors_to_try += 1
+                prev_quantized = quantized
             else:
                 break
+
+        if len(qc) > nb_colors:
+            # last quantize overshoot: revert to previous
+            print("quantize overshoot, backtracking")
+            quantized = prev_quantized
+            qc = set(quantized.values())
 
         lfp = len(qc)       # update nb colors
 
