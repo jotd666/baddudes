@@ -264,7 +264,7 @@ level_1_tile_24a000_sheet_dict = {i:sheets_path / "tiles_24a000" / "level_1" / f
 tile_0_sheet_dict = {i:sheets_path / "tiles_244000" / f"pal_{i:02x}.png" for i in range(15)}
 sprite_sheet_dict = {i:sheets_path / "sprites" / f"pal_{i:02x}.png" for i in range(16)}
 
-def load_contexted_tileset(tile_sheet_dict,context,nb_colors,is_bob,reuse_colors=set()):
+def load_contexted_tileset(tile_sheet_dict,context,nb_colors,is_bob):
     tile_palette = set()
     tile_24a000_set_list = []
 
@@ -283,8 +283,9 @@ def load_contexted_tileset(tile_sheet_dict,context,nb_colors,is_bob,reuse_colors
     if (0,0,0) not in tile_palette:
         tile_palette.add((0,0,0))
 
+    # convert to rgb4
     # subtract the colors contained in "reuse_colors"
-    bg_palette = sorted(tile_palette - reuse_colors)
+    bg_palette = sorted(tile_palette)
 
     lfp = len(bg_palette)
     if lfp==1:
@@ -292,17 +293,29 @@ def load_contexted_tileset(tile_sheet_dict,context,nb_colors,is_bob,reuse_colors
     if lfp>nb_colors:
         print(f"{context}: Too many colors {lfp} max {nb_colors}, quantizing")
 
-        quantized = quantize_palette(bg_palette,context,nb_colors)
+        print(transparent in bg_palette)
+        print(bg_palette.count((0,0,0)))
+        nb_colors_to_try = nb_colors
+        while True:
+            # quantize requires several passes to optimize number of colors
+            quantized = quantize_palette(bg_palette,context,nb_colors_to_try)
+
+            qc = set(quantized.values())
+            if len(qc) < nb_colors:
+                print(f"retry: {len(qc)} < {nb_colors}, try with {nb_colors_to_try}")
+                nb_colors_to_try += 1
+            else:
+                break
+
+        lfp = len(qc)       # update nb colors
 
 
         for tile_set in tile_24a000_set_list:
             apply_quantize(tile_set,quantized)
 
-        qc = set(quantized.values())
-        lfp = len(qc)       # update nb colors
 
         # put transparent color first, re-inject reused colors
-        bg_palette = sorted(qc | reuse_colors)
+        bg_palette = sorted(qc)
 
 ##        if dump_it:
 ##            dump_subdir = dump_dir / "tiles/244000/quantized"
@@ -317,7 +330,7 @@ def load_contexted_tileset(tile_sheet_dict,context,nb_colors,is_bob,reuse_colors
 ##
 ##                            img.save(os.path.join(dump_subdir,f"{name}_{tile_number:02x}_{palette_index:02x}.png"))
     if lfp<nb_colors:
-        bg_palette += [(0x10,0x20,0x30)]*(nb_colors-lfp)
+        bg_palette += [(0x30,0x40,0x50)]*(nb_colors-lfp)
 
     return tile_24a000_set_list,bg_palette
 
@@ -505,7 +518,7 @@ def process_tile_context(context_name,tile_sheet_dict,nb_colors,is_bob=False,use
     # use previous colors (tiles) to maximize the chance of not quantizing colors
     reuse_colors = palette_dict[use_palette_colors] if use_palette_colors else []
 
-    tile_24a000_set_list,bg_palette = load_contexted_tileset(tile_sheet_dict,context_name,nb_colors,is_bob) #,reuse_colors=set(reuse_colors))
+    tile_24a000_set_list,bg_palette = load_contexted_tileset(tile_sheet_dict,context_name,nb_colors,is_bob)
     tile_24a000_cache = {}
 
     if reuse_colors:
