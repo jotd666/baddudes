@@ -44,11 +44,11 @@ SPRITE_Y_CORRECTION = 0
 HW_SPRITE_X_CORRECTION = 0
 HW_SPRITE_Y_CORRECTION = 0
 
-PANEL_Y_GAP = 208
-Y_MAX = 260
+Y_MAX = 240
 
 BASE_BPLCON3_VALUE = (BORDERBLANK<<5)
-BASE_BPLCON2_VALUE = 0x0200  | killehb (we're using 6 real bitplanes)
+BASE_BPLCON2_VALUE = 0x0264  | killehb (we're using 6 real bitplanes) sprites above all playfields
+
 SCREEN_ADDRESS = 0x244000
 
 * set both to nonzero for full static screen, no scroll, 1 screen tile
@@ -94,17 +94,8 @@ NB_PLAYFIELD_PLANES = 6
 NB_BYTES_PER_SCREEN = 32
 NB_BYTES_PER_ROW = NB_BYTES_PER_SCREEN*3
 
-* fmode=0b11xx => 3, 0b01xx => 2
-SPRITE_FMODE = 1
-	.ifeq	SPRITE_FMODE-3
-SPRITE_POWER_OF_2 = 3
-	.else
-	.ifeq	SPRITE_FMODE-1
-SPRITE_POWER_OF_2 = 2
-	.else
-	.error	"invalid SPRITE_FMODE value"
-	.endif
-	.endif
+SPRITE_FMODE = 3
+
 	
 
 NB_PLAYFIELD_LINES = 256
@@ -1066,6 +1057,9 @@ addr_244xxx_tile_layer_op:
 	jeq		100f	| already the proper value
 	move.w	d7,(a0)	| set value in memory first
 
+	cmp.w	#CTX_GAME,global_context
+	jeq		write_osd_layer
+	
 	* special cases: on some special tiles, 
 	* blit the whole pic (big dudes in intro)
 	cmp.w	#CTX_INTRO,global_context
@@ -1080,6 +1074,7 @@ addr_244xxx_tile_layer_op:
 	move.w	#2,display_dudes
 	jra		100f
 16:
+	
 	* then draw the 8x8 tile
 	move.w	d2,d3
 	and.w	#0x3F,D3		| this is X
@@ -1224,6 +1219,20 @@ erase_tile_8:
 	
 	jra		100b
 	rts
+	
+* assuming word write ATM
+write_osd_layer:
+	lea		osd_left_sprite+16,A0
+	st		(a0)+
+	st		(a0)+
+	st		(a0)+
+	st		(a0)+
+	st		(a0)+
+	st		(a0)+
+	
+	move.w	(a7)+,d2
+	jra		101b		| exit
+	
 addr_248xxx_op:
 	rts	| to_implement
 	
@@ -2509,25 +2518,7 @@ quit_to_os:
 
 
 
-* set sprite pointers on chipmem zone
-* < A0: copperlist
 
-init_sprite_bank:
-	move.l	#blank_sprite,a1
-	move.w	#sprpt,d0
-	move.w	#NB_HOST_SPRITES-1,d2		| 7
-0:
-	move.w	d0,(a0)+
-	swap	d1
-	move.w	d1,(a0)+
-	swap	d1
-	addq	#2,d0
-	move.w	d0,(a0)+
-	move.w	d1,(a0)+
-	
-	addq	#2,d0
-	dbf		d2,0b
-	rts
 	
 platform_init:
 	bsr		store_system
@@ -2556,9 +2547,9 @@ platform_init:
 	* restrict borders: we don't see bobs on the borders!
 	* try to hide color 0 on the border (except on OCS)
     move.w #BASE_BPLCON2_VALUE,bplcon2(a5)
-	* AGA-compatible ECS default values
-	move.w	#0x32,bplcon4(a5)	| odd sprites palette start at color 48, even at 32
-    move.w #(SPRITE_FMODE<<2)+0x1,fmode(a5)
+	move.w	#0x54,bplcon4(a5)	| odd sprites palette start at color 64, even at 80
+
+    move.w #(SPRITE_FMODE<<2)+0x1,fmode(a5)	| 32 bit bitplane fetch, 64 bit wide sprites
 
 	move.w	#0,bplcon1(a5)
 	moveq	#-4+NB_BYTES_PER_ROW-40,d0
@@ -2568,10 +2559,8 @@ platform_init:
 	
 
 	
-	* set sprite registers in copperlist
-	lea		intro_sprites,a0
-	bsr		init_sprite_bank
-	
+	* set sprite registers in copperlist to blank
+	jbsr	clear_all_hardware_sprites
 
 
 	* wait 300 lines
@@ -2880,33 +2869,6 @@ set_game_bitplanes:
 
 
 
-HW_SpriteXTable:
-	.set	reptn,0
-	.rept 320
-	.set	x,reptn+0x80
-	.set reptn,reptn+1
-    .byte  0,x>>1,0,x&1
-  .endr
-
-	.macro DEF_HW_SPRITE_Y_TABLE	height
-HW_SpriteYTable_\height:
-  .set	reptn,0
-  .rept 288
-	.set	ys,reptn+0x1c
-	.set	ye,ys+\height
-    .byte  ys&255, 0, ye&255, ((ys>>6)&4)+((ye>>7)&2)
-	.set	reptn,reptn+1
-  .endr
-	.endm
-
-
-
-	
-
-osd_debug_hook:
-	rts
-	
-
 BIT_INSERT_COIN_1 = 4
 BIT_INSERT_COIN_2 = 5
 BIT_START_1P = 2
@@ -3203,6 +3165,25 @@ toggle_pause:
 0:
 	rts
 
+clear_all_hardware_sprites:
+	movem.l	d0-d2/a0,-(a7)
+	move.l	#blank_sprite,d1
+	lea		intro_sprites,a0
+	move.w	#sprpt,d0
+	move.w	#NB_HOST_SPRITES-1,d2		| 7
+0:
+	move.w	d0,(a0)+
+	swap	d1
+	move.w	d1,(a0)+
+	swap	d1
+	addq	#2,d0
+	move.w	d0,(a0)+
+	move.w	d1,(a0)+
+	
+	addq	#2,d0
+	dbf		d2,0b
+	movem.l	(a7)+,d0-d2/a0
+	rts
 	
 osd_set_context:
 	movem.l	d0-a6,-(a7)
@@ -3212,6 +3193,7 @@ osd_set_context:
 	* no double buffering
 	move.l	fg_drawed_screen_ptr,fg_displayed_screen_ptr
 	move.w	d0,global_context
+	jbsr	clear_all_hardware_sprites
 	jbsr	free_all_memory
 	jbsr	clear_log_memory
 
@@ -3409,9 +3391,8 @@ set_game_context:
 	move.l	fg_screen_data_1,fg_drawed_screen_ptr
 	move.l	fg_screen_data_2,fg_displayed_screen_ptr
 
-	
+	jbsr	install_osd_hardware_sprites
 	rts
-
 
 	
 set_intro_context:
@@ -3468,6 +3449,28 @@ set_intro_context:
 
 	rts
 
+install_osd_hardware_sprites:
+	lea		osd_left_sprite,a2
+	move.l	a2,d1
+	lea		intro_sprites,a0
+	move.w	#sprpt,d0
+	move.w	d0,(a0)+
+	swap	d1
+	move.w	d1,(a0)+
+	swap	d1
+	addq	#2,d0
+	move.w	d0,(a0)+
+	move.w	d1,(a0)+
+	* position fixed
+	lea		HW_SpriteYTable_8,a1
+	move.w	#32,d0
+	move.w	#16,d1
+	jbsr	store_sprite_pos
+	move.w	d0,8(a2)
+	swap	d0
+	move.w	d0,(a2)
+	rts
+	
 load_intro_palette:
 	* set game intro palette
 	lea		intro_palette,a1
@@ -3857,6 +3860,64 @@ _end_of_ng_code:
 	.align 2
 
 
+	
+* < d0.w: x
+* < d1.w: y
+* < a1: sprite pos table (depending on height)
+* > d0.L: control word
+store_sprite_pos:
+	tst.w	d1
+	jmi	0f
+	cmp.w	#Y_MAX,d1
+	jcc	0f
+
+    move.l  a0,-(a7)
+
+    lea	HW_SpriteXTable(pc),a0
+	
+	.ifdef	NO68020
+    add.w	d0,d0
+    add.w	d0,d0
+    move.l	(a0,d0.w),d0
+	move.w	d1,-(a7)
+    add.w	d1,d1
+    add.w	d1,d1
+    or.l	(a1,d1.w),d0
+	move.w	(a7)+,d1
+	.else
+    move.l	(a0,d0.w*4),d0
+    or.l	(a1,d1.w*4),d0	
+	.endc
+    move.l  (a7)+,a0
+    rts
+0:
+	moveq	#0,d0
+	rts
+	
+	
+HW_SpriteXTable:
+	.set	reptn,0
+	.rept 320
+	.set	x,reptn+0x80
+	.set reptn,reptn+1
+    .byte  0,x>>1,0,x&1
+  .endr
+
+	.macro DEF_HW_SPRITE_Y_TABLE	height
+HW_SpriteYTable_\height:
+  .set	reptn,0
+  .rept Y_MAX
+	.set	ys,reptn+0x1c
+	.set	ye,ys+\height
+    .byte  ys&255, 0, ye&255, ((ys>>6)&4)+((ye>>7)&2)
+	.set	reptn,reptn+1
+  .endr
+	.endm
+
+
+	DEF_HW_SPRITE_Y_TABLE	0
+	DEF_HW_SPRITE_Y_TABLE	8
+	DEF_HW_SPRITE_Y_TABLE	16
 
 
 
@@ -4049,6 +4110,24 @@ public_memory_block:
 	.align	8
 	
 		.section .bsschip
+		
+
+osd_left_sprite:
+	.skip	16
+	.skip	16*8
+osd_left_next_cw:
+	.skip	16
+osd_right_sprite:
+	.skip	16
+	.skip	16*8
+osd_right_next_cw:
+	.skip	16
+osd_center_sprite:
+	.skip	8
+	.skip	16*16
+osd_center_next_cw:
+	.skip	8
+	
 background_restore_buffer:
 	.skip	RESTORE_SCREEN_SIZE
 

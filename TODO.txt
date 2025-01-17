@@ -16,20 +16,21 @@ Not sure that all tunes could fit in one module. Level 1 and level 2 could use s
 As opposed as other smaller games, I'm using files & per-level loading or I couldn't make it happen with 2MB chip. ATM code is 300Kb in chipmem, and since the game
 needs fastmem, those 300k could easily contain the tunes if the exe was relocated.
 
+- sprite priorities vs planes: on top
+- sprite palette: starts at color 64
 - multiplexed sprites for scores / lamps / status
 - still undetected real black on enemies (Karnov...) (almost) OK on Bad dude.
 - IN PROGRESS: sommersault frames look inverted / Karnov too. Mockup with Karnov
 - quantize should be improved: definitely consider color weights/frequencies
-- try to reinstate status & score somewhere
 - hack lamps/trees/fire hydrants (from 244000 layer) with hardware sprites:
   figure out first layer row scroll registers, "trigger" tile to display / undisplay sprite
 - ninja truck display would work using just 8 colors with 3 planes and try to make a fake ghost effect
   with the bars... Palette would need to be rearranged with truck colors first...
-
-- implement sprites
-  * possible context change on some given X/Y (rounded) scroll values to load/unload sprites (boss fights)
-    or just patch the game at 00eca (initialize boss)
-  * mirror_planes: mirroring with width != 16 to implement: test on 32 then make a special case for 32 bits (d0=6)
+- levels with trains/trucks: load traintrucks bitplanes in non-displayed screen buffer
+  to save chipmem
+- blit big object partially (truck, train...)
+- sprite display: skip displaying is done too soon on left
+- sprite mirror_planes: mirroring with width != 16 to implement: test on 32 then make a special case for 32 bits (d0=6)
   
 - use wrap for vertical scrolling (level 7)
 - level 4 backgruond trees: get image: then use static 3 color sprite image with 3 greens
@@ -39,7 +40,7 @@ needs fastmem, those 300k could easily contain the tunes if the exe was relocate
 - level 6 background cave maybe OK with 3 grays
 
 
-- rip a few sounds  
+- rip a missing sounds  
 - rip more 244000 tiles (for demo)
 - rip 24D000 & 24A000 tiles
 
