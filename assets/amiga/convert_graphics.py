@@ -541,45 +541,43 @@ def process_tile_context(context_name,tile_sheet_dict,nb_colors,is_bob=False,use
 
     palette_dict[context_name] = bg_palette
 
-tile_palette = set()
-tile_244000_set_list = []
 
-# hack replace a close color by another, so we get 8 colors / possibly 3 planes
-to_replace = (0, 0, 104)
-replace_by = (0, 0, 123)
+def process_8x8_tile_layer(context):
+    tile_palette = set()
+    tile_244000_set_list = []
 
-for i in range(16):
-    tsd = tile_0_sheet_dict.get(i)
-    if tsd:
-        tp,tile_set = load_tileset(tsd,i,8,"tiles/244000",dump_dir,dump=dump_it,cluts=used_tile_cluts["title_244000"])
-        for tile in tile_set:
-            if tile:
-                bitplanelib.replace_color(tile,{to_replace},replace_by)
+    # hack replace a close color by another, so we get 8 colors / possibly 3 planes
+    to_replace = (0, 0, 104)
+    replace_by = (0, 0, 123)
 
-        tile_244000_set_list.append(tile_set)
-        tile_palette.update(tp)
-    else:
-        tile_244000_set_list.append(None)
+    for i in range(16):
+        tsd = tile_0_sheet_dict.get(i)
+        if tsd:
+            tp,tile_set = load_tileset(tsd,i,8,"tiles/"+context,dump_dir,dump=dump_it,cluts=used_tile_cluts[context])
+            for tile in tile_set:
+                if tile:
+                    bitplanelib.replace_color(tile,{to_replace},replace_by)
 
-tile_palette.discard(to_replace)
-fg_palette = sorted(tile_palette)
+            tile_244000_set_list.append(tile_set)
+            tile_palette.update(tp)
+        else:
+            tile_244000_set_list.append(None)
 
-lfp = len(fg_palette)
+    tile_palette.discard(to_replace)
+    fg_palette = sorted(tile_palette)
 
-if lfp>8:
-    raise Exception(f"Foreground: Too many colors {lfp} max 8")
+    lfp = len(fg_palette)
 
-
-fg_palette.remove(transparent)
-fg_palette.insert(0,transparent)
-
-if lfp<8:
-    fg_palette += [(0x10,0x20,0x30)]*(8-lfp)
+    if lfp>8:
+        raise Exception(f"Foreground {context}: Too many colors {lfp} max 8")
 
 
-# tiles
+    fg_palette.remove(transparent)
+    fg_palette.insert(0,transparent)
 
-if True:
+    if lfp<8:
+        fg_palette += [(0x10,0x20,0x30)]*(8-lfp)
+
     tile_244000_cache = {}
     fg_palette = [(0x10,0x20,0x30)]*56 + fg_palette
 
@@ -587,9 +585,15 @@ if True:
     cache=tile_244000_cache,
     generate_mask = True,
     is_bob=False)
+    dump_tiles("tiles_"+context,fg_palette,tile_244000_table,tile_244000_cache)
 
+# tiles
 
-    dump_tiles("tiles_title_244000",fg_palette,tile_244000_table,tile_244000_cache)
+if True:
+
+    process_8x8_tile_layer("title_244000")
+    process_8x8_tile_layer("game_intro_244000")
+    process_8x8_tile_layer("game_244000")
 
     process_tile_context("title_24a000",title_tile_24a000_sheet_dict,16)
     process_tile_context("game_intro_24a000",game_intro_tile_24a000_sheet_dict,32)

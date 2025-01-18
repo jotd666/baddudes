@@ -7,6 +7,16 @@ dropped_tile_index = set()
 used_cluts_file = this_dir / "used_tile_cluts.json"
 used_graphics_dir = this_dir / "used_graphics"
 
+def new_used_tiles():
+    return collections.defaultdict(lambda : collections.defaultdict(list))
+
+def add_digits_and_letters(n):
+    for i in range(ord("A"),ord("Z")+1):
+        used_dict[n][i]["cluts"].append(0)
+    for i in range(ord("0"),ord("9")+1):
+        used_dict[n][i]["cluts"].append(0)
+
+
 # get dude tiles (big dude pics in intro) and don't consider their tiles
 for i in range(2):
     with open(used_graphics_dir / f"dudes_{i}_tiles","rb") as f:
@@ -28,7 +38,7 @@ for n in os.listdir(tiles_dir):
     with open(tiles_file,"rb") as f:
         contents = f.read()
 
-    used_tiles = collections.defaultdict(lambda : collections.defaultdict(list))
+    used_tiles = new_used_tiles()
 
     tile_index = 0
     for offset in range(0,len(contents),16):
@@ -48,11 +58,17 @@ for n in os.listdir(tiles_dir):
     used_dict[n] = used_tiles
 
 # force use of clut 0 for all letters & numbers in tileset 244000
-n = "title_244000"
-for i in range(ord("A"),ord("Z")+1):
-    used_dict[n][i]["cluts"].append(0)
-for i in range(ord("0"),ord("9")+1):
-    used_dict[n][i]["cluts"].append(0)
+
+add_digits_and_letters("title_244000")
+
+# small font pack for game intro
+n = "game_intro_244000"
+used_dict[n] = new_used_tiles()
+add_digits_and_letters(n)
+
+n = "game_244000"
+used_dict[n] = new_used_tiles()
+add_digits_and_letters(n)
 
 
 with open(used_cluts_file,"w") as f:

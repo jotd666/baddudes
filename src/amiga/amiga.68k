@@ -1057,8 +1057,6 @@ addr_244xxx_tile_layer_op:
 	jeq		100f	| already the proper value
 	move.w	d7,(a0)	| set value in memory first
 
-	cmp.w	#CTX_GAME,global_context
-	jeq		write_osd_layer
 	
 	* special cases: on some special tiles, 
 	* blit the whole pic (big dudes in intro)
@@ -1085,6 +1083,10 @@ addr_244xxx_tile_layer_op:
 	lsl.w	#3,d2			| times 8
 	cmp.w	#512,d2
 	jcc		100f
+
+	cmp.w	#CTX_GAME,global_context
+	jeq		write_osd_layer
+
 	
 	move.l	fg_drawed_screen_ptr,a1
 	lea		background_restore_buffer,a5
@@ -1095,27 +1097,8 @@ addr_244xxx_tile_layer_op:
 	move.w	d7,d6			| tile code
 	and.w	#0x7FF,d6
 	jeq		erase_tile_8
-	move.w	d7,d5			| save code
-	rol.w	#4,d5
-	and.w	#0xF,d5			| tile clut
-
-	.ifne	OPT_ENABLE_LOGGING
-	move.l	#video_ram_244000,0x14
-	lea		tile_log_table_244000,a2
-	move.l	a2,0x10		| store address in zero page
-	move.w	d6,-(a7)
-	lsl.w	#4,d6		| 16 cluts
-	add.w	d5,d6		| clut offset
-	st.b	(a2,d6.w)
-	move.w	(a7)+,d6
-	.endif
-
-	* this is rather tricky
-	* 1) "cookie cut" or "clear mask" data for first planes (which contain background)
-	* 2) "copy data" or "clear" for the last planes
-	move.l		tile_data_244000,a0
-	add.l	(a0,d6.w*4),a0	| select tile code
-	move.l	(a0,d5.w*4),d6
+	
+	jbsr	pick_8x8_tile_code
 	jeq		100f		| ignored
 
 	add.l	d6,a0	| select tile clut
@@ -1192,6 +1175,30 @@ addr_244xxx_tile_layer_op:
 	.endr
 	jra		11b
 	
+pick_8x8_tile_code:
+	move.w	d7,d5			| save code
+	rol.w	#4,d5
+	and.w	#0xF,d5			| tile clut
+
+	.ifne	OPT_ENABLE_LOGGING
+	move.l	#video_ram_244000,0x14
+	lea		tile_log_table_244000,a2
+	move.l	a2,0x10		| store address in zero page
+	move.w	d6,-(a7)
+	lsl.w	#4,d6		| 16 cluts
+	add.w	d5,d6		| clut offset
+	st.b	(a2,d6.w)
+	move.w	(a7)+,d6
+	.endif
+
+	* this is rather tricky
+	* 1) "cookie cut" or "clear mask" data for first planes (which contain background)
+	* 2) "copy data" or "clear" for the last planes
+	move.l		tile_data_244000,a0
+	add.l	(a0,d6.w*4),a0	| select tile code
+	move.l	(a0,d5.w*4),d6
+	rts
+	
 erase_tile_8:
 	move.w	nb_tile_planes_24a000,d6
 	subq	#1,d6
@@ -1221,7 +1228,20 @@ erase_tile_8:
 	rts
 	
 * assuming word write ATM
+* < D3: X (in bytes displacement vs screen)
+* < D3: Y (in number of rows)
+* this routine dispatches the data across the various static HW
+* sprites on screen
+
 write_osd_layer:
+	move.w	d7,d6			| tile code+clut
+	and.w	#0x7FF,d6		| only clut
+	jeq		erase_tile_on_sprite
+
+	jbsr	pick_8x8_tile_code
+	jeq		write_osd_layer_out
+	
+	*TMPBREAK
 	lea		osd_left_sprite+16,A0
 	st		(a0)+
 	st		(a0)+
@@ -1230,8 +1250,13 @@ write_osd_layer:
 	st		(a0)+
 	st		(a0)+
 	
+	
+write_osd_layer_out:
 	move.w	(a7)+,d2
 	jra		101b		| exit
+	
+erase_tile_on_sprite:
+	jra		write_osd_layer_out
 	
 addr_248xxx_op:
 	rts	| to_implement
@@ -3206,8 +3231,7 @@ osd_set_context:
 clear_log_memory:
 	.ifne	OPT_ENABLE_LOGGING
 	* context change: clear tile log: it is no longer relevant
-	* but not for layer 244000 which is shared
-	lea	tile_log_table_24a000,a0
+	lea	tile_log_table_244000,a0
 0:
 	clr.l	(a0)+
 	clr.l	(a0)+
@@ -3226,7 +3250,6 @@ game_context_table:
 	.long	set_game_context		    | CTX_GAME
 	
 load_tiles_file_244000:
-	lea		tiles_title_244000_file,a0
 	jbsr	allocate_and_load_public_mem_file
 	move.l	d0,tiles_244000
 	* set palette
@@ -3273,6 +3296,7 @@ load_letters_colors:
 set_game_intro_context:
 	jbsr	remove_dudes
 
+	lea		tiles_game_intro_244000_file,a0
 	jbsr	load_tiles_file_244000
 
 	
@@ -3361,6 +3385,7 @@ load_sprite_file:
 set_high_score_context:
 	jbsr	remove_dudes
 
+	lea		tiles_title_244000_file,a0
 	jbsr	load_tiles_file_244000
 	
 	lea		tiles_highs_24a000_file,a0
@@ -3377,6 +3402,7 @@ set_high_score_context:
 set_game_context:
 	jbsr	get_current_level
 
+	lea		tiles_game_244000_file,a0
 	jbsr	load_tiles_file_244000
 	
 	lea		tiles_level_1_24a000_file,a0
@@ -3399,10 +3425,9 @@ set_intro_context:
 
 	* load data files for intro
 
+	lea		tiles_title_244000_file,a0
 	jbsr	load_tiles_file_244000
 	
-	
-	* TODO: store current memory pointer to avoid resetting all & reload
 	
 	lea		tiles_title_24a000_file,a0
 	jbsr	load_tiles_file_24a000
@@ -3833,6 +3858,10 @@ sprites_game_intro_file:
 	.asciz	"sprites_game_intro.bin"
 tiles_title_244000_file:
 	.asciz	"tiles_title_244000.bin"
+tiles_game_intro_244000_file:
+	.asciz	"tiles_game_intro_244000.bin"
+tiles_game_244000_file:
+	.asciz	"tiles_game_244000.bin"
 tiles_title_24a000_file:
 	.asciz	"tiles_title_24a000.bin"
 tiles_game_intro_24a000_file:
