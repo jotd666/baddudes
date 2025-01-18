@@ -73,7 +73,7 @@ def process_multi_tiled_sprite(img,tile_number,full_tileset,h,w,flipx):
 
 # in that implementation, we have to provide a cluts dict as without it it would dump the whole set
 # of tiles/sprites and it's pretty huge in games like BadDudes or other "big" games.
-def load_tileset(image_name,palette_index,side,tileset_name,dumpdir,cluts,dump=False,name_dict=None):
+def load_tileset(image_name,palette_index,side,tileset_name,dumpdir,cluts,dump=False,name_dict=None,postload_callback=None):
 
 
     if isinstance(image_name,(str,pathlib.Path)):
@@ -133,8 +133,6 @@ def load_tileset(image_name,palette_index,side,tileset_name,dumpdir,cluts,dump=F
                     # simple case
                     img.paste(tile_img)
 
-                # only consider colors of used tiles
-                palette.update(set(bitplanelib.palette_extract(img)))
 
                 tileset_1.append(img)
 
@@ -145,8 +143,17 @@ def load_tileset(image_name,palette_index,side,tileset_name,dumpdir,cluts,dump=F
                     else:
                         name = "unknown"
 
-                    img.save(os.path.join(dump_subdir,f"{name}_{tile_number:02x}_{palette_index:02x}.png"))
+                    img.save(os.path.join(dump_subdir,f"{name}_{tile_number:03x}_{palette_index:02x}.png"))
 
+    if postload_callback:
+        postload_callback(tileset_1,palette_index)
+
+    # now that callback has been called, compose palette (so it can remove unwanted tiles
+    # and consider color changes/removals
+    for img in tileset_1:
+        if img:
+            # only consider colors of used tiles
+            palette.update(set(bitplanelib.palette_extract(img)))
 
     return sorted(set(palette)),tileset_1
 
@@ -457,19 +464,19 @@ def dump_tiles(file_radix,palette,tile_table,tile_plane_cache,add_dimension_info
             f.write("\tdc.l\t")
 
             if any(tile_entry):
-                f.write(f"tile_{i:02x}-base")
+                f.write(f"tile_{i:03x}-base")
             else:
                 f.write("0")
             f.write(f"\t; ${i:04x}\n")
 
         for i,tile_entry in enumerate(tile_table):
             if any(tile_entry):
-                tile_base = f"tile_{i:02x}"
+                tile_base = f"tile_{i:03x}"
                 f.write(f"{tile_base}:\n")
                 for j,t in enumerate(tile_entry):
                     f.write("\tdc.l\t")
                     if t:
-                        f.write(f"tile_{i:02x}_{j:02x}-{tile_base}")
+                        f.write(f"tile_{i:03x}_{j:02x}-{tile_base}")
                     else:
                         f.write("0")
                     f.write("\n")
@@ -479,7 +486,7 @@ def dump_tiles(file_radix,palette,tile_table,tile_plane_cache,add_dimension_info
             if tile_entry:
                 for j,t in enumerate(tile_entry):
                     if t:
-                        tile_base = f"tile_{i:02x}_{j:02x}"
+                        tile_base = f"tile_{i:03x}_{j:02x}"
 
                         f.write(f"{tile_base}:\n")
                         for orientation,_ in plane_orientations:
@@ -542,7 +549,7 @@ def process_tile_context(context_name,tile_sheet_dict,nb_colors,is_bob=False,use
     palette_dict[context_name] = bg_palette
 
 
-def process_8x8_tile_layer(context):
+def process_8x8_tile_layer(context,max_colors,colors_last,postload_callback=None):
     tile_palette = set()
     tile_244000_set_list = []
 
@@ -553,7 +560,8 @@ def process_8x8_tile_layer(context):
     for i in range(16):
         tsd = tile_0_sheet_dict.get(i)
         if tsd:
-            tp,tile_set = load_tileset(tsd,i,8,"tiles/"+context,dump_dir,dump=dump_it,cluts=used_tile_cluts[context])
+            tp,tile_set = load_tileset(tsd,i,8,"tiles/"+context,dump_dir,
+            dump=dump_it,cluts=used_tile_cluts[context],postload_callback=postload_callback)
             for tile in tile_set:
                 if tile:
                     bitplanelib.replace_color(tile,{to_replace},replace_by)
@@ -568,18 +576,21 @@ def process_8x8_tile_layer(context):
 
     lfp = len(fg_palette)
 
-    if lfp>8:
-        raise Exception(f"Foreground {context}: Too many colors {lfp} max 8")
+    if lfp>max_colors:
+        print(fg_palette)
+        raise Exception(f"Foreground {context}: Too many colors {lfp} max {max_colors}")
 
-
+    # re-insert transparent in first position
     fg_palette.remove(transparent)
     fg_palette.insert(0,transparent)
 
-    if lfp<8:
-        fg_palette += [(0x10,0x20,0x30)]*(8-lfp)
+    if lfp<max_colors:
+        fg_palette += [(0x10,0x20,0x30)]*(max_colors-lfp)
 
     tile_244000_cache = {}
-    fg_palette = [(0x10,0x20,0x30)]*56 + fg_palette
+    if colors_last:
+        # pad so colors are last (not very useful for sprites, though)
+        fg_palette = [(0x10,0x20,0x30)]*(64-max_colors) + fg_palette
 
     tile_244000_table = read_tileset(tile_244000_set_list,fg_palette,
     cache=tile_244000_cache,
@@ -589,11 +600,32 @@ def process_8x8_tile_layer(context):
 
 # tiles
 
+def postprocess_game_osd_tiles(tileset,palette_index):
+    old_len = len(tileset)
+    if palette_index == 1:
+        # remove all yellow digits we'll go dynamic on those
+        tileset[:] = [None]*old_len
+    else:
+        # just kill all high tiles
+        tileset[0x80:] = [None]*(old_len-0x80)
+        tileset[0x6D] = None
+        tileset[0x6F] = None
+        # the "life" tile colors should be changed temporarily. We're changing
+        # light pink by green and pink by white, which makes 4 colors for all sprites
+        if palette_index==0:
+            cyan_from_time = (0, 230, 176)
+            pinks = (230, 142, 159), (230, 176, 176)
+
+            color_rep = {pinks[0]:(230, 230, 230),pinks[1]:cyan_from_time}
+            life_tile = tileset[0x72]
+            bitplanelib.replace_color_from_dict(life_tile,color_rep)
+
+
 if True:
 
-    process_8x8_tile_layer("title_244000")
-    process_8x8_tile_layer("game_intro_244000")
-    process_8x8_tile_layer("game_244000")
+    process_8x8_tile_layer("title_244000",colors_last=True,max_colors=8)
+    process_8x8_tile_layer("game_intro_244000",colors_last=True,max_colors=8)
+    process_8x8_tile_layer("game_244000",colors_last=False,max_colors=4,postload_callback=postprocess_game_osd_tiles)
 
     process_tile_context("title_24a000",title_tile_24a000_sheet_dict,16)
     process_tile_context("game_intro_24a000",game_intro_tile_24a000_sheet_dict,32)

@@ -67,7 +67,7 @@ used_dict[n] = new_used_tiles()
 add_digits_and_letters(n)
 
 n = "game_244000"
-used_dict[n] = new_used_tiles()
+#used_dict[n] = new_used_tiles()
 add_digits_and_letters(n)
 
 
