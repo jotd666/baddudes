@@ -45,6 +45,7 @@ HW_SPRITE_X_CORRECTION = 0
 HW_SPRITE_Y_CORRECTION = 0
 
 Y_MAX = 240
+Y_MAX_SPRITE = 256
 
 BASE_BPLCON3_VALUE = (BORDERBLANK<<5)
 BASE_BPLCON2_VALUE = 0x0264  | killehb (we're using 6 real bitplanes) sprites above all playfields
@@ -1285,7 +1286,7 @@ erase_tile_on_sprite:
 
 pick_osd_sprite:
 	cmp.w	#17,d2
-	jcc		10f
+	jcc		not_upper_osd
 	cmp.w	#8+2,d3
 	jcc		0f
 	* "1UP" + player score
@@ -1329,7 +1330,27 @@ pick_osd_sprite:
 10:
 	moveq	#0,d2		| not displayed
 	rts
+	
+not_upper_osd:
+	cmp.w #0xE0,d2
+	jcc		lower_osd
+	jra		10b		| center parts TODO
+lower_osd:	
+	cmp.w	#16+2,d3
+	jcc		0f
+	* "1-LIFE" + status
+	lea		osd_bottom_left_sprite+16,A3
+	add.w	d3,a3		| add X offset
+	moveq	#1,d2		| success
+	rts
+0:
+	* "2-LIFE" + status
+	lea		osd_bottom_right_sprite+16-17,A3
+	add.w	d3,a3		| add X offset
+	moveq	#1,d2		| success
+	rts
 
+	
 blank_area:
 	.skip	8
 	
@@ -3600,6 +3621,14 @@ install_osd_hardware_sprites:
 	move.w	#48+64*3,d0
 	move.w	#32,d1
 	jbsr	install_osd_sprite
+	lea		osd_bottom_left_sprite,a2
+	move.w	#32,d0
+	move.w	#248,d1
+	jbsr	install_osd_sprite
+	lea		osd_bottom_right_sprite,a2
+	move.w	#200,d0
+	move.w	#248,d1
+	jbsr	install_osd_sprite
 	rts
 	
 install_osd_sprite:
@@ -4021,7 +4050,7 @@ _end_of_ng_code:
 store_sprite_pos:
 	tst.w	d1
 	jmi	0f
-	cmp.w	#Y_MAX,d1
+	cmp.w	#Y_MAX_SPRITE,d1
 	jcc	0f
 
     move.l  a0,-(a7)
@@ -4059,7 +4088,7 @@ HW_SpriteXTable:
 	.macro DEF_HW_SPRITE_Y_TABLE	height
 HW_SpriteYTable_\height:
   .set	reptn,0
-  .rept Y_MAX
+  .rept Y_MAX_SPRITE
 	.set	ys,reptn+0x1c
 	.set	ye,ys+\height
     .byte  ys&255, 0, ye&255, ((ys>>6)&4)+((ye>>7)&2)
@@ -4284,6 +4313,8 @@ osd_\name\()_next_cw:
 	RESERVE_SPRITE	right
 	RESERVE_SPRITE	left_center
 	RESERVE_SPRITE	right_center
+	RESERVE_SPRITE	bottom_left
+	RESERVE_SPRITE	bottom_right
 	
 background_restore_buffer:
 	.skip	RESTORE_SCREEN_SIZE

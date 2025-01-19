@@ -608,17 +608,18 @@ def postprocess_game_osd_tiles(tileset,palette_index):
     else:
         # just kill all high tiles
         tileset[0x80:] = [None]*(old_len-0x80)
-        tileset[0x6D] = None
-        tileset[0x6F] = None
+
         # the "life" tile colors should be changed temporarily. We're changing
         # light pink by green and pink by white, which makes 4 colors for all sprites
         if palette_index==0:
             cyan_from_time = (0, 230, 176)
-            pinks = (230, 142, 159), (230, 176, 176)
+            pinks = ((230, 142, 159), (230, 176, 176),  # from "life" head
+            (176,34,142),(230,56,208))                   # from health dots
 
-            color_rep = {pinks[0]:(230, 230, 230),pinks[1]:cyan_from_time}
-            life_tile = tileset[0x72]
-            bitplanelib.replace_color_from_dict(life_tile,color_rep)
+            color_rep = {pinks[0]:(230, 230, 230),pinks[1]:cyan_from_time,
+            pinks[2]:(230, 230, 230),pinks[3]:cyan_from_time}
+            for life_tile in [0x6D,0x6F,0x72]:
+                bitplanelib.replace_color_from_dict(tileset[life_tile],color_rep)
 
 
 if True:
