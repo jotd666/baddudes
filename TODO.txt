@@ -16,6 +16,10 @@ Not sure that all tunes could fit in one module. Level 1 and level 2 could use s
 As opposed as other smaller games, I'm using files & per-level loading or I couldn't make it happen with 2MB chip. ATM code is 300Kb in chipmem, and since the game
 needs fastmem, those 300k could easily contain the tunes if the exe was relocated.
 
+- truck use unfiltered contents_of_x_scroll_246010 vs x_secondary_scroll_value
+  to try to display it
+- truck: X-clipping creates strange artifacts depending on shifting (mask???), log shifting
+  when blitting truck
 - bottom osd: wrong colors & missing tiles!
 - multiplexed sprites for scores / lamps / status
 - save memory: load truck first then copy in unused chip bitplanes
@@ -25,8 +29,6 @@ needs fastmem, those 300k could easily contain the tunes if the exe was relocate
 - quantize should be improved: definitely consider color weights/frequencies
 - hack lamps/trees/fire hydrants (from 244000 layer) with hardware sprites:
   figure out first layer row scroll registers, "trigger" tile to display / undisplay sprite
-- ninja truck display would work using just 8 colors with 3 planes and try to make a fake ghost effect
-  with the bars... Palette would need to be rearranged with truck colors first...
 - levels with trains/trucks: load traintrucks bitplanes in non-displayed screen buffer
   to save chipmem
 - blit big object partially (truck, train...)
@@ -57,9 +59,11 @@ needs fastmem, those 300k could easily contain the tunes if the exe was relocate
   reloading 244000 tiles OR keep 244000 tiles loaded at all times
   (and share palette with 24D000 layer too!)
 
+- ninja truck display try to make a fake ghost effect with the bars (we'd need bars mask)
 - osd_write_byte not working properly
 - maybe blit 16x16 tiles at some point instead of using CPU
 
+howto:
 - skip music level 1: bpset 0df2a,D0==$1F,{CURPC=$13DA;g}
 
 reverse lb_024dc
