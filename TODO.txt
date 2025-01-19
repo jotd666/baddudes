@@ -16,8 +16,7 @@ Not sure that all tunes could fit in one module. Level 1 and level 2 could use s
 As opposed as other smaller games, I'm using files & per-level loading or I couldn't make it happen with 2MB chip. ATM code is 300Kb in chipmem, and since the game
 needs fastmem, those 300k could easily contain the tunes if the exe was relocated.
 
-- sprite priorities vs planes: on top
-- sprite palette: starts at color 64
+- bottom osd: wrong colors & missing tiles!
 - multiplexed sprites for scores / lamps / status
 - still undetected real black on enemies (Karnov...) (almost) OK on Bad dude.
 - IN PROGRESS: sommersault frames look inverted / Karnov too. Mockup with Karnov
@@ -32,7 +31,7 @@ needs fastmem, those 300k could easily contain the tunes if the exe was relocate
 - sprite display: skip displaying is done too soon on left
 - sprite mirror_planes: mirroring with width != 16 to implement: test on 32 then make a special case for 32 bits (d0=6)
   
-- use wrap for vertical scrolling (level 7)
+- use wrap for vertical scrolling (level 7) or use blitter for vertical scrollling!!!
 - level 4 backgruond trees: get image: then use static 3 color sprite image with 3 greens
   or 3 browns with dynamic color change, use sprites 4-7 with priority: behind playfields
 - level 4: maybe remove foreground trees if possible

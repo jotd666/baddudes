@@ -1332,7 +1332,7 @@ pick_osd_sprite:
 	rts
 	
 not_upper_osd:
-	cmp.w #0xE0,d2
+	cmp.w #0xD8,d2
 	jcc		lower_osd
 	jra		10b		| center parts TODO
 lower_osd:	
@@ -1341,12 +1341,24 @@ lower_osd:
 	* "1-LIFE" + status
 	lea		osd_bottom_left_sprite+16,A3
 	add.w	d3,a3		| add X offset
+	cmp.w	#0xD8,d2
+	jeq		1f
+	* second row
+	add.w	#NB_BYTES_PER_SPRITE_ROW*2*8,a3
+1:
 	moveq	#1,d2		| success
 	rts
 0:
+	moveq	#0,d2
+	rts
 	* "2-LIFE" + status
 	lea		osd_bottom_right_sprite+16-17,A3
 	add.w	d3,a3		| add X offset
+	cmp.w	#0xD8,d2
+	jeq		1f
+	* second row
+	add.w	#NB_BYTES_PER_SPRITE_ROW*2*8,a3
+1:
 	moveq	#1,d2		| success
 	rts
 
@@ -2662,7 +2674,7 @@ platform_init:
 
  	*         VVHH
     move.w #0x2CA0,diwstrt(a5)
-    move.w #0x24A1-0x800,diwstop(a5)
+    move.w #0x24A1,diwstop(a5)
     move.w #0x0038,ddfstrt(a5)
     move.w #0x00D0,ddfstop(a5)
 
@@ -3593,7 +3605,7 @@ install_osd_hardware_sprites:
 	* same palette for 4 first sprites
 	lea		osd_upper_sprites_palette+2,a0
 	* 2 first sprites (upper part)
-	moveq	#1,d1
+	moveq	#3,d1
 1:
 	move.l	tiles_palette_244000,a1
 	moveq	#3,d0
@@ -3623,11 +3635,11 @@ install_osd_hardware_sprites:
 	jbsr	install_osd_sprite
 	lea		osd_bottom_left_sprite,a2
 	move.w	#32,d0
-	move.w	#248,d1
+	move.w	#240,d1
 	jbsr	install_osd_sprite
 	lea		osd_bottom_right_sprite,a2
 	move.w	#200,d0
-	move.w	#248,d1
+	move.w	#240,d1
 	jbsr	install_osd_sprite
 	rts
 	
