@@ -48,7 +48,7 @@ Y_MAX = 240
 
 BASE_BPLCON3_VALUE = (BORDERBLANK<<5)
 BASE_BPLCON2_VALUE = 0x0264  | killehb (we're using 6 real bitplanes) sprites above all playfields
-
+BASE_BPLCON4_VALUE = 0x0044	| even sprites palette starts at color 64, odd also at 64
 SCREEN_ADDRESS = 0x244000
 
 * set both to nonzero for full static screen, no scroll, 1 screen tile
@@ -1237,12 +1237,14 @@ write_osd_layer:
 	move.w	d7,d6			| tile code+clut
 	* TODO pick proper sprite & location
 
+
 	jbsr	pick_osd_sprite
 	jeq		write_osd_layer_out
 	
 	and.w	#0x7FF,d6		| only clut
 	jeq		erase_tile_on_sprite
 
+	move.w	d6,d7			| clut 0, we do colors manually
 	jbsr	pick_8x8_tile_code
 	jeq		write_osd_layer_out
 	add.w	d6,a0	| select tile clut (should be zero anyway)
@@ -1283,8 +1285,8 @@ erase_tile_on_sprite:
 * given D3/D2 as X/Y select location to start writing to sprite
 
 pick_osd_sprite:
-	cmp.w	#8,d2
-	jne		10f
+	cmp.w	#17,d2
+	jcc		10f
 	cmp.w	#8+2,d3
 	jcc		0f
 	* "1UP" + player score
@@ -1298,6 +1300,10 @@ pick_osd_sprite:
 	* end of player score + high
 	lea		osd_left_center_sprite+16-10,A3
 	add.w	d3,a3		| add X offset
+	cmp.w	#8,d2
+	jeq		1f
+	add.w	#NB_BYTES_PER_SPRITE_ROW*2*8,a3
+1:
 	moveq	#1,d2		| success
 	rts
 0:	
@@ -1305,6 +1311,18 @@ pick_osd_sprite:
 	jcc		0f
 	* end of player score + high
 	lea		osd_right_center_sprite+16-10,A3
+	add.w	d3,a3		| add X offset
+	cmp.w	#8,d2
+	jeq		1f
+	add.w	#NB_BYTES_PER_SPRITE_ROW*2*8,a3
+1:
+	moveq	#1,d2		| success
+	rts
+0:
+	cmp.w	#32+2,d3
+	jcc		0f
+	* end of player score + high
+	lea		osd_right_sprite+24-10,A3
 	add.w	d3,a3		| add X offset
 	moveq	#1,d2		| success
 	rts
@@ -2631,7 +2649,7 @@ platform_init:
 	* restrict borders: we don't see bobs on the borders!
 	* try to hide color 0 on the border (except on OCS)
     move.w #BASE_BPLCON2_VALUE,bplcon2(a5)
-	move.w	#0x54,bplcon4(a5)	| odd sprites palette start at color 64, even at 80
+
 
     move.w #(SPRITE_FMODE<<2)+0x1,fmode(a5)	| 32 bit bitplane fetch, 64 bit wide sprites
 
@@ -3315,14 +3333,14 @@ load_tiles_file_244000:
 	move.l	d0,a0
 	add.w	#4+(56*2),a0	| skip nb planes (6) plus 56 dummy colors
 
-	move.l	a0,letters_colors
+	move.l	a0,tiles_palette_244000
 
 	move.l	tiles_244000,a0
 	add.w	#4+(64*2),a0	| skip nb planes (6) plus palette
 	
 	move.l	a0,tile_data_244000
 	
-	jbsr	load_letters_colors
+	jbsr	load_tiles_palette_244000
 	
 	rts
 	
@@ -3333,14 +3351,14 @@ load_tiles_file_as_sprites_244000:
 	move.l	d0,a0
 	addq.w	#4,a0	| skip header
 
-	move.l	a0,letters_colors
+	move.l	a0,tiles_palette_244000
 
 	move.l	tiles_244000,a0
 	add.w	#4+(4*2),a0	| skip header + 4 colors
 	
 	move.l	a0,tile_data_244000
 	
-	*jbsr	load_letters_colors
+	*jbsr	load_tiles_palette_244000
 	
 	rts
 	
@@ -3359,8 +3377,8 @@ load_tiles_file_24a000:
 	move.l	a0,tile_data_24a000	 			| save it for later
 	rts
 	
-load_letters_colors:
-	move.l	letters_colors,a0
+load_tiles_palette_244000:
+	move.l	tiles_palette_244000,a0
 	lea		letters_palette,a1
 	move.w	#8,d0
 	jbsr	load_palette
@@ -3389,7 +3407,7 @@ set_game_intro_context:
 	
 	* re-apply letter colors 56-63 (the sprites in that context only use 24 colors
 	* so we're good!)
-	jbsr	load_letters_colors
+	jbsr	load_tiles_palette_244000
 	rts
 	
 load_sprite_file:
@@ -3552,6 +3570,19 @@ set_intro_context:
 	rts
 
 install_osd_hardware_sprites:
+	* same palette for 4 first sprites
+	lea		osd_upper_sprites_palette+2,a0
+	* 2 first sprites (upper part)
+	moveq	#1,d1
+1:
+	move.l	tiles_palette_244000,a1
+	moveq	#3,d0
+0:
+	move.w	(a1)+,(a0)
+	addq	#4,a0
+	dbf		d0,0b
+	dbf		d1,1b
+	
 	lea		intro_sprites,a0
 	lea		osd_left_sprite,a2
 	move.w	#48,d0
@@ -3564,6 +3595,10 @@ install_osd_hardware_sprites:
 	jbsr	install_osd_sprite
 	lea		osd_right_center_sprite,a2
 	move.w	#48+64*2,d0
+	move.w	#32,d1
+	jbsr	install_osd_sprite
+	lea		osd_right_sprite,a2
+	move.w	#48+64*3,d0
 	move.w	#32,d1
 	jbsr	install_osd_sprite
 	rts
@@ -4069,7 +4104,7 @@ nb_tile_planes_24a000:
 	.word	0
 nb_tile_colors_24a000:
 	.word	0
-letters_colors:
+tiles_palette_244000:
 	.long	0
 sprite_table_base:
 	.long	0
@@ -4162,11 +4197,11 @@ debug_color:
 	* intro copperlist
 intro_copperlist:
 	* all sprites have the same palette no need to specify odd or even
-	* on color bank 1
+	* on color bank 2 (64-)
 	
-	DECL_COLOR_BANK	1
-	* black color sprites
-	DECL_COLORS	0,32
+	DECL_COLOR_BANK	2
+osd_upper_sprites_palette:
+	DECL_COLORS	0,16
 
 bitplanes_intro:
 	DECL_BITPLANES	0,NB_PLAYFIELD_PLANES
@@ -4174,6 +4209,9 @@ bitplanes_intro:
 	.word	bplcon1
 fine_x_scroll_value:
 	.word	0
+
+	.word	bplcon4
+	.word	BASE_BPLCON4_VALUE
 
 intro_sprites:
 	DECL_SPRITES
@@ -4233,12 +4271,12 @@ public_memory_block:
 
 osd_left_sprite:
 	.skip	16
-	.skip	32*8
+	.skip	32*16
 osd_left_next_cw:
 	.skip	16
 osd_right_sprite:
 	.skip	16
-	.skip	32*8
+	.skip	32*16
 osd_right_next_cw:
 	.skip	16
 osd_left_center_sprite:
