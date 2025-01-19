@@ -535,7 +535,7 @@ def dump_tiles(file_radix,palette,tile_table,tile_plane_cache,add_dimension_info
     tiles_1_bin = os.path.join(data_dir,os.path.basename(os.path.splitext(tiles_1_src)[0])+".bin")
     asm2bin(tiles_1_src,tiles_1_bin)
 
-def process_tile_context(context_name,tile_sheet_dict,nb_colors,is_bob=False,shift_palette_count=0,first_pass=False):
+def process_tile_context(context_name,tile_sheet_dict,nb_colors,is_bob=False,shift_palette_count=0,first_pass=False,first_colors=None):
 
 
     tile_24a000_set_list,bg_palette = load_contexted_tileset(tile_sheet_dict,context_name,nb_colors,is_bob)
@@ -544,6 +544,20 @@ def process_tile_context(context_name,tile_sheet_dict,nb_colors,is_bob=False,shi
     if shift_palette_count:
         # temp: just fill with as many dummy colors as in reuse_colors
         bg_palette = [(0x10,0x20,0x30)]*shift_palette_count + bg_palette
+
+    elif first_colors:
+        # imposed first colors, that HAVE to be in the palette
+        # bg_palette contains all colors, and need reordering
+        first_colors_set = set(first_colors)
+        bg_palette_no_first_colors = [x for x in bg_palette if x not in first_colors_set]
+        # same colors, but reordered according to first colors constraint, allows to blit unrelated objects
+        # to that layer with less bitplanes so faster/less data to store
+        bg_palette = first_colors + bg_palette_no_first_colors
+
+        if len(bg_palette)<nb_colors:
+            # pad
+            bg_palette += [(0x10,0x20,0x30)]*(nb_colors-len(bg_palette))
+        print(bg_palette)
 
     if first_pass:
         # pass only done to extract palette, no need to generate a file
@@ -651,11 +665,12 @@ if False:
 else:
 
     # only generates game tiles & sprites
-    process_tile_context("level_1_24a000",level_1_tile_24a000_sheet_dict,32)
+    process_tile_context("level_1_24a000",level_1_tile_24a000_sheet_dict,32,first_pass=True)
 
     truck_used_colors = convert_truck_1_pic.doit(palette_dict["level_1_24a000"],force=True)
     # we return the reduced palette, then we reinject it in the global tiles
     # so they are first in the palette
+    process_tile_context("level_1_24a000",level_1_tile_24a000_sheet_dict,32,first_colors=truck_used_colors)
 
 
     process_tile_context("game_level_1",sprite_sheet_dict,32,is_bob=True,shift_palette_count=32)

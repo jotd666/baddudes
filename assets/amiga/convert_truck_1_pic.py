@@ -13,7 +13,9 @@ def doit(global_palette,force=False):
         y_start = 352
         width = 16*24
         truck1_img=truck1_img.crop((0,y_start,width,y_start+128))
-        reduced_colors_truck1_img = truck1_img.quantize(colors=8,dither=0).convert('RGB')
+        forced_nb_planes = 3
+        reduced_nb_colors = 1<<forced_nb_planes
+        reduced_colors_truck1_img = truck1_img.quantize(colors=reduced_nb_colors,dither=0).convert('RGB')
         truck1_palette = bitplanelib.palette_extract(reduced_colors_truck1_img)
         transparent_first(truck1_palette,transparent)
 
@@ -22,25 +24,33 @@ def doit(global_palette,force=False):
         bitplanelib.replace_color_from_dict(reduced_colors_truck1_img,color_replacement_dict)
 
         reduced_palette = bitplanelib.palette_extract(reduced_colors_truck1_img)
+        if len(reduced_palette) < reduced_nb_colors:
+            reduced_palette += [(0x10,0x20,0x30)]*(len(reduced_palette) - reduced_nb_colors)
+        raw = bitplanelib.palette_image2raw(reduced_colors_truck1_img,None,reduced_palette,forced_nb_planes=forced_nb_planes,
+        generate_mask=True,blit_pad=True,mask_color=transparent)
 
-        raw = bitplanelib.palette_image2raw(reduced_colors_truck1_img,None,global_palette,generate_mask=True,mask_color=transparent)
-
-        nb_planes = 7
-        width,height = reduced_colors_truck1_img.size
+        nb_planes = 4
+        real_width,height = reduced_colors_truck1_img.size
         # width in even bytes, plus 16 bit shift
-        width = width//8 + 2
+        width = real_width//8 + 2
         if width % 2:
             width += 1
 
+        plane_size = len(raw)//nb_planes # mask included
+        if width*height != plane_size:
+            raise Error(f"Computed w*h = {width}*{height} != plane size ({plane_size})")
         with open(asm_out,"w") as f:
 
 
-            f.write(f"\tdc.w\t{nb_planes},{width},{height}   ; nb planes, width in bytes, height\n")
+            f.write(f"\tdc.w\t{nb_planes},{width},{height}   ; nb planes (with mask), width in bytes (real width = {real_width}), height\n")
 
 
-            plane_size = len(raw)//nb_planes # mask included
+
             f.write(f"; bpldata (plane size = {plane_size})\n")
             offset = 0
+            f.write("main_table:\n")
+            for j in range(nb_planes):
+                f.write(f"\tdc.l    truck_plane_{j}-main_table\n")
             for j in range(nb_planes):
                 f.write(f"truck_plane_{j}:\n")
                 block = raw[offset:offset+plane_size]
@@ -51,18 +61,22 @@ def doit(global_palette,force=False):
                 offset += plane_size
 
 
-        #asm2bin(asm_out,dudes_bin)
+        asm2bin(asm_out,dudes_bin)
         reduced_palette.remove(transparent)
         return reduced_palette
 
 if __name__ == "__main__":
     gp = [(0, 0, 0),
+ (56, 71, 90),
+ (71, 90, 104),
+ (104, 104, 97),
+ (123, 123, 123),
+ (142, 56, 17),
  (34, 34, 34),
  (56, 34, 0),
  (56, 34, 17),
  (56, 56, 34),
  (56, 56, 56),
- (56, 71, 90),
  (56, 104, 123),
  (71, 34, 0),
  (71, 56, 0),
@@ -70,7 +84,6 @@ if __name__ == "__main__":
  (71, 56, 56),
  (71, 71, 34),
  (71, 71, 64),
- (71, 90, 104),
  (90, 56, 0),
  (90, 71, 17),
  (90, 71, 56),
@@ -79,12 +92,9 @@ if __name__ == "__main__":
  (90, 90, 90),
  (90, 104, 123),
  (97, 71, 0),
- (104, 104, 97),
  (104, 123, 142),
  (114, 90, 64),
  (123, 104, 90),
- (123, 123, 123),
- (142, 56, 17),
  (142, 104, 56),
  (142, 123, 104),
  (159, 123, 71)]

@@ -3527,19 +3527,17 @@ set_high_score_context:
 ****************
 
 set_game_context:
-	jbsr	get_current_level
 
 	lea		tiles_game_244000_file,a0
 	jbsr	load_tiles_file_as_sprites_244000
 	
-	lea		tiles_level_1_24a000_file,a0
-	jbsr	load_tiles_file_24a000
-
-	jbsr	load_intro_palette
 	
-	* stuck level 1
-	lea		sprites_game_level_1_file,a0
-	jbsr 	load_sprite_file
+	jbsr	get_current_level
+	subq	#1,d0	
+	lea		specific_level_load_table(pc),a0
+	jsr		([a0,d0.w*4])
+	
+	jbsr	load_intro_palette
 	
 	move.l	fg_screen_data_1,fg_drawed_screen_ptr
 	move.l	fg_screen_data_2,fg_displayed_screen_ptr
@@ -3601,6 +3599,32 @@ set_intro_context:
 
 	rts
 
+specific_level_load_table:
+	.long	level_1_load
+	.long	level_2_load
+	.long	level_3_load
+	.long	level_4_load
+	.long	level_5_load
+	.long	level_6_load
+	.long	level_7_load
+	
+level_1_load:
+	* stuck level 1
+	lea		tiles_level_1_24a000_file,a0
+	jbsr	load_tiles_file_24a000
+	lea		sprites_game_level_1_file,a0
+	jbsr 	load_sprite_file
+	rts
+	
+level_2_load:	
+level_3_load:	
+level_4_load:	
+level_5_load:	
+level_6_load:	
+level_7_load:
+	illegal
+	rts
+	
 install_osd_hardware_sprites:
 	* same palette for 4 first sprites
 	lea		osd_upper_sprites_palette+2,a0
@@ -3673,6 +3697,7 @@ load_intro_palette:
 get_current_level:
 	move.l	a6,-(a7)
 	lea	0xff821d,a6
+	moveq	#0,d0
 	jbsr	osd_real_ram_address
 	move.b	(a6),d0
 	move.l	(a7)+,a6
