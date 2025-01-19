@@ -3,12 +3,18 @@ import os,sys,bitplanelib,subprocess,json,pathlib
 
 from shared import *
 
+import convert_dudes_pics
+import convert_truck_1_pic
+
+convert_dudes_pics.doit()
+
 sprite_names = dict()
 palette_dict = dict()
 
 # blue ninja tiles are pre-mirrored as there are a lot of them
 # at the same time
 pre_mirrored_sprites = {k:{2} for k in range(0x200,0x348)}
+
 
 def reformat_subdict(d):
     rval = {"cluts":set(d["cluts"])}
@@ -32,9 +38,9 @@ with open(os.path.join(this_dir,"used_sprite_cluts.json")) as f:
 dump_it = True
 dump_dir = this_dir / "dumps"
 
-src_gen_dir = src_dir / "generated"
-if not src_gen_dir.exists():
-    src_gen_dir.mkdir()
+
+if not generated_src_dir.exists():
+    generated_src_dir.mkdir()
 
 if dump_it:
     if not os.path.exists(dump_dir):
@@ -446,7 +452,7 @@ def read_tileset(img_set_list,palette,cache,is_bob,generate_mask):
 def dump_tiles(file_radix,palette,tile_table,tile_plane_cache,add_dimension_info=False):
     nb_planes = get_nb_planes(palette)
 
-    tiles_1_src = src_gen_dir / f"{file_radix}.68k"
+    tiles_1_src = generated_src_dir / f"{file_radix}.68k"
 
     nb_planes_blocks = len(tile_plane_cache)
     with open(tiles_1_src,"w") as f:
@@ -529,22 +535,24 @@ def dump_tiles(file_radix,palette,tile_table,tile_plane_cache,add_dimension_info
     tiles_1_bin = os.path.join(data_dir,os.path.basename(os.path.splitext(tiles_1_src)[0])+".bin")
     asm2bin(tiles_1_src,tiles_1_bin)
 
-def process_tile_context(context_name,tile_sheet_dict,nb_colors,is_bob=False,use_palette_colors=None):
+def process_tile_context(context_name,tile_sheet_dict,nb_colors,is_bob=False,shift_palette_count=0,first_pass=False):
 
-    # use previous colors (tiles) to maximize the chance of not quantizing colors
-    reuse_colors = palette_dict[use_palette_colors] if use_palette_colors else []
 
     tile_24a000_set_list,bg_palette = load_contexted_tileset(tile_sheet_dict,context_name,nb_colors,is_bob)
     tile_24a000_cache = {}
 
-    if reuse_colors:
+    if shift_palette_count:
         # temp: just fill with as many dummy colors as in reuse_colors
-        bg_palette = [(0x10,0x20,0x30)]*len(reuse_colors) + bg_palette
+        bg_palette = [(0x10,0x20,0x30)]*shift_palette_count + bg_palette
 
-    tile_24a000_table = read_tileset(tile_24a000_set_list,bg_palette,cache=tile_24a000_cache, is_bob=is_bob, generate_mask=is_bob)
-    prefix = "sprites_" if is_bob else "tiles_"
+    if first_pass:
+        # pass only done to extract palette, no need to generate a file
+        pass
+    else:
+        tile_24a000_table = read_tileset(tile_24a000_set_list,bg_palette,cache=tile_24a000_cache, is_bob=is_bob, generate_mask=is_bob)
+        prefix = "sprites_" if is_bob else "tiles_"
 
-    dump_tiles(prefix+context_name,bg_palette,tile_24a000_table,tile_24a000_cache,add_dimension_info=is_bob)
+        dump_tiles(prefix+context_name,bg_palette,tile_24a000_table,tile_24a000_cache,add_dimension_info=is_bob)
 
     palette_dict[context_name] = bg_palette
 
@@ -580,9 +588,7 @@ def process_8x8_tile_layer(context,max_colors,colors_last,postload_callback=None
         print(fg_palette)
         raise Exception(f"Foreground {context}: Too many colors {lfp} max {max_colors}")
 
-    # re-insert transparent in first position
-    fg_palette.remove(transparent)
-    fg_palette.insert(0,transparent)
+    transparent_first(fg_palette,transparent)
 
     if lfp<max_colors:
         fg_palette += [(0x10,0x20,0x30)]*(max_colors-lfp)
@@ -621,8 +627,8 @@ def postprocess_game_osd_tiles(tileset,palette_index):
             for life_tile in [0x6D,0x6F,0x72]:
                 bitplanelib.replace_color_from_dict(tileset[life_tile],color_rep)
 
-
-if True:
+# set to "False" for faster operation when working on game sprite/tiles
+if False:
 
     process_8x8_tile_layer("title_244000",colors_last=True,max_colors=8)
     process_8x8_tile_layer("game_intro_244000",colors_last=True,max_colors=8)
@@ -632,15 +638,25 @@ if True:
     process_tile_context("game_intro_24a000",game_intro_tile_24a000_sheet_dict,32)
     process_tile_context("highs_24a000",title_tile_24a000_sheet_dict,16)
     process_tile_context("level_1_24a000",level_1_tile_24a000_sheet_dict,32)
+    convert_truck_1_pic.doit(palette_dict["level_1_24a000"])
 
 # sprites
     process_tile_context("title_24a000",title_tile_24a000_sheet_dict,16)
+
+
+    # game intro. Not gaining any colors by passing the associated screen tile colors...
+    process_tile_context("game_intro",sprite_sheet_dict,32,is_bob=True,shift_palette_count=32)
+    process_tile_context("game_level_1",sprite_sheet_dict,32,is_bob=True,shift_palette_count=32)
+
 else:
-    process_tile_context("game_intro_24a000",game_intro_tile_24a000_sheet_dict,32)
+
+    # only generates game tiles & sprites
     process_tile_context("level_1_24a000",level_1_tile_24a000_sheet_dict,32)
 
-# game intro. Not gaining any colors by passing the associated screen tile colors...
-process_tile_context("game_intro",sprite_sheet_dict,32,is_bob=True,use_palette_colors="game_intro_24a000")
+    truck_used_colors = convert_truck_1_pic.doit(palette_dict["level_1_24a000"],force=True)
+    # we return the reduced palette, then we reinject it in the global tiles
+    # so they are first in the palette
 
-process_tile_context("game_level_1",sprite_sheet_dict,32,is_bob=True,use_palette_colors="level_1_24a000")
+
+    process_tile_context("game_level_1",sprite_sheet_dict,32,is_bob=True,shift_palette_count=32)
 
