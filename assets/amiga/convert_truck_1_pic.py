@@ -49,15 +49,19 @@ def doit(global_palette,force=False):
             f.write(f"; bpldata (plane size = {plane_size})\n")
             offset = 0
             f.write("main_table:\n")
-            for j in range(nb_planes):
+            # make it suitable for 6 plane display
+            for j in range(nb_planes-1):
                 f.write(f"\tdc.l    truck_plane_{j}-main_table\n")
+            for j in range(7-nb_planes):
+                f.write("\tdc.l\t0\n")
+            f.write(f"\tdc.l    truck_plane_{nb_planes-1}-main_table\n")
             for j in range(nb_planes):
                 f.write(f"truck_plane_{j}:\n")
                 block = raw[offset:offset+plane_size]
                 if any(block):
                     bitplanelib.dump_asm_bytes(block,f)
                 else:
-                    print("zerooooes",j)
+                    raise Exception("zero plane!")
                 offset += plane_size
 
 

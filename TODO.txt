@@ -18,6 +18,8 @@ needs fastmem, those 300k could easily contain the tunes if the exe was relocate
 
 - bottom osd: wrong colors & missing tiles!
 - multiplexed sprites for scores / lamps / status
+- save memory: load truck first then copy in unused chip bitplanes
+- really_update_sprites: call truck/train update function after erase
 - still undetected real black on enemies (Karnov...) (almost) OK on Bad dude.
 - IN PROGRESS: sommersault frames look inverted / Karnov too. Mockup with Karnov
 - quantize should be improved: definitely consider color weights/frequencies

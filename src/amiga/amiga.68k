@@ -34,7 +34,7 @@ AFB_68020 = 1
 	.endif
 	
 TOTAL_PUBLIC_MEMORY_SIZE = 350000
-TOTAL_CHIP_MEMORY_SIZE = 760000
+TOTAL_CHIP_MEMORY_SIZE = 800000
 
 PREVIOUS_SPRITE_SIZE = 8
 BORDERBLANK = 1
@@ -806,7 +806,21 @@ _vblank:
 	* double buffering only in-game
 	bsr		switch_screen_buffers
 23:
-	
+	* temp
+	tst.l truck_planes
+	jeq		555f
+	move.l	truck_planes,a0
+	move.w	#50,d2
+	move.w  #128,d4
+	move.w	#NB_PLAYFIELD_PLANES,d3
+	move.l		(6*4,a0),a3	| mask
+	moveq	#0,d5			| Y-offset
+	move.l 	fg_drawed_screen_ptr,a1
+	moveq	#32,d0
+	move.w	#300,d1
+
+	jbsr	blit_planes_any_internal_cookie_cut
+555:
 	bsr		really_update_sprites
 1:
 	* don't blit, but update hw sprites as it doesn't cost a lot
@@ -2466,7 +2480,6 @@ blit_planes_any_internal_no_cookie_cut:
 	
     move.w  d0,bltdmod(a5)	|D modulo
 					
-	add.w	d5,a3			| apply y offset to mask too (y offset looks wrong)
 	subq	#1,d3
 	beq.b	7f
 	subq	#1,d3
@@ -2490,9 +2503,9 @@ start_process_1_plane_nocc:
 	move.l (a0)+,d0
 	bne.b	61f
 
-	* source is 0: just apply mask (less bandwidth lost) and change bltcon
-	move.l	d6,bltcon0(a5)	| sets con0 and con1: clear
- 	move.w	d2,bltbdat(a5)	|B word is zero
+	* source is 0: just clear (less bandwidth lost) and change bltcon
+	move.l	#0x01000000,bltcon0(a5)	| sets con0 and con1: clear
+
 	rts
 61:
 	* non-zero: set data source & bltcon
@@ -3324,7 +3337,7 @@ osd_set_context:
 	cmp.w	global_context,d0
 	jeq		1f
 
-	* no double buffering
+	* by default, no double buffering on non-game parts
 	move.l	fg_drawed_screen_ptr,fg_displayed_screen_ptr
 	move.w	d0,global_context
 	jbsr	clear_all_hardware_sprites
@@ -3389,9 +3402,7 @@ load_tiles_file_as_sprites_244000:
 	add.w	#4+(4*2),a0	| skip header + 4 colors
 	
 	move.l	a0,tile_data_244000
-	
-	*jbsr	load_tiles_palette_244000
-	
+		
 	rts
 	
 load_tiles_file_24a000:
@@ -3609,11 +3620,29 @@ specific_level_load_table:
 	.long	level_7_load
 	
 level_1_load:
-	* stuck level 1
 	lea		tiles_level_1_24a000_file,a0
 	jbsr	load_tiles_file_24a000
 	lea		sprites_game_level_1_file,a0
 	jbsr 	load_sprite_file
+	* load & relocate truck pics
+	lea		truck_1_pic_file,a0
+	jbsr	allocate_and_load_chip_mem_file
+	move.l	d0,truck_pic
+	move.l	d0,a0
+	move.w	(a0)+,truck_nb_planes		| nb planes
+	move.w	(a0)+,truck_width
+	move.w	(a0)+,truck_height
+	* make data absolute
+	move.w	#NB_PLAYFIELD_PLANES,d0		| + mask
+	move.l	a0,d1		| base pointer
+	move.l	d1,truck_planes
+0:
+	move.l	(a0)+,d2
+	jeq		1f
+	add.l	d1,d2
+	move.l	d2,(-4,a0)
+1:
+	dbf		d0,0b
 	rts
 	
 level_2_load:	
@@ -4042,6 +4071,8 @@ main_scroll_value:
 	
 cheat_used:
 	.byte	0
+truck_1_pic_file:
+	.asciz	"truck_1.bin"
 sprites_game_level_1_file:
 	.asciz	"sprites_game_level_1.bin"
 sprites_game_intro_file:
@@ -4159,6 +4190,8 @@ tiles_palette_24d000:		| address 0x24D000
 	.long	0
 dude_pics:
 	.long	0
+truck_pic:
+	.long	0
 sprites_memory:
 	.long	0
 tile_data_24a000:
@@ -4175,7 +4208,14 @@ sprite_table_base:
 	.long	0
 tile_data_24d000:
 	.long	0
-	
+truck_planes:
+	.long	0
+truck_nb_planes:
+	.word	0
+truck_width:
+	.word	0
+truck_height:	
+	.word	0
 * 2 words: first shift (as bplcon value), then
 * offset in bytes
 scroll_table:
