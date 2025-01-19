@@ -154,14 +154,14 @@ ram_relocs:
 	.long	0x001dc4+2	| spriteram_00ffc000
 	.long	0x001dde+2	| ext_00ff8128
 	.long	0x001dea+2	| ext_00ff812c
-	.long	0x001e30+2	| ext_00ff813c
+	.long	0x001e30+2	| layer_24dxxx_scroll_values_ff813c
 	.long	0x001e3c+2	| ext_00ff8140
 	.long	0x001e84+2	| #spriteram_end_00ffc7f8
 	.long	0x001e98+6	| ext_00ff8114
 	.long	0x001ea8+6	| ext_00ff8118
 	.long	0x001eb8+6	| ext_00ff8128
 	.long	0x001ec8+6	| ext_00ff812c
-	.long	0x001ed8+6	| ext_00ff813c
+	.long	0x001ed8+6	| layer_24dxxx_scroll_values_ff813c
 	.long	0x001ee8+6	| ext_00ff8140
 	.long	0x001f12+2	| ext_00ff8244
 	.long	0x001f32+4	| ext_00ff8108
@@ -178,7 +178,7 @@ ram_relocs:
 	.long	0x002054+2	| ext_00ff802e
 	.long	0x002062+6	| ext_00ff8032
 	.long	0x00206c+2	| ext_00ff801e
-	.long	0x002072+2	| ext_00ff813c
+	.long	0x002072+2	| layer_24dxxx_scroll_values_ff813c
 	.long	0x00207c+2	| ext_00ff8140
 	.long	0x002082+2	| ext_00ff801e
 	.long	0x002088+2	| ext_00ff803e
@@ -219,7 +219,7 @@ ram_relocs:
 	.long	0x002456+2	| ext_00ff8136
 	.long	0x002462+2	| ext_00ff8138
 	.long	0x00246e+2	| ext_00ff813a
-	.long	0x00247a+2	| ext_00ff813c
+	.long	0x00247a+2	| layer_24dxxx_scroll_values_ff813c
 	.long	0x002486+2	| ext_00ff8140
 	.long	0x002492+2	| ext_00ff8144
 	.long	0x00249e+2	| ext_00ff8146
@@ -305,7 +305,7 @@ ram_relocs:
 	.long	0x00305a+2	| ext_00ff8884
 	.long	0x003074+6	| ext_00ff822a
 	.long	0x003082+2	| ext_00ff822e
-	.long	0x003094+2	| ext_00ff813c
+	.long	0x003094+2	| layer_24dxxx_scroll_values_ff813c
 	.long	0x0030a4+2	| ext_00ff8884
 	.long	0x0030c0+6	| ext_00ff822e
 	.long	0x0030ca+2	| ext_00ffa856
@@ -336,7 +336,7 @@ ram_relocs:
 	.long	0x0032aa+2	| ext_00ffa8e0
 	.long	0x0032b0+4	| ext_00ffa8e0
 	.long	0x0032c6+2	| ext_00ff8232
-	.long	0x0032d8+2	| ext_00ff813c
+	.long	0x0032d8+2	| layer_24dxxx_scroll_values_ff813c
 	.long	0x0032e8+2	| ext_00ff8884
 	.long	0x003308+2	| ext_00ff8128
 	.long	0x003316+6	| ext_00ff8232
@@ -531,7 +531,7 @@ ram_relocs:
 	.long	0x00623e+6	| ext_00ffa8f6
 	.long	0x006248+2	| ext_00ff8164
 	.long	0x00624e+2	| ext_00ff8168
-	.long	0x006254+2	| ext_00ff813c
+	.long	0x006254+2	| layer_24dxxx_scroll_values_ff813c
 	.long	0x006264+6	| ext_00ff8164
 	.long	0x00626e+6	| ext_00ff8168
 	.long	0x0062a4+2	| ext_00ff81c6
@@ -777,7 +777,7 @@ ram_relocs:
 	.long	0x006ea6+6	| ext_00ff81a6
 	.long	0x006ec2+2	| ext_00ff8128
 	.long	0x006ecc+2	| ext_00ff812c
-	.long	0x006ed6+2	| ext_00ff813c
+	.long	0x006ed6+2	| layer_24dxxx_scroll_values_ff813c
 	.long	0x006ee0+2	| ext_00ff8140
 	.long	0x006ef2+6	| ext_00ff8186
 	.long	0x006efc+6	| ext_00ff81a6
@@ -946,7 +946,7 @@ ram_relocs:
 	.long	0x00884e+2	| ext_00ff805e
 	.long	0x008854+2	| ext_00ff8062
 	.long	0x00886e+4	| ext_00ff801e
-	.long	0x009236+2	| ext_00ff813c
+	.long	0x009236+2	| layer_24dxxx_scroll_values_ff813c
 	.long	0x00923c+2	| ext_00ff8140
 	.long	0x009242+4	| ext_00ff8170
 	.long	0x0097e2+4	| ext_00ffa836
@@ -1145,7 +1145,7 @@ ram_relocs:
 	.long	0x00cc52+4	| ext_00ffa84e
 	.long	0x00cc5e+2	| ext_00ffa852
 	.long	0x00cc64+2	| ext_00ffa856
-	.long	0x00cc6e+2	| ext_00ff813c
+	.long	0x00cc6e+2	| layer_24dxxx_scroll_values_ff813c
 	.long	0x00cc74+2	| ext_00ff8140
 	.long	0x00cca6+2	| ext_00ffa89c
 	.long	0x00ccb8+2	| current_stage_00ff821d
@@ -1166,7 +1166,7 @@ ram_relocs:
 	.long	0x00cd20+2	| ext_00ff8128
 	.long	0x00cd26+2	| ext_00ffa894
 	.long	0x00cd2c+2	| ext_00ff8140
-	.long	0x00cd32+2	| ext_00ff813c
+	.long	0x00cd32+2	| layer_24dxxx_scroll_values_ff813c
 	.long	0x00cd38+2	| ext_00ff8170
 	.long	0x00cd44+2	| ext_00ff8222
 	.long	0x00cd4a+2	| ext_00ff822a
@@ -1303,7 +1303,7 @@ ram_relocs:
 	.long	0x00d5b2+2	| ext_00ffa856
 	.long	0x00d5b2+6	| ext_00ffa86e
 	.long	0x00d5c4+2	| ext_00ffa856
-	.long	0x00d5ca+2	| ext_00ff813c
+	.long	0x00d5ca+2	| layer_24dxxx_scroll_values_ff813c
 	.long	0x00d5d0+4	| ext_00ffa850
 	.long	0x00d64e+2	| ext_00ffa87a
 	.long	0x00d654+2	| ext_00ffa87e
@@ -1606,8 +1606,8 @@ ram_relocs:
 	.long	0x015b32+2	| ext_00ffa882
 	.long	0x015b38+2	| ext_00ffa886
 	.long	0x015b40+6	| ext_00ffa882
-	.long	0x015b4a+4	| ext_00ff813c
-	.long	0x015b54+4	| ext_00ff813c
+	.long	0x015b4a+4	| layer_24dxxx_scroll_values_ff813c
+	.long	0x015b54+4	| layer_24dxxx_scroll_values_ff813c
 	.long	0x015b60+6	| ext_00ffa886
 	.long	0x015b6c+6	| ext_00ffa886
 	.long	0x015c8a+4	| ext_00ffa7c4
@@ -1914,7 +1914,7 @@ ram_relocs:
 	.long	0x01b260+4	| ext_00ff8120
 	.long	0x01b268+4	| ext_00ff8128
 	.long	0x01b270+4	| ext_00ff812c
-	.long	0x01b278+4	| ext_00ff813c
+	.long	0x01b278+4	| layer_24dxxx_scroll_values_ff813c
 	.long	0x01b280+4	| ext_00ff8140
 	.long	0x01b2a8+4	| ext_00ff8112
 	.long	0x01b2b6+4	| ext_00ff8126
@@ -2021,7 +2021,7 @@ ram_relocs:
 	.long	0x01bada+4	| ext_00ff811e
 	.long	0x01bae8+4	| ext_00ff811c
 	.long	0x01baf6+4	| ext_00ff8134
-	.long	0x01bb04+4	| ext_00ff813c
+	.long	0x01bb04+4	| layer_24dxxx_scroll_values_ff813c
 	.long	0x01bb12+4	| ext_00ff8140
 	.long	0x01bb20+4	| ext_00ff813a
 	.long	0x01bba8+2	| ext_00ffa7d4
@@ -2177,7 +2177,7 @@ patchlist:
 	PL_PSS	0x002456,write_word_ext_00ff8136_to_0024c002,4
 	PL_PSS	0x002462,write_word_ext_00ff8138_to_0024c004,4
 	PL_PSS	0x00246e,write_word_ext_00ff813a_to_0024c006,4
-	PL_PSS	0x00247a,write_word_ext_00ff813c_to_0024c010,4
+	PL_PSS	0x00247a,write_word_layer_24dxxx_scroll_values_ff813c_to_0024c010,4
 	PL_PSS	0x002486,write_word_ext_00ff8140_to_0024c012,4
 	PL_PSS	0x002492,write_word_ext_00ff8144_to_0024c014,4
 	PL_PSS	0x00249e,write_word_ext_00ff8146_to_0024c016,4
@@ -2194,7 +2194,7 @@ patchlist:
 	PL_PS	0x006d3c,write_word_D4_to_0024841e
 	PL_PSS	0x006ec2,write_word_ext_00ff8128_to_00246010,4
 	PL_PSS	0x006ecc,write_word_ext_00ff812c_to_00246012,4
-	PL_PSS	0x006ed6,write_word_ext_00ff813c_to_0024c010,4
+	PL_PSS	0x006ed6,write_word_layer_24dxxx_scroll_values_ff813c_to_0024c010,4
 	PL_PSS	0x006ee0,write_word_ext_00ff8140_to_0024c012,4
 	PL_P	0x007b9a,display_scores_loop_07b9a
 	PL_PSS	0x007e66,test_input_bit_d1,2
@@ -2725,16 +2725,6 @@ write_word_ext_00ff813a_to_0024c006:
 	RESTORE_REGS
 	rts
 
-write_word_ext_00ff813c_to_0024c010:
-	STORE_REGS
-	lea	0x00ff813c,a6
-	jbsr	osd_real_ram_address
-	move.w	(a6),d7
-	lea	0x0024c010,a6
-	jbsr	osd_write_word
-	RESTORE_REGS
-	rts
-
 write_word_ext_00ff8140_to_0024c012:
 	STORE_REGS
 	lea	0x00ff8140,a6
@@ -2867,6 +2857,16 @@ write_word_imm_0900_to_0030c016:
 	STORE_REGS
 	move.w	#0x0900,d7
 	lea	0x0030c016,a6
+	jbsr	osd_write_word
+	RESTORE_REGS
+	rts
+
+write_word_layer_24dxxx_scroll_values_ff813c_to_0024c010:
+	STORE_REGS
+	lea	0x00ff813c,a6
+	jbsr	osd_real_ram_address
+	move.w	(a6),d7
+	lea	0x0024c010,a6
 	jbsr	osd_write_word
 	RESTORE_REGS
 	rts

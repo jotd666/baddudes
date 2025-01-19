@@ -784,6 +784,7 @@ _vblank:
 	lea		(0x40,a2),a0			| pic planes
 	move.l	(6*4,a0),a3				| mask plane
 	movem.l	D0-D5/A1/A2,-(a7)
+	moveq	#0,d6
 	jbsr	blit_planes_any_internal_cookie_cut
 	movem.l	(a7)+,D0-D5/A1/A2
 	lea		(0x50,a2),a0			| pic remaining planes
@@ -809,17 +810,9 @@ _vblank:
 	* temp
 	tst.l truck_planes
 	jeq		555f
-	move.l	truck_planes,a0
-	move.w	#50,d2
-	move.w  #128,d4
-	move.w	#NB_PLAYFIELD_PLANES,d3
-	move.l		(6*4,a0),a3	| mask
-	moveq	#0,d5			| Y-offset
-	move.l 	fg_drawed_screen_ptr,a1
-	moveq	#32,d0
-	move.w	#300,d1
+	moveq	#0,d0
+	jbsr	draw_level_1_truck
 
-	jbsr	blit_planes_any_internal_cookie_cut
 555:
 	bsr		really_update_sprites
 1:
@@ -829,6 +822,31 @@ _vblank:
 3:
     movem.l (a7)+,d0-d7/a0-a6
     rte
+
+erase_level_1_truck:
+	tst.b	truck_previously_drawn
+	jeq		0f
+	
+	clr.b	truck_previously_drawn
+0:
+	rts
+	
+draw_level_1_truck:
+	st.b	truck_previously_drawn
+	add.w	x_background_scroll_value,d0
+	
+	move.l	truck_planes,a0
+	move.w	#50,d2
+	move.w  #128,d4
+	move.w	#NB_PLAYFIELD_PLANES,d3
+	move.l		(6*4,a0),a3	| mask
+	moveq	#0,d5			| Y-offset
+	moveq	#20,d6
+	move.l 	fg_drawed_screen_ptr,a1
+	move.w	#16*22,d1
+
+	jbsr	blit_planes_any_internal_cookie_cut
+	rts
 	
 osd_flush_caches:
 	tst.l	_resload
@@ -1395,12 +1413,10 @@ addr_24Cxxx_op:
 	* unsupported, also not useful & ignored
 	rts
 0:
-	and.w	#0x1FF,d7
 	move.w	d7,d0
 	jbsr	set_scroll_x_24d000_layer
 	rts
 1:
-	and.w	#0x1FF,d7
 	move.w	d7,d0
 	jbsr	set_scroll_y_24d000_layer
 	rts
@@ -1416,12 +1432,10 @@ addr_246xxx_op:
 	* unsupported, also not useful & ignored
 	rts
 0:
-	and.w	#0x1FF,d7
 	move.w	d7,d0
 	jbsr	set_scroll_x_24a000_layer
 	rts
 1:
-	and.w	#0x1FF,d7
 	move.w	d7,d0
 	jbsr	set_scroll_y_24a000_layer
 	rts
@@ -1980,10 +1994,10 @@ really_update_sprites:
 	add.w	(a0)+,d1		| add offset to Y
 	
 	.ifeq	OPT_NO_SCROLLING_X
-	add.w	x_scroll_value_24a000(pc),d0
+	add.w	x_background_scroll_value(pc),d0
 	.endif 
 	.ifeq	OPT_NO_SCROLLING_Y
-	add.w	y_scroll_value_24a000(pc),d1
+	add.w	y_background_scroll_value(pc),d1
 	.endif 
 	
 	* now A0 points on the first bitplane of the bob
@@ -2006,6 +2020,7 @@ really_update_sprites:
 	
 	move.w	d5,d2			| width in bytes, 4 for 16 pixels+shift
 	moveq	#0,d5			| Y-offset
+	moveq	#0,d6
 	moveq	#NB_PLAYFIELD_PLANES,d3
 	bsr		blit_planes_any_internal_cookie_cut
 29:
@@ -2162,49 +2177,16 @@ clear_fg_planes_any_blitter_internal:
     rts
 
 
-
-* what: blits 16x? data on one plane, cookie cut
-* args:
-* < A0: pointers on 16x? data
-* < A1: plane  (40 rows)
-* < A3: source mask for cookie cut (16x16)
-* < D0: X
-* < D1: Y
-* < D2: source y-offset
-* < D3: height of data
-* trashes: D0-D1
-blit_planes_cookie_cut_32x:
-    lea _custom,A5
-	move.w	d2,d5
-	move.w	d3,d4
-	moveq	#NB_PLAYFIELD_PLANES,d3		| 4 planes
-    moveq  #6,d2       | 32 pixels + 2 shift bytes
-	jra		blit_planes_any_internal_cookie_cut
-* what: blits 16x? data on one plane, cookie cut
-* args:
-* < A0: pointers on 16x? data
-* < A1: plane  (40 rows)
-* < A3: source mask for cookie cut (16x16)
-* < D0: X
-* < D1: Y
-* < D2: source y-offset
-* < D3: height of data
-* trashes: D0-D1
-blit_planes_cookie_cut_16x:
-    lea _custom,A5
-	move.w	d2,d5
-	move.w	d3,d4
-	moveq	#NB_PLAYFIELD_PLANES,d3		| 4 planes
-    moveq  #4,d2       | 16 pixels + 2 shift bytes
 * < A5: custom
 * < D0.W,D1.W: x,y
 * < A0: source (pointer on array of planes)
 * < A1: destination fg plane, also background to mix with cookie cut fg plane
 * < A3: source mask for cookie cut
-* < D2: width in bytes (inc. 2 extra for shifting)
+* < D2: width of source in bytes (inc. 2 extra for shifting)
 * < D3: number of planes
 * < D4: height. If negative, source is copied with negative modulo (flip)
 * < D5: y offset for source planes
+* < D6: width of source to blit (0: means all: will use full width)
 * < D7: blit mask (not considered, optim, -1 all through the game)
 * blit mask set
 * returns: start of destination in A1 (computed from old A1+X,Y)
@@ -2217,6 +2199,11 @@ blit_planes_any_internal_cookie_cut:
 	sub.w	d4,d1	| pre-add height to d1
 	subq.w	#1,d1	| minus one
 1:	
+	* put d6 in d5
+	swap	d5
+	move.w	d6,d5
+	swap	d5
+	
 	tst	d1
     beq.b   2f    | optim
     lea		mulNB_BYTES_PER_ROW_table,a4
@@ -2230,6 +2217,9 @@ blit_planes_any_internal_cookie_cut:
 	swap	d1
 	clr.w	d1
 	swap	d1
+	swap	d0
+	clr.w	d0
+	swap	d0
 	
 	lea		cookie_cut_blit_table,a4
 	
@@ -2928,19 +2918,23 @@ osd_disable_interrupts:
 	
 
 set_scroll_x_24a000_layer:
-	move.w	x_scroll_value_24a000,d1
+	and.w	#0x1FF,d0
+	move.w	x_background_scroll_value,d1
 	cmp.w	d1,d0
 	jne		0f
 	rts
 0:
-	.ifne	OPT_NO_SCROLLING_X
-	rts
-	.endif
-	move.w	d0,x_scroll_value_24a000
+	exg		d0,d1
+	jbsr	get_current_level
+	subq	#1,d0
+	exg 	d0,d1
+	lea		scroll_x_24a000_table(pc),a0
+	jbsr	([a0,d1.w*4])
 	rts
 
 set_scroll_y_24a000_layer:
-	move.w	y_scroll_value_24a000,d1
+	and.w	#0x1FF,d0
+	move.w	y_background_scroll_value,d1
 	cmp.w	d1,d0
 	jne		0f
 	rts
@@ -2948,21 +2942,24 @@ set_scroll_y_24a000_layer:
 	.ifne	OPT_NO_SCROLLING_Y
 	rts
 	.endif
-	move.w	d0,y_scroll_value_24a000
+	move.w	d0,y_background_scroll_value
 	rts
 
 * usually set to control big objects on screen, except at level 3
 * where the entire background uses this layer
 set_scroll_x_24d000_layer:
-	move.w	x_scroll_value_24d000,d1
+	move.w	x_secondary_scroll_value,d1
 	cmp.w	d1,d0
 	jne		0f
 	rts
 0:
-	.ifne	OPT_NO_SCROLLING_X
-	rts
-	.endif
-	move.w	d0,x_scroll_value_24d000
+
+	exg		d0,d1
+	jbsr	get_current_level
+	subq	#1,d0
+	exg 	d0,d1
+	lea		scroll_x_24d000_table(pc),a0
+	jbsr	([a0,d1.w*4])
 	rts
 
 set_scroll_y_24d000_layer:
@@ -2971,21 +2968,62 @@ set_scroll_y_24d000_layer:
 	jne		0f
 	rts
 0:
-	.ifne	OPT_NO_SCROLLING_Y
-	rts
-	.endif
+	
 	move.w	d0,y_scroll_value_24d000
 	rts
 	
+	* depending on the level, the game uses layers as background or
+	* to move big objects like trucks, train and the helicopter
+scroll_x_24d000_table:
+	.long	move_ninjas_truck
+	.long	move_long_truck
+	.long	scroll_background_x
+	.long	0
+	.long	move_train
+	.long	0
+	.long	0
 
+	
+scroll_x_24a000_table:
+	.long	scroll_background_x
+	.long	scroll_background_x
+	.long	0
+	.long	0
+	.long	scroll_background_x
+	.long	0
+	.long	scroll_background_x
+	
+move_ninjas_truck:
+	move.w	d0,x_secondary_scroll_value
+	cmp.w	#0x400,d0
+	jeq		0f
+	tst.w	d0
+	jeq		0f
+	* between 0x400 and decreasing to 0: display and move ninja truck
+	TMPBREAK
+0:
+	rts
+	
+move_long_truck:
+	move.w	d0,x_secondary_scroll_value
+	rts
+	
+move_train:
+	move.w	d0,x_secondary_scroll_value
+	rts
+	
+scroll_background_x:
+	move.w	d0,x_background_scroll_value
+	rts
+	
 set_playfield_bitplanes:
 	* set bitplanes
     moveq #NB_PLAYFIELD_PLANES-1,d1
-	move.w	y_scroll_value_24a000,d0
+	move.w	y_background_scroll_value,d0
 	*and.w	#0x1FF,d0		| wrap just in case
 	lea		mulNB_BYTES_PER_ROW_table,a2
 	move.w	(a2,d0.w*2),d0		| compute Y offset
-	move.w	x_scroll_value_24a000,d2	
+	move.w	x_background_scroll_value,d2	
 	lea		scroll_table,a2
 	move.w	(a2,d2.w*4),fine_x_scroll_value
 	add.w	(2,a2,d2.w*4),d0
@@ -3958,11 +3996,11 @@ global_context:
 	.word	0
 display_dudes:
 	.word	0
-x_scroll_value_24a000:
+x_background_scroll_value:
 	.word	0
-y_scroll_value_24a000:
+y_background_scroll_value:
 	.word	0
-x_scroll_value_24d000:
+x_secondary_scroll_value:
 	.word	0
 y_scroll_value_24d000:
 	.word	0
@@ -4216,6 +4254,9 @@ truck_width:
 	.word	0
 truck_height:	
 	.word	0
+truck_previously_drawn:
+	.byte	0
+	.align	2
 * 2 words: first shift (as bplcon value), then
 * offset in bytes
 scroll_table:

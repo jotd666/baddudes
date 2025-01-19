@@ -175,7 +175,7 @@ add_p(0x01dba,"videoram_write_loop_d0_d1")
 add_ps(0x01e00,"videoram_write_loop_d0_d1")
 add_ps(0x001e52,"videoram_write_loop_d0_d1")
 add_ps("videoram_write_062ae")
-add_ps("videoram_write_062e2")
+add_ps("videoram_write_062e2")   # scroll value for 24Dxxx plane
 add_ps("videoram_write_loop_0e07e")
 add_p("videoram_write_0e0ac")
 add_p("videoram_write_01fca")
