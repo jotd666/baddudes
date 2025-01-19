@@ -1235,7 +1235,6 @@ erase_tile_8:
 
 write_osd_layer:
 	move.w	d7,d6			| tile code+clut
-	* TODO pick proper sprite & location
 
 
 	jbsr	pick_osd_sprite
@@ -1310,7 +1309,7 @@ pick_osd_sprite:
 	cmp.w	#24+2,d3
 	jcc		0f
 	* end of player score + high
-	lea		osd_right_center_sprite+16-10,A3
+	lea		osd_right_center_sprite+16-18,A3
 	add.w	d3,a3		| add X offset
 	cmp.w	#8,d2
 	jeq		1f
@@ -1322,7 +1321,7 @@ pick_osd_sprite:
 	cmp.w	#32+2,d3
 	jcc		0f
 	* end of player score + high
-	lea		osd_right_sprite+24-10,A3
+	lea		osd_right_sprite+16-26,A3
 	add.w	d3,a3		| add X offset
 	moveq	#1,d2		| success
 	rts
@@ -2642,7 +2641,7 @@ platform_init:
 
  	*         VVHH
     move.w #0x2CA0,diwstrt(a5)
-    move.w #0x24A0-0x800,diwstop(a5)
+    move.w #0x24A1-0x800,diwstop(a5)
     move.w #0x0038,ddfstrt(a5)
     move.w #0x00D0,ddfstop(a5)
 
@@ -4227,6 +4226,12 @@ dudes_palette:
 	DECL_COLORS	0,24
 letters_palette:
 	DECL_COLORS	24,8
+
+	.word	0x2C01+0x1800,0xFFFE
+
+	* yellow color for time seconds
+	DECL_COLOR_BANK	2
+	.word	color+2*3,0xDD0
 	
 	* mid-line wait & extra interrupt
 	.word	0x8001,0xFFFE
@@ -4267,28 +4272,18 @@ public_memory_block:
 	.align	8
 	
 		.section .bsschip
-		
+		.macro		RESERVE_SPRITE	name
+osd_\name\()_sprite:
+	.skip	16
+	.skip	32*16
+osd_\name\()_next_cw:
+	.skip	16	
+	.endm
 
-osd_left_sprite:
-	.skip	16
-	.skip	32*16
-osd_left_next_cw:
-	.skip	16
-osd_right_sprite:
-	.skip	16
-	.skip	32*16
-osd_right_next_cw:
-	.skip	16
-osd_left_center_sprite:
-	.skip	8
-	.skip	32*16
-osd_left_center_next_cw:
-	.skip	8
-osd_right_center_sprite:
-	.skip	8
-	.skip	32*16
-osd_right_center_next_cw:
-	.skip	8
+	RESERVE_SPRITE	left
+	RESERVE_SPRITE	right
+	RESERVE_SPRITE	left_center
+	RESERVE_SPRITE	right_center
 	
 background_restore_buffer:
 	.skip	RESTORE_SCREEN_SIZE
