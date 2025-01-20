@@ -21,6 +21,20 @@ baddudes_reset:
 	add.l	d1,(a0,d0.l)
 	jra		0b
 1:
+	* first manual patches
+	tst.b	invincible_flag
+	jeq		0f
+	move.l	rom_base,a1
+	add.l	#0x15fbe,a1
+	move.b	#0x60,(a1)		| turn off collision detection player 1
+	move.l	rom_base,a1
+	add.l	#0x15fd6,a1
+	move.b	#0x60,(a1)		| turn off collision detection player 2
+
+0:
+
+
+	* then auto patches
 	lea		patchlist,a0
 	move.l	rom_base,a1
 	jbsr	apply_patchlist

@@ -16,6 +16,7 @@ Not sure that all tunes could fit in one module. Level 1 and level 2 could use s
 As opposed as other smaller games, I'm using files & per-level loading or I couldn't make it happen with 2MB chip. ATM code is 300Kb in chipmem, and since the game
 needs fastmem, those 300k could easily contain the tunes if the exe was relocated.
 
+- quantize should be improved: definitely consider color weights/frequencies
 - truck use unfiltered contents_of_x_scroll_246010 vs x_secondary_scroll_value
   to try to display it
 - truck: X-clipping creates strange artifacts depending on shifting (mask???), log shifting
@@ -26,13 +27,11 @@ needs fastmem, those 300k could easily contain the tunes if the exe was relocate
 - really_update_sprites: call truck/train update function after erase
 - still undetected real black on enemies (Karnov...) (almost) OK on Bad dude.
 - IN PROGRESS: sommersault frames look inverted / Karnov too. Mockup with Karnov
-- quantize should be improved: definitely consider color weights/frequencies
 - hack lamps/trees/fire hydrants (from 244000 layer) with hardware sprites:
   figure out first layer row scroll registers, "trigger" tile to display / undisplay sprite
 - levels with trains/trucks: load traintrucks bitplanes in non-displayed screen buffer
   to save chipmem
 - blit big object partially (truck, train...)
-- sprite display: skip displaying is done too soon on left
 - sprite mirror_planes: mirroring with width != 16 to implement: test on 32 then make a special case for 32 bits (d0=6)
   
 - use wrap for vertical scrolling (level 7) or use blitter for vertical scrollling!!!
@@ -44,7 +43,6 @@ needs fastmem, those 300k could easily contain the tunes if the exe was relocate
 
 
 - rip a missing sounds  
-- rip more 244000 tiles (for demo)
 - rip 24D000 & 24A000 tiles
 
 - restore buffer uses 3 horizontal playfields, they should use only 2 plus a few tiles
@@ -55,9 +53,7 @@ needs fastmem, those 300k could easily contain the tunes if the exe was relocate
 
 - "bad dudes" title still small glitches
 - "CREDIT" not written when coin inserted
-- figure a way to free the last block? OR store block at some point in intro to avoid
-  reloading 244000 tiles OR keep 244000 tiles loaded at all times
-  (and share palette with 24D000 layer too!)
+
 
 - ninja truck display try to make a fake ghost effect with the bars (we'd need bars mask)
 - osd_write_byte not working properly
