@@ -830,6 +830,7 @@ erase_level_1_truck:
 	rts
 	
 draw_level_1_truck:
+	move.w	#-64*4,d0
 	move.w	x_secondary_scroll_value,d0
 	jeq		2f		| reached destination
 	cmp.w	#0x400,d0
@@ -838,20 +839,26 @@ draw_level_1_truck:
 	sub.w	contents_of_x_scroll_246010,d0
 	neg.w	d0
 	
+	
 	st.b	truck_previously_drawn
 	
-
 	moveq	#0,d5			| XY-offset
-	move.w	#(NB_BYTES_PER_SCREEN_ROW+4)*8,d6	| full screen width plus margin
+	move.w	truck_width,d6	| full truck size
+	lsl.w	#3,d6			| in pixels
 	tst.w	d0
 	jpl		0f
+	
+	TMPWRITE
 	* required to start displaying truck outside the screen: we have to compute
 	* offset to skip start (and also adjust real width)
 	neg	d0
 	move.w	d0,d5
-	lsr.w	#3,d5	| add some X-shift
+	lsr.w	#4,d5	| add some X-shift
+	add.w	d5,d5	| in bytes but rounded to 16-bit boundary
 	sub.w	d0,d6	| adjust width to remove start/end of truck
-	moveq	#0,d0	| and X=0 now
+	and.w	#0xF,d0	| and X=0-15 now
+	jeq		1f
+	subq	#2,d0
 	jra		1f
 0:
 	cmp.w	#NB_BYTES_PER_SCREEN_ROW*8,d0
@@ -861,6 +868,12 @@ draw_level_1_truck:
 	jmi		2f
 	jeq		2f
 1:
+	cmp.w	#NB_BYTES_PER_SCREEN_ROW*8,d6
+	jcs	1f
+	* D6 is still too high for full screen: clip it
+	move.w	#NB_BYTES_PER_SCREEN_ROW*8,d6
+1:
+
 	move.l	truck_planes,a0
 	move.w	truck_width,d2			| real object size
 	move.w  truck_height,d4
@@ -869,12 +882,21 @@ draw_level_1_truck:
 	
 	* displayed width is positive: okay display something
 	lsr.w	#3,d6	| re-convert width to bytes
-	bclr	#0,d6	| make it even!
+	BTST	#0,d6
+	jeq		1f
+	addq	#1,D6	| round to highest even
+1:
 	
-	move.l 	fg_drawed_screen_ptr,a1
 	move.w	#16*22,d1
 
 	add.w	x_background_scroll_value,d0
+	* store the restore clip values for later
+	
+	lea		prev_truck_params,a1
+	move.w	d0,(a1)+	| X
+	move.w	d1,(a1)+	| Y
+	move.w	d6,(a1)	| X source offset start (useful for smart back restore)
+	move.l 	fg_drawed_screen_ptr,a1
 	jbsr	blit_planes_any_internal_cookie_cut
 2:
 	rts
@@ -4299,6 +4321,8 @@ truck_width:
 	.word	0
 truck_height:	
 	.word	0
+prev_truck_params:
+	.skip	8
 truck_previously_drawn:
 	.byte	0
 	.align	2
