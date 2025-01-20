@@ -17,11 +17,12 @@ As opposed as other smaller games, I'm using files & per-level loading or I coul
 needs fastmem, those 300k could easily contain the tunes if the exe was relocated.
 
 - ninja wrong early X right clip
-- quantize should be improved: definitely consider color weights/frequencies
 - try to display start of truck
 - truck: X-clipping creates strange artifacts depending on shifting (mask???), log shifting
   when blitting truck
-- bottom osd: wrong colors & missing tiles!
+- implement start level to try to start level 2
+- bottom osd: wrong colors & missing tiles! ("IF" of life)
+- boss energy needs a sprite too, currently writes into player 1 energy
 - multiplexed sprites for scores / lamps / status
 - save memory: load truck first then copy in unused chip bitplanes
 - really_update_sprites: call truck/train update function after erase
@@ -31,7 +32,7 @@ needs fastmem, those 300k could easily contain the tunes if the exe was relocate
   figure out first layer row scroll registers, "trigger" tile to display / undisplay sprite
 - levels with trains/trucks: load traintrucks bitplanes in non-displayed screen buffer
   to save chipmem
-- blit big object partially (truck, train...)
+- still tile 7FF issue (karnov)
 - sprite mirror_planes: mirroring with width != 16 to implement: test on 32 then make a special case for 32 bits (d0=6)
   
 - use wrap for vertical scrolling (level 7) or use blitter for vertical scrollling!!!
@@ -50,6 +51,7 @@ needs fastmem, those 300k could easily contain the tunes if the exe was relocate
   alternative: if bob X + width wrap, clip it and perform 2 restores (but 2x as blits!)
 - optim with restore_background or clear_fg_planes...: if blitter if busy,
   use the cpu to process that plane
+- quantize should be improved: definitely consider color weights/frequencies
 
 - "bad dudes" title still small glitches
 - "CREDIT" not written when coin inserted

@@ -218,6 +218,10 @@ add_ps("set_game_intro_context_084c4")
 add_pss("videoram_write_09aa6",fill=4)
 
 add_nop(0x0e32e,2)  # nonsensical / protection (?) code
+
+# level 2
+
+add_pss("copy_tiles_06bbe",fill=12)
 for offset in [0x0174c,0x0175c,0x07e66]:
     add_pss(offset,"test_input_bit_d1",2)
 

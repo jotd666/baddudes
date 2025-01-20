@@ -521,6 +521,19 @@ lb_0e130:
 	RESTORE_REGS
 	RTS
 	
+copy_tiles_06bbe:
+	STORE_REGS
+	exg		a6,a0
+0:
+	MOVE.W	(A1),d7
+	jbsr	osd_write_word
+	ADD.W	#0x20,A1
+	ADD.W	#0x20,A0
+	DBF	D0,0b
+	exg		a6,a0
+	RESTORE_REGS
+	rts
+	
 * < D0: sound code to play
 play_sound_0def0:
 	rts
