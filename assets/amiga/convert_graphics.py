@@ -557,7 +557,7 @@ def process_tile_context(context_name,tile_sheet_dict,nb_colors,is_bob=False,shi
         if len(bg_palette)<nb_colors:
             # pad
             bg_palette += [(0x10,0x20,0x30)]*(nb_colors-len(bg_palette))
-        print(bg_palette)
+
 
     if first_pass:
         # pass only done to extract palette, no need to generate a file
@@ -636,8 +636,10 @@ def postprocess_game_osd_tiles(tileset,palette_index):
             pinks = ((230, 142, 159), (230, 176, 176),  # from "life" head
             (176,34,142),(230,56,208))                   # from health dots
 
+            # we have to sacrifice the 2 nuances of pink in health dots because "1-LIFE"
+            # text needs white and sprites can only use 3 colors
             color_rep = {pinks[0]:(230, 230, 230),pinks[1]:cyan_from_time,
-            pinks[2]:(230, 230, 230),pinks[3]:cyan_from_time}
+            pinks[2]:cyan_from_time,pinks[3]:cyan_from_time}
             for life_tile in [0x6D,0x6F,0x72]:
                 bitplanelib.replace_color_from_dict(tileset[life_tile],color_rep)
 
@@ -663,8 +665,9 @@ if False:
     process_tile_context("game_level_1",sprite_sheet_dict,32,is_bob=True,shift_palette_count=32)
 
 else:
-
     # only generates game tiles & sprites
+    process_8x8_tile_layer("game_244000",colors_last=False,max_colors=4,postload_callback=postprocess_game_osd_tiles)
+
     process_tile_context("level_1_24a000",level_1_tile_24a000_sheet_dict,32,first_pass=True)
 
     truck_used_colors = convert_truck_1_pic.doit(palette_dict["level_1_24a000"],force=True)

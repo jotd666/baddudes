@@ -16,18 +16,17 @@ Not sure that all tunes could fit in one module. Level 1 and level 2 could use s
 As opposed as other smaller games, I'm using files & per-level loading or I couldn't make it happen with 2MB chip. ATM code is 300Kb in chipmem, and since the game
 needs fastmem, those 300k could easily contain the tunes if the exe was relocated.
 
+- IN PROGRESS: sommersault frames look inverted / Karnov too. Mockup with Karnov
 - ninja wrong early X right clip
-- try to display start of truck
 - truck: X-clipping creates strange artifacts depending on shifting (mask???), log shifting
   when blitting truck
 - implement start level to try to start level 2
-- bottom osd: wrong colors & missing tiles! ("IF" of life)
+- bottom osd: overwritten tiles! ("IF" of 1-life, memwatch where 0x63 char is written, see which blank
+  deletes it)
 - boss energy needs a sprite too, currently writes into player 1 energy
 - multiplexed sprites for scores / lamps / status
 - save memory: load truck first then copy in unused chip bitplanes
-- really_update_sprites: call truck/train update function after erase
 - still undetected real black on enemies (Karnov...) (almost) OK on Bad dude.
-- IN PROGRESS: sommersault frames look inverted / Karnov too. Mockup with Karnov
 - hack lamps/trees/fire hydrants (from 244000 layer) with hardware sprites:
   figure out first layer row scroll registers, "trigger" tile to display / undisplay sprite
 - levels with trains/trucks: load traintrucks bitplanes in non-displayed screen buffer

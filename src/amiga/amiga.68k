@@ -806,12 +806,7 @@ _vblank:
 	* double buffering only in-game
 	bsr		switch_screen_buffers
 23:
-	* temp
-	tst.l truck_planes
-	jeq		555f
-	jbsr	draw_level_1_truck
 
-555:
 	bsr		really_update_sprites
 1:
 	* don't blit, but update hw sprites as it doesn't cost a lot
@@ -824,6 +819,13 @@ _vblank:
 erase_level_1_truck:
 	tst.b	truck_previously_drawn
 	jeq		0f
+	lea		prev_truck_params,a1
+	move.w	(a1)+,d0	| X
+	move.w	(a1)+,d1	| Y
+	move.w	truck_width,d2			| real object size
+	move.w  truck_height,d4
+	lea		background_restore_buffer,a0
+	jbsr	restore_background
 	
 	clr.b	truck_previously_drawn
 0:
@@ -836,7 +838,6 @@ draw_level_1_truck:
 	cmp.w	#0x400,d0
 	jeq		2f		| not started
 
-	sub.w	contents_of_x_scroll_246010,d0
 	neg.w	d0
 	
 	
@@ -1320,6 +1321,7 @@ erase_tile_8:
 * sprites on screen
 
 write_osd_layer:
+
 	move.w	d7,d6			| tile code+clut
 
 
@@ -1327,9 +1329,11 @@ write_osd_layer:
 	jeq		write_osd_layer_out
 	
 	and.w	#0x7FF,d6		| only clut
+	jeq		write_osd_layer_out
 	jeq		erase_tile_on_sprite
 
 	move.w	d6,d7			| clut 0, we do colors manually
+
 	jbsr	pick_8x8_tile_code
 	jeq		write_osd_layer_out
 	add.w	d6,a0	| select tile clut (should be zero anyway)
@@ -1338,11 +1342,13 @@ write_osd_layer:
 0:
 	move.l	(a0)+,d2
 	jne		1f
+	jra		write_osd_layer_out
 	move.l	#blank_area,d2
 	sub.l	a2,d2
 1:
 	move.l	(a0)+,d3
 	jne		1f
+	jra		write_osd_layer_out
 	move.l	#blank_area,d3
 	sub.l	a2,d3
 1:
@@ -1417,12 +1423,14 @@ pick_osd_sprite:
 	rts
 	
 not_upper_osd:
+	cmp.w #0xE8,d2
+	jcc		10b
 	cmp.w #0xD8,d2
 	jcc		lower_osd
 	jra		10b		| center parts TODO
 lower_osd:	
 	cmp.w	#16+2,d3
-	jcc		0f
+	jcc		2f		| TEMP center low
 	* "1-LIFE" + status
 	lea		osd_bottom_left_sprite+16,A3
 	add.w	d3,a3		| add X offset
@@ -1436,8 +1444,12 @@ lower_osd:
 0:
 	moveq	#0,d2
 	rts
+2:
+	cmp.w	#22+1,d3
+	jcs		0f		| center low
+	
 	* "2-LIFE" + status
-	lea		osd_bottom_right_sprite+16-17,A3
+	lea		osd_bottom_right_sprite+16-23,A3
 	add.w	d3,a3		| add X offset
 	cmp.w	#0xD8,d2
 	jeq		1f
@@ -1445,6 +1457,9 @@ lower_osd:
 	add.w	#NB_BYTES_PER_SPRITE_ROW*2*8,a3
 1:
 	moveq	#1,d2		| success
+	rts
+0:
+	moveq	#0,d2
 	rts
 
 	
@@ -1911,6 +1926,12 @@ really_update_sprites:
 	move.w	(a7)+,d5
 	dbf		d7,1b
 12:	
+
+	tst.l truck_planes
+	jeq		555f
+	jbsr	erase_level_1_truck
+	jbsr	draw_level_1_truck
+555:
 	GET_RAM_START_IN_A6
 	lea	(0x4000,a6),a0		| sprites
 	.ifne	OPT_ENABLE_LOGGING
@@ -2747,7 +2768,7 @@ platform_init:
 
  	*         VVHH
     move.w #0x2CA0,diwstrt(a5)
-    move.w #0x24A1,diwstop(a5)
+    move.w #0x24A0,diwstop(a5)
     move.w #0x0038,ddfstrt(a5)
     move.w #0x00D0,ddfstop(a5)
 
@@ -3792,7 +3813,7 @@ install_osd_hardware_sprites:
 	move.w	#240,d1
 	jbsr	install_osd_sprite
 	lea		osd_bottom_right_sprite,a2
-	move.w	#200,d0
+	move.w	#216,d0
 	move.w	#240,d1
 	jbsr	install_osd_sprite
 	rts
@@ -3808,6 +3829,7 @@ install_osd_sprite:
 	move.w	d3,(a0)+
 	addq	#2,d2
 	* position fixed
+	subq	#1,d0		| apply small offset
 	lea		HW_SpriteYTable_16,a1
 	jbsr	store_sprite_pos
 	move.w	d0,8(a2)
@@ -4459,15 +4481,19 @@ intro_intreq_block:
 
 	
 	* pal limit
-    .word  0xFFCF,0xFFFE       | PAL wait
+    .word  0xFFDF,0xFFFE       | PAL wait
 	.word	 intreq,0x8010	| no bobs from now on, get more drawing time
 
+	* change palette for lower OSD sprites (lives & energy)
+	.word	0x0C01,0xFFFE
+	DECL_COLOR_BANK	2
+	.word	color+2*10,0xEBB		| flesh pink
+	.word	color+2*11,0xE9A		| flesh pink #2
+	.word	0x1401,0xFFFE
+	.word	color+2*11,0xEEE		| back to white for "LIFE" letters
+	.word	color+2*10,0xB29		| magenta for dots
+
 	
-    *.word  0x1401,0xFFFE		| wait more lines to set to black (big holes!)
-	
-    *.word   0x1C01,0xFFFE
-	
- 	*.word	beampos,0xFFFE
     .long    -2					
 	.ascii	"ENDCPLST"
 	
