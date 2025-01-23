@@ -12,8 +12,8 @@ for i in range(0,len(sprite_ram),8):
     block = sprite_ram[i:i+8]
     y,code,x,_ = struct.unpack_from(">HHHH",block)
     if y & 0x8000 != 0:
-        attrs = y
+        attrs = y & 0xFE00
         x &= 0x1FF
         y &= 0x1FF
         name = sprite_name_code.get(code,"unknown")
-        print(f"address={i+0xFFC000:06x}, x={x}, y={y}, code={code:x}, name={name}")
+        print(f"address={i+0xFFC000:06x}, x={x}, y={y}, code={code:x}, attrs={attrs:x}, name={name}")

@@ -27,13 +27,13 @@ for n in os.listdir(tiles_dir):
             for i,c in enumerate(block):
                 if c:
                     used_tiles[tile_index]["cluts"].append(i)
-                    used_tiles[tile_index]["attributes"] = c & 0x7F  # discard bit 7
+                    used_tiles[tile_index]["attributes"] = c & 0x77  # discard bit 7
 
         tile_index += 1
 
     used_dict[n] = used_tiles
 
-# glasse & guy face, ripped manually from code, not a lot of sprites
+# glasses & guy face, ripped manually from code, not a lot of sprites
 used_dict["game_intro"] = {x:{"cluts":[0xD if x==0xBBD else 0xE],"attributes":0} for x in range(0xBB8,0xBC0)}
 
 with open(used_cluts_file,"w") as f:
