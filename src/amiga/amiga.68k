@@ -300,10 +300,10 @@ _user:
 	or.l	#0x10,cheat_flags
 2:
 
-	move.l	(A0)+,D0	| STARTCOURSE/K/N
+	move.l	(A0)+,D0	| STARTLEVEL/K/N
 	beq.b	2f
 	bsr		bcpl_string_to_int
-	move.l	d0,dip_switch_start_course
+	move.l	d0,dip_switch_start_level
 2:
 	move.l	(A0)+,D0	| STARTLIVES/S
 	beq.b	2f
@@ -384,8 +384,8 @@ _user:
 
 * ALL DIP SWITCHES ARE WRONG ATM
 
-*	move.l	dip_switch_start_course,d0
-*	move.b	d0,start_level_flag
+	move.l	dip_switch_start_level,d0
+	move.b	d0,start_level
 	
 	moveq	#0,d1
 	move.b	dip_switch_start_lives+3,d1
@@ -3769,7 +3769,11 @@ level_1_load:
 	dbf		d0,0b
 	rts
 	
-level_2_load:	
+level_2_load:
+	lea		sprites_game_level_1_file,a0
+	jbsr 	load_sprite_file
+	rts
+	
 level_3_load:	
 level_4_load:	
 level_5_load:	
@@ -4132,7 +4136,7 @@ control_flags:
 misc_options:
 		.long	0
 		.long	WHDLTAG_CUSTOM4_GET
-dip_switch_start_course:
+dip_switch_start_level:
 		.long	0
 		.long	WHDLTAG_CUSTOM5_GET
 dip_switch_start_lives:

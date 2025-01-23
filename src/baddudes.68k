@@ -30,10 +30,13 @@ baddudes_reset:
 	move.l	rom_base,a1
 	add.l	#0x15fd6,a1
 	move.b	#0x60,(a1)		| turn off collision detection player 2
-
 0:
-
-
+	move.b	start_level,d0
+	jeq		0f
+	addq	#1,d0
+	move.l	rom_base,a1
+	move.b	d0,(0x01c55,a1)
+0:
 	* then auto patches
 	lea		patchlist,a0
 	move.l	rom_base,a1

@@ -11,6 +11,7 @@
 	.global	ram_buffer
 	.global	rom_base
 	.global	ram_base
+	.global	start_level
 	.global	invincible_flag
 	.global	infinite_lives_flag
 	.global	infinite_time_flag
@@ -50,6 +51,8 @@ rom_base:
 ram_base:
 	.long	0
 	
+start_level:
+	.byte	0
 invincible_flag:
 	.byte	0
 infinite_lives_flag:
