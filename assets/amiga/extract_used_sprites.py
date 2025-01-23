@@ -27,7 +27,8 @@ for n in os.listdir(tiles_dir):
             for i,c in enumerate(block):
                 if c:
                     used_tiles[tile_index]["cluts"].append(i)
-                    used_tiles[tile_index]["attributes"] = c & 0x77  # discard bit 7
+                    # discard bit 7 & 3 (7: active sprite, 3: remainder of ill-logged X coord)
+                    used_tiles[tile_index]["attributes"] = c & 0x77
 
         tile_index += 1
 

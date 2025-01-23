@@ -16,10 +16,10 @@ Not sure that all tunes could fit in one module. Level 1 and level 2 could use s
 As opposed as other smaller games, I'm using files & per-level loading or I couldn't make it happen with 2MB chip. ATM code is 300Kb in chipmem, and since the game
 needs fastmem, those 300k could easily contain the tunes if the exe was relocated.
 
-- IN PROGRESS: sommersault frames look inverted / Karnov too. Mockup with Karnov
 - ninja wrong early X right clip
 - truck: X-clipping creates strange artifacts depending on shifting (mask???), log shifting
   when blitting truck
+- sommersault frames look inverted
 - implement start level to try to start level 2
 - bottom osd: overwritten tiles! ("IF" of 1-life, memwatch where 0x63 char is written, see which blank
   deletes it)
