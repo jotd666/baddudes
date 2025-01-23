@@ -31,7 +31,6 @@ needs fastmem, those 300k could easily contain the tunes if the exe was relocate
   figure out first layer row scroll registers, "trigger" tile to display / undisplay sprite
 - levels with trains/trucks: load traintrucks bitplanes in non-displayed screen buffer
   to save chipmem
-- still tile 7FF issue (karnov)
 - sprite mirror_planes: mirroring with width != 16 to implement: test on 32 then make a special case for 32 bits (d0=6)
   
 - use wrap for vertical scrolling (level 7) or use blitter for vertical scrollling!!!

@@ -3746,6 +3746,8 @@ level_1_load:
 	jbsr	load_tiles_file_24a000
 	lea		sprites_game_level_1_file,a0
 	jbsr 	load_sprite_file
+	lea		front_objects_1_file,a0
+	jbsr	load_front_objects_file
 	* load & relocate truck pics
 	lea		truck_1_pic_file,a0
 	jbsr	allocate_and_load_chip_mem_file
@@ -3774,6 +3776,23 @@ level_5_load:
 level_6_load:	
 level_7_load:
 	illegal
+	rts
+	
+load_front_objects_file:
+	jbsr	allocate_and_load_chip_mem_file
+	move.l	D0,front_objects_palette
+	move.l	d0,a0
+	add.w	#0x20,a0
+	move.w	(a0)+,nb_front_objects
+	move.l	a0,front_objects_table
+	move.l 	a0,d2		| base
+	move.w	nb_front_objects,d0
+	add.w	d0,d0
+	subq	#1,d0
+	* make it absolute
+0:
+	add.l	d2,(a0)+
+	dbf		d0,0b
 	rts
 	
 install_osd_hardware_sprites:
@@ -4198,6 +4217,8 @@ main_scroll_value:
 	
 cheat_used:
 	.byte	0
+front_objects_1_file:
+	.asciz	"front_objects_1.bin"
 truck_1_pic_file:
 	.asciz	"truck_1.bin"
 sprites_game_level_1_file:
@@ -4338,6 +4359,12 @@ tile_data_24d000:
 truck_planes:
 	.long	0
 truck_nb_planes:
+	.word	0
+front_objects_palette:
+	.long	0
+front_objects_table:
+	.long	0
+nb_front_objects:
 	.word	0
 truck_width:
 	.word	0

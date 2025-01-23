@@ -35,6 +35,7 @@ def doit(force=False):
         with open(asm_out,"w") as f:
             f.write("palette:\n")
             bitplanelib.palette_dump(palette,f)
+            f.write("\tdc.w\t4\t; number of front objects\n")
             f.write("main_table:\n")
             for k,o in objects.items():
                 for j in range(2):
