@@ -50,17 +50,89 @@ baddudes_reset:
 	jbsr	apply_patchlist
 	.endif
 	
+	* install traps used by short JMP & JSR
+	* allows to relocate the code anywhere in RAM
+	* (including fastmem on amiga)
+	
+	pea		trap_0_jsr(pc)
+	move.l	(a7)+,0x80.W
+	pea		trap_1_jmp(pc)
+	move.l	(a7)+,0x84.W
+	
 	move.l	rom_base,-(a7)
 	add.l	#0x13dc,(a7)
 	rts
 	
+	
 
+* emulate JSR from trap. Tricky, specially with reentrancy constraint
+* (if code below is interrupted by another part which performs the same
+* emu jsr, then it would be catastrophic as "jsr_address" would be overwritten)
+
+trap_0_jsr:
+	* first, block interrupts, as using jsr address is not reentrant
+	move.w	#0x2700,SR
+	move.l	a0,-(a7)
+	* save original SR & return address
+	lea	previous_sr(pc),a0
+	move.w	(4,a7),(a0)
+	move.w	#0x2700,(4,a7)	| interrupts off after RTE
+	lea	jsr_address(pc),a0
+	move.l	6(a7),(a0)
+	move.l	(a7)+,a0
+
+	pea	afterrte(pc)
+	move.l	(A7),6(A7)	| modify RTE return address
+	addq.l	#4,a7
+	rte
+afterrte:
+	* we recovered from RTE, SR is 0x2700
+	move.l	jsr_address(pc),-(a7)
+	addq.l	#2,(a7)		| skip word
+
+	subq.l	#4,a7
+	move.l	a0,-(a7)
+	move.l	jsr_address(pc),a0
+    
+
+	move.w	(a0),a0     | get contents of this jsr address (WORD!!)
+	add.l	rom_base,a0	| relocation offset
+	
+	move.l	a0,4(a7)	| position this address
+	move.l	(a7)+,a0
+	* restore SR, re-enable interrupts now that jsr_address has been used
+	move.w	d0,-(a7)
+	move.w	previous_sr(pc),d0
+	move.w	d0,sr
+	move.w	(a7)+,d0		| original program must run in supervisor else crash!!
+	rts
+	
+
+* emulate short JMP from TRAP: this is just tricky	
+trap_1_jmp:
+	jbsr	osd_break
+	nop
+	nop
+	nop
+	movem.l	d0/a0,-(a7)
+	move.l	(10,a7),a0	| return address
+	moveq	#0,d0
+	move.w	(a0),d0		| destination
+	move.l	d0,(10,a7)	| replace return address
+	movem.l	(a7)+,d0/a0
+	rte
+	
 baddudes_irq:
 	move.l	rom_base,-(a7)
 	add.l	#0x00384,(a7)
 	rts
 	
 	
+RTS_OPCODE = 0x4E75
+JMP_OPCODE = 0x4EF9
+JSR_OPCODE = 0x4EB9
+LEA_OPCODE = 0x41F9
+
 	.macro	PL_START
 	.endm
 	.macro	PL_END
@@ -113,6 +185,42 @@ baddudes_irq:
 	.word	0x8009
 	.long	\offset,\func
 	.endm
+	.macro	PL_PR    offset,func
+	.word	0x800A
+	.long	\offset,\func
+	.endm
+	.macro	PL_PSR    offset,func
+	.word	0x800B
+	.long	\offset,\func
+	.endm
+	.macro	PL_PLEAR_0    offset,func
+	.word	0x800C
+	.long	\offset,\func
+	.endm
+	.macro	PL_PLEAR_1    offset,func
+	.word	0x800D
+	.long	\offset,\func
+	.endm
+	.macro	PL_PLEAR_2    offset,func
+	.word	0x800E
+	.long	\offset,\func
+	.endm
+	.macro	PL_PLEAR_3    offset,func
+	.word	0x800F
+	.long	\offset,\func
+	.endm
+	.macro	PL_PLEAR_4    offset,func
+	.word	0x8010
+	.long	\offset,\func
+	.endm
+	.macro	PL_PLEAR_5    offset,func
+	.word	0x8011
+	.long	\offset,\func
+	.endm
+	.macro	PL_PLEAR_6    offset,func
+	.word	0x8012
+	.long	\offset,\func
+	.endm
 
 
 * < A0: patchlist
@@ -147,6 +255,16 @@ patch_table:
 	.long	do_PL_B   | offset,value
 	.long	do_PL_R   | offset
 	.long	do_PL_P   | offset,func
+	.long	do_PL_PR  | offset,func
+	.long	do_PL_PSR | offset,func
+	.long	do_PL_PLEAR_0
+	.long	do_PL_PLEAR_1
+	.long	do_PL_PLEAR_2
+	.long	do_PL_PLEAR_3
+	.long	do_PL_PLEAR_4
+	.long	do_PL_PLEAR_5
+	.long	do_PL_PLEAR_6
+
 	
 do_PL_I:
 	move.w	#0x4AFC,(a3)
@@ -162,24 +280,24 @@ do_PL_NOP:
 	rts
 	
 do_PL_PS:
-	move.w	#0x4EB9,(a3)+
-	move.l	(a0)+,(a3)+
+	move.w	#JSR_OPCODE,(a3)+
+	move.l	(a0)+,(a3)
 	rts
 	
 do_PL_P:
-	move.w	#0x4EF9,(a3)+
-	move.l	(a0)+,(a3)+
+	move.w	#JMP_OPCODE,(a3)+
+	move.l	(a0)+,(a3)
 	rts
 	
 do_PL_PSS:
 	jbsr	do_PL_NOP
-	move.w	#0x4EB9,(a3)+
-	move.l	(a0)+,(a3)+
+	move.w	#JSR_OPCODE,(a3)+
+	move.l	(a0)+,(a3)
 	rts
 	
 do_PL_S:
 	move.w	#0x6000,(a3)+
-	move.w	(a0)+,(a3)+
+	move.w	(a0)+,(a3)
 	rts
 	
 do_PL_L:
@@ -196,9 +314,58 @@ do_PL_B:
 	rts
 
 do_PL_R:
-	move.w	#0x4E75,(a3)
+	move.w	#RTS_OPCODE,(a3)
 	rts
 	
+do_PL_PSR:
+	move.w	#JSR_OPCODE,(a3)+
+	move.l	(a0)+,d0
+	add.l	rom_base,d0
+	move.l	d0,(a3)
+	rts
+	
+do_PL_PR:
+	move.w	#JMP_OPCODE,(a3)+
+	move.l	(a0)+,d0
+	add.l	rom_base,d0
+	move.l	d0,(a3)
+	rts
+	
+* could have done a macro for this but seriously...
+do_PL_PLEAR_0:
+	moveq	#0,d0	| rebuild 4xF9 opcode from dest register
+	jra 	do_plear
+do_PL_PLEAR_1:
+	moveq	#1,d0	| rebuild 4xF9 opcode from dest register
+	jra 	do_plear
+do_PL_PLEAR_2:
+	moveq	#2,d0	| rebuild 4xF9 opcode from dest register
+	jra 	do_plear
+do_PL_PLEAR_3:
+	moveq	#3,d0	| rebuild 4xF9 opcode from dest register
+	jra 	do_plear
+do_PL_PLEAR_4:
+	moveq	#4,d0	| rebuild 4xF9 opcode from dest register
+	jra 	do_plear
+do_PL_PLEAR_5:
+	moveq	#5,d0	| rebuild 4xF9 opcode from dest register
+	jra 	do_plear
+do_PL_PLEAR_6:
+	moveq	#6,d0	| rebuild 4xF9 opcode from dest register
+do_plear:
+	add.w	d0,d0
+	lsl.w	#8,d0
+	add.w	#LEA_OPCODE,d0
+	move.w	d0,(a3)+
+	move.l	(a0)+,d0
+	add.l	rom_base,d0
+	move.l	d0,(a3)+
+	rts
+	
+
+
+
+
 ****************************
 ***** gernated patches *****
 ****************************
@@ -743,4 +910,24 @@ lb_1b320:
 	exg		a6,a1
 	move.w	(a7)+,d7
     RTS
+	
+	.macro	LEA_RELOC	address,reg
+	lea		\address\().w,\reg
+	add.l	rom_base,\reg
+	.endm
+	
+leaw_256a:
+	LSR.W	#6,D1			| 0256a: ec49
+	LEA_RELOC	0x0254a,A2	| 0256c: 45f8254a
+	rts
+	
+leaw_5b7c:
+	LEA_RELOC	0x05b14,A3	| 05b7c: 47f85b14
+	ADDA.L	D1,A3			| 05b80: d7c1
+	rts
+	
+leaw_8016:
+	LSL.W	#2,D1			| 08016: e549
+	LEA_RELOC	0x07e74,A2	| 08018: 45f87e74
+	rts
 	

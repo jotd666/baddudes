@@ -35,6 +35,9 @@ def add_r(offset,comment=""):
 def add_b(offset,value,comment=""):
     patchlist[offset] = {"type":"B","comment":comment,"value":str(value)}
 
+def add_w(offset,value,comment=""):
+    patchlist[offset] = {"type":"W","comment":comment,"value":str(value)}
+
 def add_nop(offset,count,comment=""):
     patchlist[offset] = {"type":"NOP","value":str(count),"comment":comment}
 
@@ -44,6 +47,7 @@ def add_p(offset,patch_function=None,comment=""):
         patch_function = offset
         offset = int(offset.split("_")[-1],0x10)
     patchlist[offset] = {"type":"P","value":patch_function,"comment":comment}
+
 
 def add_ps(offset,patch_function=None,comment=""):
     add_pss(offset,patch_function,0,comment)
@@ -66,25 +70,60 @@ def add_s(offset,jump_to,comment=""):
 def add_nop(offset,fill,comment=""):
     patchlist[offset] = {"type":"NOP","fill":fill,"comment":comment}
 
+# reloc patches
+def add_psr(offset,dest):
+    patchlist[offset] = {"type":"PSR","value":hex(dest)}
 
+def add_pr(offset,dest):
+    patchlist[offset] = {"type":"PR","value":hex(dest)}
+
+def add_lear(offset,dest,reg):
+    patchlist[offset] = {"type":f"PLEAR_{reg}","value":f"0x{dest:04x}"}
+
+def get_expr_address(s):
+    tok = s.rsplit("_",1)[-1]
+    if "+" in tok:
+        toks = tok.split("+")
+        return int(toks[0],16) + int(toks[1])
+    else:
+        return int(tok,16)
+
+short_reloc_table = []
+shorter_reloc_table = []
 
 for line in af.lines:
     inst_info = ira_asm_tools.parse_instruction_line(line)
 
     if inst_info:
         args = inst_info["arguments"]
+        lowinst = inst_info["instruction"].lower()
+        address = inst_info["address"]
+
+        if lowinst in ("jsrw_nop","jmpw_nop","leaw_nop"):
+            nargs = [get_expr_address(args[0])]     # prefix address
+            if len(args)==2:
+                nargs.append(int(args[1][1]))   # address register number
+            short_reloc_table.append({"address":address,
+                                        "instruction":lowinst.replace("_nop",""),
+                                        "arguments":nargs})
+
+        elif lowinst in ("jsrw","jmpw","leaw"):
+            shorter_reloc_table.append({"address":address,
+                                        "instruction":lowinst,
+                                        "arguments":args})
+
         # generate offsets to relocate RAM
         if inst_info["size"] in [4,6,8,10]:
             for i,arg in enumerate(args):
 
-                if inst_info["instruction"].lower().startswith("dc."):
+                if lowinst.startswith("dc."):
                     offset = 0
                 else:
                     offset = 2 if i==0 else inst_info["size"]-4
 
                 # fix problematic movem.w
-                if inst_info["instruction"].lower() == "movem.w":
-                    address = inst_info["address"]
+                if lowinst == "movem.w":
+
                     if args[0]=="(A7)+" and args[1]=="D0-D7/A0-A7":
                         add_l(address,"0x4CDF7FFF","fix movem.w")   # change movem.w (A7)+,D0-D7/A0-A7 by movem.l (A7)+,D0-D7/A0-A6
                     elif args[0]=="D0-D7/A0-A7" and args[1] == "-(A7)":
@@ -140,9 +179,35 @@ for line in af.lines:
                     except ValueError:
                         pass
 
+for sr in short_reloc_table:
+    instruction = sr["instruction"]
+    if instruction == "jsrw":
+        add_psr(sr["address"],sr["arguments"][0])
+    elif instruction == "jmpw":
+        add_pr(sr["address"],sr["arguments"][0])
+    elif instruction == "leaw":
+        add_lear(sr["address"],*sr["arguments"])
+
+for sr in shorter_reloc_table:
+    instruction = sr["instruction"]
+    if instruction == "jsrw":
+        add_w(sr["address"],0x4E40)  # trap 0
+    elif instruction == "jmpw":
+        add_w(sr["address"],0x4E41)  # trap 1
+    # leaw is processed manually below, there are only a few occs
+
+
 #############################################
 # manual patches, may override auto patches #
 #############################################
+
+
+# fixing short lea.w that aren't followed with NOP
+# those need to be implemented manually because there is a
+# a 2 byte instruction embedded to make up for the JSR call
+for offset in ["256a","5b7c","8016"]:
+    add_ps("leaw_"+offset)
+
 
 # note that passing a single string arg to add_ps or add_p assumes that
 # the offset is the suffix: no need to repeat the patch address then
@@ -258,6 +323,7 @@ with open(src_dir / "patchlist.68k","w") as f:
 \t.endm
 
 """)
+
     f.write("ram_relocs:\n")
     for (reloc,offset),v in sorted(relocated_ram_offsets.items()):
         f.write(f"\t.long\t0x{reloc:06x}+{offset}\t| {v}\n")

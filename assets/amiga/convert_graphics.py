@@ -63,6 +63,12 @@ def process_multi_tiled_sprite(img,tile_number,full_tileset,h,w,flipx):
     side = 16
     x_start = 0
     y_start = 0
+
+    # quick hack because either wrong log or something else but fuck it
+    # there aren't any sprites with h>4, this fixes Karnov sprites
+    if h>4:
+        h = 4
+
     if w!=1 and h!=1:
         print("multiwideeee!!!! ",tile_number)
 

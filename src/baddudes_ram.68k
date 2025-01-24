@@ -19,7 +19,9 @@
 	.global	video_ram_244000
 	.global	video_ram_24a000
 	.global	video_ram_24d000
-
+	.global	previous_sr
+	.global	jsr_address
+	
 	.global	highscore_needs_saving_flag
 	.global	vb_ticks_count
 	.global	current_ticks_count
@@ -49,6 +51,11 @@ video_ram_24d000:
 rom_base:
 	.long	0
 ram_base:
+	.long	0
+
+previous_sr:
+	.word	0
+jsr_address:
 	.long	0
 	
 start_level:

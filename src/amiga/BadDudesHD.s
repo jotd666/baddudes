@@ -7,7 +7,7 @@
 
 _base	SLAVE_HEADER					; ws_security + ws_id
 	dc.w	17					; ws_version (was 10)
-	dc.w	WHDLF_NoError|WHDLF_ReqAGA|WHDLF_Req68020
+	dc.w	WHDLF_NoError|WHDLF_EmulTrap|WHDLF_ReqAGA|WHDLF_Req68020
 	dc.l	$200000					; ws_basememsize
 	dc.l	0					; ws_execinstall
 	dc.w	start-_base		; ws_gameloader
