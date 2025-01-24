@@ -97,7 +97,8 @@ NB_BYTES_PER_ROW = NB_BYTES_PER_SCREEN_ROW*3
 
 SPRITE_FMODE = 3
 
-	
+PROGRAM_SIZE = 0x60000
+
 
 NB_PLAYFIELD_LINES = 256
 
@@ -253,8 +254,11 @@ _user:
 	
 	* load game ROM in 0 (this is temporary)
 	lea		rom_file,a0
-	sub.l	a1,a1			| ATM in 0
+	lea	program_space,a1
 	move.l	a1,rom_base
+	.ifndef	RELEASE
+	move.l	a1,0x100
+	.endif
 	jsr	(resload_LoadFileDecrunch,a2)
 	
 	
@@ -4535,6 +4539,9 @@ intro_intreq_block:
 *	.skip	0x10000
 *stack_top:
 
+program_space:
+	.skip	PROGRAM_SIZE
+	
 public_memory_block:
 	.skip	TOTAL_PUBLIC_MEMORY_SIZE
 	

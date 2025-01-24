@@ -212,6 +212,7 @@ for offset in ["256a","5b7c","8016"]:
 # note that passing a single string arg to add_ps or add_p assumes that
 # the offset is the suffix: no need to repeat the patch address then
 
+
 add_i(0x100,"spurious interrupt")
 add_i(0x31c,"infinite loop")
 add_r(0x003ee,"turn RTE to RTS in irq")
