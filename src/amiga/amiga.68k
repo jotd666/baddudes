@@ -948,6 +948,9 @@ truck_not_clipped_left:
 	*lsl.w	#3,d6			| in pixels
 	move.w	#NB_BYTES_PER_SCREEN_ROW*8,d6	| truck/train is wider than screen anyway
 	sub.w 	d0,d6
+	
+
+
 	jra		do_truck_draw
 	
 
@@ -2367,10 +2370,6 @@ clear_fg_planes_any_blitter_internal:
     * now just wait for blitter ready to write all registers
 	WAIT_BLIT
     
-    * blitter registers set
-	.ifdef	VARIABLE_BLITTER_MASKS_AND_MODS
-    move.l  d7,bltafwm(a5)
-	.endif
 	
 	move.l d5,bltcon0(a5)	
     move.w  d0,bltdmod(a5)	|D modulo
@@ -2440,7 +2439,7 @@ blit_planes_any_internal_cookie_cut:
     move.w  d0,d6
     lsr.w   #3,d0			| X displacement in bytes
 	*bclr	#0,d0			| no need, it will be even
-    and.w   #0xF,d6
+    and.w   #0xF,d6			| blit shift 0-15
 	.ifdef	NO68020
 	add.w	d6,d6
 	add.w	d6,d6
@@ -2452,13 +2451,21 @@ blit_planes_any_internal_cookie_cut:
 	lea		cookie_cut_mask_blit_table,a4
 	move.l	(a4,d6.w*4),d6
 	.endif
-3:   
+   
     add.l   d0,d1
-4:
+
     * make offset even. Blitter will ignore odd address
     * but a 68000 CPU doesn't and since we RETURN A1...
     *bclr    #0,d1
     add.l   d1,a1       | plane position (D1 can be 0x7FFF, up to 0xC000)
+
+	* start of truck will "benefit" from the shifted / rotated bits
+	* because end of bitplane data is clipped off. We can use a different bltafwm
+	* to workaround this
+	* to full mask: this is a corner case
+	moveq	#-1,d1		| default
+
+
 	move.w	#NB_BYTES_PER_ROW,d0
 	tst.w	d4
 	bpl.b	5f
@@ -2490,10 +2497,14 @@ blit_planes_any_internal_cookie_cut:
 
 	add.w	d5,a3			| apply xy offset to mask too
 	
+	
+	
     * now just wait for blitter ready to write all registers
 	WAIT_BLIT
     
     * blitter registers set
+	* set mask to possibly non-zero because truck/train use it to hide start
+    move.w  d1,bltafwm(a5)
 
 	move.w d2,bltamod(a5)		|A modulo=bytes to skip between lines
 	move.w d2,bltbmod(a5)		|B modulo=bytes to skip between lines
