@@ -20,8 +20,8 @@ needs fastmem, those 300k could easily contain the tunes if the exe was relocate
   which is pretty rare but happens...
 - 2 reloc configs: fastmem, no reloc (no reloc means double buffering)
 - ninja wrong early X right clip
-- truck: X-clipping creates strange artifacts depending on shifting (mask???), log shifting
-  when blitting truck
+- truck: X-clipping creates strange artifacts (jailbars) 
+  depending on shifting (mask???)
 - implement start level to try to start level 2
 - easy: bottom osd: overwritten tiles! ("IF" of 1-life, memwatch where 0x63 char is written, see which blank
   deletes it)
