@@ -894,10 +894,12 @@ hex_table:
 erase_level_1_truck:
 	tst.b	truck_previously_drawn
 	jeq		0f
+
 	lea		prev_truck_params,a1
 	move.w	(a1)+,d0	| X
 	move.w	(a1)+,d1	| Y
-	move.w	truck_width,d2			| real object size
+	move.w	(a1)+,d2	| real object size
+	move.l	fg_drawed_screen_ptr,a1
 	move.w  truck_height,d4
 	lea		background_restore_buffer,a0
 	jbsr	restore_background
@@ -914,7 +916,6 @@ draw_level_1_truck:
 	cmp.w	#0x100,d0
 	jcs		2f 		| out of the screen already
 	
-	st.b	truck_previously_drawn
 	
 	move.w	truck_width,d6	| full truck size
 	lsl.w	#3,d6			| in pixels
@@ -938,14 +939,14 @@ truck_clipped_left:
 	lsr.w	#3,d5			| in bytes
 	bclr	#0,d5			| multiple of 16
 	
+	* we have to consider X shift
 	jra		do_truck_draw
 	
 truck_not_clipped_left:
-	TMPWRITE
 	* D0 is the actual X, check really displayed truck width (has to be clipped right)
 	*move.w	truck_width,d6	| full truck size
 	*lsl.w	#3,d6			| in pixels
-	move.w	#NB_BYTES_PER_SCREEN_ROW*8,d6	| truck is wider than screen anyway
+	move.w	#NB_BYTES_PER_SCREEN_ROW*8,d6	| truck/train is wider than screen anyway
 	sub.w 	d0,d6
 	jra		do_truck_draw
 	
@@ -986,10 +987,11 @@ do_truck_draw:
 	add.w	x_background_scroll_value,d0
 	* store the restore clip values for later
 	
+	st.b	truck_previously_drawn
 	lea		prev_truck_params,a1
 	move.w	d0,(a1)+	| X
 	move.w	d1,(a1)+	| Y
-	move.w	d6,(a1)	| X source offset start (useful for smart back restore)
+	move.w	d6,(a1)		| real width
 	move.l 	fg_drawed_screen_ptr,a1
 	jbsr	blit_planes_any_internal_cookie_cut
 2:
@@ -2039,6 +2041,9 @@ really_update_sprites:
 	clr.l	(a4)+ 			| ack deletion
 	move.w	(a4),d2			| width in bytes (16 pixels: 4 bytes)
 	move.w	(2,a4),d4		| height
+	jpl		11f
+	neg		d4
+11:
 	clr.l	(a4)+			| ack deletion
 	* restore background
 	lea		background_restore_buffer,a0
@@ -2083,6 +2088,7 @@ really_update_sprites:
 *	jcc		30f 						| don't draw sprites too far right
 	move.w	(TARGET_SPRITE_CODE,a0),d2
 	and.w	#0xFFF,d2				| MAME masks the code to 1FFF, but here we go up to FFF
+
 	move.w	d0,d3
 	rol.w	#4,d3
 	and.w	#0xF,d3		| color code
@@ -2209,6 +2215,11 @@ really_update_sprites:
 
 	jbsr	mirror_planes
 0:
+	btst	#14,d2
+	jeq		0f
+	* y flip: happens when characters perform sommersault (bad dudes, karnov..)
+	neg		d4
+0:
 	move.l		fg_drawed_screen_ptr,a1
 	* D0 and D1 are already set
 	move.l	(NB_PLAYFIELD_PLANES*4,a0),d2
@@ -2239,7 +2250,7 @@ really_update_sprites:
 * trashes: only unused registers :)
 
 mirror_planes:
-	movem.l	d0/d1/d5/a0,-(a7)
+	movem.l	d0-d2/d5/a0,-(a7)
 	* bitplanes aren't pre-computed: check bitplanes current orientation and swap
 	* if required. This is slow but saves memory
 	lea		mirror_table,a1
@@ -2275,7 +2286,7 @@ mirror_planes:
 1:
 	* next bitplane
 	dbf		d6,0b
-	movem.l	(a7)+,d0/d1/d5/a0
+	movem.l	(a7)+,d0-d2/d5/a0
 	rts
 	* 16-bit wide: much faster, and common
 13:
