@@ -16,6 +16,7 @@ Not sure that all tunes could fit in one module. Level 1 and level 2 could use s
 As opposed as other smaller games, I'm using files & per-level loading or I couldn't make it happen with 2MB chip. ATM code is 300Kb in chipmem, and since the game
 needs fastmem, those 300k could easily contain the tunes if the exe was relocated.
 
+- 3 reloc configs: fastmem, highchip 0x1A0000 and no reloc (both: no double buffering)
 - ninja wrong early X right clip
 - truck: X-clipping creates strange artifacts depending on shifting (mask???), log shifting
   when blitting truck

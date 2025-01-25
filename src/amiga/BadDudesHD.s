@@ -5,6 +5,8 @@
 
 ;CHIP_ONLY
 
+FASTMEMSIZE = $180000
+
 _base	SLAVE_HEADER					; ws_security + ws_id
 	dc.w	17					; ws_version (was 10)
 	dc.w	WHDLF_NoError|WHDLF_EmulTrap|WHDLF_ReqAGA|WHDLF_Req68020
@@ -21,7 +23,7 @@ _expmem
     IFD CHIP_ONLY
     dc.l    $0
     ELSE
-	dc.l	$180000					; ws_expmem
+	dc.l	FASTMEMSIZE					; ws_expmem
     ENDC
 	dc.w	_name-_base				; ws_name
 	dc.w	_copy-_base				; ws_copy
@@ -82,7 +84,8 @@ start:
     ENDC
     lea progstart(pc),a0
     move.l  _expmem(pc),(a0)
-
+	move.l	_expmem(pc),a7
+	add.l	#FASTMEMSIZE-4,a7
 	lea	exe(pc),a0
 	move.l  progstart(pc),a1
 	jsr	(resload_LoadFileDecrunch,a2)
@@ -102,12 +105,16 @@ _Relocate	movem.l	d0-d1/a0-a2,-(sp)
         clr.l   -(a7)                   ;TAG_DONE
 ;        pea     -1                      ;true
 ;        pea     WHDLTAG_LOADSEG
-		IFND		CHIP_ONLY
-        move.l  #$60100,-(a7)       ;chip area
+		IFD		CHIP_ONLY
+        move.l  #$60000,-(a7)       ;chip area
+		ELSE
+        ;move.l  #$200,-(a7)       ;chip area
+       move.l  #$60000,-(a7)       ;chip area
+		ENDC
         pea     WHDLTAG_CHIPPTR        
         pea     8                       ;8 byte alignment
         pea     WHDLTAG_ALIGN
-		ENDC
+
         move.l  a7,a1                   ;tags	
 		move.l	_resload(pc),a2
 		jsr	resload_Relocate(a2)
