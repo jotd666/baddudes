@@ -835,16 +835,12 @@ _vblank:
 	.ifndef		RELEASE
 	tst.b	debug_truck_display
 	jeq		1f
-	tst.b	debug_truck_left
+	move.w	debug_truck_move,d0
 	jeq		0f
-	clr.b	debug_truck_left
-	subq.w	#1,x_secondary_scroll_value
+	add.w	d0,x_secondary_scroll_value
+	clr.w	debug_truck_move
 0:
-	tst.b	debug_truck_right
-	jeq		0f
-	clr.b	debug_truck_right
-	addq.w	#1,x_secondary_scroll_value
-0:
+	and.w	#0x3FF,x_secondary_scroll_value
 	
 	* copy truck scroll value
 	move.w	x_secondary_scroll_value,d0
@@ -911,49 +907,65 @@ erase_level_1_truck:
 	rts
 	
 draw_level_1_truck:
-	move.w	#-64*4,d0
 	move.w	x_secondary_scroll_value,d0
 	jeq		2f		| reached destination
 	cmp.w	#0x400,d0
 	jeq		2f		| not started
-
-	neg.w	d0
-	
+	cmp.w	#0x100,d0
+	jcs		2f 		| out of the screen already
 	
 	st.b	truck_previously_drawn
 	
-	moveq	#0,d5			| XY-offset
 	move.w	truck_width,d6	| full truck size
 	lsl.w	#3,d6			| in pixels
-	tst.w	d0
-	jpl		0f
 	
-	TMPWRITE
+	
 	* required to start displaying truck outside the screen: we have to compute
 	* offset to skip start (and also adjust real width)
+	moveq	#0,d5			| XY-offset
 	neg	d0
+	add.w	#NB_BYTES_PER_SCREEN_ROW*16,d0	| now scroll value -0x200->0x200
+	jpl		truck_not_clipped_left
+	add.w	d0,d6	| adjust width to remove start/end of truck
+	jmi		2f		| rightmost part still negative: too far right: don't display
+truck_clipped_left:
+	* truck starting to appear on the left side, clipped
+	moveq	#0,d0	| of course X is at 0 (TODO: fine shift)
+	
+	move.w	truck_width,d5	| full truck size
+	lsl.w	#3,d5			| in pixels
+	sub.w	d6,d5			| X-offset
+	lsr.w	#3,d5			| in bytes
+	bclr	#0,d5			| multiple of 16
+	
+	jra		do_truck_draw
+	
+truck_not_clipped_left:
+	TMPWRITE
+	* D0 is the actual X, check really displayed truck width (has to be clipped right)
+	*move.w	truck_width,d6	| full truck size
+	*lsl.w	#3,d6			| in pixels
+	move.w	#NB_BYTES_PER_SCREEN_ROW*8,d6	| truck is wider than screen anyway
+	sub.w 	d0,d6
+	jra		do_truck_draw
+	
+
 	move.w	d0,d5
 	lsr.w	#4,d5	| add some X-shift
 	add.w	d5,d5	| in bytes but rounded to 16-bit boundary
-	sub.w	d0,d6	| adjust width to remove start/end of truck
-	and.w	#0xF,d0	| and X=0-15 now
-	jeq		1f
-	subq	#2,d0
-	jra		1f
-0:
-	cmp.w	#NB_BYTES_PER_SCREEN_ROW*8,d0
-	jcc		2f				| too far right, don't display anymore
+
 	
-	sub.w	d0,d6	| adjust width to remove start/end of truck
-	jmi		2f
-	jeq		2f
-1:
+*	and.w	#0xF,d0	| and X=0-15 now
+*	jeq		1f
+*	subq	#2,d0
+*	jra		1f
+	
 	cmp.w	#NB_BYTES_PER_SCREEN_ROW*8,d6
 	jcs	1f
 	* D6 is still too high for full screen: clip it
 	move.w	#NB_BYTES_PER_SCREEN_ROW*8,d6
 1:
-
+do_truck_draw:
 	move.l	truck_planes,a0
 	move.w	truck_width,d2			| real object size
 	move.w  truck_height,d4
@@ -962,13 +974,15 @@ draw_level_1_truck:
 	
 	* displayed width is positive: okay display something
 	lsr.w	#3,d6	| re-convert width to bytes
+	jeq		2f		| zero width: don't draw anything
 	BTST	#0,d6
 	jeq		1f
 	addq	#1,D6	| round to highest even
 1:
 	
-	move.w	#16*22,d1
+	move.w	#16*22,d1		| Y-pos: fixed
 
+	* we have to take into account primary scroll value as we only have 1 layer
 	add.w	x_background_scroll_value,d0
 	* store the restore clip values for later
 	
@@ -1569,9 +1583,9 @@ addr_248xxx_op:
 	rts	| to_implement
 	
 
-* scroll registers of layer at 24A000
-* 00246010: X-scroll (wraps at 0x200)
-* 00246012: Y-scroll
+* scroll registers of layer at 24D000
+* 0024C010: X-scroll (used 0-0x400 4 screens in a row mode, truck, train)
+* 0024C012: Y-scroll
 addr_24Cxxx_op:
 	cmp.w	#0xC010,d2
 	jeq		0f
@@ -1589,8 +1603,8 @@ addr_24Cxxx_op:
 	rts
 	
 * scroll registers of layer at 24A000
-* 00246010: X-scroll (wraps at 0x200)
-* 00246012: Y-scroll
+* 00246010: X-scroll (wraps at 0x200 on 4x4 screen mode)
+* 00246012: Y-scroll (wraps at 0x200 on 4x4 screen mode)
 addr_246xxx_op:
 	cmp.w	#0x6010,d2
 	jeq		0f
@@ -2374,7 +2388,7 @@ clear_fg_planes_any_blitter_internal:
 * < D2: width of source in bytes (inc. 2 extra for shifting)
 * < D3: number of planes
 * < D4: height. If negative, source is copied with negative modulo (flip)
-* < D5: y offset for source planes
+* < D5: x+y byte offset for source planes
 * < D6: width of source to blit (0: means all: will use full width)
 * < D7: blit mask (not considered, optim, -1 all through the game)
 * blit mask set
@@ -3528,12 +3542,22 @@ handle_keyboard:
 	cmp.b	#32,d0
 	bne		0f
 	* 'A': move truck by 1 pixel left
-	st.b	debug_truck_left
+	move	#-1,debug_truck_move
 0:
 	cmp.b	#33,d0
 	bne		0f
 	* 'S': move truck by 1 pixel right
-	st.b	debug_truck_right
+	move	#1,debug_truck_move
+0:
+	cmp.b	#16,d0
+	bne		0f
+	* 'Q': move truck by 10 pixels left
+	move	#-0x10,debug_truck_move
+0:
+	cmp.b	#17,d0
+	bne		0f
+	* 'W': move truck by 10 pixels right
+	move	#0x10,debug_truck_move
 0:
 	cmp.b	#0x57,d0	| F8 key: lose all lives
 	bne.b	0f
@@ -4362,10 +4386,10 @@ cheat_used:
 	.ifndef	RELEASE
 debug_truck_display:
 	.byte	0
-debug_truck_left:
-	.byte	0
-debug_truck_right:
-	.byte	0
+	.align	2
+debug_truck_move:
+	.word	0
+
 debug_truck_message:
 	.asciz	"TPOS 000000"
 	.endif
