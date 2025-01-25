@@ -832,11 +832,69 @@ _vblank:
 1:
 	* don't blit, but update hw sprites as it doesn't cost a lot
 
+	.ifndef		RELEASE
+	tst.b	debug_truck_display
+	jeq		1f
+	tst.b	debug_truck_left
+	jeq		0f
+	clr.b	debug_truck_left
+	subq.w	#1,x_secondary_scroll_value
+0:
+	tst.b	debug_truck_right
+	jeq		0f
+	clr.b	debug_truck_right
+	addq.w	#1,x_secondary_scroll_value
+0:
+	
+	* copy truck scroll value
+	move.w	x_secondary_scroll_value,d0
+	lea		debug_truck_message+11(pc),a0
+	lea		hex_table(pc),a1
+	moveq	#0,d1
+	moveq	#2,d3
+0:
+	move.b	d0,d1
+	and.b	#0xF,d1
+	move.b	(a1,d1.W),D2
+	move.b	d2,-(a0)
+	move.b	d0,d1
+	lsr.b	#4,d1
+	move.b	(a1,d1.W),D2
+	
+	move.b	d2,-(a0)
+	lsr.l	#8,d0
+	dbf		d3,0b
+	
+	lea		debug_truck_message(pc),a0
+	jbsr	osd_write_debug_message
+1:
+	.endif
 
 3:
     movem.l (a7)+,d0-d7/a0-a6
     rte
 
+
+
+	
+hex_table:
+	.byte	0x30
+	.byte	0x31
+	.byte	0x32
+	.byte	0x33
+	.byte	0x34
+	.byte	0x35
+	.byte	0x36
+	.byte	0x37
+	.byte	0x38
+	.byte	0x39
+	.byte	0x41
+	.byte	0x42
+	.byte	0x43
+	.byte	0x44
+	.byte	0x45
+	.byte	0x46
+	
 erase_level_1_truck:
 	tst.b	truck_previously_drawn
 	jeq		0f
@@ -1373,13 +1431,14 @@ write_osd_layer:
 0:
 	move.l	(a0)+,d2
 	jne		1f
-	jra		write_osd_layer_out
+	** TODO figure out what erases "IF" from "1-LIFE"
+	**jra		write_osd_layer_out
 	move.l	#blank_area,d2
 	sub.l	a2,d2
 1:
 	move.l	(a0)+,d3
 	jne		1f
-	jra		write_osd_layer_out
+	**jra		write_osd_layer_out
 	move.l	#blank_area,d3
 	sub.l	a2,d3
 1:
@@ -1403,6 +1462,7 @@ erase_tile_on_sprite:
 	CLEAR_SPRITE_TILE_ROW
 	.endr	
 	jra		write_osd_layer_out
+
 
 * given D3/D2 as X/Y select location to start writing to sprite
 
@@ -1443,9 +1503,17 @@ pick_osd_sprite:
 0:
 	cmp.w	#32+2,d3
 	jcc		0f
-	* end of player score + high
+	* player 2 score / push button
 	lea		osd_right_sprite+16-26,A3
 	add.w	d3,a3		| add X offset
+	.ifndef	RELEASE
+	* ability to display debug messages
+	cmp.w	#8,d2
+	jeq		1f
+	add.w	#NB_BYTES_PER_SPRITE_ROW*2*8,a3
+1:
+	.endif
+	
 	moveq	#1,d2		| success
 	rts
 0:
@@ -1777,6 +1845,23 @@ addr_24Dxxx_tile_layer_2_op:
 	rts
 	
 
+* < A0: text message to display in the upper right (below second player score)
+osd_write_debug_message:
+	.ifndef	RELEASE
+	movem.l	d7/a6,-(a7)
+	lea		0X2440EA,a6
+	moveq	#0,d7
+0:
+	move.b	(a0)+,d7
+	jeq		1f
+	jbsr	osd_write_word
+	addq	#2,a6
+	jra		0b
+1:
+	movem.l	(a7)+,d7/a6
+	.endif
+	rts
+	
 * < A6: virtual address (in RAM)
 * > A6: real address
 
@@ -3116,6 +3201,13 @@ scroll_x_24a000_table:
 	.long	scroll_background_x
 	
 move_ninjas_truck:
+	* in debug mode, when debug truck display is set, don't move truck
+	.ifndef		RELEASE
+	tst.b	debug_truck_display
+	jeq		0f
+	rts
+	.endif
+0:
 	move.w	d0,x_secondary_scroll_value
 	rts
 	
@@ -3428,6 +3520,21 @@ handle_keyboard:
 *
 10:
 	.ifndef	RELEASE
+	cmp.b	#20,d0
+	bne		0f
+	* toggle truck display on/off
+	eor.b	#1,debug_truck_display
+0:
+	cmp.b	#32,d0
+	bne		0f
+	* 'A': move truck by 1 pixel left
+	st.b	debug_truck_left
+0:
+	cmp.b	#33,d0
+	bne		0f
+	* 'S': move truck by 1 pixel right
+	st.b	debug_truck_right
+0:
 	cmp.b	#0x57,d0	| F8 key: lose all lives
 	bne.b	0f
 	move.w	#0x0FF,_custom+color
@@ -4252,6 +4359,16 @@ main_scroll_value:
 	
 cheat_used:
 	.byte	0
+	.ifndef	RELEASE
+debug_truck_display:
+	.byte	0
+debug_truck_left:
+	.byte	0
+debug_truck_right:
+	.byte	0
+debug_truck_message:
+	.asciz	"TPOS 000000"
+	.endif
 front_objects_1_file:
 	.asciz	"front_objects_1.bin"
 truck_1_pic_file:
