@@ -13,7 +13,10 @@ import PIL.Image,pathlib
 
 this_dir = pathlib.Path(__file__).absolute().parent
 
-def fix_tileset(name,black_reveal_palette_index,fake_black):
+def gray(c):
+    return (c,)*3
+
+def fix_tileset(name,target_palette,black_reveal_palette_index,fake_black):
 
     tiles_dir = this_dir /"sheets"/f"{name}_black"
     tiles_out_dir = this_dir /"sheets"/name
@@ -21,26 +24,32 @@ def fix_tileset(name,black_reveal_palette_index,fake_black):
     transparent_color = (255,0,255)
     black_color = (0,0,0)
 
+    if target_palette==black_reveal_palette_index:
+        raise Exception("target & reveal palette can't be identical")
+
     shadow_pic = f"pal_{black_reveal_palette_index:02x}.png"
 
     pic = PIL.Image.open(tiles_dir / shadow_pic)
 
+    # extract X,Y where pixels are supposed to be black
     really_black_coords = {(x,y) for x in range(pic.size[0]) for y in range(pic.size[1]) if pic.getpixel((x,y)) == fake_black}
 
-    for img in tiles_dir.iterdir():
-        if str(img).endswith(".png"):
-            pic = PIL.Image.open(img)
-            out_pic_name = tiles_out_dir / img.name
-            for x in range(pic.size[0]):
-                for y in range(pic.size[1]):
-                    # convert all black to transparent
-                    if pic.getpixel((x,y)) == black_color:
-                        pic.putpixel((x,y),transparent_color)
-                    # if it's an actual black color (revealed by another pic of the set
-                    # with a possible bogus palette), restore it
-                    if (x,y) in really_black_coords:
-                        pic.putpixel((x,y),black_color)
-            pic.save(out_pic_name)
+    img = tiles_dir / f"pal_{target_palette:02x}.png"
 
-fix_tileset("tiles_244000",4,(159,90,56))
-fix_tileset("sprites",0xA,(195,195,195))
+    pic = PIL.Image.open(img)
+    out_pic_name = tiles_out_dir / img.name
+    for x in range(pic.size[0]):
+        for y in range(pic.size[1]):
+            # convert all black to transparent
+            if pic.getpixel((x,y)) == black_color:
+                pic.putpixel((x,y),transparent_color)
+            # if it's an actual black color (revealed by another pic of the set
+            # with a possible bogus palette), restore it
+            if (x,y) in really_black_coords:
+                pic.putpixel((x,y),black_color)
+    print(f"Saving {out_pic_name}")
+    pic.save(out_pic_name)
+
+fix_tileset("tiles_244000",0,4,(159,90,56))
+fix_tileset("sprites",0,0xA,gray(195))   # player tiles
+fix_tileset("sprites",2,0x9,gray(71))   # ninja tiles
