@@ -703,51 +703,15 @@ def decode_sprite(offset):
                 sprite_ptr.colour = colour;
                 sprite_ptr.flipx = flipx;
                 sprite_ptr.flipy = flipy;
-                if (priority):
 
-                    sprite_ptr.pri_mask = pri_mask
-                    for y in range(h):
+                for y in range(h):
 
-                        sprite_ptr.code[y] = code - y * incy
-                        sprite_ptr.x[y] = sx + (mult * x)
-                        sprite_ptr.y[y] = sy + (mult * y)
+                    sprite_ptr.code[y] = code - y * incy
+                    sprite_ptr.x[y] = sx + (mult * x)
+                    sprite_ptr.y[y] = sy + (mult * y)
 
-                    spritelist.append(sprite_ptr)
+                sprite_objects.append(sprite_ptr)
 
-                else:
-
-                    for y in range(h):
-
-                        sprite_ptr.code[y] = code - y * incy
-                        sprite_ptr.x[y] = sx + (mult * x)
-                        sprite_ptr.y[y] = sy + (mult * y)
-
-                    sprite_objects.append(sprite_ptr)
-    ##                            gfx(0)->transpen(bitmap, cliprect,
-    ##                                sprite_ptr->code[y],
-    ##                                sprite_ptr->colour,
-    ##                                sprite_ptr->flipx, sprite_ptr->flipy,
-    ##                                sprite_ptr->x[y], sprite_ptr->y[y], 0);
-
-
-
-
-
-    ##    if priority!
-    ##    {
-    ##        while (sprite_ptr != m_spritelist.get())
-    ##        {
-    ##            sprite_ptr--;
-    ##
-    ##            for (int y = 0; y < sprite_ptr->height; y++)
-    ##            {
-    ##                gfx(0)->prio_transpen(bitmap, cliprect,
-    ##                        sprite_ptr->code[y],
-    ##                        sprite_ptr->colour,
-    ##                        sprite_ptr->flipx, sprite_ptr->flipy,
-    ##                        sprite_ptr->x[y], sprite_ptr->y[y], screen.priority(), sprite_ptr->pri_mask, 0);
-    ##            };
-    ##        }
 
 
 

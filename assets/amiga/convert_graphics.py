@@ -103,7 +103,7 @@ def load_tileset(image_name,palette_index,side,tileset_name,dumpdir,cluts,dump=F
             img.paste(tiles_1,(-i*side,-j*side))
             full_tileset.append(img)
 
-    tileset_1 = []
+    tileset_1 = [None]*(len(full_tileset)*2)  # take multi-size into account 0-FFF: simple, higher: multiple
 
     if dump:
         dump_subdir = os.path.join(dumpdir,tileset_name)
@@ -120,9 +120,18 @@ def load_tileset(image_name,palette_index,side,tileset_name,dumpdir,cluts,dump=F
             cd = cluts.get(tile_number,empty_list)
             if palette_index not in cd["cluts"]:
                 # no clut declared for that tile
-                tileset_1.append(None)
+                pass
 
             else:
+                # found an entry, but is there a relevant entry with multi-tile? (some rare cases)
+                cdm = cluts.get(tile_number+0x1000,empty_list)
+                dual = False
+                if palette_index in cdm["cluts"]:
+                    # clut declared for that tile: we have a dual sprite
+                    cd = cdm
+                    dual = True
+
+
                 width = side
                 height = side
 
@@ -132,30 +141,51 @@ def load_tileset(image_name,palette_index,side,tileset_name,dumpdir,cluts,dump=F
                     h = (1 << ((data0 & 0x1800) >> 11))
                     w = (1 << ((data0 & 0x0600) >>  9))
                     flipx = bool(data0 & 0x2000)
-                    flipy = bool(data0 & 0x4000)
+                    # ignoring flipy, we can do that dynamically with blitter
                     #print("attribs!!! ",tile_number,cd["cluts"],hex(attributes),h,w,flipx,flipy)
 
                     height *= h
                     width *= w
 
                 img = Image.new("RGB",(width,height))
+                multi = False
+
                 if attributes and (h!=1 or w!=1):
                     process_multi_tiled_sprite(img,tile_number,full_tileset,h,w,flipx)
+                    tileset_1[tile_number+0x1000] = img   # add the multi-sprite with a shifted position
+                    multi = True
                 else:
                     # simple case
                     img.paste(tile_img)
+                    tileset_1[tile_number] = img
+                if dual:
+                    img = Image.new("RGB",(side,side))
+                    # simple case when there are 2 different sizes used for that sprite
+                    img.paste(tile_img)
+                    tileset_1[tile_number] = img
 
-
-                tileset_1.append(img)
 
                 if dump:
-                    img = ImageOps.scale(img,5,resample=Image.Resampling.NEAREST)
+                    source = tileset_1[tile_number+0x1000 if multi else tile_number]
+                    img = ImageOps.scale(source,5,resample=Image.Resampling.NEAREST)
                     if name_dict:
                         name = name_dict.get(tile_number,"unknown")
                     else:
                         name = "unknown"
+                    iname = f"{name}_{tile_number:03x}_{palette_index:02x}"
+                    if multi:
+                        iname += "_multi"
+                    img.save(os.path.join(dump_subdir,f"{iname}.png"))
+                    if dual:
+                        # also dump the normal image
+                        source = tileset_1[tile_number]
+                        img = ImageOps.scale(source,5,resample=Image.Resampling.NEAREST)
+                        if name_dict:
+                            name = name_dict.get(tile_number,"unknown")
+                        else:
+                            name = "unknown"
+                        img.save(os.path.join(dump_subdir,f"{iname}_simple.png"))
 
-                    img.save(os.path.join(dump_subdir,f"{name}_{tile_number:03x}_{palette_index:02x}.png"))
 
     if postload_callback:
         postload_callback(tileset_1,palette_index)

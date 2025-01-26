@@ -19,8 +19,12 @@ def doit(filename):
             y &= 0x1FF
             x = 240 - x
             y = 240 - y
+            y_flip = attrs & 0x4000
+            x_flip = attrs & 0x2000
+
             name = sprite_name_code.get(code,"unknown")
             print(f"address={i+0xFFC000:06x}, x={x}, y={y}, code={code:x}, attrs={attrs:x}, name={name}")
 
 doit("dudejump")
 doit("dudejump_mame")
+doit("dudejump_trunc")

@@ -16,8 +16,7 @@ Not sure that all tunes could fit in one module. Level 1 and level 2 could use s
 As opposed as other smaller games, I'm using files & per-level loading or I couldn't make it happen with 2MB chip. ATM code is 300Kb in chipmem, and since the game
 needs fastmem, those 300k could easily contain the tunes if the exe was relocated.
 
-- sommersault frames, possibly others: usage of frames with different w/h values
-  which is pretty rare but happens...
+- when scrolling at 0, characters on fence upper left "wrap" to bottom right
 - 2 reloc configs: fastmem, no reloc (no reloc means double buffering)
 - ninja wrong early X right clip
 - truck: X-clipping creates strange artifacts (jailbars) 
@@ -32,7 +31,6 @@ needs fastmem, those 300k could easily contain the tunes if the exe was relocate
   figure out first layer row scroll registers, "trigger" tile to display / undisplay sprite
 - levels with trains/trucks: load traintrucks bitplanes in non-displayed screen buffer
   to save chipmem
-- sprite mirror_planes: mirroring with width != 16 to implement: test on 32 then make a special case for 32 bits (d0=6)
   
 - save memory: load truck first then copy in unused chip bitplanes
 - use wrap for vertical scrolling (level 7) or use blitter for vertical scrollling!!!
@@ -41,6 +39,7 @@ needs fastmem, those 300k could easily contain the tunes if the exe was relocate
 - level 4: maybe remove foreground trees if possible
 - level 6: same
 - level 6 background cave maybe OK with 3 grays
+- sprite mirror_planes: mirroring with width != 16 to implement: test on 32 then make a special case for 32 bits (d0=6)
 
 
 - log & rip missing sounds  
