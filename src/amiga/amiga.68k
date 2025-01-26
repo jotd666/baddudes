@@ -80,8 +80,10 @@ ONE_TICK = 1
 
 	.endif
 	
-
-OPT_ENABLE_DOUBLE_BUFFERING = 0
+* note: double buffering eats a lot of memory, it cannot run in debug mode
+* either simple or reloc. Only in "none" (program running in fastmem, data
+* located in low chipmem)
+OPT_ENABLE_DOUBLE_BUFFERING = 1
 
 _custom = 0xDFF000
 
@@ -227,12 +229,6 @@ start:
 		.text
 
 
-.list
-
-	.ifne	OPT_ENABLE_PROFILING
-	* init profiling if enabled
-	.include	"profiler.68k"
-	.endif
 
 	    
 _user:
@@ -252,24 +248,7 @@ _user:
 	* install quit handler 
 	move.l	#quit_to_os,0x4	
 	.endif
-	
-	* load game ROM in 0 (this is temporary)
-	lea		rom_file,a0
-	lea	program_space,a1
-	.ifndef	RELEASE
-	* align ROM when debugging (those fastmem addresses are a bitch)
-	move.l	a1,d1
-	tst		d1
-	jeq		0f	| just in case (very unlikely!!)
-	clr		d1
-	swap	d1
-	addq	#1,d1
-	swap	d1
-	move.l	d1,a1
-0:
-	.endif
-	move.l	a1,rom_base
-	jsr	(resload_LoadFileDecrunch,a2)
+
 	
 	
    bra		.no_forbid
@@ -411,10 +390,39 @@ _user:
 *	not.b	d0
 *	move.b	d0,dip_switches_1
 	
-	.ifndef	RELEASE
+	.ifdef	RELEASE
+	moveq	#0,d1
+	.else
 	move.l	debug_options,d1
-	
 	.endif
+
+	* load game ROM in 0 (this is temporary)
+	lea		rom_file,a0
+
+	cmp		#1,d1
+	jne		0f
+	* simple debug mode requires exe loaded in 0
+	sub.l	a1,a1
+	jra		1f
+0:
+	* normal program load
+	lea	program_space,a1
+	.ifndef	RELEASE
+	* align ROM when debugging (those fastmem addresses are a bitch)
+	move.l	a1,d1
+	tst		d1
+	jeq		0f	| just in case (very unlikely!!)
+	clr		d1
+	swap	d1
+	addq	#1,d1
+	swap	d1
+	move.l	d1,a1
+0:
+	.endif
+1:
+	move.l	a1,rom_base
+	move.l	_resload,a2
+	jsr	(resload_LoadFileDecrunch,a2)
 
 	
 
@@ -884,16 +892,28 @@ hex_table:
 	.byte	0x45
 	.byte	0x46
 	
+* truck_erase
 erase_level_1_truck:
+	
 	tst.b	truck_previously_drawn
 	jeq		0f
 
+	* we cannot just restore the whole truck background, it's
+	* inefficient and makes the game crawl. Just restore parts
+	* that won't be immediately overwritten by the truck itself
+	* again (which is pretty rectangular and moves only to the right)
+	
 	lea		prev_truck_params,a1
+	move.w	#32,d3		| bottom part which needs restoring
 	move.w	(a1)+,d0	| X
 	move.w	(a1)+,d1	| Y
 	move.w	(a1)+,d2	| real object size
 	move.l	fg_drawed_screen_ptr,a1
 	move.w  truck_height,d4
+	* clip to bottom of truck (wheels)
+	sub.w	d3,d4
+	add.w	d3,d1
+	move.w	d3,d4
 	lea		background_restore_buffer,a0
 	jbsr	restore_background
 	
@@ -901,6 +921,7 @@ erase_level_1_truck:
 0:
 	rts
 	
+* truck_draw
 draw_level_1_truck:
 	move.w	x_secondary_scroll_value,d0
 	jeq		2f		| reached destination

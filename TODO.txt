@@ -16,23 +16,25 @@ Not sure that all tunes could fit in one module. Level 1 and level 2 could use s
 As opposed as other smaller games, I'm using files & per-level loading or I couldn't make it happen with 2MB chip. ATM code is 300Kb in chipmem, and since the game
 needs fastmem, those 300k could easily contain the tunes if the exe was relocated.
 
+- add cheat keys: weapon nunchuck/knife
+- crouch with knife => crash prob reloc issue jump in B040
+- double buffering random issues
+- missing frames: karnov head when dying, various character with nunchuck upper tiles
 - when scrolling at 0, characters on fence upper left "wrap" to bottom right
-- 2 reloc configs: fastmem, no reloc (no reloc means double buffering)
 - ninja wrong early X right clip
 - truck: X-clipping creates strange artifacts (jailbars) 
-  depending on shifting (mask???)
+  depending on shifting (mask???) also start of truck bltafwm not working
+- need to optimize truck/train erase: depending on the level, compute the parts that need
+  background refresh. Truck: bottom (wheels) + part between front & tow & exhaust pipe. 
+  Rest: not needed. same for big truck & train, with inter-tow
 - implement start level to try to start level 2
 - easy: bottom osd: overwritten tiles! ("IF" of 1-life, memwatch where 0x63 char is written, see which blank
   deletes it)
 - easy: boss energy needs a sprite too, currently writes into player 1 energy
 - multiplexed sprites for scores / lamps / status
-- still undetected real black on enemies (Karnov...) (almost) OK on Bad dude.
 - hack lamps/trees/fire hydrants (from 244000 layer) with hardware sprites:
   figure out first layer row scroll registers, "trigger" tile to display / undisplay sprite
-- levels with trains/trucks: load traintrucks bitplanes in non-displayed screen buffer
-  to save chipmem
   
-- save memory: load truck first then copy in unused chip bitplanes
 - use wrap for vertical scrolling (level 7) or use blitter for vertical scrollling!!!
 - level 4 backgruond trees: get image: then use static 3 color sprite image with 3 greens
   or 3 browns with dynamic color change, use sprites 4-7 with priority: behind playfields
@@ -40,6 +42,8 @@ needs fastmem, those 300k could easily contain the tunes if the exe was relocate
 - level 6: same
 - level 6 background cave maybe OK with 3 grays
 - sprite mirror_planes: mirroring with width != 16 to implement: test on 32 then make a special case for 32 bits (d0=6)
+- levels with trains/trucks: load traintrucks bitplanes in non-displayed screen buffer
+  to save chipmem
 
 
 - log & rip missing sounds  

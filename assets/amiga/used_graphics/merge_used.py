@@ -10,5 +10,8 @@ with open("sprites/"+used_name,"rb") as f:
 
 contents = bytes([a|b for a,b in zip(new_contents,old_contents)])
 
-with open("sprites/"+used_name,"wb") as f:
-    f.write(contents)
+if old_contents == contents:
+    print("Nothing new")
+else:
+    with open("sprites/"+used_name,"wb") as f:
+        f.write(contents)
