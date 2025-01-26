@@ -53,3 +53,4 @@ def fix_tileset(name,target_palette,black_reveal_palette_index,fake_black):
 fix_tileset("tiles_244000",0,4,(159,90,56))
 fix_tileset("sprites",0,0xA,gray(195))   # player tiles
 fix_tileset("sprites",2,0x9,gray(71))   # ninja tiles
+fix_tileset("sprites",0xF,0x9,gray(71))   # karnov tiles

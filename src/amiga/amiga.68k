@@ -411,25 +411,10 @@ _user:
 *	not.b	d0
 *	move.b	d0,dip_switches_1
 	
-	
-	move.l	misc_options,d1
-	btst	#0,d1
-	
-	btst	#1,d1
-	beq.b	0f
-	bset	#5,d0
-0:
-	btst	#2,d1
-	beq.b	0f
-	bset	#6,d0
-0:
 	.ifndef	RELEASE
-	btst	#31,d1
-	sne		break_at_startup_flag
-	.endif
+	move.l	debug_options,d1
 	
-	**move.b	d0,dip_switches_2
-
+	.endif
 
 	
 
@@ -4366,7 +4351,7 @@ control_flags:
 		.long	0
 
 		.long	WHDLTAG_CUSTOM3_GET
-misc_options:
+debug_options:
 		.long	0
 		.long	WHDLTAG_CUSTOM4_GET
 dip_switch_start_level:

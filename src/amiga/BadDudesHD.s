@@ -3,7 +3,7 @@
 	INCLUDE	whdload.i
 	INCLUDE	whdmacros.i
 
-;CHIP_ONLY
+DEV_MODE
 
 FASTMEMSIZE = $180000
 
@@ -20,11 +20,7 @@ _keydebug
 _keyexit
 	dc.b	$59					; ws_keyexit
 _expmem
-    IFD CHIP_ONLY
-    dc.l    $0
-    ELSE
 	dc.l	FASTMEMSIZE					; ws_expmem
-    ENDC
 	dc.w	_name-_base				; ws_name
 	dc.w	_copy-_base				; ws_copy
 	dc.w	_info-_base				; ws_info
@@ -36,19 +32,22 @@ _expmem
 _config
 	dc.b	"C1:X:invincibility:0;"
 	dc.b	"C1:X:infinite lives:1;"
-	dc.b	"C1:X:sector selection:3;"
 	dc.b	"C1:X:cheat keys:4;"
-	dc.b	"C2:X:jump with button 2 only:0;"
 	dc.b    "C4:L:start level:city,truck,sewer,forest,train,cave,boss base;"
 	dc.b    "C5:L:start lives:default,1,2,3,5;"
-	IFD		CHIP_ONLY
-	dc.b	"C3:X:break at startup:31;"
+	IFD		DEV_MODE
+	; none: allows double buffering, chip starts at $200, exe in fast
+	; simple: no double buffering, chip starts at $60000, exe in 0
+	; reloc: no double buffering, chip starts at $60000, exe in fast
+	dc.b	"C3:L:debug mode:none,simple,reloc;"
 	ENDC
 	dc.b	0
 
 	IFD BARFLY
 	DOSCMD	"WDate  >T:date"
 	ENDC
+
+
 
 DECL_VERSION:MACRO
 	dc.b	"1.0"
@@ -72,16 +71,19 @@ _kickname   dc.b    0
 
     dc.b	0
     even
+_tag		dc.l	WHDLTAG_CUSTOM3_GET
+debug_mode:
+	dc.l	0
+	dc.l	0
 
 start:
 	LEA	_resload(PC),A1
 	MOVE.L	A0,(A1)
 	move.l	a0,a2
+
+	lea	(_tag,pc),a0
+	jsr	(resload_Control,a2)
     
-    IFD CHIP_ONLY
-    lea  _expmem(pc),a0
-    move.l  #$80000,(a0)
-    ENDC
     lea progstart(pc),a0
     move.l  _expmem(pc),(a0)
 	move.l	_expmem(pc),a7
@@ -105,12 +107,15 @@ _Relocate	movem.l	d0-d1/a0-a2,-(sp)
         clr.l   -(a7)                   ;TAG_DONE
 ;        pea     -1                      ;true
 ;        pea     WHDLTAG_LOADSEG
-		IFD		CHIP_ONLY
-        move.l  #$60000,-(a7)       ;chip area
-		ELSE
-        ;move.l  #$200,-(a7)       ;chip area
-       move.l  #$60000,-(a7)       ;chip area
+		move.l	#$200,d1		| start of program chipmem
+		IFD		DEV_MODE
+		move.l  debug_mode(pc),d0
+		cmp.b	#0,d0
+		beq		.1
+        move.l  #$60000,d1      ; chip area moved to be able to load program / relocate
+.1:
 		ENDC
+        move.l  d1,-(a7)       ;chip area
         pea     WHDLTAG_CHIPPTR        
         pea     8                       ;8 byte alignment
         pea     WHDLTAG_ALIGN
