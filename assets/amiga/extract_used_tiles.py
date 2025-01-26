@@ -64,11 +64,15 @@ add_digits_and_letters("title_244000")
 # small font pack for game intro
 n = "game_intro_244000"
 used_dict[n] = new_used_tiles()
-add_digits_and_letters(n)
+for i in range(ord("A"),ord("Z")+1):
+    used_dict[n][i]["cluts"].append(0)
+used_dict[n][ord("?")]["cluts"].append(0)
 
 n = "game_244000"
 #used_dict[n] = new_used_tiles()
 add_digits_and_letters(n)
+for i in range(0x68,0x6F+1):            # ENEMY + dots (hardcoded, didn't log them...)
+    used_dict[n][i]["cluts"].append(0)
 
 
 with open(used_cluts_file,"w") as f:

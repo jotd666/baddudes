@@ -86,6 +86,8 @@ start:
     
     lea progstart(pc),a0
     move.l  _expmem(pc),(a0)
+	move.l	_expmem(pc),$4
+
 	move.l	_expmem(pc),a7
 	add.l	#FASTMEMSIZE-4,a7
 	lea	exe(pc),a0

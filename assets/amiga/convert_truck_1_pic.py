@@ -15,6 +15,15 @@ def doit(global_palette,force=False):
         truck1_img=truck1_img.crop((0,y_start,width,y_start+128))
         forced_nb_planes = 3
         reduced_nb_colors = 1<<forced_nb_planes
+
+        # remove some rows to show the upper iron bar (lame trick)
+        bar_height = 8
+        bar_start = 32
+        for x in range(truck1_img.size[0]):
+            for y in range(bar_start,bar_start+bar_height):
+                truck1_img.putpixel((x,y),transparent)
+
+
         reduced_colors_truck1_img = truck1_img.quantize(colors=reduced_nb_colors,dither=0).convert('RGB')
         truck1_palette = bitplanelib.palette_extract(reduced_colors_truck1_img)
         transparent_first(truck1_palette,transparent)
@@ -37,6 +46,8 @@ def doit(global_palette,force=False):
             width += 1
 
         plane_size = len(raw)//nb_planes # mask included
+
+
         if width*height != plane_size:
             raise Error(f"Computed w*h = {width}*{height} != plane size ({plane_size})")
         with open(asm_out,"w") as f:

@@ -680,7 +680,7 @@ def postprocess_game_osd_tiles(tileset,palette_index):
                 bitplanelib.replace_color_from_dict(tileset[life_tile],color_rep)
 
 # set to "False" for faster operation when working on game sprite/tiles
-if False:
+if True:
 
     process_8x8_tile_layer("title_244000",colors_last=True,max_colors=8)
     process_8x8_tile_layer("game_intro_244000",colors_last=True,max_colors=8)

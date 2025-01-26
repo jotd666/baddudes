@@ -83,7 +83,7 @@ ONE_TICK = 1
 * note: double buffering eats a lot of memory, it cannot run in debug mode
 * either simple or reloc. Only in "none" (program running in fastmem, data
 * located in low chipmem)
-OPT_ENABLE_DOUBLE_BUFFERING = 1
+OPT_ENABLE_DOUBLE_BUFFERING = 0
 
 _custom = 0xDFF000
 
@@ -101,6 +101,7 @@ SPRITE_FMODE = 3
 
 PROGRAM_SIZE = 0x60000
 
+BOTTOM_TRUCK_HEIGHT = 32
 
 NB_PLAYFIELD_LINES = 256
 
@@ -835,6 +836,17 @@ _vblank:
 0:
 	and.w	#0x3FF,x_secondary_scroll_value
 	
+	* display boss energy
+	lea		boss_life,a0
+	lea		0x244758,a6
+0:
+	move.w	(a0)+,d7
+	jeq		1f
+	jbsr	osd_write_word
+	addq	#2,a6
+	jra	0b
+1:
+
 	* copy truck scroll value
 	move.w	x_secondary_scroll_value,d0
 	lea		debug_truck_message(pc),a0
@@ -892,7 +904,7 @@ hex_table:
 	.byte	0x45
 	.byte	0x46
 	
-* truck_erase
+* truck_erase erase_truck
 erase_level_1_truck:
 	
 	tst.b	truck_previously_drawn
@@ -904,19 +916,34 @@ erase_level_1_truck:
 	* again (which is pretty rectangular and moves only to the right)
 	
 	lea		prev_truck_params,a1
-	move.w	#32,d3		| bottom part which needs restoring
+	move.w	#BOTTOM_TRUCK_HEIGHT,d3		| bottom part which needs restoring
 	move.w	(a1)+,d0	| X
 	move.w	(a1)+,d1	| Y
-	move.w	(a1)+,d2	| real object size
+	move.w	(a1),d2	| real object size
 	move.l	fg_drawed_screen_ptr,a1
 	move.w  truck_height,d4
 	* clip to bottom of truck (wheels)
 	sub.w	d3,d4
-	add.w	d3,d1
+	add.w	d4,d1
 	move.w	d3,d4
 	lea		background_restore_buffer,a0
 	jbsr	restore_background
-	
+
+	* rear should be erased only when X > 0
+	lea		prev_truck_params,a1
+	move.w	(6,a1),d3	| global scroll position when drawn
+	move.w	(a1)+,d0	| X
+	sub.w	d0,d3
+	jeq		1f			| X=0 on displayed screen: no need to erase
+	move.w	(a1)+,d1	| Y
+	moveq	#2,d2		| just the first bytes
+	move.l	fg_drawed_screen_ptr,a1
+	move.w  truck_height,d4
+	* clip to bottom of truck (wheels)
+	sub.w	#BOTTOM_TRUCK_HEIGHT,d4
+	lea		background_restore_buffer,a0
+	jbsr	restore_background
+1:
 	clr.b	truck_previously_drawn
 0:
 	rts
@@ -1004,7 +1031,8 @@ do_truck_draw:
 	lea		prev_truck_params,a1
 	move.w	d0,(a1)+	| X
 	move.w	d1,(a1)+	| Y
-	move.w	d6,(a1)		| real width
+	move.w	d6,(a1)+	| real width
+	move.w	x_secondary_scroll_value,(a1)	| note truck position
 	move.l 	fg_drawed_screen_ptr,a1
 	jbsr	blit_planes_any_internal_cookie_cut
 2:
@@ -1434,22 +1462,35 @@ erase_tile_8:
 	
 * assuming word write ATM
 * < D3: X (in bytes displacement vs screen)
-* < D2: Y (in number of rows)
+* < D2: Y (in number of rows aka real coords not tile coords!)
 * this routine dispatches the data across the various static HW
 * sprites on screen
 
 write_osd_layer:
-
+*	cmp.b	#0x1C*8,d2
+*	jne 0f
+*	cmp.b	#0x20,d7
+*	jne 0f
+*	cmp.b	#0xC,d3
+*	jcs	0f
+*	
+*	jra	write_osd_layer_out
+*0:
 	move.w	d7,d6			| tile code+clut
 
+
+*	move.b	d2,tempx
+*	move.b	d3,tempy
+*	move.b	d6,tempcode
 
 	jbsr	pick_osd_sprite
 	jeq		write_osd_layer_out
 	
-	and.w	#0x7FF,d6		| only clut
+	and.w	#0x7FF,d6		| only tile code
 	jeq		write_osd_layer_out
 	jeq		erase_tile_on_sprite
 
+	
 	move.w	d6,d7			| clut 0, we do colors manually
 
 	jbsr	pick_8x8_tile_code
@@ -1457,17 +1498,19 @@ write_osd_layer:
 	add.w	d6,a0	| select tile clut (should be zero anyway)
 	move.l	a0,a2			| save base ptr (we use relative pointers)
 	
+
+	
 0:
 	move.l	(a0)+,d2
 	jne		1f
 	** TODO figure out what erases "IF" from "1-LIFE"
-	**jra		write_osd_layer_out
+	*jra		write_osd_layer_out
 	move.l	#blank_area,d2
 	sub.l	a2,d2
 1:
 	move.l	(a0)+,d3
 	jne		1f
-	**jra		write_osd_layer_out
+	*jra		write_osd_layer_out
 	move.l	#blank_area,d3
 	sub.l	a2,d3
 1:
@@ -1481,10 +1524,18 @@ write_osd_layer:
 	COPY_SPRITE_TILE_ROW
 	.endr	
 	
-	
 write_osd_layer_out:
 	move.w	(a7)+,d2
 	jra		101b		| exit
+	
+
+tempx:
+	.byte 0
+tempy:
+	.byte 0
+tempcode:
+	.byte 0
+	.align 2
 	
 erase_tile_on_sprite:
 	.rept	16
@@ -1495,7 +1546,7 @@ erase_tile_on_sprite:
 
 * given D3/D2 as X/Y select location to start writing to sprite
 
-pick_osd_sprite:
+pick_osd_sprite:	
 	cmp.w	#17,d2
 	jcc		not_upper_osd
 	cmp.w	#8+2,d3
@@ -1563,7 +1614,7 @@ not_upper_osd:
 	jcc		lower_osd
 	jra		10b		| center parts TODO
 lower_osd:	
-	cmp.w	#16+2,d3
+	cmp.w	#11,d3
 	jcc		2f		| TEMP center low
 	* "1-LIFE" + status
 	lea		osd_bottom_left_sprite+16,A3
@@ -1581,7 +1632,8 @@ lower_osd:
 2:
 	cmp.w	#22+1,d3
 	jcs		0f		| center low
-	
+	cmp.w	#30,d3
+	jcc		10b		| ignore
 	* "2-LIFE" + status
 	lea		osd_bottom_right_sprite+16-23,A3
 	add.w	d3,a3		| add X offset
@@ -1593,6 +1645,33 @@ lower_osd:
 	moveq	#1,d2		| success
 	rts
 0:
+	* boss energy on 2 sprites
+	
+	cmp.w	#0xC,d3
+	jcs		10b			| ignore before
+	cmp.w	#0x14,d3	
+	jcc		0f
+	lea		osd_bottom_left_center_sprite+16-12,a3
+	add.w	d3,a3
+	cmp.w	#0xD8,d2
+	jeq		1f
+	* second row
+	add.w	#NB_BYTES_PER_SPRITE_ROW*2*8,a3
+1:
+	moveq	#1,d2		| success
+	rts
+	
+0:
+	* boss second sprite
+	lea		osd_bottom_right_center_sprite+16-20,a3
+	add.w	d3,a3
+	cmp.w	#0xD8,d2
+	jeq		1f
+	* second row
+	add.w	#NB_BYTES_PER_SPRITE_ROW*2*8,a3
+	jra		1b		| success
+1:
+
 	moveq	#0,d2
 	rts
 
@@ -2666,6 +2745,10 @@ restore_background:
 	move.w	#NB_BYTES_PER_ROW,d1		| blit modulo
 
     sub.w   d2,d1       | blit modulo
+	
+	move.w	d4,d5		| store blit height
+	subq	#1,d5
+	
     lsl.w   #6,d4
     lsr.w   #1,d2		| blit width
     add.w   d2,d4       | blit height
@@ -2689,14 +2772,45 @@ restore_background:
 	
 	move.w	nb_tile_planes_24a000,d0
 	subq	#2,d0
-0:
+
+
+2:
 	lea	(RESTORE_SCREEN_PLANE_SIZE,a0),a0
 	lea	(SCREEN_PLANE_SIZE,a1),a1
+	cmp.w	#3,d2
+	jcc		0f
+
+	* not too wide blits: check if blitter is active
+	BTST	#6,(dmaconr,a5)
+	jeq		0f
+	* save regs
+	move.l	a1,a3
+	move.l	a0,a2
+	move.w	d5,d6
+11:
+	* use cpu to restore background, may work concurrently to the blitter
+	move.w	d2,d3
+	subq	#1,d3
+10:
+	* copy word by word using the CPU
+	move.w	(a0)+,(a1)+
+	dbf		d3,10b
+	* next row
+	add.w	d1,a0
+	add.w	d1,a1
+	dbf		d6,11b
+	* next plane
+	move.l	a3,a1
+	move.l	a2,a0
+	dbf		D0,2b	
+	jra		1f
+0:
 	WAIT_BLIT
 	move.l a0,bltapt(a5)	|source graphic top left corner
 	move.l a1,bltdpt(a5)	|destination top (bottom) left corner
 	move.w  d4,bltsize(a5)	|rectangle size, starts blit
-	dbf		D0,0b
+	dbf		D0,2b
+1:
 	
 	movem.l	(a7)+,d2-d6/a0/a2-a5
 	rts
@@ -3346,7 +3460,13 @@ set_game_bitplanes:
     rts
 		
 
-
+award_weapon:
+	move.l	a6,-(a7)
+	lea		0xFFA365,a6
+	jbsr	osd_real_ram_address
+	move.b	d0,(a6)
+	move.l	(a7)+,a6
+	rts
 
 
 
@@ -3601,11 +3721,26 @@ handle_keyboard:
 	move.w	#0x0FF,_custom+color
 	eor.b	#1,invincible_flag
 0:
-*	cmp.b	#0x54,d0	| F5 key
-*	bne.b	0f
-*	st.b	cheat_used
-*	move.w	#0x0FF,_custom+color
-*0:
+	cmp.b	#0x54,d0	| F5 key
+	bne.b	0f
+	st.b	cheat_used
+	move.w	#0x0FF,_custom+color
+	* award knife
+	move.b	#4,d0
+	jbsr	award_weapon
+	jra		2f
+	
+0:
+	cmp.b	#0x55,d0	| F6 key
+	bne.b	0f
+	st.b	cheat_used
+	move.w	#0x0FF,_custom+color
+	* award nunchuck
+	move.b	#2,d0
+	jbsr	award_weapon
+	jra		2f
+	
+0:
 *
 10:
 	.ifndef	RELEASE
@@ -4064,14 +4199,27 @@ install_osd_hardware_sprites:
 	move.w	#48+64*2,d0
 	move.w	#32,d1
 	jbsr	install_osd_sprite
+	
 	lea		osd_right_sprite,a2
 	move.w	#48+64*3,d0
 	move.w	#32,d1
 	jbsr	install_osd_sprite
+	
 	lea		osd_bottom_left_sprite,a2
 	move.w	#32,d0
 	move.w	#240,d1
 	jbsr	install_osd_sprite
+	
+	lea		osd_bottom_left_center_sprite,a2
+	move.w	#96+32,d0
+	move.w	#240,d1
+	jbsr	install_osd_sprite
+	
+	lea		osd_bottom_right_center_sprite,a2
+	move.w	#96+32+64,d0
+	move.w	#240,d1
+	jbsr	install_osd_sprite
+	
 	lea		osd_bottom_right_sprite,a2
 	move.w	#216,d0
 	move.w	#240,d1
@@ -4467,6 +4615,10 @@ debug_truck_display:
 debug_truck_move:
 	.word	0
 
+* in 244758
+boss_life:
+      .word	0x006A,0x0068,0x006B,0x069,0x006F,0x006F,0x006F,0x006F,0x006F,0x006F,0x006D,0
+
 debug_truck_message:
 	.asciz	"TPOS 000000"
 	.endif
@@ -4775,6 +4927,7 @@ intro_intreq_block:
 	.word	0x1401,0xFFFE
 	.word	color+2*11,0xEEE		| back to white for "LIFE" letters
 	.word	color+2*10,0xB29		| magenta for dots
+	.word	color+2*14,0xB29		| magenta for dots (right part of "enemy" dots)
 
 	
     .long    -2					
@@ -4817,6 +4970,8 @@ osd_\name\()_next_cw:
 	RESERVE_SPRITE	right_center
 	RESERVE_SPRITE	bottom_left
 	RESERVE_SPRITE	bottom_right
+	RESERVE_SPRITE	bottom_left_center
+	RESERVE_SPRITE	bottom_right_center
 	
 background_restore_buffer:
 	.skip	RESTORE_SCREEN_SIZE
@@ -4834,6 +4989,7 @@ fg_screen_buffer_1:
 	.skip	SCREEN_SIZE
 	.skip	NB_BYTES_PER_ROW*12*3
 	.skip	8
+	
 
 
 		
