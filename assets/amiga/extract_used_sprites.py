@@ -36,6 +36,12 @@ for n in os.listdir(tiles_dir):
 
 game_intro = "game_intro"
 
+extra_single_size = {
+0xC,  # player head part (used in nunchuck)
+0x32,0x30,  # crouched player head part (used in nunchuck)
+
+}
+
 # glasses & guy face, ripped manually from code, not a lot of sprites
 used_dict[game_intro] = {x:{"cluts":[0xD if x==0xBBD else 0xE],"attributes":0} for x in range(0xBB8,0xBC0)}
 for k,d in used_dict.items():
@@ -44,16 +50,15 @@ for k,d in used_dict.items():
         new_d = {}
         for k,v in d.items():
             ik = int(k)
-            if v["attributes"] & 0x40:
-                if v["attributes"] & 0x18:
-                    # used as Y-flipped and multi as well we should also declare single tile, as
-                    # if multi, Y-flipped version won't match (tile order doesn't change) so they
-                    # have to use the single tiles instead. If we only generate the multi-tile, then
-                    # the flipped/single version will be missing
-                    vc = v.copy()
-                    vc["attributes"] = 0  # simple 16x16
-                    new_d[k] = vc
-                    k += 0x1000    # offset for non-16x16 tile
+            if ik in extra_single_size or (v["attributes"] & 0x40 and v["attributes"] & 0x18):
+                # used as Y-flipped and multi as well we should also declare single tile, as
+                # if multi, Y-flipped version won't match (tile order doesn't change) so they
+                # have to use the single tiles instead. If we only generate the multi-tile, then
+                # the flipped/single version will be missing
+                vc = v.copy()
+                vc["attributes"] = 0  # simple 16x16
+                new_d[k] = vc
+                k += 0x1000    # offset for non-16x16 tile
             new_d[k] = v
         d.update(new_d)
 

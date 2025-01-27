@@ -13,18 +13,28 @@ Could you try to create close versions of the tunes, maybe using some instrument
 I'm expecting a "big" hit so I'd share a good percentage of the donations with you.
 
 Not sure that all tunes could fit in one module. Level 1 and level 2 could use separate modules if instruments are too different, in order to save chipmem.
-As opposed as other smaller games, I'm using files & per-level loading or I couldn't make it happen with 2MB chip. ATM code is 300Kb in chipmem, and since the game
-needs fastmem, those 300k could easily contain the tunes if the exe was relocated.
+As opposed as other smaller games, I'm using files & per-level loading, so tunes could be loaded too
 
+- dump level 2 tiles with proper palette for background tiles, try to use only 16 colors
+- merge baddudes log from level 1 to level 2
+- group cars bobs to display them in 1 piece (if possible, as it requires clipping)
+- left osd mssing 1 char ("G"AME OVER)
+- when losing a life, life character is not erased
 - truck missing 1 bitplane or something... wrong color
 - log & rip missing sounds: breakpoint on sound not found so able to go to mame and rip it
 
 - multiplexed sprites for scores / lamps / status
 - hack lamps/trees/fire hydrants (from 244000 layer) with hardware sprites:
   figure out first layer row scroll registers, "trigger" tile to display / undisplay sprite
-- missing frames: karnov head when dying, main character with nunchuck upper tiles (crouching)
-- karnov: when scrolling at 0, characters on fence upper left "wrap" to bottom right
-  increase plane size to check
+  => get scroll value from 242404 write (set_front_layer_scroll_0e3f0)
+- missing frames: karnov head when dying,
+  main character with nunchuck upper tiles (crouching, 0x30,0x32 still not dumped or displayed)
+- karnov: when scrolling at 0, characters on fence upper
+  left "wrap" to bottom right, are clipped to soon on left (player) also tile restore is wrong
+  
+- try to group erases 16+16 = 32
+- case where CPU erase is 32 bytes size, 16 almost never happens =>
+  table with 16,32,48,64 cpu erase routines
 - ninja wrong early X right clip
 
 - double buffering random issues
@@ -61,7 +71,7 @@ needs fastmem, those 300k could easily contain the tunes if the exe was relocate
 - osd_write_byte not working properly
 
 howto:
-- skip music level 1: bpset 0df2a,D0==$1F,{CURPC=$13DA;g}
+- skip music level 1: bpset 0df2a,D0==$1F || D0==$27 || D0 == $2C || D0 == $26,{CURPC=$13DA;g}
 
 reverse lb_024dc
 reverse jump tables (like in pooyan): get dc.l  lb_xxxxx and set breakpoints

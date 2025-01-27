@@ -11,17 +11,19 @@ def doit(global_palette,force=False):
         pad_value =(0X10,0x20,0x30)
         truck1_img = Image.open(whole_pics_dir / "truck_1.png")
         y_start = 352
+        exhaust_height = 16
         width = 16*24
-        truck1_img=truck1_img.crop((0,y_start,width,y_start+128))
+        truck1_img=truck1_img.crop((0,y_start+exhaust_height,width,y_start+128))
         forced_nb_planes = 3
         reduced_nb_colors = 1<<forced_nb_planes
 
         # remove some rows to show the upper iron bar (lame trick)
         bar_height = 8
-        bar_start = 32
+        bar_start = 16
         for x in range(truck1_img.size[0]):
             for y in range(bar_start,bar_start+bar_height):
                 truck1_img.putpixel((x,y),transparent)
+
 
 
         reduced_colors_truck1_img = truck1_img.quantize(colors=reduced_nb_colors,dither=0).convert('RGB')

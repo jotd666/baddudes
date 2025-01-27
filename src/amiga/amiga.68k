@@ -1021,7 +1021,7 @@ do_truck_draw:
 	addq	#1,D6	| round to highest even
 1:
 	
-	move.w	#16*22,d1		| Y-pos: fixed
+	move.w	#16*23,d1		| Y-pos: fixed
 
 	* we have to take into account primary scroll value as we only have 1 layer
 	add.w	x_background_scroll_value,d0
@@ -1860,6 +1860,11 @@ addr_24Axxx_tile_layer_op:
 
 111:
 	move.l	tile_data_24a000,a0
+	.ifndef	RELEASE
+	cmp.l	#0,a0
+	jeq 	102f     | no tiles loaded, let logging work
+112:
+	.endif
 	add.l	(a0,d6.w*4),a0  | skip palette select tile code
 	move.l	(a0,d5.w*4),d6
 	jeq		100f				| tile not found/ignored, skip
@@ -1927,6 +1932,9 @@ addr_24Axxx_tile_layer_op:
 101:
 	movem.l	(a7)+,a0-a5/d2-d6
 	rts
+102:
+	move.w	(a7)+,d2
+	jra		101b
 2:
 	CLR_PLANE
 	tst.b	first_half_flag
@@ -3837,7 +3845,9 @@ osd_set_context:
 	jbsr	clear_all_hardware_sprites
 	jbsr	free_all_memory
 	jbsr	clear_log_memory
-
+	clr.l	tile_data_24a000
+	clr.l	tile_data_244000
+	
 	lea		game_context_table,a0
 	jsr		([a0,d0.w*4])
 1:
@@ -4142,7 +4152,7 @@ level_1_load:
 	rts
 	
 level_2_load:
-	lea		sprites_game_level_1_file,a0
+	lea		sprites_game_level_2_file,a0
 	jbsr 	load_sprite_file
 	rts
 	
@@ -4631,6 +4641,8 @@ truck_1_pic_file:
 	.asciz	"truck_1.bin"
 sprites_game_level_1_file:
 	.asciz	"sprites_game_level_1.bin"
+sprites_game_level_2_file:
+	.asciz	"sprites_game_level_2.bin"
 sprites_game_intro_file:
 	.asciz	"sprites_game_intro.bin"
 tiles_title_244000_file:

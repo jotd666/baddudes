@@ -148,7 +148,7 @@ ram_relocs:
 	.long	0x001caa+2	| current_stage_00ff821d
 	.long	0x001cbe+2	| current_stage_00ff821d
 	.long	0x001d0a+6	| ext_00ff814c
-	.long	0x001d14+6	| ext_00ff8150
+	.long	0x001d14+6	| front_layer_scroll_00ff8150
 	.long	0x001d34+2	| ext_00ff8114
 	.long	0x001d40+2	| ext_00ff8118
 	.long	0x001dc4+2	| spriteram_00ffc000
@@ -709,11 +709,11 @@ ram_relocs:
 	.long	0x006af8+2	| ext_00ff816c
 	.long	0x006afe+2	| ext_00ff814c
 	.long	0x006b04+2	| ext_00ff814c
-	.long	0x006b16+2	| ext_00ff8150
+	.long	0x006b16+2	| front_layer_scroll_00ff8150
 	.long	0x006b1c+2	| ext_00ff8128
 	.long	0x006b22+2	| ext_00ff814c
-	.long	0x006b28+2	| ext_00ff8150
-	.long	0x006b2e+2	| ext_00ff8150
+	.long	0x006b28+2	| front_layer_scroll_00ff8150
+	.long	0x006b2e+2	| front_layer_scroll_00ff8150
 	.long	0x006b46+6	| ext_00ff815c
 	.long	0x006b54+6	| ext_00ff8164
 	.long	0x006b5e+6	| ext_00ff816c
@@ -750,11 +750,11 @@ ram_relocs:
 	.long	0x006d24+2	| ext_00ff816c
 	.long	0x006d2a+2	| ext_00ff814c
 	.long	0x006d30+2	| ext_00ff814c
-	.long	0x006d42+2	| ext_00ff8150
+	.long	0x006d42+2	| front_layer_scroll_00ff8150
 	.long	0x006d48+2	| ext_00ff8128
 	.long	0x006d4e+2	| ext_00ff814c
-	.long	0x006d54+2	| ext_00ff8150
-	.long	0x006d5a+2	| ext_00ff8150
+	.long	0x006d54+2	| front_layer_scroll_00ff8150
+	.long	0x006d5a+2	| front_layer_scroll_00ff8150
 	.long	0x006d72+6	| ext_00ff815c
 	.long	0x006d80+6	| ext_00ff8164
 	.long	0x006d8a+6	| ext_00ff816c
@@ -1180,7 +1180,7 @@ ram_relocs:
 	.long	0x00cd7a+2	| ext_00ffa842
 	.long	0x00cd80+2	| ext_00ffa8a0
 	.long	0x00cd86+2	| ext_00ff814c
-	.long	0x00cd8c+2	| ext_00ff8150
+	.long	0x00cd8c+2	| front_layer_scroll_00ff8150
 	.long	0x00cd92+2	| ext_00ffa8c8
 	.long	0x00cd98+2	| ext_00ffa843
 	.long	0x00cd9e+2	| ext_00ffa844
@@ -1519,7 +1519,7 @@ ram_relocs:
 	.long	0x00e390+2	| current_stage_00ff821d
 	.long	0x00e3c0+2	| counter_00ffa8d4
 	.long	0x00e3c6+4	| counter_00ffa8d4
-	.long	0x00e3f0+2	| ext_00ff8150
+	.long	0x00e3f0+2	| front_layer_scroll_00ff8150
 	.long	0x00e410+2	| ext_00ffa856
 	.long	0x00e422+2	| ext_00ffa856
 	.long	0x00e42e+2	| ext_00ffa8d0
@@ -2622,6 +2622,7 @@ patchlist:
 	PL_PSS	0x006aca,write_word_imm_0004_to_00246016,2
 	PL_PS	0x006b0a,write_word_D4_to_0024841c
 	PL_PS	0x006b10,write_word_D4_to_0024841e
+	PL_PSS	0x006b7a,copy_tiles_06b7a,12
 	PL_PSS	0x006bbe,copy_tiles_06bbe,12
 	PL_PSS	0x006c82,videoram_write_06c82,12
 	PL_PSS	0x006cf6,write_word_imm_0004_to_00246016,2

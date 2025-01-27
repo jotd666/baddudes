@@ -184,7 +184,7 @@ def load_tileset(image_name,palette_index,side,tileset_name,dumpdir,cluts,dump=F
                             name = name_dict.get(tile_number,"unknown")
                         else:
                             name = "unknown"
-                        img.save(os.path.join(dump_subdir,f"{iname}_simple.png"))
+                        img.save(os.path.join(dump_subdir,f"{name}_simple.png"))
 
 
     if postload_callback:
@@ -680,7 +680,7 @@ def postprocess_game_osd_tiles(tileset,palette_index):
                 bitplanelib.replace_color_from_dict(tileset[life_tile],color_rep)
 
 # set to "False" for faster operation when working on game sprite/tiles
-if True:
+if False:
 
     process_8x8_tile_layer("title_244000",colors_last=True,max_colors=8)
     process_8x8_tile_layer("game_intro_244000",colors_last=True,max_colors=8)
@@ -699,6 +699,7 @@ if True:
     # game intro. Not gaining any colors by passing the associated screen tile colors...
     process_tile_context("game_intro",sprite_sheet_dict,32,is_bob=True,shift_palette_count=32)
     process_tile_context("game_level_1",sprite_sheet_dict,32,is_bob=True,shift_palette_count=32)
+    process_tile_context("game_level_2",sprite_sheet_dict,32,is_bob=True,shift_palette_count=32)
 
 else:
     # only generates game tiles & sprites
@@ -709,8 +710,11 @@ else:
     truck_used_colors = convert_truck_1_pic.doit(palette_dict["level_1_24a000"],force=True)
     # we return the reduced palette, then we reinject it in the global tiles
     # so they are first in the palette
+
     process_tile_context("level_1_24a000",level_1_tile_24a000_sheet_dict,32,first_colors=truck_used_colors)
 
+    #process_tile_context("level_2_24a000",level_2_tile_24a000_sheet_dict,32,first_pass=False)
 
     process_tile_context("game_level_1",sprite_sheet_dict,32,is_bob=True,shift_palette_count=32)
+    process_tile_context("game_level_2",sprite_sheet_dict,32,is_bob=True,shift_palette_count=32)
 

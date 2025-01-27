@@ -710,6 +710,7 @@ lb_0e130:
 	RESTORE_REGS
 	RTS
 	
+copy_tiles_06b7a:
 copy_tiles_06bbe:
 	STORE_REGS
 	exg		a6,a0
