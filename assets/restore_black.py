@@ -54,3 +54,5 @@ fix_tileset("tiles_244000",0,4,(159,90,56))
 fix_tileset("sprites",0,0xA,gray(195))   # player tiles
 fix_tileset("sprites",2,0x9,gray(71))   # ninja tiles
 fix_tileset("sprites",0xF,0x9,gray(71))   # karnov tiles
+fix_tileset("sprites",0xB,0x7,(230,230,0))   # tires
+fix_tileset("sprites",0x9,0x7,(230,230,0))   # tires
