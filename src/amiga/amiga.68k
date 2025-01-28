@@ -828,7 +828,7 @@ _vblank:
 
 	.ifndef		RELEASE
 	tst.b	debug_truck_display
-	jeq		1f
+	jeq		2f
 	move.w	debug_truck_move,d0
 	jeq		0f
 	add.w	d0,x_secondary_scroll_value
@@ -856,7 +856,7 @@ _vblank:
 	lea		debug_scroll_message(pc),a0
 	jbsr	encode_debug_message
 	jbsr	osd_write_left_debug_message
-1:
+2:
 	.endif
 
 3:
@@ -3264,44 +3264,26 @@ free_all_memory:
 	
 * < A0: palette
 * < A1: copperlist
-* < D0: number of colors to load	
+* < D0: number of colors to load
+* supports bank switching (skips it)	
 load_palette:
 	subq.w	#1,d0
 	beq.b	2f
 1:
-	addq.w	#2,a1
+	move.w	(a1)+,d1
+	* check if copperlist entry is not a bank switch
+	cmp.w	#bplcon3,d1
+	jeq		3f
 	move.w	(a0)+,(a1)+
 	dbf		d0,1b
 2:
 	rts
-	
-* < A1: copperlist
-* < D0: number of colors to unload	
-unload_palette:
-	subq.w	#1,d0
-	beq.b	2f
-1:
-	move.w	#0x1FE,(a1)+		| nop
-	addq.w	#2,a1
-	dbf		d0,1b
-2:
-	rts
+3:
+	addq	#2,a1
+	jra		1b		| bank switch, skip this copperlist entry
 	
 
-* < A0: palette
-* < A1: copperlist
-* < D0: number of colors to load	
-* < D1: color register to start from (color)
-load_palette_fully:
-	subq.w	#1,d0
-	beq.b	2f
-1:
-	move.w	d1,(a1)+
-	move.w	(a0)+,(a1)+
-	addq	#2,d1	| next color reg
-	dbf		d0,1b
-2:
-	rts
+
 	
 
 osd_is_vblank_interrupt_enabled:
@@ -3964,15 +3946,16 @@ load_sprite_file:
 	move.l	d0,a0
 	move.w	(a0)+,d0	| nb planes (6) ignore
 	moveq	#0,d0
-	move.w	(a0)+,d0	| nb plane blocks (ignore)
-
+	move.w	(a0)+,d0	| first (skipped) colors
 	
-	lea	(0x40,a0),a0	| skip 32 first colors
 	move.l	a0,a1
-	add.w	#0x40,a1
+	lea	(a0,d0.w*2),a0	| skip first colors
+	add.w	#0x80,a1	| skip palette colors
 	move.l	a1,sprite_table_base
-	lea	sprites_palette,a1
-	move.w	#32,d0
+	lea	base_palette,a1
+	lea		(a1,d0.w*4),a1	| skip first colors
+	sub.w	#64,d0
+	neg.w	d0		| 32 or 48
 	jbsr	load_palette
 	
 	* relocate tile tables so they're no longer relative (generic blit routines
@@ -4152,6 +4135,8 @@ level_1_load:
 	rts
 	
 level_2_load:
+	lea		tiles_level_2_24a000_file,a0
+	jbsr	load_tiles_file_24a000
 	lea		sprites_game_level_2_file,a0
 	jbsr 	load_sprite_file
 	rts
@@ -4257,7 +4242,7 @@ install_osd_sprite:
 	
 load_intro_palette:
 	* set game intro palette
-	lea		intro_palette,a1
+	lea		base_palette,a1
 	move.w	nb_tile_colors_24a000,d0
 	move.l	tiles_palette_24a000,a0		| palette
 	jbsr	load_palette
@@ -4659,6 +4644,8 @@ tiles_highs_24a000_file:
 	.asciz	"tiles_highs_24a000.bin"
 tiles_level_1_24a000_file:
 	.asciz	"tiles_level_1_24a000.bin"
+tiles_level_2_24a000_file:
+	.asciz	"tiles_level_2_24a000.bin"
 dudes_pics_files:
 	.asciz	"dudes.bin"
 rom_file:
@@ -4902,11 +4889,10 @@ intro_sprites:
 
 
 	DECL_COLOR_BANK 0
-intro_palette:
+base_palette:
 	DECL_COLORS	0,32
 	* now set color bank 1
 	DECL_COLOR_BANK	1
-sprites_palette:
 dudes_palette:
 	DECL_COLORS	0,24
 letters_palette:

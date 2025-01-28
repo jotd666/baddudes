@@ -310,6 +310,7 @@ def remove_colors(imgname):
 title_tile_24a000_sheet_dict = {i:sheets_path / "tiles_24a000" / "title" / f"pal_{i:02x}.png" for i in range(9)}
 game_intro_tile_24a000_sheet_dict = {i:sheets_path / "tiles_24a000" / "game_intro" / f"pal_{i:02x}.png" for i in range(4)}
 level_1_tile_24a000_sheet_dict = {i:sheets_path / "tiles_24a000" / "level_1" / f"pal_{i:02x}.png" for i in range(16)}
+level_2_tile_24a000_sheet_dict = {i:sheets_path / "tiles_24a000" / "level_2" / f"pal_{i:02x}.png" for i in range(8,16)}
 tile_0_sheet_dict = {i:sheets_path / "tiles_244000" / f"pal_{i:02x}.png" for i in range(15)}
 sprite_sheet_dict = {i:sheets_path / "sprites" / f"pal_{i:02x}.png" for i in range(16)}
 
@@ -485,7 +486,7 @@ def read_tileset(img_set_list,palette,cache,is_bob,generate_mask):
     return new_tile_table
 
 
-def dump_tiles(file_radix,palette,tile_table,tile_plane_cache,add_dimension_info=False):
+def dump_tiles(file_radix,palette,tile_table,tile_plane_cache,add_dimension_info=False,palette_shift=0):
     nb_planes = get_nb_planes(palette)
 
     tiles_1_src = generated_src_dir / f"{file_radix}.68k"
@@ -493,7 +494,7 @@ def dump_tiles(file_radix,palette,tile_table,tile_plane_cache,add_dimension_info
     nb_planes_blocks = len(tile_plane_cache)
     with open(tiles_1_src,"w") as f:
         f.write(f"\tdc.w\t{nb_planes}   ; nb planes \n")
-        f.write(f"\tdc.w\t{nb_planes_blocks}   ; nb plane blocks \n")
+        f.write(f"\tdc.w\t{palette_shift}   ; nb shifted colors \n")
         f.write("palette:\n")
         palette_copy = palette.copy()
         # avoid that sometimes screen flashes purple when in fact it should be black
@@ -602,7 +603,7 @@ def process_tile_context(context_name,tile_sheet_dict,nb_colors,is_bob=False,shi
         tile_24a000_table = read_tileset(tile_24a000_set_list,bg_palette,cache=tile_24a000_cache, is_bob=is_bob, generate_mask=is_bob)
         prefix = "sprites_" if is_bob else "tiles_"
 
-        dump_tiles(prefix+context_name,bg_palette,tile_24a000_table,tile_24a000_cache,add_dimension_info=is_bob)
+        dump_tiles(prefix+context_name,bg_palette,tile_24a000_table,tile_24a000_cache,add_dimension_info=is_bob,palette_shift=shift_palette_count)
 
     palette_dict[context_name] = bg_palette
 
@@ -680,7 +681,7 @@ def postprocess_game_osd_tiles(tileset,palette_index):
                 bitplanelib.replace_color_from_dict(tileset[life_tile],color_rep)
 
 # set to "False" for faster operation when working on game sprite/tiles
-if False:
+if True:
 
     process_8x8_tile_layer("title_244000",colors_last=True,max_colors=8)
     process_8x8_tile_layer("game_intro_244000",colors_last=True,max_colors=8)
@@ -691,6 +692,7 @@ if False:
     process_tile_context("highs_24a000",title_tile_24a000_sheet_dict,16)
     process_tile_context("level_1_24a000",level_1_tile_24a000_sheet_dict,32)
     convert_truck_1_pic.doit(palette_dict["level_1_24a000"])
+    process_tile_context("level_2_24a000",level_2_tile_24a000_sheet_dict,16,first_pass=False)
 
 # sprites
     process_tile_context("title_24a000",title_tile_24a000_sheet_dict,16)
@@ -699,7 +701,7 @@ if False:
     # game intro. Not gaining any colors by passing the associated screen tile colors...
     process_tile_context("game_intro",sprite_sheet_dict,32,is_bob=True,shift_palette_count=32)
     process_tile_context("game_level_1",sprite_sheet_dict,32,is_bob=True,shift_palette_count=32)
-    process_tile_context("game_level_2",sprite_sheet_dict,32,is_bob=True,shift_palette_count=32)
+    process_tile_context("game_level_2",sprite_sheet_dict,48,is_bob=True,shift_palette_count=16)
 
 else:
     # only generates game tiles & sprites
@@ -713,8 +715,8 @@ else:
 
     process_tile_context("level_1_24a000",level_1_tile_24a000_sheet_dict,32,first_colors=truck_used_colors)
 
-    #process_tile_context("level_2_24a000",level_2_tile_24a000_sheet_dict,32,first_pass=False)
+    process_tile_context("level_2_24a000",level_2_tile_24a000_sheet_dict,16,first_pass=False)
 
     process_tile_context("game_level_1",sprite_sheet_dict,32,is_bob=True,shift_palette_count=32)
-    process_tile_context("game_level_2",sprite_sheet_dict,32,is_bob=True,shift_palette_count=32)
+    process_tile_context("game_level_2",sprite_sheet_dict,48,is_bob=True,shift_palette_count=16)
 

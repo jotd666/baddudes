@@ -1,26 +1,11 @@
-Hi,
-
-I'm making good progress on Bad Dudes vs Dragonninja. There's an amiga version which has some okay music but
-
-- it's incomplete
-- the instruments used may be okay or very shitty (ST-00...)
-
-The tunes are available as MP3 or vgmrip: https://vgmrips.net/packs/pack/bad-dudes-vs-dragonninja-data-east
-
-Could you try to create close versions of the tunes, maybe using some instruments of the amiga modules? The tunes would use 3 channels, except for the
-"game completed" tune which can use all 4 channels.
-
-I'm expecting a "big" hit so I'd share a good percentage of the donations with you.
-
-Not sure that all tunes could fit in one module. Level 1 and level 2 could use separate modules if instruments are too different, in order to save chipmem.
-As opposed as other smaller games, I'm using files & per-level loading, so tunes could be loaded too
-
-- dump level 2 tiles with proper palette for background tiles, try to use only 16 colors
 - merge baddudes log from level 1 to level 2
+- big tile missing issue on level 2
+- level 2 purple boss red despite displaying 48 colors out of 56 (log quantize!!)
 - group cars bobs to display them in 1 piece (if possible, as it requires clipping)
 - left osd mssing 1 char ("G"AME OVER)
 - when losing a life, life character is not erased
-- truck missing 1 bitplane or something... wrong color
+- regression: truck missing 1 bitplane or something... wrong color
+- level 2 truck: clip lower wheel parts as they'll be placated with wheel sprites
 - log & rip missing sounds: breakpoint on sound not found so able to go to mame and rip it
 
 - multiplexed sprites for scores / lamps / status
