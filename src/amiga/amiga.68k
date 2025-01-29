@@ -46,6 +46,7 @@ HW_SPRITE_Y_CORRECTION = 0
 
 Y_MAX = 240
 Y_MAX_SPRITE = 256
+ONE_FULL_16_BIT_ROW = 3*Y_MAX_SPRITE*2
 
 BASE_BPLCON3_VALUE = (BORDERBLANK<<5)
 BASE_BPLCON2_VALUE = 0x0264  | killehb (we're using 6 real bitplanes) sprites above all playfields
@@ -2324,7 +2325,6 @@ really_update_sprites:
 	cmp.w	#0xFFF0,d0
 	jcs		30f		| too negative: no can do (slightly negative works)	
 0:
-	TMPWRITE
 	move.l	a0,-(a7)
 	move.l	d4,a0
 	move.l	(a0,d3.w*4),d4	| structure
@@ -2491,7 +2491,12 @@ clear_fg_planes_any_blitter_internal:
 	ror.l	#8,d5     | AKA move.l  #0x01000000,d5   | minterm useD & rect clear (0xA) 
     and.w   #0x1F0,d0
     beq.b   2f				| zero X optimization
-    lsr.w   #3,d0
+    lsr.w   #3,d0			| X displacement in bytes
+	cmp.w	#0xF00,d0
+	jcs		22f
+	moveq	#0,d0				| was negative: clip to 0 (erase don't need shifting)
+22:
+	
     add.w   d0,d1
 	bclr	#0,d1
 2:   
@@ -2576,6 +2581,10 @@ blit_planes_any_internal_cookie_cut:
 	
     move.w  d0,d6
     lsr.w   #3,d0			| X displacement in bytes
+	cmp.w	#0xF00,d0
+	jcs		22f
+	extb.l	d0				| was negative: extend sign
+22:
 	*bclr	#0,d0			| no need, it will be even
    
     add.l   d0,d1
@@ -2721,6 +2730,10 @@ restore_background:
 	movem.l	d2-d6/a0/a2-a5,-(a7)
 	lea		_custom,a5
 	* adjust offset X: X//8 even rounded
+	tst		d0
+	jpl		0f
+	moveq	#0,d0		| clip to 0 if X < 0
+0:
 	lsr.w	#4,d0
 	add.w	d0,d0
 
@@ -3502,8 +3515,6 @@ enable_road_scroll:
     dbf d1,0b
 	move.w	#bplcon1,(a0)
 	
-    lea	bitplanes_road+2,a0
-	jbsr	set_bitplanes
 	
 	rts
 	
@@ -5071,11 +5082,13 @@ chip_memory_block:
 	
 fg_screen_buffer_2:
 	.ifne  OPT_ENABLE_DOUBLE_BUFFERING
+	.skip	ONE_FULL_16_BIT_ROW
 	.skip	SCREEN_SIZE
 	.skip	NB_BYTES_PER_ROW*12*3
 	.skip	8
 	.endif	
 fg_screen_buffer_1:
+	.skip	ONE_FULL_16_BIT_ROW
 	.skip	SCREEN_SIZE
 	.skip	NB_BYTES_PER_ROW*12*3
 	.skip	8

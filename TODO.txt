@@ -1,3 +1,4 @@
+- sometimes tile restore goes crazy better seen on main character X < 0 (in karnov)
 - transparent cars (instead of black)
 - dump sprites with quantized colors too (to be able to find colors to change
   on dynamic color load)
@@ -24,9 +25,6 @@
   left "wrap" to bottom right, are clipped to soon on left (player) also tile restore is wrong
   
 - try to group erases 16+16 = 32
-- case where CPU erase is 32 bytes size, 16 almost never happens =>
-  table with 16,32,48,64 cpu erase routines
-- ninja wrong early X right clip
 
 - double buffering random issues
   
@@ -35,7 +33,7 @@
 - need to optimize truck/train erase: depending on the level, compute the parts that need
   background refresh. Truck: bottom (wheels) + part between front & tow & exhaust pipe. 
   Rest: not needed. same for big truck & train, with inter-tow: in progress
-- implement start level to try to start level 2
+
   
 - use wrap for vertical scrolling (level 7)
 - level 4 backgruond trees: get image: then use static 3 color sprite image with 3 greens
