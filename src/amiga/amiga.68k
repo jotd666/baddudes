@@ -1680,6 +1680,11 @@ blank_area:
 	.skip	8
 	
 addr_248xxx_op:
+	cmp.w	#0x841C,d2
+	jne		0f
+	* road scroll first row (also 841E receives the same value)
+	move.w	d7,x_road_layer_scroll_value	
+0:
 	rts	| to_implement
 	
 
@@ -1799,28 +1804,20 @@ addr_24Axxx_tile_layer_op:
 	jmi		20f		| 000-200: no changes
 	sub.w	#0x200,d2
 	jpl		21f	
-	.ifeq	OPT_NO_SCROLLING_X	
 	* 200-400: add to Y
 	add.w	#16*16,d4
 	st		first_half_flag
-	.endif
 	jra		20f
 21:
 	sub.w	#0x200,d2
 	jpl		22f	
 	* 400-600: add to X
-	.ifeq	OPT_NO_SCROLLING_Y	
 	add.w	#0x20,D3
-	.endif
 	jra		20f
 22:
 	* 600_800: add to both
-	.ifeq	OPT_NO_SCROLLING_X	
 	add.w	#0x20,D3
-	.endif
-	.ifeq	OPT_NO_SCROLLING_Y	
 	add.w	#16*16,d4
-	.endif
 20:
 	move.l	fg_drawed_screen_ptr,a1
 	.ifne	OPT_ENABLE_DOUBLE_BUFFERING
@@ -2965,7 +2962,6 @@ switch_screen_buffers:
 	move.l	a2,bob_previous_drawed_sprites
 	.endif
 
-	lea		bitplanes_intro+2,a0
 	jbsr		set_playfield_bitplanes
 	
 	rts
@@ -3339,9 +3335,7 @@ set_scroll_y_24a000_layer:
 	jne		0f
 	rts
 0:
-	.ifne	OPT_NO_SCROLLING_Y
-	rts
-	.endif
+
 	move.w	d0,y_background_scroll_value
 	rts
 
@@ -3418,7 +3412,7 @@ scroll_background_x:
 	
 set_playfield_bitplanes:
 	* set bitplanes
-    moveq #NB_PLAYFIELD_PLANES-1,d1
+	moveq	#0,d0
 	move.w	y_background_scroll_value,d0
 	*and.w	#0x1FF,d0		| wrap just in case
 	lea		mulNB_BYTES_PER_ROW_table,a2
@@ -3428,9 +3422,33 @@ set_playfield_bitplanes:
 	move.w	(a2,d2.w*4),fine_x_scroll_value
 	add.w	(2,a2,d2.w*4),d0
 
-	
     add.l	fg_displayed_screen_ptr,d0
+    lea	bitplanes_intro+2,a0
+	jbsr	set_bitplanes
 	
+	
+	jbsr	get_current_level
+	cmp.w	#2,d0
+
+	
+	* level 2 level road layer
+	move.w	x_road_layer_scroll_value,d2
+	and.w	#0x1FF,d2
+	lea		scroll_table,a2
+	move.w	(a2,d2.w*4),fine_x_road_scroll_value
+	moveq	#0,d0
+ 	move.w	(2,a2,d2.w*4),d0		| truck level: y scrolling = 0
+	add.l	fg_displayed_screen_ptr,d0
+ 	add.l	#NB_BYTES_PER_ROW*(256-32),d0
+
+    lea	bitplanes_road+2,a0
+	jbsr	set_bitplanes
+	
+0:	
+	rts
+
+set_bitplanes:
+    moveq #NB_PLAYFIELD_PLANES-1,d1
 	move.l	#SCREEN_PLANE_SIZE,d2
 0:
     swap d0
@@ -3441,10 +3459,40 @@ set_playfield_bitplanes:
     add.l d2,d0		| LONG!
     dbf d1,0b
 	rts
-
+	
+enable_road_scroll:
+    lea	bitplanes_road,a0
+    moveq #NB_PLAYFIELD_PLANES-1,d1
+	move.w	#bplpt,d0
+0:
+    move.w d0,(a0)
+    addq	#2,d0
+    move.w d0,(4,a0)    
+    addq	#2,d0
+    addq.w  #8,a0
+    dbf d1,0b
+	move.w	#bplcon1,(a0)
+	
+    lea	bitplanes_road+2,a0
+	jbsr	set_bitplanes
+	
+	rts
+	
+disable_road_scroll:
+	
+    lea	bitplanes_road,a0
+    moveq #NB_PLAYFIELD_PLANES-1,d1
+	move.w	#0x1FE,d0
+0:
+    move.w d0,(a0)
+    move.w d0,(4,a0)    
+    addq.w  #8,a0
+    dbf d1,0b
+	move.w	d0,(a0)
+	rts
+	
 set_game_bitplanes:	
 	movem.l	d0-d3/a0-a2,-(a7)
-    lea	bitplanes_intro+2,a0
 	jbsr	set_playfield_bitplanes
 	movem.l	(a7)+,d0-d3/a0-a2
     rts
@@ -4087,10 +4135,11 @@ set_intro_context:
 	lea		_custom,a5
 	* set them even if reset by game afterwards
 	* avoiding ugly stripe bitplane effect at startup
-    lea	bitplanes_intro+2,a0
 	bsr		set_playfield_bitplanes
 
 	jbsr	load_intro_palette
+	
+	jbsr	disable_road_scroll
 	
 	lea		intro_copperlist,a0
 	move.l	a0,cop1lc(a5)
@@ -4139,6 +4188,9 @@ level_2_load:
 	jbsr	load_tiles_file_24a000
 	lea		sprites_game_level_2_file,a0
 	jbsr 	load_sprite_file
+
+	jbsr	enable_road_scroll
+	
 	rts
 	
 level_3_load:	
@@ -4498,6 +4550,8 @@ x_secondary_scroll_value:
 	.word	0
 y_secondary_scroll_value:
 	.word	0
+x_road_layer_scroll_value:
+	.word	0
 first_half_flag:
 	.word	0
 _tag:
@@ -4815,9 +4869,6 @@ tile_log_table_end:
 	.endif
 
 
-	.section	.datachip
-
-
 .macro	DECL_BITPLANES	bpoff_start,nb_planes
 	.set	bpoff,\bpoff_start
 	.rept	\nb_planes
@@ -4827,6 +4878,7 @@ tile_log_table_end:
 	.endr
 	.endm
 
+	.section	.datachip
 
 
 .macro	DECL_COLOR_BANK	bankno
@@ -4847,6 +4899,10 @@ tile_log_table_end:
 	.word	0x1FE,0
     .endr
 	.endm
+
+	
+
+
 
 blank_sound:
 	ds.l	4
@@ -4917,8 +4973,15 @@ intro_intreq_block:
     .word  0xFFDF,0xFFFE       | PAL wait
 	.word	 intreq,0x8010	| no bobs from now on, get more drawing time
 
+	* set road scroll and
 	* change palette for lower OSD sprites (lives & energy)
 	.word	0x0C01,0xFFFE
+bitplanes_road:
+	DECL_BITPLANES	0,NB_PLAYFIELD_PLANES
+	.word	bplcon1
+fine_x_road_scroll_value:
+	.word	0
+
 	DECL_COLOR_BANK	2
 	.word	color+2*10,0xEBB		| flesh pink
 	.word	color+2*11,0xE9A		| flesh pink #2
