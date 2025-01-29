@@ -1801,23 +1801,24 @@ addr_24Axxx_tile_layer_op:
 	* now compute quadrant.
 	sub.w	#0x200,d2
 	smi		first_half_flag		| first half
-	jmi		20f		| 000-200: no changes
+	jmi		20f		| 000-200: top left quadrant: no changes
 	sub.w	#0x200,d2
 	jpl		21f	
-	* 200-400: add to Y
-	add.w	#16*16,d4
+	* 200-400: bottom left quadrant: add to Y
+	bset	#8,d4	| add 256 to Y
 	st		first_half_flag
 	jra		20f
 21:
 	sub.w	#0x200,d2
-	jpl		22f	
-	* 400-600: add to X
-	add.w	#0x20,D3
+	jpl		22f
+
+	* 400-600: top rigth quadrant: add to X
+	bset	#5,D3	| add 32 to X
 	jra		20f
 22:
 	* 600_800: add to both
-	add.w	#0x20,D3
-	add.w	#16*16,d4
+	bset	#5,D3	| add 32 to X
+	bset	#8,d4	| add 256 to Y
 20:
 	move.l	fg_drawed_screen_ptr,a1
 	.ifne	OPT_ENABLE_DOUBLE_BUFFERING
@@ -2133,7 +2134,15 @@ is_game_playing:
 	
 
 	
-
+	.macro	FIX_COORD	reg
+	and.w	#0x1FF,\reg   | remove attribute bits from sprite coord
+	cmp.w	#0x100,\reg
+	jcs		0f
+	sub.w	#0x200,\reg
+0:
+	neg.w	\reg
+	add.w	#240,\reg
+	.endm
 	
 
 
@@ -2206,8 +2215,6 @@ really_update_sprites:
 	jeq		30f						 | if bit 15 not set, then slot is free
 	
 	move.w	(TARGET_SPRITE_X,a0),d0  | sprite X
-*	cmp.b	#230,d0
-*	jcc		30f 						| don't draw sprites too far right
 	move.w	(TARGET_SPRITE_CODE,a0),d2
 	and.w	#0xFFF,d2				| MAME masks the code to 1FFF, but here we go up to FFF
 
@@ -2283,20 +2290,12 @@ really_update_sprites:
 *		parentFlipY = flipy = data0 & 0x4000;
 *		const int h = (1 << ((data0 & 0x1800) >> 11));   /* 1x, 2x, 4x, 8x height */
 *		const int w = (1 << ((data0 & 0x0600) >>  9));   /* 1x, 2x, 4x, 8x width */
-	and.w	#0x1FF,d0	| remove attribute bits from sprite X
-*	btst	#8,d0
-*	jeq		0f
-*	sub.w	#0x200,d0
-*0:
+
 	move.w	d1,d6		| Y coord + attributes
 	move.w	d6,d2		| copy full attributes in D2
 	rol.w	#5,d6		| data0 height properly times 16
 	and.w	#0x3,d6
-	and.w	#0x1FF,d1	| remove attribute bits from sprite Y
-*	btst	#8,d1
-*	jeq		0f
-*	sub.w	#0x200,d1
-*0:
+
 	* this game sprite system uses 16,32 and 64 (1,2,4x) heights
 	* there's also a 8x possible but not there. when displaying
 	* a 16-high tile, the coord is OK, but when displaying a 32-high tile
@@ -2304,15 +2303,10 @@ really_update_sprites:
 	* we cannot rely on sprite height as it could have been cropped to optimize
 	* 
 	* correct X/Y: 240-x
-	neg.w	d1
-	add.w	#240,d1
-	jmi		30f		| negative: no can do
-	neg.w	d0
-	add.w	#240,d0
-	jpl		0f
-	cmp.w	#0xFFF0,d0
-	jcs		30f		| too negative: no can do (slightly negative works)
-0:	
+	FIX_COORD	d1
+	FIX_COORD	d0
+	
+	
 	tst.b	d6			| single sprite: skip Y correction
 	jeq		0f
 	lea		y_correction_table(pc),a3
@@ -2325,7 +2319,12 @@ really_update_sprites:
 	add.w	#SPRITE_X_CORRECTION,d0
 	.endif
 
-	
+	add.w	x_background_scroll_value(pc),d0
+	jpl		0f
+	cmp.w	#0xFFF0,d0
+	jcs		30f		| too negative: no can do (slightly negative works)	
+0:
+	TMPWRITE
 	move.l	a0,-(a7)
 	move.l	d4,a0
 	move.l	(a0,d3.w*4),d4	| structure
@@ -2348,8 +2347,8 @@ really_update_sprites:
 	move.w	(a0)+,d5		| width
 	add.w	(a0)+,d1		| add offset to Y
 	
-	add.w	x_background_scroll_value(pc),d0
 	add.w	y_background_scroll_value(pc),d1
+	* TODO maybe some Y-clipping to do.... in Y scrollable levels
 	
 	* now A0 points on the first bitplane of the bob
 	tst.b	d6
@@ -2752,7 +2751,7 @@ restore_background:
     sub.w   d2,d1       | blit modulo
 	
 	move.w	d4,d5		| store blit height
-	subq	#1,d5
+	subq	#1,d5		| one less (for possible dbf)
 	
     lsl.w   #6,d4
     lsr.w   #1,d2		| blit width
@@ -2782,7 +2781,7 @@ restore_background:
 2:
 	lea	(RESTORE_SCREEN_PLANE_SIZE,a0),a0
 	lea	(SCREEN_PLANE_SIZE,a1),a1
-	cmp.w	#3,d2
+	cmp.w	#4,d2
 	jcc		0f
 
 	* not too wide blits: check if blitter is active
@@ -2792,18 +2791,9 @@ restore_background:
 	move.l	a1,a3
 	move.l	a0,a2
 	move.w	d5,d6
-11:
-	* use cpu to restore background, may work concurrently to the blitter
-	move.w	d2,d3
-	subq	#1,d3
-10:
-	* copy word by word using the CPU
-	move.w	(a0)+,(a1)+
-	dbf		d3,10b
-	* next row
-	add.w	d1,a0
-	add.w	d1,a1
-	dbf		d6,11b
+	lea		cpu_copy_table(pc),a4
+	jsr		([a4,d2.w*4])
+
 	* next plane
 	move.l	a3,a1
 	move.l	a2,a0
@@ -2820,7 +2810,46 @@ restore_background:
 	movem.l	(a7)+,d2-d6/a0/a2-a5
 	rts
 
-
+cpu_copy_table:
+	.long	nope
+	.long	copy_1_word_row
+	.long	copy_2_word_row
+	.long	copy_3_word_row
+	
+nope:
+	rts
+copy_1_word_row:
+11:
+	* use cpu to restore background, may work concurrently to the blitter
+	* copy word by word using the CPU
+	move.w	(a0)+,(a1)+
+	add.w	d1,a0
+	add.w	d1,a1
+	dbf		d6,11b
+	rts
+	
+copy_2_word_row:
+11:
+	* use cpu to restore background, may work concurrently to the blitter
+	* copy word by word using the CPU
+	move.l	(a0)+,(a1)+
+	add.w	d1,a0
+	add.w	d1,a1
+	dbf		d6,11b
+	rts
+	
+copy_3_word_row:
+11:
+	* use cpu to restore background, may work concurrently to the blitter
+	* copy word by word using the CPU
+	move.l	(a0)+,(a1)+
+	move.w	(a0)+,(a1)+
+	add.w	d1,a0
+	add.w	d1,a1
+	dbf		d6,11b
+	rts
+	
+	
 * < A5: custom
 * < D0.W,D1.W: x,y, no shifting
 * < A0: source (pointer on array of planes)

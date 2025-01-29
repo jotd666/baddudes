@@ -639,13 +639,10 @@ test_input_bit_d1:
 
 copy_to_tile_0651e:
 copy_to_tile_064f6:
-	ADDA.L	D7,A3
+	ADDA.W	D7,A3		| D7 is < 0x1FF
 	STORE_REGS
 	exg		a6,a0
 	MOVE.W	(A3),d7
-	jeq	0f
-	move.w 	#0xFF0,0xDFF180
-0:
 	jbsr	osd_write_word
 	exg		a6,a0
 	RESTORE_REGS
@@ -718,7 +715,7 @@ copy_tiles_06bbe:
 	MOVE.W	(A1),d7
 	jbsr	osd_write_word
 	ADD.W	#0x20,A1
-	ADD.W	#0x20,A0
+	ADD.W	#0x20,A6
 	DBF	D0,0b
 	exg		a6,a0
 	RESTORE_REGS

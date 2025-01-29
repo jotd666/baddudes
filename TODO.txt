@@ -1,9 +1,12 @@
-- transparent wheels and cars (instead of black)
+- transparent cars (instead of black)
+- dump sprites with quantized colors too (to be able to find colors to change
+  on dynamic color load)
 - merge baddudes log from level 1 to level 2
-- big tile missing issue on level 2
-- level 2 purple boss red: dump palette at start of level 2 and during boss and compare
-  => should dynamically change it when boss appears like in the game, maybe hook
-     on the set palette
+- level 2 purple boss red: => should dynamically change it when boss appears like in the game, maybe hook
+     on the set palette:
+	 ex: load_boss_2_purple_colors_0102c if write to 3103E0 with A1 = 0x0117c+rom_base
+	 then load level 2 boss palette
+	 
 - group cars bobs to display them in 1 piece (if possible, as it requires clipping)
 - left osd mssing 1 char ("G"AME OVER)
 - when losing a life, life character is not erased
