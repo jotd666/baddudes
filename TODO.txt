@@ -1,4 +1,9 @@
+- reduce truck size to test
+- check truck x pos shift vs ninjas on it
+- tune bltafwm from a value in zp
 - sometimes tile restore goes crazy better seen on main character X < 0 (in karnov)
+ => lsr => asr!!!!
+- level 3 to make a video!
 - transparent cars (instead of black)
 - dump sprites with quantized colors too (to be able to find colors to change
   on dynamic color load)
@@ -22,11 +27,8 @@
 - missing frames: karnov head when dying,
   main character with nunchuck upper tiles (crouching, 0x30,0x32 still not dumped or displayed)
 - karnov: when scrolling at 0, characters on fence upper
-  left "wrap" to bottom right, are clipped to soon on left (player) also tile restore is wrong
-  
-- try to group erases 16+16 = 32
+  left "wrap" to bottom right tile restore is wrong
 
-- double buffering random issues
   
 - truck: X-clipping creates strange artifacts (jailbars) 
   depending on shifting (mask???) also start of truck bltafwm not working
@@ -44,7 +46,8 @@
 - sprite mirror_planes: mirroring with width != 16 to implement: test on 32 then make a special case for 32 bits (d0=6)
 - levels with trains/trucks: load traintrucks bitplanes in non-displayed screen buffer
   to save chipmem
-
+- better bob group erase (not just 2 by 2 but full, would be handy to erase
+  cars if sprites aren't grouped)
 
 - rip 24D000 & 24A000 tiles
 

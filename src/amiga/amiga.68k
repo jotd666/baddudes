@@ -2149,9 +2149,46 @@ is_game_playing:
 
 really_update_sprites:
 	move.l	bob_previous_drawed_sprites,a4
-	lea		_custom,a5
+	move.w	(a4),d2		| init prev X with first val
+	add.w	#16,d2			| previous += 16
+	move.w	(2,a4),d3	| init prev Y with first val
+	TMPWRITE
 	
-
+	* scan previous positions to group the consecutive ones
+	move.w	#NB_TARGET_SPRITES-2,d7
+0:
+	addq	#8,a4			| next entry
+	move.w	(2,a4),d1		| Y
+	beq.b	12f				| Y=0: inactive and end of list (let's hope it works!)
+	move.w	(a4),d0
+	cmp.w	d1,d3
+	jne		1f				| different Y: out
+	cmp.w	d2,d0
+	jne		1f				| prev X + 16 != X: out
+	* 2 consecutive 16 bit erase (composite sprite):
+	* group them to save a lot of blitting
+	move.w	(4,a4),d2
+	subq	#2,d2			| no need to add, there's already a 16 bit margin
+	add.w	d2,(-4,a4)		| merge widths instead (less bandwidth)
+	* issue: propagate higher height value (which can waste bandwidth
+	* but it's still better to do twice as less bigger clear blits
+	move.w	(6,a4),d2
+	cmp.w	(-2,a4),d2
+	jcs		10f
+	* previous blit erase is smaller: merge with bigger
+	move.w	d2,(-2,a4)
+10:
+	clr.w	(4,a4)			| this width (means: cancel that erase slot)
+	* do not store previous, as we don't support multi-grouping (yet)
+	dbf		d7,0b
+1:
+	move.w	d1,d3			| y => prev y
+	move.w	d0,d2			| store previous
+	add.w	#16,d2			| previous += 16
+	dbf		d7,0b
+12:
+	
+	lea		_custom,a5
 	* clear previous positions
 	move.w	#NB_TARGET_SPRITES-1,d7
 
@@ -2159,16 +2196,21 @@ really_update_sprites:
 	move.w	nb_tile_planes_24a000,d5
 	neg.w	d5
 	addq.w	#NB_PLAYFIELD_PLANES,d5
-	
+	move.l	bob_previous_drawed_sprites,a4
 1:
 	move.w	(a4),d0
-	beq.b	12f		| y=0: inactive and end of list (let's hope it works!)
-	move.w	(2,a4),d1
+	beq.b	12f				| X=0: inactive and end of list (let's hope it works!)
+	move.w	(2,a4),d1		| Y
 	and.w	#0x3F0,d0		| align on 16 lower bound (there are potentially 3 screens!)
 	* clear area where the sprite was
 	move.l	fg_drawed_screen_ptr,a1
 	clr.l	(a4)+ 			| ack deletion
 	move.w	(a4),d2			| width in bytes (16 pixels: 4 bytes)
+	jne		10f
+	* zero width: ack & skip this entry
+	clr.l	(a4)+
+	dbf		d7,1b
+10:	
 	move.w	(2,a4),d4		| height
 	jpl		11f
 	neg		d4
@@ -2383,6 +2425,10 @@ really_update_sprites:
 30:
 	addq.w	#TARGET_SPRITE_SIZE,a0
 	dbf		d7,1b
+	
+	* clear last long X/Y
+	clr.l	(a6)
+	
 	rts
 
 * < A0: plane list
@@ -2971,7 +3017,7 @@ bob_previous_displayed_sprites:
 	.else
 	.long	bob_previous_positions_2	
 bob_previous_positions_2:
-	ds.b	NB_TARGET_SPRITES*PREVIOUS_SPRITE_SIZE	
+	.skip	NB_TARGET_SPRITES*PREVIOUS_SPRITE_SIZE+4	
 	.endif
 
 sprite_registers:
