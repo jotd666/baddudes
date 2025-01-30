@@ -359,6 +359,10 @@ _user:
 	move.l	#-1,184(A0)	| pr_WindowPtr: no more system requesters (insert volume, write protected...)
 
 .no_forbid:
+
+	* init tables for sprites with some used heights
+	bsr		init_sprite_y_table_table
+
 	* align bitplanes
 	lea		fg_screen_buffer_1,a0
 	bsr		align_for_fmode
@@ -4276,6 +4280,68 @@ level_1_load:
 	move.l	d2,(-4,a0)
 1:
 	dbf		d0,0b
+	
+	
+	* temp display a front object
+	
+	move.l	front_objects_table,a0
+	move.l	(8,a0),a2		| lamp 1
+	move.l	(12,a0),d4		| lamp 1
+	move.w	(-2,a2),d2		| height
+	
+	lea		init_sprite_y_table_table,a4
+	move.l	(a4,d2.w*4),d0
+	.ifndef	RELEASE
+	jne		0f
+	BREAKPOINT	"unsupported sprite size (in D2)"
+0:
+	.endif
+	
+	move.l	d0,a1
+	move	#40,D0
+	move.w	#64,d1
+	jbsr	store_sprite_pos
+
+	* enable multiplexed sprite
+
+	lea		upper_osd_next_cw_table,a3
+	move.l	(a3)+,a0
+	move.w	d0,(8,a0)
+	swap	d0
+	move.w	d0,(a0)
+	swap	d0
+	
+	move.l	(a3)+,a0
+	bset	#7,d0
+	move.w	d0,(8,a0)
+	swap	d0
+	move.w	d0,(a0)
+	
+	* position sprite in copperlist
+	lea		front_object_sprites,a0
+	move.l	a2,d0
+	add.w	#16,d0			| skip CW, handled by osd sprite above
+	move.w	#sprpt,d2
+	move.w	d2,(a0)+
+	swap	d0
+	move.w	d0,(a0)+
+	swap	d0
+	addq	#2,d2
+	move.w	d2,(a0)+
+	move.w	d0,(a0)+
+	addq	#2,d2
+	
+	move.l	d4,d0
+	add.w	#16,d0			| skip CW, handled by osd sprite above
+	move.w	d2,(a0)+
+	swap	d0
+	move.w	d0,(a0)+
+	swap	d0
+	addq	#2,d2
+	move.w	d2,(a0)+
+	move.w	d0,(a0)+
+	
+
 	rts
 	
 level_2_load:
@@ -4868,13 +4934,26 @@ HW_SpriteYTable_\height:
   .endr
 	.endm
 
-
-	DEF_HW_SPRITE_Y_TABLE	0
+	* only sprites with this height can be displayed
 	DEF_HW_SPRITE_Y_TABLE	8
 	DEF_HW_SPRITE_Y_TABLE	16
+	DEF_HW_SPRITE_Y_TABLE	32
+	DEF_HW_SPRITE_Y_TABLE	48
+	DEF_HW_SPRITE_Y_TABLE	160
 
-
-
+	.macro	STORE_SPRITE_Y_ENTRY	offset
+	lea	HW_SpriteYTable_\offset,a1
+	move.l	a1,(\offset*4,a0)
+	.endm
+	
+init_sprite_y_table_table:
+	lea	sprite_y_table_table,a0
+	STORE_SPRITE_Y_ENTRY	8
+	STORE_SPRITE_Y_ENTRY	16
+	STORE_SPRITE_Y_ENTRY	32
+	STORE_SPRITE_Y_ENTRY	48
+	STORE_SPRITE_Y_ENTRY	160
+	rts
 	
 public_memory_current_ptr:
 	.long	0
@@ -4973,6 +5052,12 @@ tile_log_table_end:
 	.endr
 	.endm
 
+upper_osd_next_cw_table:
+	.long	osd_left_next_cw
+	.long	osd_left_center_next_cw
+	.long	osd_right_center_next_cw
+	.long	osd_right_next_cw
+
 	.section	.datachip
 
 
@@ -5055,6 +5140,16 @@ letters_palette:
 	DECL_COLOR_BANK	2
 	.word	color+2*3,0xDD0
 	
+	* wait 8 lines to declare multiplexed/attached sprites
+	* (front objects) in levels 1 and 2
+	.word	0x2C01+0x2000,0xFFFE
+	* change bplcon4 to point on another palette range
+	* for 16-color attached sprites
+	*.word	bplcon4,xxxx
+	*DECL_COLOR_BANK	3
+front_object_sprites:
+	DECL_SPRITES
+	
 	* mid-line wait & extra interrupt
 	.word	0x8001,0xFFFE
 intro_intreq_block:
@@ -5076,6 +5171,8 @@ bitplanes_road:
 	.word	bplcon1
 fine_x_road_scroll_value:
 	.word	0
+	* re-set palette for non-attached sprites
+	.word	bplcon4,BASE_BPLCON4_VALUE
 
 	DECL_COLOR_BANK	2
 	.word	color+2*10,0xEBB		| flesh pink
@@ -5086,15 +5183,17 @@ fine_x_road_scroll_value:
 	.word	color+2*14,0xB29		| magenta for dots (right part of "enemy" dots)
 
 	
-    .long    -2					
+    .long    -2
+	.ifndef	RELEASE
 	.ascii	"ENDCPLST"
-	
+	.endif
 	
 
 	.section	.bsspublic
 
-*	.skip	0x10000
-*stack_top:
+sprite_y_table_table:
+	.skip	Y_MAX*4
+
 
 program_space:
 	.ifndef	RELEASE
@@ -5105,7 +5204,7 @@ program_space:
 public_memory_block:
 	.skip	TOTAL_PUBLIC_MEMORY_SIZE
 	
-
+	
 	
 	* aligning on 8 bytes so .align will work
 	* in the next datachip sections

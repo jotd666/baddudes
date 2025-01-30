@@ -25,7 +25,7 @@ def doit(force=False):
 
         objects = {"meter":meter,"lamp_1":lamp_1,"lamp_2":lamp_2,"hydrant":hydrant}
 
-        if False:
+        if True:
             img.save("front_objects_16.png")
             meter.save("meter.png")
             lamp_1.save("lamp_1.png")
@@ -45,7 +45,10 @@ def doit(force=False):
                 outs = bitplanelib.palette_image2attached_sprites(o,None,palette,sprite_fmode=3)
                 cw_offset = len(outs[0])-16
                 for j,out in enumerate(outs):
-                    f.write(f"\tdc.w\t${cw_offset:04x}  ; offset of end control word for next object\nobject_{k}_{j}:")
+                    f.write(f"""\tdc.w\t${cw_offset:04x}  ; offset of end control word for next object
+\tdc.w\t{o.size[1]}   ; sprite height
+object_{k}_{j}:""")
+
                     bitplanelib.dump_asm_bytes(out,f)
 
         asm2bin(asm_out,fo_bin)
