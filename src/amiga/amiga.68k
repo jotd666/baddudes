@@ -2546,9 +2546,8 @@ clear_fg_planes_any_blitter_internal:
 	ror.l	#8,d5     | AKA move.l  #0x01000000,d5   | minterm useD & rect clear (0xA) 
     and.w   #0x1F0,d0
     beq.b   2f				| zero X optimization
-    lsr.w   #3,d0			| X displacement in bytes
-	cmp.w	#0xF00,d0
-	jcs		22f
+    asr.w   #3,d0			| X displacement in bytes
+	jpl		22f
 	moveq	#0,d0				| was negative: clip to 0 (erase don't need shifting)
 22:
 	
@@ -2635,11 +2634,8 @@ blit_planes_any_internal_cookie_cut:
 	lea		cookie_cut_blit_table,a4
 	
     move.w  d0,d6
-    lsr.w   #3,d0			| X displacement in bytes
-	cmp.w	#0xF00,d0
-	jcs		22f
-	extb.l	d0				| was negative: extend sign
-22:
+    asr.w   #3,d0			| X displacement in bytes (maybe negative)
+
 	*bclr	#0,d0			| no need, it will be even
    
     add.l   d0,d1
@@ -2789,8 +2785,12 @@ restore_background:
 	jpl		0f
 	moveq	#0,d0		| clip to 0 if X < 0
 0:
-	lsr.w	#4,d0
-	add.w	d0,d0
+	asr.w	#3,d0		| in bytes
+	jpl		1f
+	* clip to 0 (never happens...)
+	moveq	#0,d0
+1:
+	bclr	#0,d0		| make it even
 
 	
 	lea		mulNB_BYTES_PER_ROW_table,a4
@@ -2949,7 +2949,7 @@ blit_planes_any_internal_no_cookie_cut:
 	.endif
 2:
 	
-    lsr.w   #3,d0			| X displacement in bytes
+    asr.w   #3,d0			| X displacement in bytes
 
     add.w   d0,d1
 

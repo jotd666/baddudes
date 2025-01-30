@@ -1,13 +1,13 @@
+- easy: transparent cars (instead of black)
+- easy: dump sprites with quantized colors too (to be able to find colors to change
+  on dynamic color load)
+- easy: merge baddudes log from level 1 to level 2
 - reduce truck size to test
-- check truck x pos shift vs ninjas on it
+- check truck x pos shift vs ninjas on it: wrong
 - tune bltafwm from a value in zp
 - sometimes tile restore goes crazy better seen on main character X < 0 (in karnov)
- => lsr => asr!!!!
+  now X<0 main character still not displayed (AGAIN!!)
 - level 3 to make a video!
-- transparent cars (instead of black)
-- dump sprites with quantized colors too (to be able to find colors to change
-  on dynamic color load)
-- merge baddudes log from level 1 to level 2
 - level 2 purple boss red: => should dynamically change it when boss appears like in the game, maybe hook
      on the set palette:
 	 ex: load_boss_2_purple_colors_0102c if write to 3103E0 with A1 = 0x0117c+rom_base
@@ -15,9 +15,9 @@
 	 
 - group cars bobs to display them in 1 piece (if possible, as it requires clipping)
 - left osd mssing 1 char ("G"AME OVER)
-- when losing a life, life character is not erased
+- easy: when losing a life, life character is not erased
 - regression: truck missing 1 bitplane or something... wrong color
-- level 2 truck: clip lower wheel parts as they'll be placated with wheel sprites
+- level 2 truck: rip & clip lower wheel parts as they'll be placated with wheel sprites
 - log & rip missing sounds: breakpoint on sound not found so able to go to mame and rip it
 
 - multiplexed sprites for scores / lamps / status
@@ -28,8 +28,6 @@
   main character with nunchuck upper tiles (crouching, 0x30,0x32 still not dumped or displayed)
 - karnov: when scrolling at 0, characters on fence upper
   left "wrap" to bottom right tile restore is wrong
-
-  
 - truck: X-clipping creates strange artifacts (jailbars) 
   depending on shifting (mask???) also start of truck bltafwm not working
 - need to optimize truck/train erase: depending on the level, compute the parts that need
@@ -37,7 +35,8 @@
   Rest: not needed. same for big truck & train, with inter-tow: in progress
 
   
-- use wrap for vertical scrolling (level 7)
+- use wrap for vertical scrolling (level 7)?? or just make display faded black until
+  scroll is right again
 - level 4 backgruond trees: get image: then use static 3 color sprite image with 3 greens
   or 3 browns with dynamic color change, use sprites 4-7 with priority: behind playfields
 - level 4: maybe remove foreground trees if possible
