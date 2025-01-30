@@ -2152,9 +2152,19 @@ really_update_sprites:
 	move.w	(a4),d2		| init prev X with first val
 	add.w	#16,d2			| previous += 16
 	move.w	(2,a4),d3	| init prev Y with first val
-	TMPWRITE
-	
+
+	* erase optimization pre-processing
 	* scan previous positions to group the consecutive ones
+	*
+	* actually, lots of BOBs are 16-wide stripes grouped
+	* 2 by 2 to create a big 32 bit wide character. Grouping
+	* the erases saves a lot of bandwidth by not erasing the same
+	* location twice
+	* When erasing 2 bobs close by 16 pixels and on same Y
+	* without optimization, it costs 64 bits clear per row
+	* with optimization, it only costs 48 bits clear per row
+	* in twice as less blits! (so less blitwaits, less computation)
+	
 	move.w	#NB_TARGET_SPRITES-2,d7
 0:
 	addq	#8,a4			| next entry
@@ -2198,24 +2208,20 @@ really_update_sprites:
 	addq.w	#NB_PLAYFIELD_PLANES,d5
 	move.l	bob_previous_drawed_sprites,a4
 1:
-	move.w	(a4),d0
-	beq.b	12f				| X=0: inactive and end of list (let's hope it works!)
-	move.w	(2,a4),d1		| Y
+	move.l	(a4),d0
+	jeq		12f				| X=0 & Y=0: inactive and end of list (let's hope it works!)
+	move.w	d0,d1		| Y
+	swap	d0			| X
 	and.w	#0x3F0,d0		| align on 16 lower bound (there are potentially 3 screens!)
 	* clear area where the sprite was
 	move.l	fg_drawed_screen_ptr,a1
-	clr.l	(a4)+ 			| ack deletion
-	move.w	(a4),d2			| width in bytes (16 pixels: 4 bytes)
-	jne		10f
-	* zero width: ack & skip this entry
-	clr.l	(a4)+
-	dbf		d7,1b
-10:	
-	move.w	(2,a4),d4		| height
+	move.w	(4,a4),d2			| width in bytes (16 pixels: 4 bytes)
+	jeq		111f	|  zero width: skip this entry
+
+	move.w	(6,a4),d4		| height
 	jpl		11f
 	neg		d4
 11:
-	clr.l	(a4)+			| ack deletion
 	* restore background
 	lea		background_restore_buffer,a0
 	jbsr	restore_background
@@ -2230,6 +2236,9 @@ really_update_sprites:
 	move.w	d5,-(a7)
 	jbsr	clear_fg_planes_any_blitter_internal
 	move.w	(a7)+,d5
+111:
+	* next erase entry
+	addq	#8,a4
 	dbf		d7,1b
 12:	
 
