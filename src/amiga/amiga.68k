@@ -5213,6 +5213,7 @@ public_memory_block:
 	.align	8
 	
 		.section .bsschip
+	.align	8		| if not aligned, this is catastrophic for 64-bit wide fmode=3 sprites
 		.macro		RESERVE_SPRITE	name
 osd_\name\()_sprite:
 	.skip	16

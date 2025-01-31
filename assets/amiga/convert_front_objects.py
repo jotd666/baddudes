@@ -46,6 +46,8 @@ def doit(force=False):
                 cw_offset = len(outs[0])-16
                 for j,out in enumerate(outs):
                     f.write(f"""\tdc.w\t${cw_offset:04x}  ; offset of end control word for next object
+\tCNOP\t0,8     ; align on 8 bytes else sprite is not properly displayed
+\tdc.w 0,0,0    ; keep this alignment
 \tdc.w\t{o.size[1]}   ; sprite height
 object_{k}_{j}:""")
 
