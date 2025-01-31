@@ -12,7 +12,6 @@
 	 ex: load_boss_2_purple_colors_0102c if write to 3103E0 with A1 = 0x0117c+rom_base
 	 then load level 2 boss palette
 	 
-- group cars bobs to display them in 1 piece (if possible, as it requires clipping)
 - left osd mssing 1 char ("G"AME OVER)
 - easy: when losing a life, life character is not erased
 - regression: truck missing 1 bitplane or something... wrong color
@@ -45,6 +44,8 @@
   to save chipmem
 - better bob group erase (not just 2 by 2 but full, would be handy to erase
   cars if sprites aren't grouped)
+- group cars bobs to display them in 1 piece (if possible, as it requires clipping), 
+  which is definitely possible & easy: create a fake 48-high tile made from various car stripes: would divide number of blits by 2
 
 - rip 24D000 & 24A000 tiles
 
