@@ -16,7 +16,7 @@ def doit(force=False):
 
         meter = Image.new("RGB",(64,48))  # 16 is enough
         meter.paste(img,(-56,-176))
-        lamp_1 = Image.new("RGB",(64,160))   # 16 is enough
+        lamp_1 = Image.new("RGB",(64,184))   # 16 is enough
         lamp_1.paste(img,(-376,-40))
         lamp_2 = Image.new("RGB",lamp_1.size)
         lamp_2.paste(img,(-628,-40))
