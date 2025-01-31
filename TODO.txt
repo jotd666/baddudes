@@ -1,4 +1,3 @@
-- easy: transparent cars (instead of black)
 - easy: dump sprites with quantized colors too (to be able to find colors to change
   on dynamic color load)
 - easy: merge baddudes log from level 1 to level 2
@@ -19,8 +18,6 @@
 - regression: truck missing 1 bitplane or something... wrong color
 - level 2 truck: rip & clip lower wheel parts as they'll be placated with wheel sprites
 - log & rip missing sounds: breakpoint on sound not found so able to go to mame and rip it
-
-- multiplexed sprites for scores / lamps / status: load colors, debug positions & multiplexing
 
 - hack lamps/trees/fire hydrants (from 244000 layer) with hardware sprites:
   figure out first layer row scroll registers, "trigger" tile to display / undisplay sprite
