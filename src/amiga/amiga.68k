@@ -3472,7 +3472,7 @@ scroll_x_24d000_table:
 	.long	move_ninjas_truck
 	.long	move_long_truck
 	.long	scroll_background_x
-	.long	0
+	.long	nope
 	.long	move_train
 	.long	0
 	.long	0
@@ -3481,8 +3481,8 @@ scroll_x_24d000_table:
 scroll_x_24a000_table:
 	.long	scroll_background_x
 	.long	scroll_background_x
-	.long	0
-	.long	0
+	.long	nope
+	.long	scroll_background_x
 	.long	scroll_background_x
 	.long	0
 	.long	scroll_background_x
@@ -4087,6 +4087,12 @@ set_game_intro_context:
 	
 load_sprite_file:
 	jbsr	osd_disable_interrupts
+	jbsr	get_current_level
+	add.b	#48,d0	
+	
+	move.b	d0,file_level_index
+	lea		sprites_game_level_file,a0
+	
 	jbsr	allocate_and_load_chip_mem_file
 	move.l	d0,sprites_memory
 	move.l	d0,a0
@@ -4256,7 +4262,6 @@ specific_level_load_table:
 level_1_load:
 	lea		tiles_level_1_24a000_file,a0
 	jbsr	load_tiles_file_24a000
-	lea		sprites_game_level_1_file,a0
 	jbsr 	load_sprite_file
 	lea		front_objects_1_file,a0
 	jbsr	load_front_objects_file
@@ -4376,7 +4381,7 @@ display_front_object:
 level_2_load:
 	lea		tiles_level_2_24a000_file,a0
 	jbsr	load_tiles_file_24a000
-	lea		sprites_game_level_2_file,a0
+	
 	jbsr 	load_sprite_file
 
 	jbsr	enable_road_scroll
@@ -4384,7 +4389,16 @@ level_2_load:
 	rts
 	
 level_3_load:	
+	*lea		tiles_level_2_24a000_file,a0
+	*jbsr	load_tiles_file_24a000
+	jbsr 	load_sprite_file
+
+	*jbsr	enable_road_scroll
+	
+	rts
 level_4_load:	
+	jbsr 	load_sprite_file
+	rts
 level_5_load:	
 level_6_load:	
 level_7_load:
@@ -4881,10 +4895,10 @@ front_objects_1_file:
 	.asciz	"front_objects_1.bin"
 truck_1_pic_file:
 	.asciz	"truck_1.bin"
-sprites_game_level_1_file:
-	.asciz	"sprites_game_level_1.bin"
-sprites_game_level_2_file:
-	.asciz	"sprites_game_level_2.bin"
+sprites_game_level_file:
+	.asciz	"sprites_game_level_"
+file_level_index:
+	.asciz	"1.bin"
 sprites_game_intro_file:
 	.asciz	"sprites_game_intro.bin"
 tiles_title_244000_file:

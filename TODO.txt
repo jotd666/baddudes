@@ -1,12 +1,12 @@
 - easy: dump sprites with quantized colors too (to be able to find colors to change
   on dynamic color load)
-- easy: merge baddudes log from level 1 to level 2
+- level 2: y may be negative: needs y clipping
 - reduce truck size to test
 - check truck x pos shift vs ninjas on it: wrong
 - tune bltafwm from a value in zp
 - sometimes tile restore goes crazy better seen on main character X < 0 (in karnov)
   now X<0 main character still not displayed (AGAIN!!)
-- level 3 to make a video!
+- level 3 to make a video! needs to log 24dxxx tiles and load them
 - level 2 purple boss red: => should dynamically change it when boss appears like in the game, maybe hook
      on the set palette:
 	 ex: load_boss_2_purple_colors_0102c if write to 3103E0 with A1 = 0x0117c+rom_base
