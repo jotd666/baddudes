@@ -4280,10 +4280,15 @@ level_1_load:
 1:
 	dbf		d0,0b
 	
-	move	#55,D0
-	move	#0,d2
-	move	#0,d3
-	jbsr	display_front_object
+	* testing front objects!!!
+	*move	#55,D0
+	*move	#2,d2
+	*move	#0,d3
+	*jbsr	display_front_object
+	*move	#156,D0
+	*move	#3,d2
+	*move	#1,d3
+	*jbsr	display_front_object
 	
 	rts
 	
@@ -4291,6 +4296,8 @@ level_1_load:
 * < D0: X
 * < D2: object index
 * < D3: sprite slot (0,1,2,3)
+* sprite slots 0 and 1 don't multiplex to the lower sprites
+* sprite slots 2 and 3 need to yield control to the lower osd sprites (TODO)
 display_front_object:
 	movem.l	d0-a6,-(a7)
 	move.l	front_objects_y_table,a0
@@ -4335,13 +4342,15 @@ display_front_object:
 	
 	* position sprite in copperlist
 	lea		front_object_sprites,a0
+	move.w	d3,d2
+	lsl.w	#4,d2
+	add.w 	d2,a0			| where to put the sprpos
 	move.l	a2,d0
 	add.w	#16,d0			| skip CW, handled by osd sprite above
-	move.w	#sprpt,d2
-	add.w	d3,d2
-	add.w	d3,d2
-	add.w	d3,d2
-	add.w	d3,d2
+	move.w	d3,d2
+	lsl.w	#3,d2
+	add.w	#sprpt,d2		| starting sprite pointer
+
 	move.w	d2,(a0)+
 	swap	d0
 	move.w	d0,(a0)+
