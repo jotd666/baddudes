@@ -4280,16 +4280,30 @@ level_1_load:
 1:
 	dbf		d0,0b
 	
+	move	#55,D0
+	move	#0,d2
+	move	#0,d3
+	jbsr	display_front_object
 	
-	* temp display a front object
+	rts
 	
+* display a front object
+* < D0: X
+* < D2: object index
+* < D3: sprite slot (0,1,2,3)
+display_front_object:
+	movem.l	d0-a6,-(a7)
+	move.l	front_objects_y_table,a0
+	move.w	(a0,d2.w*2),d1
 	move.l	front_objects_table,a0
-	move.l	(8,a0),a2		| lamp 1
-	move.l	(12,a0),d4		| lamp 1
-	move.w	(-2,a2),d2		| height
+	lsl.w	#3,d2
+	add.w	d2,a0
+	move.l	(a0)+,a2		| part #1
+	move.l	(a0)+,a5		| part #2
+	move.w	(-2,a2),d6		| height
 	
 	lea		sprite_y_table_table,a4
-	move.l	(a4,d2.w*4),d0
+	move.l	(a4,d6.w*4),d6	| get proper height table
 	.ifndef	RELEASE
 	jne		0f
 	BREAKPOINT	"unsupported sprite size (in D2)"
@@ -4297,14 +4311,16 @@ level_1_load:
 0:
 	.endif
 	
-	move.l	d0,a1
-	move	#55,D0
-	move	#56,d1
+	move.l	d6,a1
 	jbsr	store_sprite_pos
 
 	* enable multiplexed sprite
 
 	lea		upper_osd_next_cw_table,a3
+	move.w	d3,d5
+	lsl.w	#3,d5
+	add.w	d5,a3		| pick proper slot
+	
 	move.l	(a3)+,a0
 	move.w	d0,(8,a0)
 	swap	d0
@@ -4322,6 +4338,10 @@ level_1_load:
 	move.l	a2,d0
 	add.w	#16,d0			| skip CW, handled by osd sprite above
 	move.w	#sprpt,d2
+	add.w	d3,d2
+	add.w	d3,d2
+	add.w	d3,d2
+	add.w	d3,d2
 	move.w	d2,(a0)+
 	swap	d0
 	move.w	d0,(a0)+
@@ -4331,7 +4351,7 @@ level_1_load:
 	move.w	d0,(a0)+
 	addq	#2,d2
 	
-	move.l	d4,d0
+	move.l	a5,d0
 	add.w	#16,d0			| skip CW, handled by osd sprite above
 	move.w	d2,(a0)+
 	swap	d0
@@ -4341,7 +4361,7 @@ level_1_load:
 	move.w	d2,(a0)+
 	move.w	d0,(a0)+
 	
-
+	movem.l	(a7)+,d0-a6
 	rts
 	
 level_2_load:
@@ -4367,7 +4387,10 @@ load_front_objects_file:
 	move.l	D0,front_objects_palette
 	move.l	d0,a0
 	add.w	#0x20,a0
-	move.w	(a0)+,nb_front_objects
+	move.w	(a0)+,d0
+	move.w	d0,nb_front_objects
+	move.l	a0,front_objects_y_table
+	lea		(a0,d0.w*2),a0
 	move.l	a0,front_objects_table
 	move.l 	a0,d2		| base
 	move.w	nb_front_objects,d0
@@ -5009,6 +5032,8 @@ front_objects_palette:
 	.long	0
 front_objects_table:
 	.long	0
+front_objects_y_table:
+	.skip	8*2		| hopefully will be enough
 nb_front_objects:
 	.word	0
 truck_width:

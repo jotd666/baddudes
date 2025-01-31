@@ -25,7 +25,7 @@ def doit(force=False):
 
         objects = {"meter":meter,"lamp_1":lamp_1,"lamp_2":lamp_2,"hydrant":hydrant}
 
-        if True:
+        if False:
             img.save("front_objects_16.png")
             meter.save("meter.png")
             lamp_1.save("lamp_1.png")
@@ -35,9 +35,12 @@ def doit(force=False):
         with open(asm_out,"w") as f:
             f.write("palette:\n")
             bitplanelib.palette_dump(palette,f)
-            f.write("\tdc.w\t4\t; number of front objects\n")
-            f.write("main_table:\n")
+            f.write(f"\tdc.w\t{len(objects)}\t; number of front objects\n; display Y\n")
             for k,o in objects.items():
+                y = 240-o.size[1]
+                f.write(f"\tdc.w\t{y}\n")
+            f.write("main_table:\n")
+            for k,o, in objects.items():
                 for j in range(2):
                     f.write(f"\tdc.l\tobject_{k}_{j}-main_table\n")
 
