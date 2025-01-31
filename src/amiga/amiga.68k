@@ -4289,19 +4289,21 @@ level_1_load:
 	move.l	(12,a0),d4		| lamp 1
 	move.w	(-2,a2),d2		| height
 	
-	lea		init_sprite_y_table_table,a4
+	lea		sprite_y_table_table,a4
 	move.l	(a4,d2.w*4),d0
 	.ifndef	RELEASE
 	jne		0f
 	BREAKPOINT	"unsupported sprite size (in D2)"
+	illegal
 0:
 	.endif
 	
 	move.l	d0,a1
-	move	#40,D0
-	move.w	#64,d1
+	move	#55,D0
+	move	#64,d1
 	jbsr	store_sprite_pos
 
+	TMPBREAK
 	* enable multiplexed sprite
 
 	lea		upper_osd_next_cw_table,a3
@@ -5214,7 +5216,7 @@ public_memory_block:
 		.macro		RESERVE_SPRITE	name
 osd_\name\()_sprite:
 	.skip	16
-	.skip	32*16
+	.skip	16*16	| 16 rows of 2*8 bits (2 bitplanes)
 osd_\name\()_next_cw:
 	.skip	16	
 	.endm
