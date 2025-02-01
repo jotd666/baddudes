@@ -34,7 +34,7 @@ AFB_68020 = 1
 	.endif
 	
 TOTAL_PUBLIC_MEMORY_SIZE = 350000
-TOTAL_CHIP_MEMORY_SIZE = 800000
+TOTAL_CHIP_MEMORY_SIZE = 820000
 
 PREVIOUS_SPRITE_SIZE = 8
 BORDERBLANK = 1
@@ -952,7 +952,7 @@ erase_level_1_truck:
 0:
 	rts
 	
-* truck_draw
+* truck_draw draw_truck
 draw_level_1_truck:
 	move.w	x_secondary_scroll_value,d0
 	jeq		2f		| reached destination
@@ -1035,7 +1035,10 @@ do_truck_draw:
 	lea		prev_truck_params,a1
 	move.w	d0,(a1)+	| X
 	move.w	d1,(a1)+	| Y
+	move.w	d2,d6  | TEMP MACFUCK
 	move.w	d6,(a1)+	| real width
+	moveq 	#0,d6  | TEMP MACFUCK
+	moveq	#0,d5  | TEMP MACFUCK
 	move.w	x_secondary_scroll_value,(a1)	| note truck position
 	move.l 	fg_drawed_screen_ptr,a1
 	jbsr	blit_planes_any_internal_cookie_cut
@@ -4085,14 +4088,13 @@ set_game_intro_context:
 	jbsr	load_tiles_palette_244000
 	rts
 	
-load_sprite_file:
-	jbsr	osd_disable_interrupts
+load_level_sprite_file:
 	jbsr	get_current_level
 	add.b	#48,d0	
-	
 	move.b	d0,file_level_index
 	lea		sprites_game_level_file,a0
-	
+load_sprite_file:
+	jbsr	osd_disable_interrupts
 	jbsr	allocate_and_load_chip_mem_file
 	move.l	d0,sprites_memory
 	move.l	d0,a0
@@ -4262,7 +4264,7 @@ specific_level_load_table:
 level_1_load:
 	lea		tiles_level_1_24a000_file,a0
 	jbsr	load_tiles_file_24a000
-	jbsr 	load_sprite_file
+	jbsr 	load_level_sprite_file
 	lea		front_objects_1_file,a0
 	jbsr	load_front_objects_file
 	* load & relocate truck pics
@@ -4382,7 +4384,7 @@ level_2_load:
 	lea		tiles_level_2_24a000_file,a0
 	jbsr	load_tiles_file_24a000
 	
-	jbsr 	load_sprite_file
+	jbsr 	load_level_sprite_file
 
 	jbsr	enable_road_scroll
 	
@@ -4391,13 +4393,13 @@ level_2_load:
 level_3_load:	
 	*lea		tiles_level_2_24a000_file,a0
 	*jbsr	load_tiles_file_24a000
-	jbsr 	load_sprite_file
+	jbsr 	load_level_sprite_file
 
 	*jbsr	enable_road_scroll
 	
 	rts
 level_4_load:	
-	jbsr 	load_sprite_file
+	jbsr 	load_level_sprite_file
 	rts
 level_5_load:	
 level_6_load:	
@@ -4896,7 +4898,7 @@ front_objects_1_file:
 truck_1_pic_file:
 	.asciz	"truck_1.bin"
 sprites_game_level_file:
-	.asciz	"sprites_game_level_"
+	.ascii	"sprites_game_level_"
 file_level_index:
 	.asciz	"1.bin"
 sprites_game_intro_file:

@@ -1,3 +1,4 @@
+- truck shift converted to full blit: we see planar shift???
 - easy: dump sprites with quantized colors too (to be able to find colors to change
   on dynamic color load)
 - level 2: y may be negative: needs y clipping
