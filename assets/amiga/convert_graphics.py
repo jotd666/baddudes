@@ -691,8 +691,9 @@ if True:
     process_tile_context("title_24a000",title_tile_24a000_sheet_dict,16)
     process_tile_context("game_intro_24a000",game_intro_tile_24a000_sheet_dict,32)
     process_tile_context("highs_24a000",title_tile_24a000_sheet_dict,16)
-    process_tile_context("level_1_24a000",level_1_tile_24a000_sheet_dict,32)
-    convert_truck_1_pic.doit(palette_dict["level_1_24a000"])
+    process_tile_context("level_1_24a000",level_1_tile_24a000_sheet_dict,32,first_pass=True)
+    truck_used_colors = convert_truck_1_pic.doit(palette_dict["level_1_24a000"],force=True)
+    process_tile_context("level_1_24a000",level_1_tile_24a000_sheet_dict,32,first_pass=False,first_colors=truck_used_colors)
     #process_tile_context("level_3_24d000",level_3_tile_24d000_sheet_dict,16,first_pass=False)
 
 # sprites
@@ -716,6 +717,7 @@ else:
     truck_used_colors = convert_truck_1_pic.doit(palette_dict["level_1_24a000"],force=True)
     # we return the reduced palette, then we reinject it in the global tiles
     # so they are first in the palette
+    process_tile_context("level_1_24a000",level_1_tile_24a000_sheet_dict,32,first_pass=False,first_colors=truck_used_colors)
 
 
     process_tile_context("game_level_2",sprite_sheet_dict,48,is_bob=True,shift_palette_count=16)
