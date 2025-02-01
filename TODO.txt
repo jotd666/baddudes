@@ -1,4 +1,5 @@
-- truck shift converted to full blit: we see planar shift???
+- truck: X-clipping creates strange artifacts (jailbars every 16 pixels) 
+  depending on shifting (mask???) also start of truck bltafwm not working
 - easy: dump sprites with quantized colors too (to be able to find colors to change
   on dynamic color load)
 - level 2: y may be negative: needs y clipping
@@ -26,8 +27,6 @@
   main character with nunchuck upper tiles (crouching, 0x30,0x32 still not dumped or displayed)
 - karnov: when scrolling at 0, characters on fence upper
   left "wrap" to bottom right tile restore is wrong
-- truck: X-clipping creates strange artifacts (jailbars) 
-  depending on shifting (mask???) also start of truck bltafwm not working
 - need to optimize truck/train erase: depending on the level, compute the parts that need
   background refresh. Truck: bottom (wheels) + part between front & tow & exhaust pipe. 
   Rest: not needed. same for big truck & train, with inter-tow: in progress

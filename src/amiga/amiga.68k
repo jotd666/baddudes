@@ -798,9 +798,9 @@ _vblank:
 	lsr.w	#3,d2				| divide by 8 to get len in bytes
 	move.w	#4,d3				| 4 bitplanes in cookie cut mode
 	move.w	(a2)+,d4			| height
-	moveq	#0,d5
-	lea		(0x40,a2),a0			| pic planes
-	move.l	(6*4,a0),a3				| mask plane
+	moveq	#0,d5				| no clipping
+	lea		(0x40,a2),a0		| pic planes
+	move.l	(6*4,a0),a3			| mask plane
 	movem.l	D0-D5/A1/A2,-(a7)
 	moveq	#0,d6
 	jbsr	blit_planes_any_internal_cookie_cut
@@ -1035,10 +1035,7 @@ do_truck_draw:
 	lea		prev_truck_params,a1
 	move.w	d0,(a1)+	| X
 	move.w	d1,(a1)+	| Y
-	move.w	d2,d6  | TEMP MACFUCK
 	move.w	d6,(a1)+	| real width
-	moveq 	#0,d6  | TEMP MACFUCK
-	moveq	#0,d5  | TEMP MACFUCK
 	move.w	x_secondary_scroll_value,(a1)	| note truck position
 	move.l 	fg_drawed_screen_ptr,a1
 	jbsr	blit_planes_any_internal_cookie_cut
@@ -2615,7 +2612,7 @@ blit_planes_any_internal_cookie_cut:
 	sub.w	d4,d1	| pre-add height to d1
 	subq.w	#1,d1	| minus one
 1:	
-	* put d6 in d5
+	* put d6 in d5 high 16 bits
 	swap	d5
 	move.w	d6,d5
 	swap	d5
@@ -2681,19 +2678,18 @@ blit_planes_any_internal_cookie_cut:
 	* D6 param non-zero. Means that we will use a custom width
 	* instead of full object width
 	* D2 is still full object width (needed for source modulo)
-	sub.w	d5,d2		| source modulo: non-zero
-	
-    sub.w   d5,d0       | blit width
-    lsr.w   #1,d5
+	sub.w	d5,d2		| change source modulo from full width to partial width
+    sub.w   d5,d0       | reduce blit width
+    lsr.w   #1,d5		| now in 16 bit words
     add.w   d5,d4       | blit height
 	jra		52f
 51:
     sub.w   d2,d0       | blit width
     lsr.w   #1,d2
     add.w   d2,d4       | blit height
-	moveq	#0,d2		| no data skip in source
+	moveq	#0,d2		| no data skip in source (no source modulo)
 52:
-	* restore d5 register
+	* restore d5 register to get byte offset of data start
 	swap	d5
 
 	add.w	d5,a3			| apply xy offset to mask too
@@ -2750,7 +2746,7 @@ start_process_1_plane:
 60:
 	* source is 0: just apply mask (less bandwidth lost) and change bltcon
 	move.l	d6,bltcon0(a5)	| sets con0 and con1: C-A->D cookie cut, B fixed
- 	move.w	d2,bltbdat(a5)	|B word is zero
+ 	move.w	d0,bltbdat(a5)	|B word is zero (re-use the fact that d0 = 0)
 	rts
 
 
