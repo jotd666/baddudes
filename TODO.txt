@@ -1,11 +1,10 @@
-- truck: X-clipping creates strange artifacts (jailbars every 16 pixels) 
-  depending on shifting (mask???) also start of truck bltafwm not working
+- hack lamps/trees/fire hydrants (from 244000 layer) with hardware sprites:
+  figure out first layer row scroll registers, "trigger" tile to display / undisplay sprite
+  => get scroll value from 242404 write (set_front_layer_scroll_0e3f0): keep doing that!!
 - easy: dump sprites with quantized colors too (to be able to find colors to change
   on dynamic color load)
 - level 2: y may be negative: needs y clipping
-- reduce truck size to test
-- check truck x pos shift vs ninjas on it: wrong
-- tune bltafwm from a value in zp
+- truck appearing trashed restore ??
 - sometimes tile restore goes crazy better seen on main character X < 0 (in karnov)
   now X<0 main character still not displayed (AGAIN!!)
 - level 3 to make a video! needs to log 24dxxx tiles and load them
@@ -16,13 +15,9 @@
 	 
 - left osd mssing 1 char ("G"AME OVER)
 - easy: when losing a life, life character is not erased
-- regression: truck missing 1 bitplane or something... wrong color
 - level 2 truck: rip & clip lower wheel parts as they'll be placated with wheel sprites
 - log & rip missing sounds: breakpoint on sound not found so able to go to mame and rip it
 
-- hack lamps/trees/fire hydrants (from 244000 layer) with hardware sprites:
-  figure out first layer row scroll registers, "trigger" tile to display / undisplay sprite
-  => get scroll value from 242404 write (set_front_layer_scroll_0e3f0)
 - missing frames: karnov head when dying,
   main character with nunchuck upper tiles (crouching, 0x30,0x32 still not dumped or displayed)
 - karnov: when scrolling at 0, characters on fence upper

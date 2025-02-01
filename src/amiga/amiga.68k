@@ -908,6 +908,40 @@ hex_table:
 	.byte	0x45
 	.byte	0x46
 	
+update_level_1_front_objects:
+	* level 1: scan for front objects
+	move.w 	front_objects_x_scroll,d0
+	lea		video_ram_244000+0x6C0,a0
+	and.w	#0x300,d0		| scroll "page"
+	lsl.w	#3,D0		| times 8, 0x800 per scroll page
+	add.w	d0,a0
+
+	move.w	#0x3F,d7
+	move.w	#32,d6		| current X (without scroll)
+	moveq	#0,d3		| sprite slot
+0:
+	move.w 	(a0)+,d1
+	jeq		1f
+	* found a non-zero tile
+	cmp.w	#0x4227,d1
+	jne		2f
+	* lamp
+	move.w	d6,d0
+	move.w 	front_objects_x_scroll,d1
+	and.w	#0xFF,d1
+	sub.w	d1,d0
+	jmi		2f
+	moveq	#1,d2		| lamp
+	jbsr	display_front_object
+	addq.w	#1,d3		| next sprite slot
+2:
+
+1:
+	addq	#8,d6
+	dbf		d7,0b
+	
+	rts
+	
 * truck_erase erase_truck
 erase_level_1_truck:
 	
@@ -923,7 +957,7 @@ erase_level_1_truck:
 	move.w	#BOTTOM_TRUCK_HEIGHT,d3		| bottom part which needs restoring
 	move.w	(a1)+,d0	| X
 	move.w	(a1)+,d1	| Y
-	move.w	(a1),d2	| real object size
+	move.w	(a1),d2		| real object size
 	move.l	fg_drawed_screen_ptr,a1
 	move.w  truck_height,d4
 	* clip to bottom of truck (wheels)
@@ -935,9 +969,7 @@ erase_level_1_truck:
 
 	* rear should be erased only when X > 0
 	lea		prev_truck_params,a1
-	move.w	(6,a1),d3	| global scroll position when drawn
-	move.w	(a1)+,d0	| X
-	sub.w	d0,d3
+	move.w	(a1)+,d0	| X	
 	jeq		1f			| X=0 on displayed screen: no need to erase
 	move.w	(a1)+,d1	| Y
 	moveq	#2,d2		| just the first bytes
@@ -947,6 +979,20 @@ erase_level_1_truck:
 	sub.w	#BOTTOM_TRUCK_HEIGHT,d4
 	lea		background_restore_buffer,a0
 	jbsr	restore_background
+
+	* restore blank between truck front & tow
+	* broken...
+	*lea		prev_truck_params,a1
+	*move.w	(a1),d0		| displayX
+	*sub.w	(6,a1),d0	| truck pos
+	*add.w	#0x320,d0	| correct X
+	*jmi		1f
+	*move.w	(2,a1),d1
+	*move.w  truck_height,d4
+	*sub.w	#BOTTOM_TRUCK_HEIGHT,d4
+	*lea		background_restore_buffer,a0
+	*jbsr	restore_background
+
 1:
 	clr.b	truck_previously_drawn
 0:
@@ -965,7 +1011,7 @@ draw_level_1_truck:
 	move.w	truck_width,d6	| full truck size
 	lsl.w	#3,d6			| in pixels
 	
-	
+	TMPWRITE
 	* required to start displaying truck outside the screen: we have to compute
 	* offset to skip start (and also adjust real width)
 	moveq	#0,d5			| XY-offset
@@ -984,7 +1030,7 @@ truck_clipped_left:
 
 	and.w	#0xF,d0		| of course X is at 0 (except fine shift)
 	jeq		11f
-	addq	#1,d6		| increase length
+	add.w	#16,d6		| increase length
 	sub.w	#0x10,d0
 11:
 	
@@ -1002,10 +1048,10 @@ truck_not_clipped_left:
 	* because end of bitplane data is clipped off. We can use a different bltafwm
 	* to workaround this
 	* to full mask: this is a corner case
-	
+	move.l	#0xFFFF0000,bltamask_long_value
 	
 do_truck_draw:
-	move.w	#NB_BYTES_PER_SCREEN_ROW*8+2,d2
+	move.w	#NB_BYTES_PER_SCREEN_ROW*8,d2
 	cmp.w	d6,d2
 	jcc		11f
 	move.w	d2,d6		| maxing out displayed width
@@ -1161,7 +1207,7 @@ addr_24xxxx_table_op:
 	.long	addr_242xxx_op
 	.long	addr_unmapped_op
 	.long	addr_244xxx_tile_layer_op
-	.long	addr_245xxx_tile_layer_0_op
+	.long	addr_245xxx_tile_layer_op
 	.long	addr_246xxx_op
 	.long	addr_unmapped_op
 	.long	addr_248xxx_op
@@ -1232,15 +1278,22 @@ addr_unmapped_op:
 addr_240xxx_op:
 	rts		| to_implement
 addr_242xxx_op:
-	rts	| to_implement
-	
-* 8x8 tile layer, right screen nothing done TODO
-addr_245xxx_tile_layer_0_op:
+	* for level 1, we're interested only in a lower row
+	* where all objects have some bytes written
+	cmp.w	#0x2404,d2
+	jne		0f
+	* D7 holds scroll value
+	move.w	d7,front_objects_x_scroll
+0:
 	rts
 	
-* 8x8 tile layer
+
+	
+* 8x8 tile layer, for osd (not scrolled) but also row scrolled
+* for front objects (lamps...)
+addr_245xxx_tile_layer_op:
 addr_244xxx_tile_layer_op:
-	and.w	#0x7FF,d2
+	and.w	#0x1FFF,d2
 
 	cmp.b	#2,d0
 	jne		0f
@@ -1278,6 +1331,7 @@ addr_244xxx_tile_layer_op:
 2:
 	rts
 0:
+	* word write
 	movem.l	a0-a5/d2-d6,-(a7)
 10:
 	move.w	d2,-(a7)
@@ -1294,7 +1348,13 @@ addr_244xxx_tile_layer_op:
 	jeq		100f	| already the proper value
 	move.w	d7,(a0)	| set value in memory first
 
-	
+	* > 0x244800: just write, don't do anything
+	* (used only scrolled for front objects)
+	cmp.w	#0x800,d2
+	jcs		0f
+	addq	#2,a7
+	jra		101f
+0:
 	* special cases: on some special tiles, 
 	* blit the whole pic (big dudes in intro)
 	cmp.w	#CTX_INTRO,global_context
@@ -2244,14 +2304,18 @@ really_update_sprites:
 	addq	#8,a4
 	dbf		d7,1b
 12:	
+	
 
 	tst.l truck_planes
 	jeq		555f
+	
 	jbsr	erase_level_1_truck
 	jbsr	draw_level_1_truck
 	* reset possibly changed first word mask setting
-	move.w	#-1,bltamask_long_value
+	move.l	#-1,bltamask_long_value
 
+	jbsr	update_level_1_front_objects
+	
 555:
 	GET_RAM_START_IN_A6
 	lea	(0x4000,a6),a0		| sprites
@@ -2649,7 +2713,7 @@ blit_planes_any_internal_cookie_cut:
     add.l   d1,a1       | plane position (D1 can be 0x7FFF, up to 0xC000)
 
 
-	move.w	bltamask_long_value,d1
+	move.l	bltamask_long_value,d1
 	and.w   #0xF,d6			| blit shift 0-15
 	.ifdef	NO68020
 	add.w	d6,d6
@@ -2701,7 +2765,7 @@ blit_planes_any_internal_cookie_cut:
     
     * blitter registers set
 	* set mask to possibly non-zero because truck/train use it to hide start
-    move.w  d1,bltafwm(a5)
+    move.l  d1,bltafwm(a5)
 
 	move.w d2,bltamod(a5)		|A modulo=bytes to skip between lines
 	move.w d2,bltbmod(a5)		|B modulo=bytes to skip between lines
@@ -4753,6 +4817,8 @@ display_dudes:
 	.word	0
 bltamask_long_value:
 	.long	-1
+front_objects_x_scroll:
+	.word	0
 x_background_scroll_value:
 	.word	0
 y_background_scroll_value:

@@ -43,7 +43,7 @@ ram_start_ff8000:
 	.endif
 
 video_ram_244000:
-	.skip	0x800
+	.skip	0x2000
 video_ram_24a000:
 	.skip	0x800
 video_ram_24d000:
