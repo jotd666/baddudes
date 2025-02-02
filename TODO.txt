@@ -1,9 +1,14 @@
+- karnov: when scrolling at 0, tile restore is wrong
+- truck: once again shifting/bltafwm issue (seen also when scroll = 0)
 - hack lamps/trees/fire hydrants (from 244000 layer) with hardware sprites:
   figure out first layer row scroll registers, "trigger" tile to display / undisplay sprite
   => get scroll value from 242404 write (set_front_layer_scroll_0e3f0): keep doing that!!
+  (scroll value looks wrong on second object)
+- multiplex sprites 4 to 7 to do (lower hud)
+- "D" debug key to show scrolling (without truck), "T" enables debug
 - easy: dump sprites with quantized colors too (to be able to find colors to change
   on dynamic color load)
-- level 2: y may be negative: needs y clipping
+- level 2 (1 boss with karnov jumping): y may be negative: needs y clipping
 - truck appearing trashed restore ??
 - sometimes tile restore goes crazy better seen on main character X < 0 (in karnov)
   now X<0 main character still not displayed (AGAIN!!)
@@ -15,13 +20,11 @@
 	 
 - left osd mssing 1 char ("G"AME OVER)
 - easy: when losing a life, life character is not erased
-- level 2 truck: rip & clip lower wheel parts as they'll be placated with wheel sprites
+- level 2 truck: clip lower wheel parts as they'll be placated with wheel sprites, clip exhaust too!!
 - log & rip missing sounds: breakpoint on sound not found so able to go to mame and rip it
 
 - missing frames: karnov head when dying,
   main character with nunchuck upper tiles (crouching, 0x30,0x32 still not dumped or displayed)
-- karnov: when scrolling at 0, characters on fence upper
-  left "wrap" to bottom right tile restore is wrong
 - need to optimize truck/train erase: depending on the level, compute the parts that need
   background refresh. Truck: bottom (wheels) + part between front & tow & exhaust pipe. 
   Rest: not needed. same for big truck & train, with inter-tow: in progress
@@ -58,8 +61,4 @@
 howto:
 - skip music level 1: bpset 0df2a,D0==$1F || D0==$27 || D0 == $2C || D0 == $26,{CURPC=$13DA;g}
 
-reverse lb_024dc
-reverse jump tables (like in pooyan): get dc.l  lb_xxxxx and set breakpoints
-    ADDA.L    D2,A3            ;025b4: d7c2
-    MOVEA.L    (A3),A3            ;025b6: 2653
-    JSR    (A3)            ;025b8: 4e93
+

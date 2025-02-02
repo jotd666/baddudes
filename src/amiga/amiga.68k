@@ -924,14 +924,31 @@ update_level_1_front_objects:
 	jeq		1f
 	* found a non-zero tile
 	cmp.w	#0x4227,d1
-	jne		2f
-	* lamp
+	jeq		5f
+	cmp.w	#0x623B,d1
+	jne		4f
+	* meter
+	moveq	#3,d2
+	jra		3f
+4:
+	cmp.w	#0x522F,d1
+	jne		4f
+	* fire hydrant
+	moveq	#0,d2
+	jra		3f
+5:
+	* lamp, but which one?
+	move.w	(-0x442,a0),d1
+	moveq	#1,d2		| lamp
+	cmp.w	#0x3212,d1
+	jne		3f
+	moveq	#2,d2		| lamp with sign
+3:
 	move.w	d6,d0
 	move.w 	front_objects_x_scroll,d1
 	and.w	#0xFF,d1
 	sub.w	d1,d0
 	jmi		2f
-	moveq	#1,d2		| lamp
 	jbsr	display_front_object
 	addq.w	#1,d3		| next sprite slot
 2:
@@ -940,6 +957,15 @@ update_level_1_front_objects:
 	addq	#8,d6
 	dbf		d7,0b
 	
+	* zero out the unused sprite slots
+	moveq	#-1,d2
+1:
+	cmp.w	#4,d3
+	jeq		1f
+	jbsr	display_front_object
+	addq	#1,d3
+	jra		1b
+1:	
 	rts
 	
 * truck_erase erase_truck
@@ -4379,12 +4405,20 @@ level_1_load:
 	
 * display a front object
 * < D0: X
-* < D2: object index
+* < D2: object index (-1: blank object)
 * < D3: sprite slot (0,1,2,3)
 * sprite slots 0 and 1 don't multiplex to the lower sprites
 * sprite slots 2 and 3 need to yield control to the lower osd sprites (TODO)
 display_front_object:
 	movem.l	d0-a6,-(a7)
+	tst		d2
+	jpl		0f
+	moveq	#0,d1
+	lea		blank_sprite,a2
+	lea		blank_sprite,a5
+	moveq	#16,d6
+	jra		1f
+0:
 	move.l	front_objects_y_table,a0
 	move.w	(a0,d2.w*2),d1
 	move.l	front_objects_table,a0
@@ -4393,7 +4427,7 @@ display_front_object:
 	move.l	(a0)+,a2		| part #1
 	move.l	(a0)+,a5		| part #2
 	move.w	(-2,a2),d6		| height
-	
+1:	
 	lea		sprite_y_table_table,a4
 	move.l	(a4,d6.w*4),d6	| get proper height table
 	.ifndef	RELEASE
@@ -4407,7 +4441,7 @@ display_front_object:
 	jbsr	store_sprite_pos
 
 	* enable multiplexed sprite
-
+1:
 	lea		upper_osd_next_cw_table,a3
 	move.w	d3,d5
 	lsl.w	#3,d5
@@ -4457,6 +4491,7 @@ display_front_object:
 	
 	movem.l	(a7)+,d0-a6
 	rts
+
 	
 level_2_load:
 	lea		tiles_level_2_24a000_file,a0
@@ -5228,7 +5263,7 @@ blank_sound:
 	ds.l	4
 	
 blank_sprite:
-	.skip	8
+	.skip	16+16*16+16
 	
 debug_copperlist:
 	dc.w	bplcon0,0x200
