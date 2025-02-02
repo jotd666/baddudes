@@ -2275,6 +2275,15 @@ really_update_sprites:
 	jeq		12f				| X=0 & Y=0: inactive and end of list (let's hope it works!)
 	move.w	d0,d1		| Y
 	swap	d0			| X
+	tst		d0
+	jpl		2f
+	* X recorded as negative (shifted BOB blit like x=-3 happens, when
+	* character is on the hard left and x_background_scroll_value is 0)
+	* make it 0, doesn't matter if we don't restore the bobs there
+	* it has wrapped to some high-X location and will be overwritten
+	* at the time it will be displayed again
+	moveq	#0,d0
+2:
 	and.w	#0x3F0,d0		| align on 16 lower bound (there are potentially 3 screens!)
 	* clear area where the sprite was
 	move.l	fg_drawed_screen_ptr,a1
@@ -2440,6 +2449,7 @@ really_update_sprites:
 
 	add.w	x_background_scroll_value(pc),d0
 	jpl		0f
+	TMPWRITE
 	cmp.w	#0xFFF0,d0
 	jcs		30f		| too negative: no can do (slightly negative works)	
 0:
@@ -2611,6 +2621,10 @@ clear_fg_planes_any_blitter_internal:
 1:
 	moveq	#1,d5
 	ror.l	#8,d5     | AKA move.l  #0x01000000,d5   | minterm useD & rect clear (0xA) 
+	tst		d1
+	jpl		0f
+	moveq	#0,d1
+0:
     and.w   #0x1F0,d0
     beq.b   2f				| zero X optimization
     asr.w   #3,d0			| X displacement in bytes
@@ -2703,8 +2717,8 @@ blit_planes_any_internal_cookie_cut:
     move.w  d0,d6
     asr.w   #3,d0			| X displacement in bytes (maybe negative)
 
-	*bclr	#0,d0			| no need, it will be even
-   
+	*bclr	#0,d0			| it will be even (unless it's negative!)
+	ext.l	d0				| extend sign
     add.l   d0,d1
 	
     * make offset even. Blitter will ignore odd address
@@ -2850,6 +2864,10 @@ restore_background:
 	tst		d0
 	jpl		0f
 	moveq	#0,d0		| clip to 0 if X < 0
+0:
+	tst		d1
+	jpl		0f
+	moveq	#0,d1		| clip to 0 if Y < 0
 0:
 	asr.w	#3,d0		| in bytes
 	jpl		1f
