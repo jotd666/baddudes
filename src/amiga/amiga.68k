@@ -831,8 +831,8 @@ _vblank:
 	* don't blit, but update hw sprites as it doesn't cost a lot
 
 	.ifndef		RELEASE
-	tst.b	debug_truck_display
-	jeq		2f
+	tst.b	debug_truck_control
+	jeq		1f
 	move.w	debug_truck_move,d0
 	jeq		0f
 	add.w	d0,x_secondary_scroll_value
@@ -840,17 +840,18 @@ _vblank:
 0:
 	and.w	#0x3FF,x_secondary_scroll_value
 	
-	* display boss energy
-	lea		boss_life,a0
-	lea		0x244758,a6
-0:
-	move.w	(a0)+,d7
-	jeq		1f
-	jbsr	osd_write_word
-	addq	#2,a6
-	jra	0b
+*	* display test boss energy
+*	lea		boss_life,a0
+*	lea		0x244758,a6
+*0:
+*	move.w	(a0)+,d7
+*	jeq		1f
+*	jbsr	osd_write_word
+*	addq	#2,a6
+*	jra	0b
 1:
-
+	tst.b	debug_scroll_display
+	jeq		2f
 	* copy truck scroll value
 	move.w	x_secondary_scroll_value,d0
 	lea		debug_truck_message(pc),a0
@@ -3597,7 +3598,7 @@ scroll_x_24a000_table:
 move_ninjas_truck:
 	* in debug mode, when debug truck display is set, don't move truck
 	.ifndef		RELEASE
-	tst.b	debug_truck_display
+	tst.b	debug_truck_control
 	jeq		0f
 	rts
 	.endif
@@ -3987,10 +3988,15 @@ handle_keyboard:
 *
 10:
 	.ifndef	RELEASE
+	cmp.b	#34,d0
+	bne		0f
+	* 'D': debug scrolling display on/off
+	eor.b	#1,debug_scroll_display
+0:
 	cmp.b	#20,d0
 	bne		0f
-	* toggle truck display on/off
-	eor.b	#1,debug_truck_display
+	* 'T': toggle truck manual control on/off
+	eor.b	#1,debug_truck_control
 0:
 	cmp.b	#32,d0
 	bne		0f
@@ -4992,7 +4998,9 @@ main_scroll_value:
 cheat_used:
 	.byte	0
 	.ifndef	RELEASE
-debug_truck_display:
+debug_truck_control:
+	.byte	0
+debug_scroll_display:
 	.byte	0
 	.align	2
 debug_truck_move:

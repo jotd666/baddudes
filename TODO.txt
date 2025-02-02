@@ -1,4 +1,5 @@
-- karnov: when scrolling at 0, tile restore is wrong
+- karnov/in general when scrolling at 0, existing screen buffer is not properly
+  set initialized with background tiles
 - truck: once again shifting/bltafwm issue (seen also when scroll = 0)
 - hack lamps/trees/fire hydrants (from 244000 layer) with hardware sprites:
   figure out first layer row scroll registers, "trigger" tile to display / undisplay sprite
