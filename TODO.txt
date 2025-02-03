@@ -1,3 +1,17 @@
+- front objects: make a X//8 -> lower part address table
+  python X,Y => address: debug update_level_1_front_objects
+ 
+def get_front_address(x,y):
+    addr = 0x244000+(y*0x40)
+    page = x & 0x300
+    addr += 0x8*page + (x&0xFF)//8
+
+    return addr
+
+x_start = 0x295
+for x in range(x_start,x_start+0x100,8):
+    print(hex(get_front_address(x,0x1B)))
+	
 - karnov/in general when scrolling at 0, existing screen buffer is slightly trashed:
   with restored tiles: add debug key to toggle screen with/without scroll
 - check when the sprite draw is avoided and see what values it would yield

@@ -910,19 +910,28 @@ hex_table:
 	.byte	0x46
 	
 update_level_1_front_objects:
+	TMPWRITE
 	* level 1: scan for front objects
-	move.w 	front_objects_x_scroll,d0
-	lea		video_ram_244000+0x6C0,a0
-	and.w	#0x300,d0		| scroll "page"
-	lsl.w	#3,D0		| times 8, 0x800 per scroll page
-	add.w	d0,a0
+	move.w 	front_objects_x_scroll,d5		| X start
+	lea		video_ram_244000,a0	| bottom of object Y at scroll = 0
 
 	move.w	#0x3F,d7
 	move.w	#32,d6		| current X (without scroll)
 	moveq	#0,d3		| sprite slot
 0:
-	move.w 	(a0)+,d1
+	* X/Y (Y fixed to 0x1B) => screen address (not linear, there are 4 pages)
+	move.w	d5,d0
+	and.w	#0x300,d0
+	lsl.w	#3,D0		| times 8, 0x800 per scroll page
+	move.w	d5,d4
+	and.w	#0xF,d4
+	lsr.w	#3,d4
+	add.w 	d4,d0
+	add.w	#0x6C0,d0	| with Y=0x1B
+	and.w	#0x1FFF,d0	| wrap
+	move.w 	(a0,d0.w),d1
 	jeq		1f
+	
 	* found a non-zero tile
 	cmp.w	#0x4227,d1
 	jeq		5f
@@ -939,7 +948,7 @@ update_level_1_front_objects:
 	jra		3f
 5:
 	* lamp, but which one?
-	move.w	(-0x442,a0),d1
+	move.w	(-0x442,a0,d0.w),d1
 	moveq	#1,d2		| lamp
 	cmp.w	#0x3212,d1
 	jne		3f
@@ -955,6 +964,7 @@ update_level_1_front_objects:
 2:
 
 1:
+	addq	#8,d5		| next X
 	addq	#8,d6
 	dbf		d7,0b
 	
