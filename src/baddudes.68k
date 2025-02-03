@@ -696,12 +696,12 @@ display_lives_0e122:
 	SUBQ.W	#1,D1	
 	BMI.S	lb_0e12e
 lb_0e126:
-	MOVE.W	#0x0072,d7
+	MOVE.W	#0x0072,d7	| head counting lives
 	WRITE_WORD_AND_PLUS
 	DBF	D1,lb_0e126
 lb_0e12e:
-	moveq	#0,d7
-	jbsr	osd_write_byte
+	moveq	#0,d7		| blank after lives
+	jbsr	osd_write_word
 lb_0e130:
 	exg	a6,a4
 	RESTORE_REGS

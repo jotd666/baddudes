@@ -3,11 +3,43 @@ import os,sys,bitplanelib,json,pathlib
 
 from shared import *
 
+dump_subdir = dump_dir / "front_objects"
+dump_it = True
+
+if dump_it:
+    ensure_empty(dump_subdir)
+
+def gen_data_file(asm_out,fo_bin,palette,objects):
+    with open(asm_out,"w") as f:
+        f.write("palette:\n")
+        bitplanelib.palette_dump(palette,f)
+        f.write(f"\tdc.w\t{len(objects)}\t; number of front objects\n; display Y\n")
+        for k,o in objects.items():
+            y = 240-o.size[1]
+            f.write(f"\tdc.w\t{y}\n")
+        f.write("main_table:\n")
+        for k,o, in objects.items():
+            for j in range(2):
+                f.write(f"\tdc.l\tobject_{k}_{j}-main_table\n")
+
+        for k,o in objects.items():
+            outs = bitplanelib.palette_image2attached_sprites(o,None,palette,sprite_fmode=3)
+            cw_offset = len(outs[0])-16
+            for j,out in enumerate(outs):
+                f.write(f"""\tdc.w\t${cw_offset:04x}  ; offset of end control word for next object
+\tCNOP\t0,8     ; align on 8 bytes else sprite is not properly displayed
+\tdc.w 0,0,0    ; keep this alignment
+\tdc.w\t{o.size[1]}   ; sprite height
+object_{k}_{j}:""")
+
+                bitplanelib.dump_asm_bytes(out,f)
+
+    asm2bin(asm_out,fo_bin)
 
 def doit(force=False):
     asm_out = generated_src_dir / "front_objects_1.68k"
     fo_bin = data_dir / "front_objects_1.bin"
-    if force or not dudes_bin.exists():
+    if force or not fo_bin.exists():
         img = Image.open(whole_pics_dir / "front_objects_1.png")
         img = img.quantize(16,dither=0)
 
@@ -25,39 +57,35 @@ def doit(force=False):
 
         objects = {"meter":meter,"lamp_1":lamp_1,"lamp_2":lamp_2,"hydrant":hydrant}
 
-        if False:
-            img.save("front_objects_16.png")
-            meter.save("meter.png")
-            lamp_1.save("lamp_1.png")
-            lamp_2.save("lamp_2.png")
-            hydrant.save("hydrant.png")
+        if dump_it:
+            img.save(dump_subdir / "front_objects_1_16.png")
+            meter.save(dump_subdir / "meter.png")
+            lamp_1.save(dump_subdir / "lamp_1.png")
+            lamp_2.save(dump_subdir / "lamp_2.png")
+            hydrant.save(dump_subdir / "hydrant.png")
 
-        with open(asm_out,"w") as f:
-            f.write("palette:\n")
-            bitplanelib.palette_dump(palette,f)
-            f.write(f"\tdc.w\t{len(objects)}\t; number of front objects\n; display Y\n")
-            for k,o in objects.items():
-                y = 240-o.size[1]
-                f.write(f"\tdc.w\t{y}\n")
-            f.write("main_table:\n")
-            for k,o, in objects.items():
-                for j in range(2):
-                    f.write(f"\tdc.l\tobject_{k}_{j}-main_table\n")
+        gen_data_file(asm_out,fo_bin,palette,objects)
 
-            for k,o in objects.items():
-                outs = bitplanelib.palette_image2attached_sprites(o,None,palette,sprite_fmode=3)
-                cw_offset = len(outs[0])-16
-                for j,out in enumerate(outs):
-                    f.write(f"""\tdc.w\t${cw_offset:04x}  ; offset of end control word for next object
-\tCNOP\t0,8     ; align on 8 bytes else sprite is not properly displayed
-\tdc.w 0,0,0    ; keep this alignment
-\tdc.w\t{o.size[1]}   ; sprite height
-object_{k}_{j}:""")
+    # level 2
+    asm_out = generated_src_dir / "front_objects_2.68k"
+    fo_bin = data_dir / "front_objects_2.bin"
+    if force or not fo_bin.exists():
+        img = Image.open(whole_pics_dir / "front_objects_2.png")
+        #img = img.quantize(16,dither=0)
+        palette = bitplanelib.palette_extract(img)
+        transparent_first(palette,transparent)
+        palette_pad(palette,16)
 
-                    bitplanelib.dump_asm_bytes(out,f)
+        lamp_1 = Image.new("RGB",(64,184))   # 16 is enough
+        lamp_1.paste(img,(-96-8,-40))
 
-        asm2bin(asm_out,fo_bin)
+        objects = {"lamp_3":lamp_1}
 
+        if dump_it:
+            #img.save(dump_subdir / "front_objects_2_16.png")
+            lamp_1.save(dump_subdir / "lamp_3.png")
+
+        gen_data_file(asm_out,fo_bin,palette,objects)
 
 if __name__ == "__main__":
 

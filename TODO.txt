@@ -1,31 +1,29 @@
-- karnov/in general when scrolling at 0, existing screen buffer is not properly
-  set initialized with background tiles
+- karnov/in general when scrolling at 0, existing screen buffer is slightly trashed:
+  with restored tiles: add debug key to toggle screen with/without scroll
+- check when the sprite draw is avoided and see what values it would yield
 - truck: once again shifting/bltafwm issue (seen also when scroll = 0)
 - hack lamps/trees/fire hydrants (from 244000 layer) with hardware sprites:
   figure out first layer row scroll registers, "trigger" tile to display / undisplay sprite
   => get scroll value from 242404 write (set_front_layer_scroll_0e3f0): keep doing that!!
   (scroll value looks wrong on second object)
 - multiplex sprites 4 to 7 to do (lower hud)
-- "D" debug key to show scrolling (without truck), "T" enables debug
+
+- unsupported sprite height (8) on level 2
 - easy: dump sprites with quantized colors too (to be able to find colors to change
   on dynamic color load)
 - level 2 (1 boss with karnov jumping): y may be negative: needs y clipping
 - truck appearing trashed restore ??
-- sometimes tile restore goes crazy better seen on main character X < 0 (in karnov)
-  now X<0 main character still not displayed (AGAIN!!)
 - level 3 to make a video! needs to log 24dxxx tiles and load them
 - level 2 purple boss red: => should dynamically change it when boss appears like in the game, maybe hook
      on the set palette:
 	 ex: load_boss_2_purple_colors_0102c if write to 3103E0 with A1 = 0x0117c+rom_base
 	 then load level 2 boss palette
-	 
+
+- FPS options: full 50, 25, adaptative (depending on number of enemies)	 
 - left osd mssing 1 char ("G"AME OVER)
-- easy: when losing a life, life character is not erased
 - level 2 truck: clip lower wheel parts as they'll be placated with wheel sprites, clip exhaust too!!
 - log & rip missing sounds: breakpoint on sound not found so able to go to mame and rip it
 
-- missing frames: karnov head when dying,
-  main character with nunchuck upper tiles (crouching, 0x30,0x32 still not dumped or displayed)
 - need to optimize truck/train erase: depending on the level, compute the parts that need
   background refresh. Truck: bottom (wheels) + part between front & tow & exhaust pipe. 
   Rest: not needed. same for big truck & train, with inter-tow: in progress

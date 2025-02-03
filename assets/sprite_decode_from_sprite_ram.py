@@ -25,4 +25,4 @@ def doit(filename):
             name = sprite_name_code.get(code,"unknown")
             print(f"address={i+0xFFC000:06x}, x={x}, y={y}, code={code:x}, attrs={attrs:x}, name={name}")
 
-doit("karnov_sprites")
+doit("karnov_dies")

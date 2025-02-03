@@ -36,7 +36,6 @@ with open(os.path.join(this_dir,"used_sprite_cluts.json")) as f:
 
 
 dump_it = True
-dump_dir = this_dir / "dumps"
 
 
 if not generated_src_dir.exists():
@@ -49,12 +48,7 @@ if dump_it:
             f.write("*")
 
 
-def ensure_empty(d):
-    if os.path.exists(d):
-        for f in os.listdir(d):
-            os.remove(os.path.join(d,f))
-    else:
-        os.makedirs(d)
+
 
 def dump_asm_bytes(*args,**kwargs):
     bitplanelib.dump_asm_bytes(*args,**kwargs)
@@ -173,6 +167,7 @@ def load_tileset(image_name,palette_index,side,tileset_name,dumpdir,cluts,dump=F
                     else:
                         name = "unknown"
                     iname = f"{name}_{tile_number:03x}_{palette_index:02x}"
+                    bname = iname
                     if multi:
                         iname += "_multi"
                     img.save(os.path.join(dump_subdir,f"{iname}.png"))
@@ -184,7 +179,7 @@ def load_tileset(image_name,palette_index,side,tileset_name,dumpdir,cluts,dump=F
                             name = name_dict.get(tile_number,"unknown")
                         else:
                             name = "unknown"
-                        img.save(os.path.join(dump_subdir,f"{name}_simple.png"))
+                        img.save(os.path.join(dump_subdir,f"{bname}_simple.png"))
 
 
     if postload_callback:

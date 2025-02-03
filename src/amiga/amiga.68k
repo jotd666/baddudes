@@ -1373,6 +1373,17 @@ addr_244xxx_tile_layer_op:
 0:
 	cmp.w	(a0),d7
 	jeq		100f	| already the proper value
+	
+*	cmp.w	#0x72,d7
+*	jne		111f
+*	TMPBREAK
+*111:
+*	cmp	#0,d7
+*	jne		112f
+*	cmp.w	#0x72,(A0)
+*	jne		112f
+*	TMPBREAK
+*112:
 	move.w	d7,(a0)	| set value in memory first
 
 	* > 0x244800: just write, don't do anything
@@ -1558,27 +1569,15 @@ erase_tile_8:
 * sprites on screen
 
 write_osd_layer:
-*	cmp.b	#0x1C*8,d2
-*	jne 0f
-*	cmp.b	#0x20,d7
-*	jne 0f
-*	cmp.b	#0xC,d3
-*	jcs	0f
-*	
-*	jra	write_osd_layer_out
-*0:
+
 	move.w	d7,d6			| tile code+clut
 
 
-*	move.b	d2,tempx
-*	move.b	d3,tempy
-*	move.b	d6,tempcode
 
 	jbsr	pick_osd_sprite
 	jeq		write_osd_layer_out
 	
 	and.w	#0x7FF,d6		| only tile code
-	jeq		write_osd_layer_out
 	jeq		erase_tile_on_sprite
 
 	
@@ -1594,14 +1593,11 @@ write_osd_layer:
 0:
 	move.l	(a0)+,d2
 	jne		1f
-	** TODO figure out what erases "IF" from "1-LIFE"
-	*jra		write_osd_layer_out
 	move.l	#blank_area,d2
 	sub.l	a2,d2
 1:
 	move.l	(a0)+,d3
 	jne		1f
-	*jra		write_osd_layer_out
 	move.l	#blank_area,d3
 	sub.l	a2,d3
 1:
@@ -1629,6 +1625,7 @@ tempcode:
 	.align 2
 	
 erase_tile_on_sprite:
+	.set	offset,0
 	.rept	16
 	CLEAR_SPRITE_TILE_ROW
 	.endr	
@@ -2332,6 +2329,7 @@ really_update_sprites:
 	moveq	#0,d0
 	moveq	#0,d1
 	move.w	d5,d3
+	
 	move.w	d5,-(a7)
 	jbsr	clear_fg_planes_any_blitter_internal
 	move.w	(a7)+,d5
@@ -2364,7 +2362,7 @@ really_update_sprites:
 	move.l		sprite_table_base,a4
 	*add.w	#(NB_TARGET_SPRITES-1)*4,a0		| start by the end (drawing priority)
 	move.w	#NB_TARGET_SPRITES-1,d7
-1:
+draw_bob_loop:
 	move.w	(TARGET_SPRITE_Y,a0),d1  | sprite Y & attributes
 	btst	#15,d1
 	jeq		30f						 | if bit 15 not set, then slot is free
@@ -2474,9 +2472,20 @@ really_update_sprites:
 	add.w	#SPRITE_X_CORRECTION,d0
 	.endif
 
+	* sprite X coord (without scrolling value added) should be in the screen
+	* or just slightly off screen (avoids redrawing BOBs the visible screen
+	* for no visible effect but slowdowns...)
+	tst.w	d0
+	jpl		0f
+	cmp.w	#0xFFF0,d0
+	jcs		30f		| too negative: no can do (slightly negative works)	
+	jra		10f
+0:
+	cmp.w	#NB_BYTES_PER_SCREEN_ROW*8,d0
+	jcc		30f
+10:
 	add.w	x_background_scroll_value(pc),d0
 	jpl		0f
-	TMPWRITE
 	cmp.w	#0xFFF0,d0
 	jcs		30f		| too negative: no can do (slightly negative works)	
 0:
@@ -2537,7 +2546,7 @@ really_update_sprites:
 	move.l	(a7)+,a0
 30:
 	addq.w	#TARGET_SPRITE_SIZE,a0
-	dbf		d7,1b
+	dbf		d7,draw_bob_loop
 	
 	* clear last long X/Y
 	clr.l	(a6)
@@ -2619,7 +2628,6 @@ clear_fg_plane_any_blitter_internal:
 * < D2: width in bytes (inc. 2 extra for shifting)
 * < D3: number of planes to clear
 * < D4: blit height
-* < D7: mask (disabled, -1 set at start)
 * trashes D0-D6
 clear_fg_planes_any_blitter_internal:
     * pre-compute the maximum of shit here
@@ -3712,6 +3720,22 @@ award_weapon:
 	move.l	(a7)+,a6
 	rts
 
+level_completed:
+	move.l	a6,-(a7)
+	lea		0xFF8216,a6
+	jbsr	osd_real_ram_address
+	st.b	(a6)
+	move.l	(a7)+,a6
+	rts
+
+boss_low_energy:
+	move.l	a6,-(a7)
+	lea		0xFF95C0,a6
+	jbsr	osd_real_ram_address
+	move.b	#1,(a6)
+	move.l	(a7)+,a6
+	rts
+
 
 
 BIT_INSERT_COIN_1 = 4
@@ -3943,16 +3967,14 @@ handle_keyboard:
 	* cheat keys
 	cmp.b	#0x50,d0	| F1 key
 	bne.b	0f
-	move.w	#0x0FF,_custom+color
-	
 	st.b	cheat_used
-	
+	* end current level
+	jbsr 	level_completed
 0:
 	cmp.b	#0x51,d0	| F2 key
 	bne.b	0f
 	st.b	cheat_used
-	move.w	#0x0FF,_custom+color
-	
+	jbsr	boss_low_energy
 0:
 	cmp.b	#0x52,d0	| F3 key
 	bne.b	0f
@@ -4077,9 +4099,11 @@ clear_all_hardware_sprites:
 	
 osd_set_context:
 	movem.l	d0-a6,-(a7)
+	cmp.w	#CTX_GAME,d0
+	jeq		0f
 	cmp.w	global_context,d0
-	jeq		1f
-
+	jeq		1f		| skip if context already set (except for game)
+0:
 	* by default, no double buffering on non-game parts
 	move.l	fg_drawed_screen_ptr,fg_displayed_screen_ptr
 	move.w	d0,global_context
@@ -4289,7 +4313,6 @@ set_high_score_context:
 ****************
 
 set_game_context:
-
 	lea		tiles_game_244000_file,a0
 	jbsr	load_tiles_file_as_sprites_244000
 	
@@ -4417,11 +4440,12 @@ level_1_load:
 * sprite slots 2 and 3 need to yield control to the lower osd sprites (TODO)
 display_front_object:
 	movem.l	d0-a6,-(a7)
+	sub.l	a6,a6
 	tst		d2
 	jpl		0f
 	moveq	#0,d1
-	lea		blank_sprite,a2
-	lea		blank_sprite,a5
+	sub.l	a2,a2
+	sub.l	a5,a5
 	moveq	#16,d6
 	jra		1f
 0:
@@ -4452,7 +4476,10 @@ display_front_object:
 	move.w	d3,d5
 	lsl.w	#3,d5
 	add.w	d5,a3		| pick proper slot
-	
+	cmp.l	a6,a2
+	jne		1f
+	moveq	#0,d0		| blank: don't display, don't multiplex
+1:
 	move.l	(a3)+,a0
 	move.w	d0,(8,a0)
 	swap	d0
@@ -4465,6 +4492,9 @@ display_front_object:
 	swap	d0
 	move.w	d0,(a0)
 	
+	cmp.l	a6,a2
+	jeq		1f
+
 	* position sprite in copperlist
 	lea		front_object_sprites,a0
 	move.w	d3,d2
@@ -4494,12 +4524,13 @@ display_front_object:
 	addq	#2,d2
 	move.w	d2,(a0)+
 	move.w	d0,(a0)+
-	
+1:
 	movem.l	(a7)+,d0-a6
 	rts
 
 	
 level_2_load:
+	TMPBREAK
 	lea		tiles_level_2_24a000_file,a0
 	jbsr	load_tiles_file_24a000
 	

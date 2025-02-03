@@ -39,7 +39,7 @@ game_intro = "game_intro"
 extra_single_size = {
 0xC,  # player head part (used in nunchuck)
 0x32,0x30,  # crouched player head part (used in nunchuck)
-
+0x470,      # karnov head
 }
 
 # glasses & guy face, ripped manually from code, not a lot of sprites
