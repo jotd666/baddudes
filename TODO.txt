@@ -1,25 +1,9 @@
-- front objects: make a X//8 -> lower part address table
-  python X,Y => address: debug update_level_1_front_objects
- 
-def get_front_address(x,y):
-    addr = 0x244000+(y*0x40)
-    page = x & 0x300
-    addr += 0x8*page + (x&0xFF)//8
 
-    return addr
-
-x_start = 0x295
-for x in range(x_start,x_start+0x100,8):
-    print(hex(get_front_address(x,0x1B)))
-	
 - karnov/in general when scrolling at 0, existing screen buffer is slightly trashed:
   with restored tiles: add debug key to toggle screen with/without scroll
 - check when the sprite draw is avoided and see what values it would yield
 - truck: once again shifting/bltafwm issue (seen also when scroll = 0)
-- hack lamps/trees/fire hydrants (from 244000 layer) with hardware sprites:
-  figure out first layer row scroll registers, "trigger" tile to display / undisplay sprite
-  => get scroll value from 242404 write (set_front_layer_scroll_0e3f0): keep doing that!!
-  (scroll value looks wrong on second object)
+- front objects fine scroll is not right
 - multiplex sprites 4 to 7 to do (lower hud)
 
 - unsupported sprite height (8) on level 2
