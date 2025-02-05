@@ -1,16 +1,16 @@
 
 - karnov/in general when scrolling at 0, existing screen buffer is slightly trashed:
-  with restored tiles: add debug key to toggle screen with/without scroll
-- check when the sprite draw is avoided and see what values it would yield
-- truck: once again shifting/bltafwm issue (seen also when scroll = 0)
-- front objects fine scroll is not right
-- multiplex sprites 4 to 7 to do (lower hud)
+  with restored tiles: add debug key to toggle screen with/without 
+  scroll / check when the sprite draw is avoided and see what values it would yield
+- truck: once again mask shifting issue (seen also when scroll = 0), when
+  truck position is xxy with y 0->8 ex 305 fail, 309 OK!
+- multiplex sprites 4 to 7 to do (lower hud): ATM only one object is displayed at a time
 
-- unsupported sprite height (8) on level 2
+- unsupported sprite height (8) on level 2 (when switching from level 1 to 2): check again
+- make a parametrized routine to draw truck/train and erase it
 - easy: dump sprites with quantized colors too (to be able to find colors to change
   on dynamic color load)
 - level 2 (1 boss with karnov jumping): y may be negative: needs y clipping
-- truck appearing trashed restore ??
 - level 3 to make a video! needs to log 24dxxx tiles and load them
 - level 2 purple boss red: => should dynamically change it when boss appears like in the game, maybe hook
      on the set palette:
@@ -18,6 +18,7 @@
 	 then load level 2 boss palette
 
 - FPS options: full 50, 25, adaptative (depending on number of enemies)	 
+- level complete messages should use front object sprites
 - left osd mssing 1 char ("G"AME OVER)
 - level 2 truck: clip lower wheel parts as they'll be placated with wheel sprites, clip exhaust too!!
 - log & rip missing sounds: breakpoint on sound not found so able to go to mame and rip it

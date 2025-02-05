@@ -7,6 +7,7 @@ from shared import *
 def doit(global_palette,force=False):
     asm_out = generated_src_dir / "truck_1.68k"
     dudes_bin = data_dir / "truck_1.bin"
+    y_pos = 16*23
     if force or not dudes_bin.exists():
         pad_value =(0X10,0x20,0x30)
         truck1_img = Image.open(whole_pics_dir / "truck_1.png")
@@ -55,7 +56,7 @@ def doit(global_palette,force=False):
         with open(asm_out,"w") as f:
 
 
-            f.write(f"\tdc.w\t{nb_planes},{width},{height}   ; nb planes (with mask), width in bytes (real width = {real_width}), height\n")
+            f.write(f"\tdc.w\t{nb_planes},{width},{height},{y_pos}   ; nb planes (with mask), width in bytes (real width = {real_width}), height\n")
 
 
 

@@ -825,7 +825,22 @@ _vblank:
 	* double buffering only in-game
 	bsr		switch_screen_buffers
 23:
+	tst.b	clear_target_sprites_flag
+	jeq		24f
+	clr.b	clear_target_sprites_flag
+	* remove all remaining sprites to avoid conflicts with new loaded sprites
+	GET_RAM_START_IN_A6
+	cmp.l	#0,a6
+	jeq		24f		| ram is not initialized yet!
+0:
+	lea	(0x4000,a6),a0		| sprites
+	move.w	#NB_TARGET_SPRITES-1,d1
+0:
+	clr.l	(a0)+
+	clr.l	(a0)+
+	dbf	d1,0b
 
+24:
 	bsr		really_update_sprites
 1:
 	* don't blit, but update hw sprites as it doesn't cost a lot
@@ -910,7 +925,6 @@ hex_table:
 	.byte	0x46
 	
 update_level_1_front_objects:
-	TMPWRITE
 	* level 1: scan for front objects
 	move.w 	front_objects_x_scroll,d5		| X start
 	lea		video_ram_244000,a0	| bottom of object Y at scroll = 0
@@ -957,7 +971,7 @@ update_level_1_front_objects:
 3:
 	move.w	d6,d0
 	move.w 	front_objects_x_scroll,d1
-	and.w	#0xF,d1
+	and.w	#0x7,d1		| fine scroll offset must be reversed
 	sub.w	d1,d0
 	jmi		2f
 	jbsr	display_front_object
@@ -994,7 +1008,7 @@ erase_level_1_truck:
 	lea		prev_truck_params,a1
 	move.w	#BOTTOM_TRUCK_HEIGHT,d3		| bottom part which needs restoring
 	move.w	(a1)+,d0	| X
-	move.w	(a1)+,d1	| Y
+	move.w	truck_y_pos,d1	| Y
 	move.w	(a1),d2		| real object size
 	move.l	fg_drawed_screen_ptr,a1
 	move.w  truck_height,d4
@@ -1009,7 +1023,7 @@ erase_level_1_truck:
 	lea		prev_truck_params,a1
 	move.w	(a1)+,d0	| X	
 	jeq		1f			| X=0 on displayed screen: no need to erase
-	move.w	(a1)+,d1	| Y
+	move.w	truck_y_pos,d1	| Y
 	moveq	#2,d2		| just the first bytes
 	move.l	fg_drawed_screen_ptr,a1
 	move.w  truck_height,d4
@@ -1049,7 +1063,6 @@ draw_level_1_truck:
 	move.w	truck_width,d6	| full truck size
 	lsl.w	#3,d6			| in pixels
 	
-	TMPWRITE
 	* required to start displaying truck outside the screen: we have to compute
 	* offset to skip start (and also adjust real width)
 	moveq	#0,d5			| XY-offset
@@ -1109,7 +1122,7 @@ do_truck_draw:
 	addq	#1,D6	| round to highest even
 1:
 	
-	move.w	#16*23,d1		| Y-pos: fixed
+	move.w	truck_y_pos,d1		| Y-pos: fixed
 
 	* we have to take into account primary scroll value as we only have 1 layer
 	add.w	x_background_scroll_value,d0
@@ -1118,10 +1131,13 @@ do_truck_draw:
 	st.b	truck_previously_drawn
 	lea		prev_truck_params,a1
 	move.w	d0,(a1)+	| X
-	move.w	d1,(a1)+	| Y
 	move.w	d6,(a1)+	| real width
 	move.w	x_secondary_scroll_value,(a1)	| note truck position
 	move.l 	fg_drawed_screen_ptr,a1
+	* now big optim: no need to cookie cut/draw all planes!!
+	* so avoid last blit or even 2 last blits (if background is 16 colors)
+	move.w	nb_tile_planes_24a000,d3
+	TMPWRITE
 	jbsr	blit_planes_any_internal_cookie_cut
 2:
 	rts
@@ -2731,6 +2747,23 @@ clear_fg_planes_any_blitter_internal:
 blit_planes_any_internal_cookie_cut:
     movem.l d0-d7/a4,-(a7)
     * pre-compute the maximum of shit here
+	tst.w	d1
+	jpl		1f
+	* Y is negative
+	tst.w	d4
+	bpl.b	0f
+	* H and Y are negative
+	sub.w	d1,d4		| reduce height
+	jpl		10f		| >= 0: don't draw at all
+	moveq	#0,d1
+	jra		1f
+0:
+	* H is positive, Y is negative: clip
+	add.w	d1,d4
+	jeq		10f
+	jmi		10f		| <= 0: don't draw at all
+	moveq	#0,d1
+1:
 	tst.w	d4
 	bpl.b	1f
 	sub.w	d4,d1	| pre-add height to d1
@@ -2769,7 +2802,7 @@ blit_planes_any_internal_cookie_cut:
 	
     * make offset even. Blitter will ignore odd address
     * but a 68000 CPU doesn't and since we RETURN A1...
-    *bclr    #0,d1
+    bclr    #0,d1
     add.l   d1,a1       | plane position (D1 can be 0x7FFF, up to 0xC000)
 
 
@@ -2853,7 +2886,7 @@ blit_planes_any_internal_cookie_cut:
 	move.l	a1,bltcpt(a5)	|pristine background top (bottom) left corner
 	move.l	a1,bltdpt(a5)	|destination top (bottom) left corner
 	move.w  d4,bltsize(a5)	|rectangle size, starts blit
-    
+10:
     movem.l (a7)+,d0-d7/a4
     rts
 	
@@ -4030,6 +4063,7 @@ handle_keyboard:
 	bne		0f
 	* 'T': toggle truck manual control on/off
 	eor.b	#1,debug_truck_control
+	move.b	debug_truck_control,debug_scroll_display
 0:
 	cmp.b	#32,d0
 	bne		0f
@@ -4108,8 +4142,31 @@ clear_all_hardware_sprites:
 	movem.l	(a7)+,d0-d2/a0
 	rts
 	
+wait_vbl:
+	lea	_custom,a5
+	move.w	#0x7FFF,intreq(a5)
+0:
+	move.w	intreqr(a5),d1
+	btst	#5,d1
+	beq.b	0b
+	rts	
+	
 osd_set_context:
 	movem.l	d0-a6,-(a7)
+	* we need to make sure that the sprite update interrupt is updating the
+	* sprites while we're changing the sprite set, or it can cause issues
+	* so first we set the flag to clear sprites from memory
+	st		clear_target_sprites_flag
+	* remove pointer on truck planes, this will disable any remaining truck
+	* draw, and also front objects
+	clr.l	truck_planes
+	* then we wait a little while to make sure the interrupt has run
+	
+	jbsr	wait_vbl
+	jbsr	wait_vbl
+	* then we can safely load the new sprite set
+	jbsr	save_interrupt_state
+	jbsr	osd_disable_interrupts
 	cmp.w	#CTX_GAME,d0
 	jeq		0f
 	cmp.w	global_context,d0
@@ -4118,8 +4175,11 @@ osd_set_context:
 	* by default, no double buffering on non-game parts
 	move.l	fg_drawed_screen_ptr,fg_displayed_screen_ptr
 	move.w	d0,global_context
+	* remove all front objects
 	jbsr	clear_all_hardware_sprites
+	* remove everything dynamically loaded
 	jbsr	free_all_memory
+	* clean slate for logs, each context has a new log
 	jbsr	clear_log_memory
 	clr.l	tile_data_24a000
 	clr.l	tile_data_244000
@@ -4127,8 +4187,22 @@ osd_set_context:
 	lea		game_context_table,a0
 	jsr		([a0,d0.w*4])
 1:
+	jbsr	restore_interrupt_state
 	movem.l	(a7)+,d0-a6
 	rts
+
+save_interrupt_state:
+	lea	_custom,a5
+	move.w	(intenar,a5),saved_intena
+	rts
+restore_interrupt_state:
+	lea	_custom,a5
+	move.w	saved_intena,d0
+	bset	#15,d0
+	move.w	d0,(intena,a5)
+	rts
+	
+
 	
 clear_log_memory:
 	.ifne	OPT_ENABLE_LOGGING
@@ -4239,7 +4313,6 @@ load_level_sprite_file:
 	move.b	d0,file_level_index
 	lea		sprites_game_level_file,a0
 load_sprite_file:
-	jbsr	osd_disable_interrupts
 	jbsr	allocate_and_load_chip_mem_file
 	move.l	d0,sprites_memory
 	move.l	d0,a0
@@ -4299,7 +4372,6 @@ load_sprite_file:
 	dbf	d6,10b			| next clut
 1:
 	dbf	d7,0b			| next sprite
-	jbsr	osd_enable_interrupts
 	rts
 	
 **********************
@@ -4419,6 +4491,7 @@ level_1_load:
 	move.w	(a0)+,truck_nb_planes		| nb planes
 	move.w	(a0)+,truck_width
 	move.w	(a0)+,truck_height
+	move.w	(a0)+,truck_y_pos
 	* make data absolute
 	move.w	#NB_PLAYFIELD_PLANES,d0		| + mask
 	move.l	a0,d1		| base pointer
@@ -4541,7 +4614,6 @@ display_front_object:
 
 	
 level_2_load:
-	TMPBREAK
 	lea		tiles_level_2_24a000_file,a0
 	jbsr	load_tiles_file_24a000
 	
@@ -4935,7 +5007,10 @@ y_secondary_scroll_value:
 x_road_layer_scroll_value:
 	.word	0
 first_half_flag:
-	.word	0
+	.byte	0
+clear_target_sprites_flag:
+	.byte	0
+	.align	2
 _tag:
 		.long	WHDLTAG_MONITOR_GET
 monitor:
@@ -4996,7 +5071,8 @@ interrupt_mode:
 pause_flag:
 	.word	0
 
-
+saved_intena:
+	.word	0
 vbl_counter:
 	.word	0
 _resload:
@@ -5229,6 +5305,8 @@ nb_front_objects:
 truck_width:
 	.word	0
 truck_height:	
+	.word	0
+truck_y_pos:	
 	.word	0
 prev_truck_params:
 	.skip	8
