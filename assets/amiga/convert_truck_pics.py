@@ -5,29 +5,30 @@ from shared import *
 
 empty_plane_workaround = True
 
-def doit(global_palette,force=False):
-    asm_out = generated_src_dir / "truck_1.68k"
-    dudes_bin = data_dir / "truck_1.bin"
-    y_pos = 16*23
+def doit(global_palette,name,y_start,level_1_bar,exhaust_height,width,height,y_pos,forced_nb_planes,force=False):
+    asm_out = generated_src_dir / f"{name}.68k"
+    dudes_bin = data_dir / f"{name}.bin"
+
     if force or not dudes_bin.exists():
         pad_value =(0X10,0x20,0x30)
-        truck1_img = Image.open(whole_pics_dir / "truck_1.png")
-        y_start = 352
-        exhaust_height = 16
-        width = 16*24
-        truck1_img=truck1_img.crop((0,y_start+exhaust_height,width,y_start+128))
-        forced_nb_planes = 3
+        truck1_img = Image.open(whole_pics_dir / f"{name}.png")
+
+        truck1_img=truck1_img.crop((0,y_start+exhaust_height,width,y_start+height))
+
+        truck1_img.save(dump_dir/f"{name}.png")
+
         reduced_nb_colors = 1<<forced_nb_planes
 
         if empty_plane_workaround:
             forced_nb_planes = 6
 
-        # remove some rows to show the upper iron bar (lame trick)
-        bar_height = 8
-        bar_start = 16
-        for x in range(truck1_img.size[0]):
-            for y in range(bar_start,bar_start+bar_height):
-                truck1_img.putpixel((x,y),transparent)
+        if level_1_bar:
+            # remove some rows to show the upper iron bar (lame trick)
+            bar_height = 8
+            bar_start = 16
+            for x in range(truck1_img.size[0]):
+                for y in range(bar_start,bar_start+bar_height):
+                    truck1_img.putpixel((x,y),transparent)
 
 
 
@@ -87,6 +88,11 @@ def doit(global_palette,force=False):
         reduced_palette.remove(transparent)
         return reduced_palette
 
+def doit_truck_1(global_palette,force=False):
+    return doit(global_palette,name="truck_1",level_1_bar=True,forced_nb_planes=3,y_start=352,height=128,exhaust_height=16,width=16*24,y_pos = 16*23,force=force)
+def doit_truck_2(global_palette,force=False):
+    return doit(global_palette,name="truck_2",level_1_bar=False,forced_nb_planes=3,y_start=352,height=128,exhaust_height=16,width=544,y_pos = 16*23 - 256,force=force)
+
 if __name__ == "__main__":
     gp = [(0, 0, 0),
  (56, 71, 90),
@@ -120,4 +126,4 @@ if __name__ == "__main__":
  (142, 104, 56),
  (142, 123, 104),
  (159, 123, 71)]
-    reduced = doit(global_palette=gp,force=True)
+    reduced = doit_truck_1(global_palette=gp,force=True)

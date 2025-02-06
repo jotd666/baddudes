@@ -34,7 +34,7 @@ AFB_68020 = 1
 	.endif
 	
 TOTAL_PUBLIC_MEMORY_SIZE = 350000
-TOTAL_CHIP_MEMORY_SIZE = 820000
+TOTAL_CHIP_MEMORY_SIZE = 850000
 
 PREVIOUS_SPRITE_SIZE = 8
 BORDERBLANK = 1
@@ -1089,8 +1089,8 @@ truck_clipped_left:
 	
 truck_not_clipped_left:
 	* D0 is the actual X, check really displayed truck width (has to be clipped right)
-	move.w	truck_width,d6	| full truck size
-	lsl.w	#3,d6			| in pixels
+	*move.w	truck_width,d6	| full truck size
+	*lsl.w	#3,d6			| in pixels
 	move.w	#NB_BYTES_PER_SCREEN_ROW*8,d6	| truck/train is wider than screen anyway
 	sub.w 	d0,d6
 	
@@ -1116,8 +1116,7 @@ do_truck_draw:
 	* displayed width is positive: okay display something
 	lsr.w	#3,d6	| re-convert width to bytes
 	jeq		2f		| zero width: don't draw anything
-	BTST	#0,d6
-	jeq		1f
+	jcc		1f
 	addq	#1,D6	| round to highest even
 1:
 	
@@ -1136,8 +1135,6 @@ do_truck_draw:
 	* now big optim: no need to cookie cut/draw all planes!!
 	* so avoid last blit or even 2 last blits (if background is 16 colors)
 	move.w	nb_tile_planes_24a000,d3
-
-	TMPWRITE
 	jbsr	blit_planes_any_internal_cookie_cut
 2:
 	rts
@@ -4485,6 +4482,23 @@ level_1_load:
 	jbsr	load_front_objects_file
 	* load & relocate truck pics
 	lea		truck_1_pic_file,a0
+	jbsr	load_truck
+	
+
+	
+	* testing front objects!!!
+	*move	#55,D0
+	*move	#2,d2
+	*move	#0,d3
+	*jbsr	display_front_object
+	*move	#156,D0
+	*move	#3,d2
+	*move	#1,d3
+	*jbsr	display_front_object
+	
+	rts
+	
+load_truck:
 	jbsr	allocate_and_load_chip_mem_file
 	move.l	d0,truck_pic
 	move.l	d0,a0
@@ -4503,17 +4517,6 @@ level_1_load:
 	move.l	d2,(-4,a0)
 1:
 	dbf		d0,0b
-	
-	* testing front objects!!!
-	*move	#55,D0
-	*move	#2,d2
-	*move	#0,d3
-	*jbsr	display_front_object
-	*move	#156,D0
-	*move	#3,d2
-	*move	#1,d3
-	*jbsr	display_front_object
-	
 	rts
 	
 * display a front object
@@ -4618,6 +4621,11 @@ level_2_load:
 	jbsr	load_tiles_file_24a000
 	
 	jbsr 	load_level_sprite_file
+
+	* load & relocate truck pics
+	lea		truck_2_pic_file,a0
+	jbsr	load_truck
+
 
 	jbsr	enable_road_scroll
 	
@@ -5138,6 +5146,8 @@ front_objects_1_file:
 	.asciz	"front_objects_1.bin"
 truck_1_pic_file:
 	.asciz	"truck_1.bin"
+truck_2_pic_file:
+	.asciz	"truck_2.bin"
 sprites_game_level_file:
 	.ascii	"sprites_game_level_"
 file_level_index:

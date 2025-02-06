@@ -4,7 +4,7 @@ import os,sys,bitplanelib,subprocess,json,pathlib
 from shared import *
 
 import convert_dudes_pics
-import convert_truck_1_pic
+import convert_truck_pics
 
 convert_dudes_pics.doit()
 
@@ -687,9 +687,14 @@ if True:
     process_tile_context("game_intro_24a000",game_intro_tile_24a000_sheet_dict,32)
     process_tile_context("highs_24a000",title_tile_24a000_sheet_dict,16)
     process_tile_context("level_1_24a000",level_1_tile_24a000_sheet_dict,32,first_pass=True)
-    truck_used_colors = convert_truck_1_pic.doit(palette_dict["level_1_24a000"],force=True)
+    truck_used_colors = convert_truck_pics.doit_truck_1(palette_dict["level_1_24a000"],force=True)
     process_tile_context("level_1_24a000",level_1_tile_24a000_sheet_dict,32,first_pass=False,first_colors=truck_used_colors)
     #process_tile_context("level_3_24d000",level_3_tile_24d000_sheet_dict,16,first_pass=False)
+
+    process_tile_context("level_2_24a000",level_2_tile_24a000_sheet_dict,16,first_pass=True)
+    truck_used_colors = convert_truck_pics.doit_truck_2(palette_dict["level_2_24a000"],force=True)
+    process_tile_context("level_2_24a000",level_2_tile_24a000_sheet_dict,16,first_pass=False,first_colors=truck_used_colors)
+    process_tile_context("game_level_2",sprite_sheet_dict,48,is_bob=True,shift_palette_count=16)
 
 # sprites
     process_tile_context("title_24a000",title_tile_24a000_sheet_dict,16)
@@ -698,8 +703,6 @@ if True:
     # game intro. Not gaining any colors by passing the associated screen tile colors...
     process_tile_context("game_intro",sprite_sheet_dict,32,is_bob=True,shift_palette_count=32)
     process_tile_context("game_level_1",sprite_sheet_dict,32,is_bob=True,shift_palette_count=32)
-    process_tile_context("level_2_24a000",level_2_tile_24a000_sheet_dict,16,first_pass=False)
-    process_tile_context("game_level_2",sprite_sheet_dict,48,is_bob=True,shift_palette_count=16)
     #process_tile_context("game_level_3",sprite_sheet_dict,48,is_bob=True,shift_palette_count=16)
     #process_tile_context("game_level_4",sprite_sheet_dict,48,is_bob=True,shift_palette_count=16)
 

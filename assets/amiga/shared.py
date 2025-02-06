@@ -13,7 +13,7 @@ dump_dir = this_dir / "dumps"
 transparent = (255,0,255)
 
 def asm2bin(source,dest):
-    subprocess.run(["vasmm68k_mot","-nosym","-pic","-Fbin",source,"-o",dest],check=True)
+    subprocess.run(["vasmm68k_mot","-nosym","-pic","-Fbin",source,"-o",dest],check=True,stdout=subprocess.DEVNULL)
 
 def transparent_first(palette,transparent):
     # re-insert transparent in first position

@@ -1,10 +1,13 @@
 - truck jailbars when simpler blit with no source and BLTBDAT=0 in some cases?????
-  => OK with actual zero source but WTF
-- truck blit erase issue (front of truck)
+  => OK with actual zero source WTF!!!
+- missing frames player attacking with dagger
+- modulo issue with second level truck
+- T truck key should stop the game control of the scrolling
+- truck blit erase issue (front of truck), truck right clip part too soon
 - karnov/in general when scrolling at 0, existing screen buffer is slightly trashed:
   with restored tiles: add debug key to toggle screen with/without 
   scroll / check when the sprite draw is avoided and see what values it would yield
-
+- set context: clear all 6 planes
 - multiplex sprites 4 to 7 to do (lower hud): ATM only one object is displayed at a time
 
 - unsupported sprite height (8) on level 2 (when switching from level 1 to 2): check again
