@@ -2,7 +2,7 @@ import os,pathlib
 
 reference_for_bad_dudes = "game_level_1"
 
-used_name = "game_level_4"
+used_name = "game_level_2"
 
 merged_path_file = pathlib.Path("sprites")
 # first 512 tiles are the player tiles. Game level 1 has all the moves, so we have to propagate those to

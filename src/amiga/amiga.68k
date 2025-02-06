@@ -924,8 +924,8 @@ hex_table:
 	.byte	0x45
 	.byte	0x46
 	
-update_level_1_front_objects:
-	* level 1: scan for front objects
+update_front_objects:
+	* level 1/2: scan for front objects
 	move.w 	front_objects_x_scroll,d5		| X start
 	lea		video_ram_244000,a0	| bottom of object Y at scroll = 0
 
@@ -2372,7 +2372,9 @@ really_update_sprites:
 	* reset possibly changed first word mask setting
 	move.l	#-1,bltamask_long_value
 
-	jbsr	update_level_1_front_objects
+	tst.l	front_objects_table
+	jeq		555f
+	jbsr	update_front_objects
 	
 555:
 	GET_RAM_START_IN_A6
@@ -4150,6 +4152,8 @@ wait_vbl:
 	
 osd_set_context:
 	movem.l	d0-a6,-(a7)
+	move.w	d0,d7		| save in d7
+	
 	* we need to make sure that the sprite update interrupt is updating the
 	* sprites while we're changing the sprite set, or it can cause issues
 	* so first we set the flag to clear sprites from memory
@@ -4169,6 +4173,25 @@ osd_set_context:
 	cmp.w	global_context,d0
 	jeq		1f		| skip if context already set (except for game)
 0:
+	* remove front objects
+	clr.l	front_objects_table
+	
+	* clear screens
+	lea		_custom,a5
+	moveq	#0,d0
+	moveq	#0,d1
+	move.l	fg_displayed_screen_ptr,a1
+	move.w	#NB_BYTES_PER_ROW,d2
+	move.w	#NB_PLAYFIELD_PLANES,d3
+	move.w	#0x200,d4
+	movem.w	d0-d4,-(a7)
+	jbsr	clear_fg_planes_any_blitter_internal
+	movem.w	(a7)+,d0-d4
+	move.l	fg_drawed_screen_ptr,a1
+	jbsr	clear_fg_planes_any_blitter_internal
+	
+	move	d7,d0		| restore state
+	
 	* by default, no double buffering on non-game parts
 	move.l	fg_drawed_screen_ptr,fg_displayed_screen_ptr
 	move.w	d0,global_context
@@ -4621,6 +4644,9 @@ level_2_load:
 	jbsr	load_tiles_file_24a000
 	
 	jbsr 	load_level_sprite_file
+	
+	lea		front_objects_1_file,a0
+	jbsr	load_front_objects_file
 
 	* load & relocate truck pics
 	lea		truck_2_pic_file,a0
@@ -5144,6 +5170,8 @@ debug_scroll_message:
 	.endif
 front_objects_1_file:
 	.asciz	"front_objects_1.bin"
+front_objects_2_file:
+	.asciz	"front_objects_2.bin"
 truck_1_pic_file:
 	.asciz	"truck_1.bin"
 truck_2_pic_file:

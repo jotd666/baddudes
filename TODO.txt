@@ -1,20 +1,19 @@
 - truck jailbars when simpler blit with no source and BLTBDAT=0 in some cases?????
   => OK with actual zero source WTF!!!
-- missing frames player attacking with dagger
-- modulo issue with second level truck
-- T truck key should stop the game control of the scrolling
+- missing frames player attacking with dagger check again?
+- sometimes modulo issue with second level truck
+- level 2 front object (lamp) not displaying (used to work)
+- easy: T truck key should stop the game control of the scrolling
 - truck blit erase issue (front of truck), truck right clip part too soon
+
 - karnov/in general when scrolling at 0, existing screen buffer is slightly trashed:
   with restored tiles: add debug key to toggle screen with/without 
   scroll / check when the sprite draw is avoided and see what values it would yield
-- set context: clear all 6 planes
 - multiplex sprites 4 to 7 to do (lower hud): ATM only one object is displayed at a time
 
-- unsupported sprite height (8) on level 2 (when switching from level 1 to 2): check again
-- make a parametrized routine to draw truck/train and erase it
 - easy: dump sprites with quantized colors too (to be able to find colors to change
   on dynamic color load)
-- level 2 (1 boss with karnov jumping): y may be negative: needs y clipping
+
 - level 3 to make a video! needs to log 24dxxx tiles and load them
 - level 2 purple boss red: => should dynamically change it when boss appears like in the game, maybe hook
      on the set palette:
