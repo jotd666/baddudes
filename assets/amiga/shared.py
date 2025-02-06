@@ -26,6 +26,8 @@ def palette_pad(palette,pad_nb):
 def ensure_empty(d):
     if os.path.exists(d):
         for f in os.listdir(d):
-            os.remove(os.path.join(d,f))
+            x = os.path.join(d,f)
+            if os.path.isfile(x):
+                os.remove(x)
     else:
         os.makedirs(d)

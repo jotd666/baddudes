@@ -79,7 +79,7 @@ def process_multi_tiled_sprite(img,tile_number,full_tileset,h,w,flipx):
 
 # in that implementation, we have to provide a cluts dict as without it it would dump the whole set
 # of tiles/sprites and it's pretty huge in games like BadDudes or other "big" games.
-def load_tileset(image_name,palette_index,side,tileset_name,dumpdir,cluts,dump=False,name_dict=None,postload_callback=None):
+def load_tileset(image_name,palette_index,side,tileset_name,cluts,name_dict=None,postload_callback=None):
 
 
     if isinstance(image_name,(str,pathlib.Path)):
@@ -99,8 +99,8 @@ def load_tileset(image_name,palette_index,side,tileset_name,dumpdir,cluts,dump=F
 
     tileset_1 = [None]*(len(full_tileset)*2)  # take multi-size into account 0-FFF: simple, higher: multiple
 
-    if dump:
-        dump_subdir = os.path.join(dumpdir,tileset_name)
+    if dump_it:
+        dump_subdir = dump_dir / tileset_name
         if palette_index == 0:
             ensure_empty(dump_subdir)
 
@@ -111,75 +111,75 @@ def load_tileset(image_name,palette_index,side,tileset_name,dumpdir,cluts,dump=F
     palette = set()
 
     for tile_number,tile_img in enumerate(full_tileset):
-            cd = cluts.get(tile_number,empty_list)
-            if palette_index not in cd["cluts"]:
-                # no clut declared for that tile
-                pass
+        cd = cluts.get(tile_number,empty_list)
+        if palette_index not in cd["cluts"]:
+            # no clut declared for that tile
+            pass
 
+        else:
+            # found an entry, but is there a relevant entry with multi-tile? (some rare cases)
+            cdm = cluts.get(tile_number+0x1000,empty_list)
+            dual = False
+            if palette_index in cdm["cluts"]:
+                # clut declared for that tile: we have a dual sprite
+                cd = cdm
+                dual = True
+
+
+            width = side
+            height = side
+
+            attributes = cd.get("attributes")
+            if attributes:
+                data0 = attributes << 8
+                h = (1 << ((data0 & 0x1800) >> 11))
+                w = (1 << ((data0 & 0x0600) >>  9))
+                flipx = bool(data0 & 0x2000)
+                # ignoring flipy, we can do that dynamically with blitter
+                #print("attribs!!! ",tile_number,cd["cluts"],hex(attributes),h,w,flipx,flipy)
+
+                height *= h
+                width *= w
+
+            img = Image.new("RGB",(width,height))
+            multi = False
+
+            if attributes and (h!=1 or w!=1):
+                process_multi_tiled_sprite(img,tile_number,full_tileset,h,w,flipx)
+                tileset_1[tile_number+0x1000] = img   # add the multi-sprite with a shifted position
+                multi = True
             else:
-                # found an entry, but is there a relevant entry with multi-tile? (some rare cases)
-                cdm = cluts.get(tile_number+0x1000,empty_list)
-                dual = False
-                if palette_index in cdm["cluts"]:
-                    # clut declared for that tile: we have a dual sprite
-                    cd = cdm
-                    dual = True
+                # simple case
+                img.paste(tile_img)
+                tileset_1[tile_number] = img
+            if dual:
+                img = Image.new("RGB",(side,side))
+                # simple case when there are 2 different sizes used for that sprite
+                img.paste(tile_img)
+                tileset_1[tile_number] = img
 
 
-                width = side
-                height = side
-
-                attributes = cd.get("attributes")
-                if attributes:
-                    data0 = attributes << 8
-                    h = (1 << ((data0 & 0x1800) >> 11))
-                    w = (1 << ((data0 & 0x0600) >>  9))
-                    flipx = bool(data0 & 0x2000)
-                    # ignoring flipy, we can do that dynamically with blitter
-                    #print("attribs!!! ",tile_number,cd["cluts"],hex(attributes),h,w,flipx,flipy)
-
-                    height *= h
-                    width *= w
-
-                img = Image.new("RGB",(width,height))
-                multi = False
-
-                if attributes and (h!=1 or w!=1):
-                    process_multi_tiled_sprite(img,tile_number,full_tileset,h,w,flipx)
-                    tileset_1[tile_number+0x1000] = img   # add the multi-sprite with a shifted position
-                    multi = True
+            if dump_it:
+                source = tileset_1[tile_number+0x1000 if multi else tile_number]
+                img = ImageOps.scale(source,5,resample=Image.Resampling.NEAREST)
+                if name_dict:
+                    name = name_dict.get(tile_number,"unknown")
                 else:
-                    # simple case
-                    img.paste(tile_img)
-                    tileset_1[tile_number] = img
+                    name = "unknown"
+                iname = f"{name}_{tile_number:03x}_{palette_index:02x}"
+                bname = iname
+                if multi:
+                    iname += "_multi"
+                img.save(os.path.join(dump_subdir,f"{iname}.png"))
                 if dual:
-                    img = Image.new("RGB",(side,side))
-                    # simple case when there are 2 different sizes used for that sprite
-                    img.paste(tile_img)
-                    tileset_1[tile_number] = img
-
-
-                if dump:
-                    source = tileset_1[tile_number+0x1000 if multi else tile_number]
+                    # also dump the normal image
+                    source = tileset_1[tile_number]
                     img = ImageOps.scale(source,5,resample=Image.Resampling.NEAREST)
                     if name_dict:
                         name = name_dict.get(tile_number,"unknown")
                     else:
                         name = "unknown"
-                    iname = f"{name}_{tile_number:03x}_{palette_index:02x}"
-                    bname = iname
-                    if multi:
-                        iname += "_multi"
-                    img.save(os.path.join(dump_subdir,f"{iname}.png"))
-                    if dual:
-                        # also dump the normal image
-                        source = tileset_1[tile_number]
-                        img = ImageOps.scale(source,5,resample=Image.Resampling.NEAREST)
-                        if name_dict:
-                            name = name_dict.get(tile_number,"unknown")
-                        else:
-                            name = "unknown"
-                        img.save(os.path.join(dump_subdir,f"{bname}_simple.png"))
+                    img.save(os.path.join(dump_subdir,f"{bname}_simple.png"))
 
 
     if postload_callback:
@@ -236,13 +236,15 @@ def quantize_palette(rgb_tuples,img_type,nb_quantize,transparent=None):
 
 
 
-    if True:  # debug it
+    if dump_it:  # debug it, create 2 rows, 1 non-quantized, and 1 quantized, separated by bloack
         s = clut_img.size
         ns = (s[0]*30,s[1]*30)
         clut_img = clut_img.resize(ns,resample=0)
-        clut_img.save(dump_dir / "{}_colors_not_quantized.png".format(img_type))
+        whole_image = Image.new("RGB",(clut_img.size[0],clut_img.size[1]*3))
+        whole_image.paste(clut_img,(0,0))
         reduced_colors_clut_img = reduced_colors_clut_img.resize(ns,resample=0)
-        reduced_colors_clut_img.save(dump_dir / "{}_colors_quantized.png".format(img_type))
+        whole_image.paste(reduced_colors_clut_img,(0,clut_img.size[1]*2))
+        whole_image.save(dump_dir / "{}_colors.png".format(img_type))
 
     result_nb = len(set(reduced_palette))
     if nb_quantize < result_nb:
@@ -320,7 +322,7 @@ def load_contexted_tileset(tile_sheet_dict,context,nb_colors,is_bob):
     for i in range(16):
         tsd = tile_sheet_dict.get(i)
         if tsd:
-            tp,tile_set = load_tileset(tsd,i,16,context_dir,dump_dir,dump=dump_it,cluts=used_cluts_dict[context])
+            tp,tile_set = load_tileset(tsd,i,16,context_dir,cluts=used_cluts_dict[context])
             tile_24a000_set_list.append(tile_set)
             tile_palette.update(tp)
         else:
@@ -372,18 +374,19 @@ def load_contexted_tileset(tile_sheet_dict,context,nb_colors,is_bob):
         # put transparent color first, re-inject reused colors
         bg_palette = sorted(qc)
 
-##        if dump_it:
-##            dump_subdir = dump_dir / "tiles/244000/quantized"
-##            ensure_empty(dump_subdir)
-##
-##            for palette_index,tile_set in enumerate(tile_244000_set_list):
-##                if tile_set:
-##                    for tile_number,img in enumerate(tile_set):
-##                        if img:
-##                            img = ImageOps.scale(img,5,resample=Image.Resampling.NEAREST)
-##                            name = "unknown"
-##
-##                            img.save(os.path.join(dump_subdir,f"{name}_{tile_number:02x}_{palette_index:02x}.png"))
+        if dump_it:
+            dump_subdir = dump_dir / context_dir / "quantized"
+            ensure_empty(dump_subdir)
+
+
+            for palette_index,tile_set in enumerate(tile_24a000_set_list):
+                if tile_set:
+                    for tile_number,img in enumerate(tile_set):
+                        if img:
+                            img = ImageOps.scale(img,5,resample=Image.Resampling.NEAREST)
+                            name = "unknown"
+
+                            img.save(os.path.join(dump_subdir,f"{name}_{tile_number:02x}_{palette_index:02x}.png"))
     if lfp<nb_colors:
         bg_palette += [(0x30,0x40,0x50)]*(nb_colors-lfp)
 
@@ -615,8 +618,7 @@ def process_8x8_tile_layer(context,max_colors,colors_last,postload_callback=None
     for i in range(16):
         tsd = tile_0_sheet_dict.get(i)
         if tsd:
-            tp,tile_set = load_tileset(tsd,i,8,"tiles/"+context,dump_dir,
-            dump=dump_it,cluts=used_tile_cluts[context],postload_callback=postload_callback)
+            tp,tile_set = load_tileset(tsd,i,8,"tiles/"+context,cluts=used_tile_cluts[context],postload_callback=postload_callback)
             for tile in tile_set:
                 if tile:
                     bitplanelib.replace_color(tile,{to_replace},replace_by)

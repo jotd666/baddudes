@@ -34,7 +34,7 @@ AFB_68020 = 1
 	.endif
 	
 TOTAL_PUBLIC_MEMORY_SIZE = 350000
-TOTAL_CHIP_MEMORY_SIZE = 850000
+TOTAL_CHIP_MEMORY_SIZE = 950000
 
 PREVIOUS_SPRITE_SIZE = 8
 BORDERBLANK = 1
@@ -1223,11 +1223,24 @@ an_ports:
 * virtual address 0x31xxxx
 palette_and_sprites_ram_op:
 	.ifndef RELEASE
-	add.w	#0x31,d2
+	add.w	#0x31-0xD,d2
 	.endif
 
 	swap	d2
-			| to_implement
+	cmp.w	#0x3E0,d2
+	jne		0f
+	move.l	a0,-(a7)
+	* boss 2 color change? could be
+	move.l	rom_base,a0
+	add.w	#0x117C,a0
+	cmp.l	a0,a1
+	jne		0f
+	* writing to palette with 117C as source: boss 2 colors
+	* (reds => purples)
+	lea		level_2_boss_color_change(pc),a0
+	jbsr	change_palette
+0:
+	move.l	(a7)+,a0
 	jra		special_memory_op_out
 	
 * actual inputs
@@ -1338,7 +1351,23 @@ addr_242xxx_op:
 0:
 	rts
 	
-
+* those values have been computed by dumping the tilesheet
+* for level 2 before and after boss color change, then matches
+* the quantized colors (so aren't the actual colors but very close)
+* we cannot use the original palette change commands as the order
+* and count don't match
+level_2_boss_color_change:
+	.word	0xeee,0x707
+	.word	0xc62,0xb75
+	.word	0x952,0x853
+	.word	0x500,0x306
+	.word	0x444,0x555
+	.word	0x731,0x631
+	.word	0x700,0x408
+	.word	0xb00,0x52b
+	.word	0x400,0x204
+	.word	0xd86,0xd97
+	.long	-1		| end
 	
 * 8x8 tile layer, for osd (not scrolled) but also row scrolled
 * for front objects (lamps...)
@@ -3601,6 +3630,11 @@ set_scroll_y_24a000_layer:
 * usually set to control big objects on screen, except at level 3
 * where the entire background uses this layer
 set_scroll_x_24d000_layer:
+	.ifndef	RELEASE
+	* if debug truck/train don't let the program set the value
+	tst.b	debug_truck_control
+	jne		0f
+	.endif
 	move.w	x_secondary_scroll_value,d1
 	cmp.w	d1,d0
 	jne		0f
@@ -4655,6 +4689,7 @@ level_2_load:
 
 	jbsr	enable_road_scroll
 	
+	
 	rts
 	
 level_3_load:	
@@ -4673,6 +4708,39 @@ level_6_load:
 level_7_load:
 	illegal
 	rts
+	
+* inefficient but rarely called algorithm to search a color
+* in the copperlist and change it by another
+* < A0: palette change list (ends by -1.L)
+change_palette:
+	movem.l	d0-d2/a1,-(a7)
+0:
+	move.l	(a0)+,d2
+	jmi	3f
+	swap	d2		| search key D2.W
+	lea	base_palette,a1
+	move.w	#63,d0
+1:
+	move.w	(a1)+,d1
+	* check if copperlist entry is not a bank switch
+	cmp.w	#bplcon3,d1
+	jeq		4f
+	move.w	(a1)+,d1
+	cmp.w	d1,d2
+	jne		2f
+	* found a matching color: replace by the other one
+	swap	d2
+	move.w	d2,(-2,a1)
+2:
+	dbf		d0,1b
+	jra		0b		| next search entry
+3:
+	movem.l	(a7)+,d0-d2/a1
+	rts
+4:
+	addq	#2,a1
+	jra		1b		| bank switch, skip this copperlist entry
+
 	
 load_front_objects_file:
 	jbsr	allocate_and_load_chip_mem_file

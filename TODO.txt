@@ -3,7 +3,7 @@
 - missing frames player attacking with dagger check again?
 - sometimes modulo issue with second level truck
 - level 2 front object (lamp) not displaying (used to work)
-- easy: T truck key should stop the game control of the scrolling
+- easy: T truck key should stop the game control of the scrolling: to test
 - truck blit erase issue (front of truck), truck right clip part too soon
 
 - karnov/in general when scrolling at 0, existing screen buffer is slightly trashed:
@@ -11,14 +11,11 @@
   scroll / check when the sprite draw is avoided and see what values it would yield
 - multiplex sprites 4 to 7 to do (lower hud): ATM only one object is displayed at a time
 
-- easy: dump sprites with quantized colors too (to be able to find colors to change
-  on dynamic color load)
-
 - level 3 to make a video! needs to log 24dxxx tiles and load them
 - level 2 purple boss red: => should dynamically change it when boss appears like in the game, maybe hook
      on the set palette:
 	 ex: load_boss_2_purple_colors_0102c if write to 3103E0 with A1 = 0x0117c+rom_base
-	 then load level 2 boss palette
+	 then load level 2 boss palette: to test
 
 - FPS options: full 50, 25, adaptative (depending on number of enemies)	 
 - level complete messages should use front object sprites
