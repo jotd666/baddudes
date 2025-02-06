@@ -3,6 +3,7 @@ import os,sys,bitplanelib,subprocess,json,pathlib
 
 from shared import *
 
+empty_plane_workaround = True
 
 def doit(global_palette,force=False):
     asm_out = generated_src_dir / "truck_1.68k"
@@ -17,6 +18,9 @@ def doit(global_palette,force=False):
         truck1_img=truck1_img.crop((0,y_start+exhaust_height,width,y_start+128))
         forced_nb_planes = 3
         reduced_nb_colors = 1<<forced_nb_planes
+
+        if empty_plane_workaround:
+            forced_nb_planes = 6
 
         # remove some rows to show the upper iron bar (lame trick)
         bar_height = 8
@@ -41,7 +45,7 @@ def doit(global_palette,force=False):
         raw = bitplanelib.palette_image2raw(reduced_colors_truck1_img,None,reduced_palette,forced_nb_planes=forced_nb_planes,
         generate_mask=True,blit_pad=True,mask_color=transparent)
 
-        nb_planes = 4
+        nb_planes = forced_nb_planes+1
         real_width,height = reduced_colors_truck1_img.size
         # width in even bytes, plus 16 bit shift
         width = real_width//8 + 2
@@ -52,11 +56,11 @@ def doit(global_palette,force=False):
 
 
         if width*height != plane_size:
-            raise Error(f"Computed w*h = {width}*{height} != plane size ({plane_size})")
+            raise Exception(f"Computed w*h = {width}*{height} != plane size ({plane_size})")
         with open(asm_out,"w") as f:
 
 
-            f.write(f"\tdc.w\t{nb_planes},{width},{height},{y_pos}   ; nb planes (with mask), width in bytes (real width = {real_width}), height\n")
+            f.write(f"\tdc.w\t7,{width},{height},{y_pos}   ; nb planes (with mask), width in bytes (real width = {real_width}), height\n")
 
 
 
@@ -72,7 +76,7 @@ def doit(global_palette,force=False):
             for j in range(nb_planes):
                 f.write(f"truck_plane_{j}:\n")
                 block = raw[offset:offset+plane_size]
-                if any(block):
+                if any(block) or empty_plane_workaround:
                     bitplanelib.dump_asm_bytes(block,f)
                 else:
                     raise Exception("zero plane!")

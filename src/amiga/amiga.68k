@@ -996,7 +996,6 @@ update_level_1_front_objects:
 	
 * truck_erase erase_truck
 erase_level_1_truck:
-	
 	tst.b	truck_previously_drawn
 	jeq		0f
 
@@ -1137,6 +1136,7 @@ do_truck_draw:
 	* now big optim: no need to cookie cut/draw all planes!!
 	* so avoid last blit or even 2 last blits (if background is 16 colors)
 	move.w	nb_tile_planes_24a000,d3
+
 	TMPWRITE
 	jbsr	blit_planes_any_internal_cookie_cut
 2:
@@ -4488,7 +4488,7 @@ level_1_load:
 	jbsr	allocate_and_load_chip_mem_file
 	move.l	d0,truck_pic
 	move.l	d0,a0
-	move.w	(a0)+,truck_nb_planes		| nb planes
+	addq	#2,a0		| nb planes (skip it, not needed)
 	move.w	(a0)+,truck_width
 	move.w	(a0)+,truck_height
 	move.w	(a0)+,truck_y_pos
@@ -5534,6 +5534,7 @@ osd_\name\()_next_cw:
 	RESERVE_SPRITE	bottom_left_center
 	RESERVE_SPRITE	bottom_right_center
 	
+
 background_restore_buffer:
 	.skip	RESTORE_SCREEN_SIZE
 

@@ -1,9 +1,10 @@
-
+- truck jailbars when simpler blit with no source and BLTBDAT=0 in some cases?????
+  => OK with actual zero source but WTF
+- truck blit erase issue (front of truck)
 - karnov/in general when scrolling at 0, existing screen buffer is slightly trashed:
   with restored tiles: add debug key to toggle screen with/without 
   scroll / check when the sprite draw is avoided and see what values it would yield
-- truck: once again mask shifting issue (seen also when scroll = 0), when
-  truck position is xxy with y 0->8 ex 305 fail, 309 OK!
+
 - multiplex sprites 4 to 7 to do (lower hud): ATM only one object is displayed at a time
 
 - unsupported sprite height (8) on level 2 (when switching from level 1 to 2): check again
