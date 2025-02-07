@@ -1,15 +1,17 @@
 - truck jailbars when simpler blit with no source and BLTBDAT=0 in some cases?????
   => OK with actual zero source WTF!!!
 - missing frames player attacking with dagger check again?
-- sometimes modulo issue with second level truck
 - level 2 front object (lamp) not displaying (used to work)
-- easy: T truck key should stop the game control of the scrolling: to test
 - truck blit erase issue (front of truck), truck right clip part too soon
-
+- back of truck: erase even if not visible (level 2!)
+- karnov feet erase issue, doesn't seem to be erased
 - karnov/in general when scrolling at 0, existing screen buffer is slightly trashed:
   with restored tiles: add debug key to toggle screen with/without 
   scroll / check when the sprite draw is avoided and see what values it would yield
 - multiplex sprites 4 to 7 to do (lower hud): ATM only one object is displayed at a time
+
+- clip bottom of truck even more to save blitter
+- BOTTOM_TRUCK_HEIGHT should be dynamic not always 32 (line 1008!) should be truck params
 
 - level 3 to make a video! needs to log 24dxxx tiles and load them
 - level 2 purple boss red: => should dynamically change it when boss appears like in the game, maybe hook
@@ -20,7 +22,6 @@
 - FPS options: full 50, 25, adaptative (depending on number of enemies)	 
 - level complete messages should use front object sprites
 - left osd mssing 1 char ("G"AME OVER)
-- level 2 truck: clip lower wheel parts as they'll be placated with wheel sprites, clip exhaust too!!
 - log & rip missing sounds: breakpoint on sound not found so able to go to mame and rip it
 
 - need to optimize truck/train erase: depending on the level, compute the parts that need

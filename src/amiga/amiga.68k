@@ -1020,8 +1020,10 @@ erase_level_1_truck:
 
 	* rear should be erased only when X > 0
 	lea		prev_truck_params,a1
-	move.w	(a1)+,d0	| X	
+	move.w	(a1)+,d0	| X
+	subq.w	#8,d0
 	jeq		1f			| X=0 on displayed screen: no need to erase
+	jmi		1f			| X<0 on displayed screen: no need to erase
 	move.w	truck_y_pos,d1	| Y
 	moveq	#2,d2		| just the first bytes
 	move.l	fg_drawed_screen_ptr,a1
@@ -1135,6 +1137,7 @@ do_truck_draw:
 	* now big optim: no need to cookie cut/draw all planes!!
 	* so avoid last blit or even 2 last blits (if background is 16 colors)
 	move.w	nb_tile_planes_24a000,d3
+	TMPWRITE
 	jbsr	blit_planes_any_internal_cookie_cut
 2:
 	rts
@@ -1228,7 +1231,7 @@ palette_and_sprites_ram_op:
 
 	swap	d2
 	cmp.w	#0x3E0,d2
-	jne		0f
+	jne		1f
 	move.l	a0,-(a7)
 	* boss 2 color change? could be
 	move.l	rom_base,a0
@@ -1241,6 +1244,7 @@ palette_and_sprites_ram_op:
 	jbsr	change_palette
 0:
 	move.l	(a7)+,a0
+1:
 	jra		special_memory_op_out
 	
 * actual inputs
@@ -2797,11 +2801,17 @@ blit_planes_any_internal_cookie_cut:
 	sub.w	d4,d1	| pre-add height to d1
 	subq.w	#1,d1	| minus one
 1:	
+	tst	d6
+	jeq	2f
+	btst	#0,d6
+	jeq	1f
+	addq	#1,d6	| even and round it
+1:
 	* put d6 in d5 high 16 bits
 	swap	d5
 	move.w	d6,d5
 	swap	d5
-	
+2:	
 	tst	d1
     beq.b   2f    | optim
     lea		mulNB_BYTES_PER_ROW_table,a4
@@ -3633,7 +3643,7 @@ set_scroll_x_24d000_layer:
 	.ifndef	RELEASE
 	* if debug truck/train don't let the program set the value
 	tst.b	debug_truck_control
-	jne		0f
+	jne		1f
 	.endif
 	move.w	x_secondary_scroll_value,d1
 	cmp.w	d1,d0
@@ -3647,6 +3657,7 @@ set_scroll_x_24d000_layer:
 	exg 	d0,d1
 	lea		scroll_x_24d000_table(pc),a0
 	jbsr	([a0,d1.w*4])
+1:
 	rts
 
 set_scroll_y_24d000_layer:

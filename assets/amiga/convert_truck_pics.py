@@ -3,7 +3,7 @@ import os,sys,bitplanelib,subprocess,json,pathlib
 
 from shared import *
 
-empty_plane_workaround = True
+empty_plane_workaround = False
 
 def doit(global_palette,name,y_start,level_1_bar,exhaust_height,width,height,y_pos,forced_nb_planes,force=False):
     asm_out = generated_src_dir / f"{name}.68k"
@@ -91,7 +91,7 @@ def doit(global_palette,name,y_start,level_1_bar,exhaust_height,width,height,y_p
 def doit_truck_1(global_palette,force=False):
     return doit(global_palette,name="truck_1",level_1_bar=True,forced_nb_planes=3,y_start=352,height=128,exhaust_height=16,width=16*24,y_pos = 16*23,force=force)
 def doit_truck_2(global_palette,force=False):
-    return doit(global_palette,name="truck_2",level_1_bar=False,forced_nb_planes=3,y_start=352,height=128,exhaust_height=16,width=544,y_pos = 16*23 - 256,force=force)
+    return doit(global_palette,name="truck_2",level_1_bar=False,forced_nb_planes=3,y_start=352,height=128-16,exhaust_height=16,width=544,y_pos = 16*23 - 256,force=force)
 
 if __name__ == "__main__":
     gp = [(0, 0, 0),
