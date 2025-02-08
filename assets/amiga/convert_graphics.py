@@ -681,7 +681,7 @@ def postprocess_game_osd_tiles(tileset,palette_index):
 
 generate_for_levels = [False]*8
 
-generate_for_levels[2] = True
+generate_for_levels[3] = True
 
 # set to "False" for faster operation when working on game sprite/tiles
 if generate_for_levels[0]:  # title/intro é game fonts
@@ -711,6 +711,7 @@ if generate_for_levels[2]:
     convert_front_objects.doit_level_2()
 
 if generate_for_levels[3]:
+    process_tile_context("level_3_24d000",level_3_tile_24d000_sheet_dict,16,first_pass=False)
     process_tile_context("game_level_3",sprite_sheet_dict,48,is_bob=True,shift_palette_count=16)
 if generate_for_levels[4]:
     process_tile_context("game_level_4",sprite_sheet_dict,48,is_bob=True,shift_palette_count=16)

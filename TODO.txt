@@ -1,3 +1,5 @@
+- level 3: if write below some Y, then consider it water with 24Axxx tiles, enable "road" scroll
+- level 3: scroll mixup, 24C010 should be 0, water should be 246010
 - truck jailbars when simpler blit with no source and BLTBDAT=0 in some cases?????
   => OK with actual zero source is minterm right???
 - try to display truck 1 times out of 2??? see effect? try not to display animated wheels

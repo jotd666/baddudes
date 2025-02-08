@@ -1990,8 +1990,17 @@ addr_24Axxx_tile_layer_op:
 	.ifne	OPT_ENABLE_LOGGING
 	cmp.w	#0x800,d6			| when logging on title: 1FF, else increase!
 	jcc		0f
+	move.w	d0,-(a7)
+	jbsr	get_current_level
 	lea		tile_log_table_24a000,a2
 	move.l 	#video_ram_24a000,0xC
+	cmp.w	#3,d0
+	movem.w	(a7)+,d0	| preserves Z flag!
+	jne		1111f
+	lea		tile_log_table_24d000,a2
+	move.l 	#video_ram_24d000,0x18
+	
+1111:
 	move.l	a2,0x8		| store address in zero page
 	move.w	d6,-(a7)
 	lsl.w	#4,d6		| 16 cluts
@@ -2106,7 +2115,24 @@ erase_tile_twice:
 	
 * 16x16 tile layer TODO NOP
 addr_24Dxxx_tile_layer_2_op:
-	*BREAKPOINT	"word read/write from 24Dxxx (in D2)"
+	.ifndef	RELEASE
+	cmp.w	#1,d0
+	jeq		0f
+	BREAKPOINT	"long read/write from 24Dxxx (in D2)"
+0:
+	.endif
+	jbsr	get_current_level
+	cmp.w	#3,d0
+	jne		0f
+	* level 3 (sewer) uses this tile layer as background, probably
+	* because tile layer 24Axxx doesn't have enough tiles.
+	* on the amiga, on the other hand, I don't care about that so I'm
+	* redirecting a write to this layer into a write to the other layer
+	* if the level uses it
+	sub.w	#0x3000,d2
+	moveq	#1,d0
+	jra		addr_24Axxx_tile_layer_op
+0:
 	rts
 	
 
@@ -4764,8 +4790,8 @@ level_2_load:
 	rts
 	
 level_3_load:	
-	*lea		tiles_level_2_24a000_file,a0
-	*jbsr	load_tiles_file_24a000
+	lea		tiles_level_3_24d000,a0
+	jbsr	load_tiles_file_24a000
 	jbsr 	load_level_sprite_file
 
 	*jbsr	enable_road_scroll
@@ -5337,6 +5363,8 @@ tiles_level_1_24a000_file:
 	.asciz	"tiles_level_1_24a000.bin"
 tiles_level_2_24a000_file:
 	.asciz	"tiles_level_2_24a000.bin"
+tiles_level_3_24d000:
+	.asciz	"tiles_level_3_24d000.bin"
 dudes_pics_files:
 	.asciz	"dudes.bin"
 rom_file:
