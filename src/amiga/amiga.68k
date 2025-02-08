@@ -101,7 +101,7 @@ SPRITE_FMODE = 3
 
 PROGRAM_SIZE = 0x60000
 
-BOTTOM_TRUCK_HEIGHT = 32
+
 
 NB_PLAYFIELD_LINES = 256
 
@@ -1005,7 +1005,7 @@ erase_level_1_truck:
 	* again (which is pretty rectangular and moves only to the right)
 	
 	lea		prev_truck_params,a1
-	move.w	#BOTTOM_TRUCK_HEIGHT,d3		| bottom part which needs restoring
+	move.w	truck_wheels_height,d3		| bottom part which needs restoring
 	move.w	(a1)+,d0	| X
 	move.w	truck_y_pos,d1	| Y
 	move.w	(a1),d2		| real object size
@@ -1029,7 +1029,7 @@ erase_level_1_truck:
 	move.l	fg_drawed_screen_ptr,a1
 	move.w  truck_height,d4
 	* clip to bottom of truck (wheels)
-	sub.w	#BOTTOM_TRUCK_HEIGHT,d4
+	sub.w	truck_wheels_height,d4
 	lea		background_restore_buffer,a0
 	jbsr	restore_background
 
@@ -1042,7 +1042,7 @@ erase_level_1_truck:
 	*jmi		1f
 	*move.w	(2,a1),d1
 	*move.w  truck_height,d4
-	*sub.w	#BOTTOM_TRUCK_HEIGHT,d4
+	*sub.w	truck_wheels_height,d4
 	*lea		background_restore_buffer,a0
 	*jbsr	restore_background
 
@@ -3777,6 +3777,7 @@ enable_road_scroll:
     dbf d1,0b
 	move.w	#bplcon1,(a0)
 	
+	* also change colors of the road
 	
 	rts
 	
@@ -4574,6 +4575,7 @@ load_truck:
 	move.w	(a0)+,truck_width
 	move.w	(a0)+,truck_height
 	move.w	(a0)+,truck_y_pos
+	move.w	(a0)+,truck_wheels_height
 	* make data absolute
 	move.w	#NB_PLAYFIELD_PLANES,d0		| + mask
 	move.l	a0,d1		| base pointer
@@ -5424,6 +5426,8 @@ truck_width:
 truck_height:	
 	.word	0
 truck_y_pos:	
+	.word	0
+truck_wheels_height:	
 	.word	0
 prev_truck_params:
 	.skip	8

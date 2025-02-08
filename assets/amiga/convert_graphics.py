@@ -5,6 +5,7 @@ from shared import *
 
 import convert_dudes_pics
 import convert_truck_pics
+import convert_front_objects
 
 convert_dudes_pics.doit()
 
@@ -678,8 +679,12 @@ def postprocess_game_osd_tiles(tileset,palette_index):
             for life_tile in [0x6D,0x6F,0x72]:
                 bitplanelib.replace_color_from_dict(tileset[life_tile],color_rep)
 
+generate_for_levels = [False]*8
+
+generate_for_levels[2] = True
+
 # set to "False" for faster operation when working on game sprite/tiles
-if True:
+if generate_for_levels[0]:  # title/intro é game fonts
 
     process_8x8_tile_layer("title_244000",colors_last=True,max_colors=8)
     process_8x8_tile_layer("game_intro_244000",colors_last=True,max_colors=8)
@@ -688,39 +693,22 @@ if True:
     process_tile_context("title_24a000",title_tile_24a000_sheet_dict,16)
     process_tile_context("game_intro_24a000",game_intro_tile_24a000_sheet_dict,32)
     process_tile_context("highs_24a000",title_tile_24a000_sheet_dict,16)
+
+if generate_for_levels[1]:
     process_tile_context("level_1_24a000",level_1_tile_24a000_sheet_dict,32,first_pass=True)
-    truck_used_colors = convert_truck_pics.doit_truck_1(palette_dict["level_1_24a000"],force=True)
+    truck_used_colors = convert_truck_pics.doit_truck_1(palette_dict["level_1_24a000"])
     process_tile_context("level_1_24a000",level_1_tile_24a000_sheet_dict,32,first_pass=False,first_colors=truck_used_colors)
-    #process_tile_context("level_3_24d000",level_3_tile_24d000_sheet_dict,16,first_pass=False)
+    convert_front_objects.doit_level_1()
 
-    process_tile_context("level_2_24a000",level_2_tile_24a000_sheet_dict,16,first_pass=True)
-    truck_used_colors = convert_truck_pics.doit_truck_2(palette_dict["level_2_24a000"],force=True)
-    process_tile_context("level_2_24a000",level_2_tile_24a000_sheet_dict,16,first_pass=False,first_colors=truck_used_colors)
-    process_tile_context("game_level_2",sprite_sheet_dict,48,is_bob=True,shift_palette_count=16)
+if generate_for_levels[2]:
+    process_tile_context("level_2_24a000",level_2_tile_24a000_sheet_dict,8,first_pass=True)
+    truck_used_colors = convert_truck_pics.doit_truck_2(palette_dict["level_2_24a000"])
+    process_tile_context("level_2_24a000",level_2_tile_24a000_sheet_dict,8,first_pass=False,first_colors=truck_used_colors)
+    process_tile_context("game_level_2",sprite_sheet_dict,56,is_bob=True,shift_palette_count=8)
+    convert_front_objects.doit_level_2()
 
-# sprites
-    process_tile_context("title_24a000",title_tile_24a000_sheet_dict,16)
-
-
-    # game intro. Not gaining any colors by passing the associated screen tile colors...
-    process_tile_context("game_intro",sprite_sheet_dict,32,is_bob=True,shift_palette_count=32)
-    process_tile_context("game_level_1",sprite_sheet_dict,32,is_bob=True,shift_palette_count=32)
-    #process_tile_context("game_level_3",sprite_sheet_dict,48,is_bob=True,shift_palette_count=16)
-    #process_tile_context("game_level_4",sprite_sheet_dict,48,is_bob=True,shift_palette_count=16)
-
-else:
-    # only generates game tiles & sprites
-    process_8x8_tile_layer("game_244000",colors_last=False,max_colors=4,postload_callback=postprocess_game_osd_tiles)
-
-    process_tile_context("level_1_24a000",level_1_tile_24a000_sheet_dict,32,first_pass=True)
-
-    truck_used_colors = convert_truck_1_pic.doit(palette_dict["level_1_24a000"],force=True)
-    # we return the reduced palette, then we reinject it in the global tiles
-    # so they are first in the palette
-    process_tile_context("level_1_24a000",level_1_tile_24a000_sheet_dict,32,first_pass=False,first_colors=truck_used_colors)
-
-
-    process_tile_context("game_level_2",sprite_sheet_dict,48,is_bob=True,shift_palette_count=16)
+if generate_for_levels[3]:
     process_tile_context("game_level_3",sprite_sheet_dict,48,is_bob=True,shift_palette_count=16)
+if generate_for_levels[4]:
     process_tile_context("game_level_4",sprite_sheet_dict,48,is_bob=True,shift_palette_count=16)
 

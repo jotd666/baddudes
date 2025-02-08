@@ -5,11 +5,11 @@ from shared import *
 
 empty_plane_workaround = False
 
-def doit(global_palette,name,y_start,level_1_bar,exhaust_height,width,height,y_pos,forced_nb_planes,force=False):
+def doit(global_palette,name,y_start,level_1_bar,exhaust_height,width,height,wheels_height,y_pos,forced_nb_planes):
     asm_out = generated_src_dir / f"{name}.68k"
     dudes_bin = data_dir / f"{name}.bin"
 
-    if force or not dudes_bin.exists():
+    if True:
         pad_value =(0X10,0x20,0x30)
         truck1_img = Image.open(whole_pics_dir / f"{name}.png")
 
@@ -61,7 +61,7 @@ def doit(global_palette,name,y_start,level_1_bar,exhaust_height,width,height,y_p
         with open(asm_out,"w") as f:
 
 
-            f.write(f"\tdc.w\t7,{width},{height},{y_pos}   ; nb planes (with mask), width in bytes (real width = {real_width}), height\n")
+            f.write(f"\tdc.w\t7,{width},{height},{y_pos},{wheels_height}   ; nb planes (with mask), width in bytes (real width = {real_width}), height, ypos, wheel height\n")
 
 
 
@@ -88,10 +88,14 @@ def doit(global_palette,name,y_start,level_1_bar,exhaust_height,width,height,y_p
         reduced_palette.remove(transparent)
         return reduced_palette
 
-def doit_truck_1(global_palette,force=False):
-    return doit(global_palette,name="truck_1",level_1_bar=True,forced_nb_planes=3,y_start=352,height=128,exhaust_height=16,width=16*24,y_pos = 16*23,force=force)
-def doit_truck_2(global_palette,force=False):
-    return doit(global_palette,name="truck_2",level_1_bar=False,forced_nb_planes=3,y_start=352,height=128-16,exhaust_height=16,width=544,y_pos = 16*23 - 256,force=force)
+def doit_truck_1(global_palette):
+    return doit(global_palette,name="truck_1",level_1_bar=True,
+forced_nb_planes=3,y_start=352,height=128,exhaust_height=16,width=16*24,wheels_height=32,y_pos = 16*23)
+
+def doit_truck_2(global_palette):
+    return doit(global_palette,name="truck_2",level_1_bar=False,forced_nb_planes=3,
+    y_start=352,height=128-16,exhaust_height=16,width=544,wheels_height=16,   # save 16 pixels, animated sprite wheels cover the lower part!
+    y_pos = 16*23 - 256)
 
 if __name__ == "__main__":
     gp = [(0, 0, 0),
@@ -126,4 +130,4 @@ if __name__ == "__main__":
  (142, 104, 56),
  (142, 123, 104),
  (159, 123, 71)]
-    reduced = doit_truck_1(global_palette=gp,force=True)
+    reduced = doit_truck_1(global_palette=gp)

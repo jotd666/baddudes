@@ -36,7 +36,7 @@ object_{k}_{j}:""")
 
     asm2bin(asm_out,fo_bin)
 
-def doit(force=False):
+def doit_level_1(force=False):
     asm_out = generated_src_dir / "front_objects_1.68k"
     fo_bin = data_dir / "front_objects_1.bin"
     if force or not fo_bin.exists():
@@ -66,6 +66,7 @@ def doit(force=False):
 
         gen_data_file(asm_out,fo_bin,palette,objects)
 
+def doit_level_2(force=False):
     # level 2
     asm_out = generated_src_dir / "front_objects_2.68k"
     fo_bin = data_dir / "front_objects_2.bin"
@@ -89,4 +90,5 @@ def doit(force=False):
 
 if __name__ == "__main__":
 
-    doit(force=True)
+    doit_level_1(force=True)
+    doit_level_2(force=True)
