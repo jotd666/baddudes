@@ -11,7 +11,6 @@
 - multiplex sprites 4 to 7 to do (lower hud): ATM only one object is displayed at a time
 
 - clear_fg_planes_any_blitter_internal: switch to cpu if small width and blitter busy
-- cycle exact: game doesn"t start!
 - truck 2 left erase not working
 - level 3 to make a video! needs to log 24dxxx tiles and load them
 - level 2: copper shade yellow/white (24 bit preferably)

@@ -2687,7 +2687,7 @@ clear_fg_plane_any_blitter_internal:
 * < D2: width in bytes (inc. 2 extra for shifting)
 * < D3: number of planes to clear
 * < D4: blit height
-* trashes D0-D6
+* trashes D0-D6, A2
 clear_fg_planes_any_blitter_internal:
     * pre-compute the maximum of shit here
 	move.w	d1,d6
@@ -2733,35 +2733,87 @@ clear_fg_planes_any_blitter_internal:
 
 	move.w #NB_BYTES_PER_ROW,d0
 	bclr	#0,d2		| make sure D2 is even (else strange things occur!)
-    sub.w   d2,d0       | blit width
+    sub.w   d2,d0       | blit width => modulo
 
+	move.w	d4,d1		| save height
+	subq	#1,d1		| minus one
     lsl.w   #6,d4
     lsr.w   #1,d2
     add.w   d2,d4       | blit height
 
+	lea		cpu_erase_table(pc),a2
     * now just wait for blitter ready to write all registers
 	WAIT_BLIT
     
 	
-	move.l d5,bltcon0(a5)	
+	move.l	d5,bltcon0(a5)	
     move.w  d0,bltdmod(a5)	|D modulo
 	
 	subq	#1,d3
-	beq.b	4f
-	subq	#1,d3
 3:
-	move.l a1,bltdpt(a5)	|destination top left corner
-	move.w  d4,bltsize(a5)	|rectangle size, starts blit
-	lea		(SCREEN_PLANE_SIZE,a1),a1
-	WAIT_BLIT
-	dbf		d3,3b
+	BTST	#6,(dmaconr,a5)
+	jne		5f
 4:
 	move.l a1,bltdpt(a5)	|destination top left corner
 	move.w  d4,bltsize(a5)	|rectangle size, starts blit
-	
+	lea		(SCREEN_PLANE_SIZE,a1),a1
+	dbf		d3,3b	
     rts
+5:
+	* blitter is busy erasing data on previous plane: do the other one with CPU
+	cmp.w	#5,d2
+	jcc		6f
+	move.w	d1,d6			| load height counter
+	move.l	a1,a3			| save bitplane pointer
+	jmp		([a2,d2.w*4])	| select proper erase function
 
-
+6:
+	* not supporting big CPU erases (not happening in-game anyway)
+	WAIT_BLIT
+	jra		4b
+	
+cpu_erase_table:
+	.long	nope
+	.long	cpu_erase_16_bits
+	.long	cpu_erase_32_bits
+	.long	cpu_erase_48_bits
+	.long	cpu_erase_64_bits
+	
+cpu_erase_16_bits:
+0:
+	clr.w	(a1)+
+	add.w	d0,a1
+	dbf		d6,0b
+	lea		(SCREEN_PLANE_SIZE,a3),a1
+	dbf		d3,3b	
+    rts	
+cpu_erase_32_bits:
+0:
+	clr.l	(a1)+
+	add.w	d0,a1
+	dbf		d6,0b
+	lea		(SCREEN_PLANE_SIZE,a3),a1
+	dbf		d3,3b	
+    rts
+cpu_erase_48_bits:
+0:
+	clr.w	(a1)+
+	clr.l	(a1)+
+	add.w	d0,a1
+	dbf		d6,0b
+	lea		(SCREEN_PLANE_SIZE,a3),a1
+	dbf		d3,3b	
+    rts
+cpu_erase_64_bits:
+0:
+	clr.l	(a1)+
+	clr.l	(a1)+
+	add.w	d0,a1
+	dbf		d6,0b
+	lea		(SCREEN_PLANE_SIZE,a3),a1
+	dbf		d3,3b	
+    rts	
+	
 * < A5: custom
 * < D0.W,D1.W: x,y
 * < A0: source (pointer on array of planes)
