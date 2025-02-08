@@ -701,10 +701,13 @@ if generate_for_levels[1]:
     convert_front_objects.doit_level_1()
 
 if generate_for_levels[2]:
-    process_tile_context("level_2_24a000",level_2_tile_24a000_sheet_dict,8,first_pass=True)
-    truck_used_colors = convert_truck_pics.doit_truck_2(palette_dict["level_2_24a000"])
-    process_tile_context("level_2_24a000",level_2_tile_24a000_sheet_dict,8,first_pass=False,first_colors=truck_used_colors)
-    process_tile_context("game_level_2",sprite_sheet_dict,56,is_bob=True,shift_palette_count=8)
+    truck_nb_planes = 3
+    nb_truck_colors = 1<<truck_nb_planes
+    nb_tiles_colors = 8
+    process_tile_context("level_2_24a000",level_2_tile_24a000_sheet_dict,nb_tiles_colors,first_pass=True)
+    truck_used_colors = convert_truck_pics.doit_truck_2(palette_dict["level_2_24a000"],truck_nb_planes)
+    process_tile_context("level_2_24a000",level_2_tile_24a000_sheet_dict,nb_tiles_colors,first_pass=False,first_colors=truck_used_colors)
+    process_tile_context("game_level_2",sprite_sheet_dict,64-nb_tiles_colors,is_bob=True,shift_palette_count=nb_tiles_colors)
     convert_front_objects.doit_level_2()
 
 if generate_for_levels[3]:

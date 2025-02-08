@@ -84,7 +84,7 @@ ONE_TICK = 1
 * note: double buffering eats a lot of memory, it cannot run in debug mode
 * either simple or reloc. Only in "none" (program running in fastmem, data
 * located in low chipmem)
-OPT_ENABLE_DOUBLE_BUFFERING = 0
+OPT_ENABLE_DOUBLE_BUFFERING = 1
 
 _custom = 0xDFF000
 
@@ -1025,7 +1025,7 @@ erase_level_1_truck:
 	jeq		1f			| X=0 on displayed screen: no need to erase
 	jmi		1f			| X<0 on displayed screen: no need to erase
 	move.w	truck_y_pos,d1	| Y
-	moveq	#2,d2		| just the first bytes
+	moveq	#4,d2		| just the first bytes
 	move.l	fg_drawed_screen_ptr,a1
 	move.w  truck_height,d4
 	* clip to bottom of truck (wheels)
@@ -4223,18 +4223,23 @@ osd_set_context:
 	clr.l	front_objects_table
 	
 	* clear screens
-	lea		_custom,a5
-	moveq	#0,d0
-	moveq	#0,d1
 	move.l	fg_displayed_screen_ptr,a1
-	move.w	#NB_BYTES_PER_ROW,d2
-	move.w	#NB_PLAYFIELD_PLANES,d3
-	move.w	#0x200,d4
-	movem.w	d0-d4,-(a7)
-	jbsr	clear_fg_planes_any_blitter_internal
-	movem.w	(a7)+,d0-d4
+	move.w	#SCREEN_SIZE/16-1,d0
+0:
+	clr.l	(a1)+
+	clr.l	(a1)+
+	clr.l	(a1)+
+	clr.l	(a1)+
+	dbf	d0,0b
 	move.l	fg_drawed_screen_ptr,a1
-	jbsr	clear_fg_planes_any_blitter_internal
+	move.w	#SCREEN_SIZE/16-1,d0
+0:
+	clr.l	(a1)+
+	clr.l	(a1)+
+	clr.l	(a1)+
+	clr.l	(a1)+
+	dbf	d0,0b
+	
 	
 	move	d7,d0		| restore state
 	
@@ -4378,6 +4383,7 @@ load_level_sprite_file:
 	add.b	#48,d0	
 	move.b	d0,file_level_index
 	lea		sprites_game_level_file,a0
+	
 load_sprite_file:
 	jbsr	allocate_and_load_chip_mem_file
 	move.l	d0,sprites_memory

@@ -10,6 +10,7 @@
   scroll / check when the sprite draw is avoided and see what values it would yield
 - multiplex sprites 4 to 7 to do (lower hud): ATM only one object is displayed at a time
 
+- clear_fg_planes_any_blitter_internal: switch to cpu if small width and blitter busy
 - cycle exact: game doesn"t start!
 - truck 2 left erase not working
 - level 3 to make a video! needs to log 24dxxx tiles and load them
@@ -46,6 +47,8 @@
   cars if sprites aren't grouped)
 - group cars bobs to display them in 1 piece (if possible, as it requires clipping), 
   which is definitely possible & easy: create a fake 48-high tile made from various car stripes: would divide number of blits by 2
+- player jump high kick (at 53464) to perform & rip (not easy to pull off, seems even
+  impossible on this version???)
 
 - rip 24D000 & 24A000 tiles
 

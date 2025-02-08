@@ -33,7 +33,13 @@ def doit(global_palette,name,y_start,level_1_bar,exhaust_height,width,height,whe
 
 
         reduced_colors_truck1_img = truck1_img.quantize(colors=reduced_nb_colors,dither=0).convert('RGB')
+        # restore the transparent color afterwards (transparent may have been quantized too), we know that top right
+        # pixel is "empty" so whatever color is there is the replacement for transparent
+        changed_transparent = reduced_colors_truck1_img.getpixel((reduced_colors_truck1_img.size[0]-1,0))
+
+        bitplanelib.replace_color(reduced_colors_truck1_img,{changed_transparent},transparent)
         truck1_palette = bitplanelib.palette_extract(reduced_colors_truck1_img)
+        reduced_colors_truck1_img.save("foo.png")
         transparent_first(truck1_palette,transparent)
 
         color_replacement_dict = bitplanelib.closest_colors_replacement_dict(truck1_palette,global_palette)
@@ -88,13 +94,13 @@ def doit(global_palette,name,y_start,level_1_bar,exhaust_height,width,height,whe
         reduced_palette.remove(transparent)
         return reduced_palette
 
-def doit_truck_1(global_palette):
+def doit_truck_1(global_palette,nb_planes):
     return doit(global_palette,name="truck_1",level_1_bar=True,
-forced_nb_planes=3,y_start=352,height=128,exhaust_height=16,width=16*24,wheels_height=32,y_pos = 16*23)
+forced_nb_planes=nb_planes,y_start=352,height=128,exhaust_height=16,width=16*24,wheels_height=32,y_pos = 16*23)
 
-def doit_truck_2(global_palette):
-    return doit(global_palette,name="truck_2",level_1_bar=False,forced_nb_planes=3,
-    y_start=352,height=128-16,exhaust_height=16,width=544,wheels_height=16,   # save 16 pixels, animated sprite wheels cover the lower part!
+def doit_truck_2(global_palette,nb_planes):
+    return doit(global_palette,name="truck_2",level_1_bar=False,forced_nb_planes=nb_planes,
+    y_start=352,height=128-16,exhaust_height=16,width=544+8,wheels_height=16,   # save 16 pixels, animated sprite wheels cover the lower part!
     y_pos = 16*23 - 256)
 
 if __name__ == "__main__":
@@ -130,4 +136,4 @@ if __name__ == "__main__":
  (142, 104, 56),
  (142, 123, 104),
  (159, 123, 71)]
-    reduced = doit_truck_1(global_palette=gp)
+    reduced = doit_truck_1(global_palette=gp,nb_planes=3)
