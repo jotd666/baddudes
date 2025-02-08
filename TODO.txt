@@ -1,21 +1,28 @@
 - truck jailbars when simpler blit with no source and BLTBDAT=0 in some cases?????
-  => OK with actual zero source WTF!!! only for level 1
-- missing frames player attacking with dagger check again? also player flames
+  => OK with actual zero source is minterm right???
+- try to display truck 1 times out of 2??? see effect? try not to display animated wheels
+
+- optim: create fake 32 bit wide groups for car & truck wheels (level 2) to save blitter time
+- optim: dump sprites when car is displayed to see if group erase is easily doable with more than 1 group
+
+- remove BB9 BB8 BBA BBB (glasses) from log (old artifact)
+- level 2 missing frames player attacking with dagger check again? also player flames
 - level 2 front object (lamp) not displaying (used to work)
 - truck blit erase issue (front of truck), truck right clip part too soon
-- back of truck: erase even if not visible (level 2!)
-- karnov feet erase issue, doesn't seem to be erased
+ 
+- karnov feet erase issue, doesn't seem to be erased (also true for jumping ninjas) probably
+  group erase not working
 - karnov/in general when scrolling at 0, existing screen buffer is slightly trashed:
   with restored tiles: add debug key to toggle screen with/without 
   scroll / check when the sprite draw is avoided and see what values it would yield
 - multiplex sprites 4 to 7 to do (lower hud): ATM only one object is displayed at a time
 
-- clear_fg_planes_any_blitter_internal: switch to cpu if small width and blitter busy
-- truck 2 left erase not working
 - level 3 to make a video! needs to log 24dxxx tiles and load them
 - level 2: copper shade yellow/white (24 bit preferably)
 - level 2: remove blue colors for tiles 7F 76 77 (collect the colors), replace by existing, same for scrolling road, then
   restore them using copper, which will also leave more colors for the rest
+- level 2: group cars bobs to display them in 1 piece (if possible, as it requires clipping), 
+  which is definitely possible & easy: create a fake 48-high tile made from various car stripes: would divide number of blits by 2
 
 - level 2 purple boss red: => should dynamically change it when boss appears like in the game, maybe hook
      on the set palette:
@@ -24,7 +31,7 @@
 
 - FPS options: full 50, 25, adaptative (depending on number of enemies)	 
 - level complete messages should use front object sprites
-- left osd mssing 1 char ("G"AME OVER)
+- left osd mssing 1 char ("G"AME OVER), middle lower OSD also missing 1 char
 - log & rip missing sounds: breakpoint on sound not found so able to go to mame and rip it
 
 - need to optimize truck/train erase: depending on the level, compute the parts that need
@@ -42,15 +49,14 @@
 - sprite mirror_planes: mirroring with width != 16 to implement: test on 32 then make a special case for 32 bits (d0=6)
 - levels with trains/trucks: load traintrucks bitplanes in non-displayed screen buffer
   to save chipmem
-- better bob group erase (not just 2 by 2 but full, would be handy to erase
-  cars if sprites aren't grouped)
-- group cars bobs to display them in 1 piece (if possible, as it requires clipping), 
-  which is definitely possible & easy: create a fake 48-high tile made from various car stripes: would divide number of blits by 2
+
+
+
+
+low/not reproduced
+
 - player jump high kick (at 53464) to perform & rip (not easy to pull off, seems even
   impossible on this version???)
-
-- rip 24D000 & 24A000 tiles
-
 - restore buffer uses 3 horizontal playfields, they should use only 2 plus a few tiles
   to restore bobs that "wrap"
   alternative: if bob X + width wrap, clip it and perform 2 restores (but 2x as blits!)

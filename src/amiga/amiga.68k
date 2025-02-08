@@ -5228,7 +5228,7 @@ system_vbr:
 
 flip_flop:
 	.byte	0
-
+truck_flip_flop:
 	.align	2
 
 host_sprites:
