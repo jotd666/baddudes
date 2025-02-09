@@ -1829,10 +1829,7 @@ blank_area:
 	
 addr_248xxx_op:
 	cmp.w	#0x841C,d2
-	jne		0f
-	* road scroll first row (also 841E receives the same value)
-	move.w	d7,x_road_layer_scroll_value	
-0:
+	jeq		set_road_layer_scroll_value
 	rts
 	
 
@@ -1860,9 +1857,9 @@ addr_24Cxxx_op:
 * to scroll the whole screen and get the running water effect
 addr_246xxx_op_level_3:
 	cmp.w	#0x6010,d2
-	jeq		0f
+	jeq		set_road_layer_scroll_value
 	rts
-0:
+set_road_layer_scroll_value:
 	and.w	#0x1FF,d7
 	move.w	d7,x_road_layer_scroll_value
 	rts
@@ -2027,7 +2024,7 @@ preprocess_16x16_tile:
 	sub.w	#0x200,d2
 	jpl		22f
 
-	* 400-600: top rigth quadrant: add to X
+	* 400-600: top right quadrant: add to X
 	bset	#5,D3	| add 32 to X
 	jra		20f
 22:
@@ -2135,6 +2132,7 @@ addr_24Dxxx_tile_layer_op:
 addr_24Axxx_tile_layer_op_level_3:
 	
 	movem.l	a0-a5/d2-d6,-(a7)
+	and.w	#0x7FF,d2
 	lea		video_ram_24a000,a0
 	add.w	d2,a0
 	tst.b	d1
@@ -2143,15 +2141,16 @@ addr_24Axxx_tile_layer_op_level_3:
 	move.w	(a0),d7
 	jra		101f
 0:
+	TMPWRITE
+	move.w	#0xD10A,d7	| TEMP§!!!!
 	cmp.w	(a0),d7
 	jeq		100f	| already the proper value
 	move.w	d7,(a0)	| set value in memory first
 
 	jbsr	preprocess_16x16_tile
 
-	cmp.w	#200,d4
+	cmp.w	#224,d4
 	jcs		100f			| don't write anything above that point!
-	TMPWRITE
 	move.w	d7,d5			| save code
 	move.w	d7,d6			| tile code
 	and.w	#0x7FF,d6
@@ -3978,7 +3977,6 @@ set_playfield_bitplanes:
 0:
 	* level 2 level road layer
 	move.w	x_road_layer_scroll_value,d2
-	and.w	#0x1FF,d2
 	lea		scroll_table,a2
 	move.w	(a2,d2.w*4),fine_x_road_scroll_value
 	moveq	#0,d0
@@ -4978,7 +4976,7 @@ level_2_load:
 	lea		truck_2_pic_file,a0
 	jbsr	load_truck
 
-
+	move.b	#0xC,road_y_pos
 	jbsr	enable_bottom_scroll
 	
 	move.l	tiles_palette_24a000,a0		| palette
@@ -5001,6 +4999,7 @@ level_3_load:
 
 
 
+	move.b	#0x4,road_y_pos
 	jbsr	enable_bottom_scroll
 
 	move.l	tiles_palette_24d000,a0		| palette
@@ -5902,8 +5901,9 @@ intro_intreq_block:
     .word  0xFFDF,0xFFFE       | PAL wait
 	.word	 intreq,0x8010	| no bobs from now on, get more drawing time
 
-	* set road scroll and
-	.word	0x0C01,0xFFFE
+	* set road scroll
+road_y_pos:
+	.word	0x0401,0xFFFE
 	DECL_COLOR_BANK	0
 road_colors:
 	.rept	16

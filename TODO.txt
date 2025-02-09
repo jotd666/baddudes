@@ -1,55 +1,11 @@
-- level 3: water scroll & colors failed??? debug in 06c82
-Stopped at watchpoint 8 writing 8000 to 24A0FE (PC=00006C82)
->g
-Stopped at watchpoint 8 writing 8000 to 24A11E (PC=00006C82)
->g
-Stopped at watchpoint 8 writing 8000 to 24A13E (PC=00006C82)
->g
-Stopped at watchpoint 8 writing 8000 to 24A15E (PC=00006C82)
->g
-Stopped at watchpoint 8 writing 8000 to 24A17E (PC=00006C82)
->g
-Stopped at watchpoint 8 writing 8000 to 24A19E (PC=00006C82)
->g
-Stopped at watchpoint 8 writing D10B to 24A1BE (PC=00006C82)
->g
-Stopped at watchpoint 8 writing D106 to 24A1DE (PC=00006C82)
->g
-Stopped at watchpoint 8 writing E10F to 24A1FE (PC=00006C82)
-
-- level 3 scroll goes nuts at some point; failed: pb mask 0x1FF
-  mask also pb with water scroll???
+- level 3: water scroll tiles wrong placement, maybe quadrant shit is different than
+  for other mode??? dump 24A000 memory on second write to 246010 MAME/amiga and compare
+- level 3: put water scroll in some other buffer (allocate one?) so changing plans automatically
+  clips the sprites without any other side effect
   
- 00060180: 00e0 001b            ;  BPL1PTH := 0x001b
- 00060184: 00e2 6d20            ;  BPL1PTL := 0x6d20
- 00060188: 00e4 001c            ;  BPL2PTH := 0x001c
->o
- 0006018c: 00e6 2d20            ;  BPL2PTL := 0x2d20
- 00060190: 00e8 001c            ;  BPL3PTH := 0x001c
- 00060194: 00ea ed20            ;  BPL3PTL := 0xed20
- 00060198: 00ec 001d            ;  BPL4PTH := 0x001d
- 0006019c: 00ee ad20            ;  BPL4PTL := 0xad20
- 000601a0: 00f0 001e            ;  BPL5PTH := 0x001e
- 000601a4: 00f2 6d20            ;  BPL5PTL := 0x6d20
- 000601a8: 00f4 001f            ;  BPL6PTH := 0x001f
- 000601ac: 00f6 2d20            ;  BPL6PTL := 0x2d20
- 
-00060180: 00e0 001a            ;  BPL1PTH := 0x001a
- 00060184: 00e2 ad5c            ;  BPL1PTL := 0xad5c
- 00060188: 00e4 001b            ;  BPL2PTH := 0x001b
->o
- 0006018c: 00e6 6d5c            ;  BPL2PTL := 0x6d5c
- 00060190: 00e8 001c            ;  BPL3PTH := 0x001c
- 00060194: 00ea 2d5c            ;  BPL3PTL := 0x2d5c
- 00060198: 00ec 001c            ;  BPL4PTH := 0x001c
- 0006019c: 00ee ed5c            ;  BPL4PTL := 0xed5c
- 000601a0: 00f0 001d            ;  BPL5PTH := 0x001d
- 000601a4: 00f2 ad5c            ;  BPL5PTL := 0xad5c
- 000601a8: 00f4 001e            ;  BPL6PTH := 0x001e
- 000601ac: 00f6 6d5c            ;  BPL6PTL := 0x6d5c
 - truck jailbars when simpler blit with no source and BLTBDAT=0 in some cases?????
   => OK with actual zero source is minterm right???
-- try to display truck 1 times out of 2??? see effect? try not to display animated wheels
+- try to display truck 1 times out of 2??? see effect?
 
 - optim: create fake 32 bit wide groups for car & truck wheels (level 2) to save blitter time
 - optim: dump sprites when car is displayed to see if group erase is easily doable with more than 1 group
