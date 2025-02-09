@@ -773,7 +773,7 @@ _vblank:
 	* remaining planes need to be simply cleared
 	* when exiting from restore_background, A1 points
 	* to the exact next erase position so D0=0, D1=0 here
-	move.w	nb_tile_planes_24a000,d3
+	move.w	nb_tile_planes_24da,d3
 	neg.w	d3
 	addq.w	#NB_PLAYFIELD_PLANES,d3
 	moveq	#0,d0
@@ -1136,7 +1136,7 @@ do_truck_draw:
 	move.l 	fg_drawed_screen_ptr,a1
 	* now big optim: no need to cookie cut/draw all planes!!
 	* so avoid last blit or even 2 last blits (if background is 16 colors)
-	move.w	nb_tile_planes_24a000,d3
+	move.w	nb_tile_planes_24da,d3
 	TMPWRITE
 	jbsr	blit_planes_any_internal_cookie_cut
 2:
@@ -1276,6 +1276,7 @@ addr_24xxxx_table_op:
 	.long	addr_unmapped_op
 	.long	addr_244xxx_tile_layer_op
 	.long	addr_245xxx_tile_layer_op
+addr_246xxx_tile_layer_op_address:
 	.long	addr_246xxx_op
 	.long	addr_unmapped_op
 	.long	addr_248xxx_op
@@ -1497,7 +1498,7 @@ addr_244xxx_tile_layer_op:
 
 	add.l	d6,a0	| select tile clut
 	
-	move.w	nb_tile_planes_24a000,d6
+	move.w	nb_tile_planes_24da,d6
 	subq	#1,d6
 	move.l	a0,a3			| base ptr
 	move.l	(24,a0),a4		| where the mask is
@@ -1522,7 +1523,7 @@ addr_244xxx_tile_layer_op:
 	lea		(RESTORE_SCREEN_PLANE_SIZE,a5),a5
 	dbf		d6,0b
 	* plain copy loop on the planes without background
-	move.w	nb_tile_planes_24a000,d6
+	move.w	nb_tile_planes_24da,d6
 0:	
 	move.l	(a0)+,d2
 	jeq		3f		| erase plane
@@ -1594,7 +1595,7 @@ pick_8x8_tile_code:
 	rts
 	
 erase_tile_8:
-	move.w	nb_tile_planes_24a000,d6
+	move.w	nb_tile_planes_24da,d6
 	subq	#1,d6
 0:
 	.set	offset,0
@@ -1606,7 +1607,7 @@ erase_tile_8:
 	lea		(RESTORE_SCREEN_PLANE_SIZE,a5),a5
 	dbf		d6,0b
 	
-	move.w	nb_tile_planes_24a000,d6
+	move.w	nb_tile_planes_24da,d6
 0:
 	.set	offset,0
 	.rept	8
@@ -1832,7 +1833,7 @@ addr_248xxx_op:
 	* road scroll first row (also 841E receives the same value)
 	move.w	d7,x_road_layer_scroll_value	
 0:
-	rts	| to_implement
+	rts
 	
 
 * scroll registers of layer at 24D000
@@ -1855,6 +1856,18 @@ addr_24Cxxx_op:
 	rts
 	
 * scroll registers of layer at 24A000
+* level 3 uses that global scroll (unlike for road in level 2)
+* to scroll the whole screen and get the running water effect
+addr_246xxx_op_level_3:
+	cmp.w	#0x6010,d2
+	jeq		0f
+	rts
+0:
+	and.w	#0x1FF,d7
+	move.w	d7,x_road_layer_scroll_value
+	rts
+
+* scroll registers of layer at 24A000
 * 00246010: X-scroll (wraps at 0x200 on 4x4 screen mode)
 * 00246012: Y-scroll (wraps at 0x200 on 4x4 screen mode)
 addr_246xxx_op:
@@ -1862,6 +1875,7 @@ addr_246xxx_op:
 	jeq		0f
 	cmp.w	#0x6012,d2
 	jeq		1f
+	
 	* unsupported, also not useful & ignored
 	rts
 0:
@@ -1930,7 +1944,7 @@ addr_24Axxx_tile_layer_op:
 	jne		0f		| write
 	BREAKPOINT	"word read from 24axxx (in D2)"
 	move.w	(a0),d7
-	jra		101f
+	jra		102f
 0:
 	cmp.w	(a0),d7
 	jeq		100f	| already the proper value
@@ -1941,24 +1955,18 @@ addr_24Axxx_tile_layer_op:
 	move.w	d7,d5			| save code
 	move.w	d7,d6			| tile code
 	and.w	#0x7FF,d6
-	jeq		erase_tile
+	jne		0f
+	jbsr	erase_16x16_tile
+	jra		100f
+0:
 	rol.w	#4,d5
 	and.w	#0xF,d5			| tile clut
 
 	.ifne	OPT_ENABLE_LOGGING
 	cmp.w	#0x800,d6			| when logging on title: 1FF, else increase!
 	jcc		0f
-	move.w	d0,-(a7)
-	jbsr	get_current_level
 	lea		tile_log_table_24a000,a2
 	move.l 	#video_ram_24a000,0xC
-	cmp.w	#3,d0
-	movem.w	(a7)+,d0	| preserves Z flag!
-	jne		1111f
-	lea		tile_log_table_24d000,a2
-	move.l 	#video_ram_24d000,0x18
-	
-1111:
 	move.l	a2,0x8		| store address in zero page
 	move.w	d6,-(a7)
 	lsl.w	#4,d6		| 16 cluts
@@ -1968,9 +1976,9 @@ addr_24Axxx_tile_layer_op:
 0:
 	.endif
 
-111:
+
 	move.l	tile_data_24a000,a0
-	move.w	nb_tile_planes_24a000,d2
+	move.w	nb_tile_planes_24da,d2
 
 	.ifndef	RELEASE
 	cmp.l	#0,a0
@@ -1991,6 +1999,7 @@ addr_24Axxx_tile_layer_op:
 	move.w	(a7)+,d2
 	jra		101b
 
+	
 * compute X/Y tile and quadrant (internal routine)
 * < D2: memory address low part 
 * > D2/D3/D4/A1/A4/A5 
@@ -2050,6 +2059,7 @@ preprocess_16x16_tile:
 * checks first_half_flag
 
 write_16x16_tile:
+
 	add.l	(a0,d6.w*4),a0  | skip palette select tile code
 	move.l	(a0,d5.w*4),d6
 	jeq		1000f				| tile not found/ignored, skip
@@ -2065,7 +2075,7 @@ write_16x16_tile:
 	.ifndef	RELEASE
 	cmp.l	#0x00FFFFF,d2
 	jcs		22f
-	lea		111b,a1
+	
 	BREAKPOINT	"invalid d2 value!"
 22:
 	.endif
@@ -2091,7 +2101,8 @@ write_16x16_tile:
 	
 	NEXT_PLANES
 	dbf		d6,0b
-	jra		1000f
+1000:
+	rts
 23:
 	* plane contains data: copy it
 	.set	offset,0
@@ -2107,7 +2118,6 @@ write_16x16_tile:
 1:
 	NEXT_PLANES
 	dbf		d6,0b
-1000:
 	rts
 2:
 	CLR_PLANE
@@ -2116,43 +2126,48 @@ write_16x16_tile:
 	CLR_MIRROR_PLANE
 	jra		1b
 	
-erase_tile:
-	move.w	nb_tile_planes_24a000,d6
-	subq	#1,d6
-	tst.b	first_half_flag
-	jne		erase_tile_twice
-0:
-	CLR_PLANE
-	NEXT_PLANES
-	dbf		d6,0b
-	jra		100b
-	
-erase_tile_twice:
-0:
-	CLR_PLANE
-	CLR_MIRROR_PLANE
-	NEXT_PLANES
-	dbf		d6,0b
-	jra		100b
+
 	
 * 16x16 secondary tile layer, default: do nothing
 addr_24Dxxx_tile_layer_op:
 	rts
 	
 addr_24Axxx_tile_layer_op_level_3:
-	.ifne	OPT_ENABLE_LOGGING
+	
+	movem.l	a0-a5/d2-d6,-(a7)
+	lea		video_ram_24a000,a0
+	add.w	d2,a0
+	tst.b	d1
+	jne		0f		| write
+	BREAKPOINT	"word read from 24axxx (in D2)"
+	move.w	(a0),d7
+	jra		101f
+0:
+	cmp.w	(a0),d7
+	jeq		100f	| already the proper value
+	move.w	d7,(a0)	| set value in memory first
+
+	jbsr	preprocess_16x16_tile
+
+	cmp.w	#200,d4
+	jcs		100f			| don't write anything above that point!
+	TMPWRITE
 	move.w	d7,d5			| save code
 	move.w	d7,d6			| tile code
 	and.w	#0x7FF,d6
-	jeq		0f
+	jne		0f
+	jbsr	erase_16x16_tile
+	jra		100f
+0:
 	rol.w	#4,d5
 	and.w	#0xF,d5			| tile clut
 
+	.ifne	OPT_ENABLE_LOGGING
 	cmp.w	#0x800,d6			| when logging on title: 1FF, else increase!
 	jcc		0f
-	lea		tile_log_table_24a000,a2
-	move.l 	#video_ram_24a000,0xC
-
+	lea		tile_log_table_24d000,a2
+	move.l 	#video_ram_24d000,0x18
+1111:
 	move.l	a2,0x28		| store address in zero page
 	move.w	d6,-(a7)
 	lsl.w	#4,d6		| 16 cluts
@@ -2162,7 +2177,25 @@ addr_24Axxx_tile_layer_op_level_3:
 0:
 	.endif
 
+111:
+	move.l	tile_data_24a000,a0
+	move.w	nb_tile_planes_24da,d2
+
+	.ifndef	RELEASE
+	cmp.l	#0,a0
+	jeq 	102f     | no tiles loaded, let logging work
+	.endif
+
+	jbsr	write_16x16_tile
+100:		
+
+
+101:
+	movem.l	(a7)+,a0-a5/d2-d6
 	rts
+102:
+	jra		101b
+
 	
 addr_24Dxxx_tile_layer_op_level_3:
 	* level 3 (sewer) uses this tile layer as background, probably
@@ -2170,8 +2203,96 @@ addr_24Dxxx_tile_layer_op_level_3:
 	* on the amiga, on the other hand, I don't care about that so I'm
 	* redirecting a write to this layer into a write to the other layer
 	* if the level uses it
-	sub.w	#0x3000,d2
-	jra		addr_24Axxx_tile_layer_op
+	and.w	#0x7FF,d2
+
+	.ifndef		RELEASE
+	cmp.w	#1,d0
+	jeq		0f
+	* byte/long op: ignore (not used...)
+	BREAKPOINT	"24dxxx operation on byte or long not supported"
+	rts
+0:
+	.endif
+	movem.l	a0-a5/d2-d6,-(a7)
+10:
+
+	move.w	d2,-(a7)
+	lea		video_ram_24d000,a0
+	add.w	d2,a0
+	tst.b	d1
+	jne		0f		| write
+	BREAKPOINT	"word read from 24axxx (in D2)"
+	move.w	(a0),d7
+	jra		101f
+0:
+	cmp.w	(a0),d7
+	jeq		100f	| already the proper value
+	move.w	d7,(a0)	| set value in memory first
+
+	jbsr	preprocess_16x16_tile
+
+	move.w	d7,d5			| save code
+	move.w	d7,d6			| tile code
+	and.w	#0x7FF,d6
+	jne		0f
+	jbsr	erase_16x16_tile
+	jra		100f
+0:
+	rol.w	#4,d5
+	and.w	#0xF,d5			| tile clut
+
+	.ifne	OPT_ENABLE_LOGGING
+	cmp.w	#0x800,d6			| when logging on title: 1FF, else increase!
+	jcc		0f
+	lea		tile_log_table_24d000,a2
+	move.l 	#video_ram_24d000,0x1C
+	move.l	a2,0x28		| store address in zero page
+	move.w	d6,-(a7)
+	lsl.w	#4,d6		| 16 cluts
+	add.w	d5,d6		| clut offset
+	st.b	(a2,d6.w)
+	move.w	(a7)+,d6
+0:
+	.endif
+
+111:
+	move.l	tile_data_24d000,a0
+	move.w	nb_tile_planes_24da,d2
+
+	.ifndef	RELEASE
+	cmp.l	#0,a0
+	jeq 	102f     | no tiles loaded, let logging work
+	.endif
+
+	jbsr	write_16x16_tile
+100:		
+	move.w	(a7)+,d2
+
+101:
+	movem.l	(a7)+,a0-a5/d2-d6
+	rts
+102:
+	move.w	(a7)+,d2
+	jra		101b
+
+erase_16x16_tile:
+	move.w	nb_tile_planes_24da,d6
+	subq	#1,d6
+	tst.b	first_half_flag
+	jne		erase_tile_twice_16x16
+0:
+	CLR_PLANE
+	NEXT_PLANES
+	dbf		d6,0b
+	rts
+	
+erase_tile_twice_16x16:
+0:
+	CLR_PLANE
+	CLR_MIRROR_PLANE
+	NEXT_PLANES
+	dbf		d6,0b
+	rts
 
 
 	
@@ -2412,7 +2533,7 @@ really_update_sprites:
 	move.w	#NB_TARGET_SPRITES-1,d7
 
 	* compute number of remaining empty planes (after background planes)
-	move.w	nb_tile_planes_24a000,d5
+	move.w	nb_tile_planes_24da,d5
 	neg.w	d5
 	addq.w	#NB_PLAYFIELD_PLANES,d5
 	move.l	bob_previous_drawed_sprites,a4
@@ -3160,7 +3281,7 @@ restore_background:
 	move.l a1,bltdpt(a5)	|destination top (bottom) left corner
 	move.w  d4,bltsize(a5)	|rectangle size, starts blit
 	
-	move.w	nb_tile_planes_24a000,d0
+	move.w	nb_tile_planes_24da,d0
 	subq	#2,d0
 
 
@@ -3828,6 +3949,7 @@ move_train:
 	rts
 	
 scroll_background_x:
+	and.w	#0x1FF,d0
 	move.w	d0,x_background_scroll_value
 	rts
 	
@@ -3835,10 +3957,10 @@ set_playfield_bitplanes:
 	* set bitplanes
 	moveq	#0,d0
 	move.w	y_background_scroll_value,d0
-	*and.w	#0x1FF,d0		| wrap just in case
 	lea		mulNB_BYTES_PER_ROW_table,a2
 	move.w	(a2,d0.w*2),d0		| compute Y offset
 	move.w	x_background_scroll_value,d2	
+
 	lea		scroll_table,a2
 	move.w	(a2,d2.w*4),fine_x_scroll_value
 	add.w	(2,a2,d2.w*4),d0
@@ -3850,8 +3972,10 @@ set_playfield_bitplanes:
 	
 	jbsr	get_current_level
 	cmp.w	#2,d0
-
-	
+	jeq		0f
+	cmp.w	#3,d0
+	jne		1f
+0:
 	* level 2 level road layer
 	move.w	x_road_layer_scroll_value,d2
 	and.w	#0x1FF,d2
@@ -3865,7 +3989,7 @@ set_playfield_bitplanes:
     lea	bitplanes_road+2,a0
 	jbsr	set_bitplanes
 	
-0:	
+1:	
 	rts
 
 set_bitplanes:
@@ -4328,6 +4452,7 @@ osd_set_context:
 	* default for operation on 24Axxx => normal
 	move.l	#addr_24Axxx_tile_layer_op,addr_24Axxx_tile_layer_op_address
 	move.l	#addr_24Dxxx_tile_layer_op,addr_24Dxxx_tile_layer_op_address
+	move.l	#addr_246xxx_op,addr_246xxx_tile_layer_op_address
 	
 	* then we wait a little while to make sure the interrupt has run
 	
@@ -4343,6 +4468,13 @@ osd_set_context:
 0:
 	* remove front objects
 	clr.l	front_objects_table
+	
+	* reset road color
+	lea		road_colors,a0
+	move.w	#15,d0
+0:
+	move.l	#0x01FE0000,(a0)+
+	dbf		D0,0b
 	
 	* clear screens
 	move.l	fg_displayed_screen_ptr,a1
@@ -4458,13 +4590,29 @@ load_tiles_file_24a000:
 	move.w	(a0)+,d0	| nb planes
 	move.w	(a0)+,d1	| nb block planes (ignored)
 	move.l	a0,tiles_palette_24a000
-	move.w	d0,nb_tile_planes_24a000		| save it for later
+	move.w	d0,nb_tile_planes_24da		| save it for later
 	moveq	#0,d1
 	bset	d0,d1
 	move.w	d1,nb_tile_colors_24a000
 	add.w	d1,d1
 	add.w	d1,a0
 	move.l	a0,tile_data_24a000	 			| save it for later
+	rts
+	
+
+load_tiles_file_24d000:
+	jbsr	allocate_and_load_public_mem_file
+	move.l	d0,a0
+	move.w	(a0)+,d0	| nb planes
+	move.w	(a0)+,d1	| nb block planes (ignored)
+	move.l	a0,tiles_palette_24d000
+	move.w	d0,nb_tile_planes_24da		| save it for later
+	moveq	#0,d1
+	bset	d0,d1
+	move.w	d1,nb_tile_colors_24d000
+	add.w	d1,d1
+	add.w	d1,a0
+	move.l	a0,tile_data_24d000	 			| save it for later
 	rts
 	
 load_tiles_palette_244000:
@@ -4599,7 +4747,6 @@ set_game_context:
 	lea		specific_level_load_table(pc),a0
 	jsr		([a0,d0.w*4])
 	
-	jbsr	load_intro_palette
 	
 	move.l	fg_screen_data_1,fg_drawed_screen_ptr
 	move.l	fg_screen_data_2,fg_displayed_screen_ptr
@@ -4693,6 +4840,10 @@ level_1_load:
 	*move	#1,d3
 	*jbsr	display_front_object
 	
+	move.l	tiles_palette_24a000,a0		| palette
+	jbsr	load_tiles_palette
+
+
 	rts
 	
 load_truck:
@@ -4830,11 +4981,15 @@ level_2_load:
 
 	jbsr	enable_bottom_scroll
 	
+	move.l	tiles_palette_24a000,a0		| palette
+	jbsr	load_tiles_palette
 	
 	rts
 	
 level_3_load:	
-	lea		tiles_level_3_24d000,a0
+	lea		tiles_level_3_24d000_file,a0
+	jbsr	load_tiles_file_24d000
+	lea		tiles_level_3_24a000_file,a0
 	jbsr	load_tiles_file_24a000
 	jbsr 	load_level_sprite_file
 
@@ -4842,12 +4997,27 @@ level_3_load:
 	* only on this level, other background tiles are using second tile layer
 	move.l	#addr_24Axxx_tile_layer_op_level_3,addr_24Axxx_tile_layer_op_address
 	move.l	#addr_24Dxxx_tile_layer_op_level_3,addr_24Dxxx_tile_layer_op_address
+	move.l	#addr_246xxx_op_level_3,addr_246xxx_tile_layer_op_address
 
 
 
 	jbsr	enable_bottom_scroll
+
+	move.l	tiles_palette_24d000,a0		| palette
+	jbsr	load_tiles_palette
 	
+	* install running water palette (bottom of screen)
+	lea		road_colors,a0
+	move.l	tiles_palette_24a000,a1
+	move.w	#15,d0
+	move.w	#color,d1
+0:
+	move.w	d1,(a0)+
+	move.w	(a1)+,(a0)+
+	addq	#2,d1		| next color
+	dbf		d0,0b
 	rts
+	
 level_4_load:	
 	jbsr 	load_level_sprite_file
 	rts
@@ -4994,11 +5164,12 @@ install_osd_sprite:
 	move.w	d0,(a2)
 	rts
 	
-load_intro_palette:
 	* set game intro palette
+load_intro_palette:
+	move.l	tiles_palette_24a000,a0		| palette
+load_tiles_palette:
 	lea		base_palette,a1
 	move.w	nb_tile_colors_24a000,d0
-	move.l	tiles_palette_24a000,a0		| palette
 	jbsr	load_palette
 	rts
 	
@@ -5414,8 +5585,10 @@ tiles_level_1_24a000_file:
 	.asciz	"tiles_level_1_24a000.bin"
 tiles_level_2_24a000_file:
 	.asciz	"tiles_level_2_24a000.bin"
-tiles_level_3_24d000:
+tiles_level_3_24d000_file:
 	.asciz	"tiles_level_3_24d000.bin"
+tiles_level_3_24a000_file:
+	.asciz	"tiles_level_3_24a000.bin"
 dudes_pics_files:
 	.asciz	"dudes.bin"
 rom_file:
@@ -5536,9 +5709,12 @@ tile_data_24a000:
 	.long	0
 tile_data_244000:
 	.long	0
-nb_tile_planes_24a000:
+nb_tile_planes_24da:
 	.word	0
+
 nb_tile_colors_24a000:
+	.word	0
+nb_tile_colors_24d000:
 	.word	0
 tiles_palette_244000:
 	.long	0
@@ -5727,8 +5903,12 @@ intro_intreq_block:
 	.word	 intreq,0x8010	| no bobs from now on, get more drawing time
 
 	* set road scroll and
-	* change palette for lower OSD sprites (lives & energy)
 	.word	0x0C01,0xFFFE
+	DECL_COLOR_BANK	0
+road_colors:
+	.rept	16
+	.long	0x01FE0000
+	.endr
 bitplanes_road:
 	DECL_BITPLANES	0,NB_PLAYFIELD_PLANES
 	.word	bplcon1
@@ -5736,6 +5916,8 @@ fine_x_road_scroll_value:
 	.word	0
 	* re-set palette for non-attached sprites
 	.word	bplcon4,BASE_BPLCON4_VALUE
+	* change palette for lower OSD sprites (lives & energy)
+	.word	0x0C01,0xFFFE
 
 	DECL_COLOR_BANK	2
 	.word	color+2*10,0xEBB		| flesh pink
