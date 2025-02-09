@@ -23,6 +23,11 @@ else:
 # add compete ref for dudes
 new_contents = dude_contents_ref + new_contents
 
+if False:  # character moves changed force update
+    with open(used_dump,"rb") as f:
+        new_contents = f.read()
+
+
 old_used = merged_path_file / used_name
 if old_used.exists():
     with open(old_used,"rb") as f:

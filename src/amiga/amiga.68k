@@ -2014,18 +2014,40 @@ addr_24Axxx_tile_layer_op:
 
 111:
 	move.l	tile_data_24a000,a0
+	move.w	nb_tile_planes_24a000,d2
+
 	.ifndef	RELEASE
 	cmp.l	#0,a0
 	jeq 	102f     | no tiles loaded, let logging work
-112:
 	.endif
+
+	jbsr	write_16x16_tile
+100:		
+	move.w	(a7)+,d2
+	* preparing for longword write
+	addq.w	#2,d2
+	swap	d7
+	dbf		d0,10b		| next word (if longword write)
+101:
+	movem.l	(a7)+,a0-a5/d2-d6
+	rts
+102:
+	move.w	(a7)+,d2
+	jra		101b
+
+* internal write tile routine, shared between 2 16x16 tile layers
+* < A0: tile clut array
+* < D2: number of planes
+* < D5: clut index
+* checks first_half_flag
+
+write_16x16_tile:
 	add.l	(a0,d6.w*4),a0  | skip palette select tile code
 	move.l	(a0,d5.w*4),d6
-	jeq		100f				| tile not found/ignored, skip
+	jeq		1000f				| tile not found/ignored, skip
 
 	add.l	d6,a0	| select tile clut
-	
-	move.w	nb_tile_planes_24a000,d6
+	move	d2,d6
 	subq	#1,d6
 	move.l	a0,a3			| base ptr
 0:
@@ -2061,7 +2083,7 @@ addr_24Axxx_tile_layer_op:
 	
 	NEXT_PLANES
 	dbf		d6,0b
-	jra		100f
+	jra		1000f
 23:
 	* plane contains data: copy it
 	.set	offset,0
@@ -2077,18 +2099,8 @@ addr_24Axxx_tile_layer_op:
 1:
 	NEXT_PLANES
 	dbf		d6,0b
-100:	
-	move.w	(a7)+,d2
-	* preparing for longword write
-	addq.w	#2,d2
-	swap	d7
-	dbf		d0,10b		| next word (if longword write)
-101:
-	movem.l	(a7)+,a0-a5/d2-d6
+1000:
 	rts
-102:
-	move.w	(a7)+,d2
-	jra		101b
 2:
 	CLR_PLANE
 	tst.b	first_half_flag
@@ -2120,7 +2132,6 @@ addr_24Dxxx_tile_layer_op:
 	rts
 	
 addr_24Axxx_tile_layer_op_level_3:
-	TMPWRITE
 	.ifne	OPT_ENABLE_LOGGING
 	move.w	d7,d5			| save code
 	move.w	d7,d6			| tile code

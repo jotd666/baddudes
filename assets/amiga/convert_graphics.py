@@ -685,6 +685,7 @@ def postprocess_game_osd_tiles(tileset,palette_index):
 
 generate_for_levels = [False]*8
 
+generate_for_levels[1] = True
 generate_for_levels[3] = True
 
 # set to "False" for faster operation when working on game sprite/tiles
@@ -699,10 +700,12 @@ if generate_for_levels[0]:  # title/intro é game fonts
     process_tile_context("highs_24a000",title_tile_24a000_sheet_dict,16)
 
 if generate_for_levels[1]:
+    truck_nb_planes = 3
     process_tile_context("level_1_24a000",level_1_tile_24a000_sheet_dict,32,first_pass=True)
-    truck_used_colors = convert_truck_pics.doit_truck_1(palette_dict["level_1_24a000"])
+    truck_used_colors = convert_truck_pics.doit_truck_1(palette_dict["level_1_24a000"],truck_nb_planes)
     process_tile_context("level_1_24a000",level_1_tile_24a000_sheet_dict,32,first_pass=False,first_colors=truck_used_colors)
     convert_front_objects.doit_level_1()
+    process_tile_context("game_level_1",sprite_sheet_dict,32,is_bob=True,shift_palette_count=32)
 
 if generate_for_levels[2]:
     truck_nb_planes = 3
