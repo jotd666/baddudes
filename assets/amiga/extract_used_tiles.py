@@ -35,7 +35,7 @@ for i in range(2):
 tiles_dir = used_graphics_dir / "tiles"
 for n in os.listdir(tiles_dir):
     tiles_file = tiles_dir / n
-    print(tiles_file)
+
     with open(tiles_file,"rb") as f:
         contents = f.read()
 

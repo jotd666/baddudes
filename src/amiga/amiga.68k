@@ -34,7 +34,7 @@ AFB_68020 = 1
 	.endif
 	
 TOTAL_PUBLIC_MEMORY_SIZE = 350000
-TOTAL_CHIP_MEMORY_SIZE = 950000
+TOTAL_CHIP_MEMORY_SIZE = 980000
 
 PREVIOUS_SPRITE_SIZE = 8
 BORDERBLANK = 1
@@ -5018,12 +5018,18 @@ level_3_load:
 	rts
 	
 level_4_load:	
+	lea		tiles_level_4_24a000_file,a0
+	jbsr	load_tiles_file_24a000
 	jbsr 	load_level_sprite_file
+	move.l	tiles_palette_24a000,a0		| palette
+	jbsr	load_tiles_palette
 	rts
 level_5_load:	
+	jbsr 	load_level_sprite_file
 level_6_load:	
+	jbsr 	load_level_sprite_file
 level_7_load:
-	illegal
+	jbsr 	load_level_sprite_file
 	rts
 	
 * inefficient but rarely called algorithm to search a color
@@ -5588,6 +5594,8 @@ tiles_level_3_24d000_file:
 	.asciz	"tiles_level_3_24d000.bin"
 tiles_level_3_24a000_file:
 	.asciz	"tiles_level_3_24a000.bin"
+tiles_level_4_24a000_file:
+	.asciz	"tiles_level_4_24a000.bin"
 dudes_pics_files:
 	.asciz	"dudes.bin"
 rom_file:
