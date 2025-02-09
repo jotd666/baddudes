@@ -1934,54 +1934,10 @@ addr_24Axxx_tile_layer_op:
 0:
 	cmp.w	(a0),d7
 	jeq		100f	| already the proper value
-
 	move.w	d7,(a0)	| set value in memory first
-	* then draw the 16x16 tile
-	moveq	#0,d3			| D3.L!!
-	move.w	d2,d3
-	and.w	#0x1E,D3		| this is X times 2 (tiles are 16 bits wide
-	move.w	d2,d4
-	and.w	#0x1E0,d4
-	lsr.w	#1,D4			| this is Y
 
+	jbsr	preprocess_16x16_tile
 
-	* now compute quadrant.
-	sub.w	#0x200,d2
-	smi		first_half_flag		| first half
-	jmi		20f		| 000-200: top left quadrant: no changes
-	sub.w	#0x200,d2
-	jpl		21f	
-	* 200-400: bottom left quadrant: add to Y
-	bset	#8,d4	| add 256 to Y
-	st		first_half_flag
-	jra		20f
-21:
-	sub.w	#0x200,d2
-	jpl		22f
-
-	* 400-600: top rigth quadrant: add to X
-	bset	#5,D3	| add 32 to X
-	jra		20f
-22:
-	* 600_800: add to both
-	bset	#5,D3	| add 32 to X
-	bset	#8,d4	| add 256 to Y
-20:
-	move.l	fg_drawed_screen_ptr,a1
-	.ifne	OPT_ENABLE_DOUBLE_BUFFERING
-	move.l	fg_displayed_screen_ptr,a5
-	.endif
-	lea		background_restore_buffer,a4
-	lea		mulNB_BYTES_PER_ROW_table,a2
-	moveq	#0,d5
-	move.w	(a2,d4.w*2),d5
-	add.l	d3,d5
-	add.l	d5,a1			| screen dest address on playfield
-	add.l	d5,a4			| screen dest address on restore playfield
-	.ifne	OPT_ENABLE_DOUBLE_BUFFERING
-	add.l	d5,a5
-	.endif
-	
 	move.w	d7,d5			| save code
 	move.w	d7,d6			| tile code
 	and.w	#0x7FF,d6
@@ -2035,6 +1991,58 @@ addr_24Axxx_tile_layer_op:
 	move.w	(a7)+,d2
 	jra		101b
 
+* compute X/Y tile and quadrant (internal routine)
+* < D2: memory address low part 
+* > D2/D3/D4/A1/A4/A5 
+preprocess_16x16_tile:
+	* then draw the 16x16 tile
+	moveq	#0,d3			| D3.L!!
+	move.w	d2,d3
+	and.w	#0x1E,D3		| this is X times 2 (tiles are 16 bits wide
+	move.w	d2,d4
+	and.w	#0x1E0,d4
+	lsr.w	#1,D4			| this is Y
+
+
+	* now compute quadrant.
+	sub.w	#0x200,d2
+	smi		first_half_flag		| first half
+	jmi		20f		| 000-200: top left quadrant: no changes
+	sub.w	#0x200,d2
+	jpl		21f	
+	* 200-400: bottom left quadrant: add to Y
+	bset	#8,d4	| add 256 to Y
+	st		first_half_flag
+	jra		20f
+21:
+	sub.w	#0x200,d2
+	jpl		22f
+
+	* 400-600: top rigth quadrant: add to X
+	bset	#5,D3	| add 32 to X
+	jra		20f
+22:
+	* 600_800: add to both
+	bset	#5,D3	| add 32 to X
+	bset	#8,d4	| add 256 to Y
+20:
+	move.l	fg_drawed_screen_ptr,a1
+	.ifne	OPT_ENABLE_DOUBLE_BUFFERING
+	move.l	fg_displayed_screen_ptr,a5
+	.endif
+	lea		background_restore_buffer,a4
+	lea		mulNB_BYTES_PER_ROW_table,a2
+	moveq	#0,d5
+	move.w	(a2,d4.w*2),d5
+	add.l	d3,d5
+	add.l	d5,a1			| screen dest address on playfield
+	add.l	d5,a4			| screen dest address on restore playfield
+	.ifne	OPT_ENABLE_DOUBLE_BUFFERING
+	add.l	d5,a5
+	.endif
+	
+	rts
+	
 * internal write tile routine, shared between 2 16x16 tile layers
 * < A0: tile clut array
 * < D2: number of planes
