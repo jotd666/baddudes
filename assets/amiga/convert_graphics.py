@@ -1,5 +1,5 @@
 from PIL import Image,ImageOps
-import os,sys,bitplanelib,subprocess,json,pathlib
+import os,sys,bitplanelib,subprocess,json,pathlib,shutil
 
 from shared import *
 
@@ -43,6 +43,12 @@ if not generated_src_dir.exists():
     generated_src_dir.mkdir()
 
 if dump_it:
+    if os.path.exists(dump_dir):
+        try:
+            shutil.rmtree(dump_dir)
+        except OSError:
+            print(f"Warning: cannot cleanup, locked subdir in {dump_dir}?")
+
     if not os.path.exists(dump_dir):
         os.mkdir(dump_dir)
         with open(os.path.join(dump_dir,".gitignore"),"w") as f:
@@ -81,8 +87,6 @@ def process_multi_tiled_sprite(img,tile_number,full_tileset,h,w,flipx):
 # in that implementation, we have to provide a cluts dict as without it it would dump the whole set
 # of tiles/sprites and it's pretty huge in games like BadDudes or other "big" games.
 def load_tileset(image_name,palette_index,side,tileset_name,cluts,name_dict=None,postload_callback=None):
-
-
     if isinstance(image_name,(str,pathlib.Path)):
         full_image_path = os.path.join(this_dir,os.path.pardir,"sheets",image_name)
         tiles_1 = Image.open(full_image_path)
@@ -102,8 +106,7 @@ def load_tileset(image_name,palette_index,side,tileset_name,cluts,name_dict=None
 
     if dump_it:
         dump_subdir = dump_dir / tileset_name
-        if palette_index == 0:
-            ensure_empty(dump_subdir)
+        ensure_exists(dump_subdir)
 
     # now we have an array of small images, way more convenient to work with
     # specially if the attributes make the sprite multi-tiled
@@ -309,6 +312,7 @@ title_tile_24a000_sheet_dict = {i:sheets_path / "tiles_24a000" / "title" / f"pal
 game_intro_tile_24a000_sheet_dict = {i:sheets_path / "tiles_24a000" / "game_intro" / f"pal_{i:02x}.png" for i in range(4)}
 level_1_tile_24a000_sheet_dict = {i:sheets_path / "tiles_24a000" / "level_1" / f"pal_{i:02x}.png" for i in range(16)}
 level_2_tile_24a000_sheet_dict = {i:sheets_path / "tiles_24a000" / "level_2" / f"pal_{i:02x}.png" for i in range(8,16)}
+level_3_tile_24a000_sheet_dict = {i:sheets_path / "tiles_24a000" / "level_3" / f"pal_{i:02x}.png" for i in range(13,16)}
 level_3_tile_24d000_sheet_dict = {i:sheets_path / "tiles_24d000" / "level_3" / f"pal_{i:02x}.png" for i in range(9)}
 tile_0_sheet_dict = {i:sheets_path / "tiles_244000" / f"pal_{i:02x}.png" for i in range(15)}
 sprite_sheet_dict = {i:sheets_path / "sprites" / f"pal_{i:02x}.png" for i in range(16)}
@@ -377,7 +381,7 @@ def load_contexted_tileset(tile_sheet_dict,context,nb_colors,is_bob):
 
         if dump_it:
             dump_subdir = dump_dir / context_dir / "quantized"
-            ensure_empty(dump_subdir)
+            ensure_exists(dump_subdir)
 
 
             for palette_index,tile_set in enumerate(tile_24a000_set_list):
@@ -712,6 +716,7 @@ if generate_for_levels[2]:
 
 if generate_for_levels[3]:
     process_tile_context("level_3_24d000",level_3_tile_24d000_sheet_dict,16,first_pass=False)
+    process_tile_context("level_3_24a000",level_3_tile_24a000_sheet_dict,16,first_pass=False)
     process_tile_context("game_level_3",sprite_sheet_dict,48,is_bob=True,shift_palette_count=16)
 if generate_for_levels[4]:
     process_tile_context("game_level_4",sprite_sheet_dict,48,is_bob=True,shift_palette_count=16)

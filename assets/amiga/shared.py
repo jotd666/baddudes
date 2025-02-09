@@ -31,3 +31,9 @@ def ensure_empty(d):
                 os.remove(x)
     else:
         os.makedirs(d)
+
+def ensure_exists(d):
+    if os.path.exists(d):
+        pass
+    else:
+        os.makedirs(d)

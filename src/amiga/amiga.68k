@@ -84,7 +84,7 @@ ONE_TICK = 1
 * note: double buffering eats a lot of memory, it cannot run in debug mode
 * either simple or reloc. Only in "none" (program running in fastmem, data
 * located in low chipmem)
-OPT_ENABLE_DOUBLE_BUFFERING = 1
+OPT_ENABLE_DOUBLE_BUFFERING = 0
 
 _custom = 0xDFF000
 
@@ -1280,10 +1280,12 @@ addr_24xxxx_table_op:
 	.long	addr_unmapped_op
 	.long	addr_248xxx_op
 	.long	addr_unmapped_op
+addr_24Axxx_tile_layer_op_address:
 	.long	addr_24Axxx_tile_layer_op
 	.long	addr_unmapped_op
 	.long	addr_24Cxxx_op
-	.long	addr_24Dxxx_tile_layer_2_op
+addr_24Dxxx_tile_layer_op_address:
+	.long	addr_24Dxxx_tile_layer_op
 	.long	addr_unmapped_op
 	.long	addr_unmapped_op
 	
@@ -2113,29 +2115,47 @@ erase_tile_twice:
 	dbf		d6,0b
 	jra		100b
 	
-* 16x16 tile layer TODO NOP
-addr_24Dxxx_tile_layer_2_op:
-	.ifndef	RELEASE
-	cmp.w	#1,d0
+* 16x16 secondary tile layer, default: do nothing
+addr_24Dxxx_tile_layer_op:
+	rts
+	
+addr_24Axxx_tile_layer_op_level_3:
+	TMPWRITE
+	.ifne	OPT_ENABLE_LOGGING
+	move.w	d7,d5			| save code
+	move.w	d7,d6			| tile code
+	and.w	#0x7FF,d6
 	jeq		0f
-	BREAKPOINT	"long read/write from 24Dxxx (in D2)"
+	rol.w	#4,d5
+	and.w	#0xF,d5			| tile clut
+
+	cmp.w	#0x800,d6			| when logging on title: 1FF, else increase!
+	jcc		0f
+	lea		tile_log_table_24a000,a2
+	move.l 	#video_ram_24a000,0xC
+
+	move.l	a2,0x28		| store address in zero page
+	move.w	d6,-(a7)
+	lsl.w	#4,d6		| 16 cluts
+	add.w	d5,d6		| clut offset
+	st.b	(a2,d6.w)
+	move.w	(a7)+,d6
 0:
 	.endif
-	jbsr	get_current_level
-	cmp.w	#3,d0
-	jne		0f
+
+	rts
+	
+addr_24Dxxx_tile_layer_op_level_3:
 	* level 3 (sewer) uses this tile layer as background, probably
 	* because tile layer 24Axxx doesn't have enough tiles.
 	* on the amiga, on the other hand, I don't care about that so I'm
 	* redirecting a write to this layer into a write to the other layer
 	* if the level uses it
 	sub.w	#0x3000,d2
-	moveq	#1,d0
 	jra		addr_24Axxx_tile_layer_op
-0:
-	rts
-	
 
+
+	
 * < A0: text message to display in the upper right (below second player score)
 osd_write_right_debug_message:
 	.ifndef	RELEASE
@@ -3842,7 +3862,7 @@ set_bitplanes:
     dbf d1,0b
 	rts
 	
-enable_road_scroll:
+enable_bottom_scroll:
     lea	bitplanes_road,a0
     moveq #NB_PLAYFIELD_PLANES-1,d1
 	move.w	#bplpt,d0
@@ -4285,6 +4305,11 @@ osd_set_context:
 	* remove pointer on truck planes, this will disable any remaining truck
 	* draw, and also front objects
 	clr.l	truck_planes
+	
+	* default for operation on 24Axxx => normal
+	move.l	#addr_24Axxx_tile_layer_op,addr_24Axxx_tile_layer_op_address
+	move.l	#addr_24Dxxx_tile_layer_op,addr_24Dxxx_tile_layer_op_address
+	
 	* then we wait a little while to make sure the interrupt has run
 	
 	jbsr	wait_vbl
@@ -4784,7 +4809,7 @@ level_2_load:
 	jbsr	load_truck
 
 
-	jbsr	enable_road_scroll
+	jbsr	enable_bottom_scroll
 	
 	
 	rts
@@ -4794,7 +4819,14 @@ level_3_load:
 	jbsr	load_tiles_file_24a000
 	jbsr 	load_level_sprite_file
 
-	*jbsr	enable_road_scroll
+	* change behaviour for write to 24Axxx: this controls the running water
+	* only on this level, other background tiles are using second tile layer
+	move.l	#addr_24Axxx_tile_layer_op_level_3,addr_24Axxx_tile_layer_op_address
+	move.l	#addr_24Dxxx_tile_layer_op_level_3,addr_24Dxxx_tile_layer_op_address
+
+
+
+	jbsr	enable_bottom_scroll
 	
 	rts
 level_4_load:	

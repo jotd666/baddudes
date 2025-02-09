@@ -35,6 +35,7 @@ for i in range(2):
 tiles_dir = used_graphics_dir / "tiles"
 for n in os.listdir(tiles_dir):
     tiles_file = tiles_dir / n
+    print(tiles_file)
     with open(tiles_file,"rb") as f:
         contents = f.read()
 
@@ -52,7 +53,12 @@ for n in os.listdir(tiles_dir):
                         # flash but renders ugly and eats a lot of colors for nothing
                         pass
                     else:
-                        used_tiles[tile_index]["cluts"].append(i)
+                        if n == "level_3_24a000" and tile_index < 0x100:
+                            # we can't rely on that info, the game writes stuff but
+                            # it has no visible effect. Only used tiles are 0x100->0x110 (water)
+                            pass
+                        else:
+                            used_tiles[tile_index]["cluts"].append(i)
         tile_index += 1
 
     used_dict[n] = used_tiles
