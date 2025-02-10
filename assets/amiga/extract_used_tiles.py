@@ -4,8 +4,6 @@ this_dir = pathlib.Path(__file__).absolute().parent
 used_dict = {}
 dropped_tile_index = set()
 
-used_cluts_file = this_dir / "used_tile_cluts.json"
-used_graphics_dir = this_dir / "used_graphics"
 
 def new_used_tiles():
     return collections.defaultdict(lambda : collections.defaultdict(list))

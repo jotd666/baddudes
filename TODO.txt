@@ -1,3 +1,5 @@
+- 32 bit wide symmetry code broken!!!
+- optim: create fake 32 bit wide groups for car & truck wheels (level 2) to save blitter time
 - level 3: water scroll tiles wrong placement, maybe quadrant shit is different than
   for other mode??? dump 24A000 memory on second write to 246010 MAME/amiga and compare
 - level 3: put water scroll in some other buffer (allocate one?) so changing plans automatically
@@ -7,7 +9,6 @@
   => OK with actual zero source is minterm right???
 - try to display truck 1 times out of 2??? see effect?
 
-- optim: create fake 32 bit wide groups for car & truck wheels (level 2) to save blitter time
 - optim: dump sprites when car is displayed to see if group erase is easily doable with more than 1 group
 
 - remove BB9 BB8 BBA BBB (glasses) from log (old artifact)

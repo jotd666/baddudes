@@ -7,6 +7,9 @@ import convert_dudes_pics
 import convert_truck_pics
 import convert_front_objects
 
+import extract_used_sprites
+
+extract_used_sprites.doit()
 convert_dudes_pics.doit()
 
 sprite_names = dict()
@@ -16,6 +19,7 @@ palette_dict = dict()
 # at the same time
 pre_mirrored_sprites = {k:{2} for k in range(0x200,0x348)}
 
+side_grouped_dict,vert_grouped_dict = load_grouped_dicts()
 
 def reformat_subdict(d):
     rval = {"cluts":set(d["cluts"])}
@@ -27,11 +31,11 @@ def reformat_subdict(d):
 def reformat_dict(d):
     return {k:{int(k2):reformat_subdict(v2) for k2,v2 in v.items()} for k,v in d.items()}
 
-with open(os.path.join(this_dir,"used_tile_cluts.json")) as f:
+with open(used_tile_cluts_file) as f:
     # set proper types
     used_tile_cluts = reformat_dict(json.load(f))
 
-with open(os.path.join(this_dir,"used_sprite_cluts.json")) as f:
+with open(used_sprite_cluts_file) as f:
     # set proper types
     used_sprite_cluts = reformat_dict(json.load(f))
 
@@ -60,18 +64,48 @@ if dump_it:
 def dump_asm_bytes(*args,**kwargs):
     bitplanelib.dump_asm_bytes(*args,**kwargs)
 
-def process_multi_tiled_sprite(img,tile_number,full_tileset,h,w,flipx):
+def process_multi_tiled_sprite(tile_number,full_tileset,h,w,height,width,flipx):
+    side_group = side_grouped_dict.get(tile_number)
+    if side_group:
+        # sprite has a manually set lateral/side tile grouping
+        # allows to save 1 blit and 25% chip bandwidth on sprites that are only used together (wheel parts, body parts)
+        # also saves a lot of memory
+
+        group_tiles = [tile_number]+side_group
+        img = Image.new("RGB",(width*len(group_tiles),height))
+
+        # rebuild bigger pic from unique tile columns
+        for i,gtn in enumerate(group_tiles):
+            img_part = process_multi_tiled_sprite_single_column(gtn,full_tileset,h,w,height,width,flipx)
+            img.paste(img_part,(width*i,0))
+    else:
+        vert_group = vert_grouped_dict.get(tile_number)
+        if vert_group:
+            # sprite has a manually set vertical tile grouping
+            # allows to save 1 blit and 25% chip bandwidth on sprites that are only used together (wheel parts, body parts)
+            # also saves a lot of memory
+            group_tiles = [tile_number]+vert_group
+            img = Image.new("RGB",(width,height*len(group_tiles)))
+            # rebuild bigger pic from unique tile columns
+            for i,gtn in enumerate(group_tiles):
+                img_part = process_multi_tiled_sprite_single_column(gtn,full_tileset,h,w,height,width,flipx)
+                img.paste(img_part,(0,height*i))
+        else:
+            # not grouped, normal column grouping
+            img = process_multi_tiled_sprite_single_column(tile_number,full_tileset,h,w,height,width,flipx)
+    return img
+
+def process_multi_tiled_sprite_single_column(tile_number,full_tileset,h,w,height,width,flipx):
     side = 16
     x_start = 0
     y_start = 0
 
+    img = Image.new("RGB",(width,height))
     # quick hack because either wrong log or something else but fuck it
     # there aren't any sprites with h>4, this fixes Karnov sprites
     if h>4:
         h = 4
 
-    if w!=1 and h!=1:
-        print("multiwideeee!!!! ",tile_number)
 
     if h>1:
         for hi in range(h):
@@ -79,10 +113,13 @@ def process_multi_tiled_sprite(img,tile_number,full_tileset,h,w,flipx):
             tile_number += 1
             y_start += 1
     if w>1:
+        # doesn't happen in this game, we'll use side-grouping manually
         for hi in range(w):
             img.paste(full_tileset[tile_number],(side*x_start,side*y_start))
             tile_number += 1
             x_start += 1
+
+    return img
 
 # in that implementation, we have to provide a cluts dict as without it it would dump the whole set
 # of tiles/sprites and it's pretty huge in games like BadDudes or other "big" games.
@@ -145,15 +182,15 @@ def load_tileset(image_name,palette_index,side,tileset_name,cluts,name_dict=None
                 height *= h
                 width *= w
 
-            img = Image.new("RGB",(width,height))
             multi = False
 
             if attributes and (h!=1 or w!=1):
-                process_multi_tiled_sprite(img,tile_number,full_tileset,h,w,flipx)
+                img = process_multi_tiled_sprite(tile_number,full_tileset,h,w,height,width,flipx)
                 tileset_1[tile_number+0x1000] = img   # add the multi-sprite with a shifted position
                 multi = True
             else:
                 # simple case
+                img = Image.new("RGB",(width,height))
                 img.paste(tile_img)
                 tileset_1[tile_number] = img
             if dual:
@@ -450,9 +487,10 @@ def read_tileset(img_set_list,palette,cache,is_bob,generate_mask):
                                     generate_mask = bitplanelib.MASK_INVERTED
 
                             height = wtile.size[1]
-                            width = (wtile.size[0]//16)+2
+                            width = (wtile.size[0]//8)+2
                             if width % 2:
                                 width += 1   # not sure it will solve anything, rather make it differenly trashed...
+
                             bitplane_data = bitplanelib.palette_image2raw(wtile,None,palette,generate_mask=generate_mask,blit_pad=is_bob,mask_color=transparent)
                             if generate_mask:
                                 actual_nb_planes += 1

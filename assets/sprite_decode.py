@@ -745,13 +745,24 @@ def decode_sprite(offset):
 
     return sprite_codes,sprite_used_by_entry
 
-sprite_name_code = {}
-sprite_used_by_entry = {}
-for offset in assembled_sprites:
-    sprite_codes,sue = decode_sprite(offset)
-    sprite_name_code.update(sprite_codes)
-    sprite_used_by_entry.update(sue)
+if False:
+    sprite_name_code = {}
+    sprite_used_by_entry = {}
+    for offset in assembled_sprites:
+        sprite_codes,sue = decode_sprite(offset)
+        sprite_name_code.update(sprite_codes)
+        sprite_used_by_entry.update(sue)
 
-with open(os.path.join(this_dir,"sprite_code_names.json"),"w") as f:
-    json.dump({"codes_names":sprite_name_code,"sprite_used_by_entry":sprite_used_by_entry},f,indent=2)
+    with open(os.path.join(this_dir,"sprite_code_names.json"),"w") as f:
+        json.dump({"codes_names":sprite_name_code,"sprite_used_by_entry":sprite_used_by_entry},f,indent=2)
 #decode_sprite(0x52f8a)
+with open(os.path.join(this_dir,"sprite_code_names.json"),"r") as f:
+    sprite_used_by_entry = json.load(f)
+
+tile_used_by_block = collections.defaultdict(set)
+for k,vl in sprite_used_by_entry["sprite_used_by_entry"].items():
+    for v in vl:
+        tile_used_by_block[v].add(k)
+
+with open(os.path.join(this_dir,"tiles_used_by_block.json"),"w") as f:
+        json.dump({"tile_used_by_block":{k:list(v) for k,v in tile_used_by_block.items()},"tiles_used_once":[k for k,v in tile_used_by_block.items() if len(v)==1]},f,indent=2)

@@ -10,7 +10,24 @@ generated_src_dir = src_dir / "generated"
 sheets_path = this_dir / ".." / "sheets"
 dump_dir = this_dir / "dumps"
 
+used_sprite_cluts_file = this_dir / "used_sprite_cluts.json"
+used_tile_cluts_file = this_dir / "used_tile_cluts.json"
+used_graphics_dir = this_dir / "used_graphics"
+
 transparent = (255,0,255)
+
+def load_grouped_dicts():
+
+    # ATM manual lateral grouping of sprites (possibly already vertically grouped)
+    # those are manual, but with the help of frame decode (sprite_decode.py) which analyzes
+    # the whole set of game macro-objects
+    with open(this_dir / "macro_grouped_sprites.json") as f:
+        # load and convert to easily useable
+        gd = json.load(f)
+        side_grouped_dict,vert_grouped_dict = [{int(k,16):[int(c,16) for c in v]
+                        if isinstance(v,list) else [int(v,16)] for k,v in gd[x].items()}
+                        for x in ["horizontal","vertical"]]
+    return side_grouped_dict,vert_grouped_dict
 
 def asm2bin(source,dest):
     subprocess.run(["vasmm68k_mot","-nosym","-pic","-Fbin",source,"-o",dest],check=True,stdout=subprocess.DEVNULL)
