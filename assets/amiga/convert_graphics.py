@@ -64,7 +64,14 @@ if dump_it:
 def dump_asm_bytes(*args,**kwargs):
     bitplanelib.dump_asm_bytes(*args,**kwargs)
 
-def process_multi_tiled_sprite(tile_number,full_tileset,h,w,height,width,flipx):
+def process_sprite(tile_number,full_tileset,height,width):
+    img = Image.new("RGB",(width,height))
+    # simple case when there are 2 different sizes used for that sprite
+    img.paste(full_tileset[tile_number])
+    return img
+
+
+def process_multi_tiled_sprite(tile_number,full_tileset,h,w,height,width):
     side_group = side_grouped_dict.get(tile_number)
     if side_group:
         # sprite has a manually set lateral/side tile grouping
@@ -76,7 +83,7 @@ def process_multi_tiled_sprite(tile_number,full_tileset,h,w,height,width,flipx):
 
         # rebuild bigger pic from unique tile columns
         for i,gtn in enumerate(group_tiles):
-            img_part = process_multi_tiled_sprite_single_column(gtn,full_tileset,h,w,height,width,flipx)
+            img_part = process_multi_tiled_sprite_single_column(gtn,full_tileset,h,w,height,width)
             img.paste(img_part,(width*i,0))
     else:
         vert_group = vert_grouped_dict.get(tile_number)
@@ -88,14 +95,14 @@ def process_multi_tiled_sprite(tile_number,full_tileset,h,w,height,width,flipx):
             img = Image.new("RGB",(width,height*len(group_tiles)))
             # rebuild bigger pic from unique tile columns
             for i,gtn in enumerate(group_tiles):
-                img_part = process_multi_tiled_sprite_single_column(gtn,full_tileset,h,w,height,width,flipx)
+                img_part = process_multi_tiled_sprite_single_column(gtn,full_tileset,h,w,height,width)
                 img.paste(img_part,(0,height*i))
         else:
             # not grouped, normal column grouping
-            img = process_multi_tiled_sprite_single_column(tile_number,full_tileset,h,w,height,width,flipx)
+            img = process_multi_tiled_sprite_single_column(tile_number,full_tileset,h,w,height,width)
     return img
 
-def process_multi_tiled_sprite_single_column(tile_number,full_tileset,h,w,height,width,flipx):
+def process_multi_tiled_sprite_single_column(tile_number,full_tileset,h,w,height,width):
     side = 16
     x_start = 0
     y_start = 0
@@ -185,19 +192,15 @@ def load_tileset(image_name,palette_index,side,tileset_name,cluts,name_dict=None
             multi = False
 
             if attributes and (h!=1 or w!=1):
-                img = process_multi_tiled_sprite(tile_number,full_tileset,h,w,height,width,flipx)
+                img = process_multi_tiled_sprite(tile_number,full_tileset,h,w,height,width)
                 tileset_1[tile_number+0x1000] = img   # add the multi-sprite with a shifted position
                 multi = True
             else:
                 # simple case
-                img = Image.new("RGB",(width,height))
-                img.paste(tile_img)
-                tileset_1[tile_number] = img
+                tileset_1[tile_number] = process_sprite(tile_number,full_tileset,height,width)
             if dual:
-                img = Image.new("RGB",(side,side))
-                # simple case when there are 2 different sizes used for that sprite
-                img.paste(tile_img)
-                tileset_1[tile_number] = img
+                # repeat for simple
+                tileset_1[tile_number] = process_sprite(tile_number,full_tileset,height,width)
 
 
             if dump_it:

@@ -2730,7 +2730,7 @@ draw_bob_loop:
 10:
 	add.w	x_background_scroll_value(pc),d0
 	jpl		0f
-	cmp.w	#0xFFF0,d0
+	cmp.w	#0xFFE0,d0
 	jcs		30f		| too negative: no can do (slightly negative works)	
 0:
 	move.l	a0,-(a7)
@@ -2754,7 +2754,15 @@ draw_bob_loop:
 	move.w	(a0)+,d4		| height
 	move.w	(a0)+,d5		| width
 	add.w	(a0)+,d1		| add offset to Y
+
+	tst.b	d3
+	jeq		0f
+	* X flip
+	lea	x_correction_table(pc),a1
 	
+	* wider than 16 bits means grouped sprite: we have to change X
+	sub.w	(a1,d5.w),d0
+0:
 	add.w	y_background_scroll_value(pc),d1
 	* TODO maybe some Y-clipping to do.... in Y scrollable levels
 	
@@ -2762,7 +2770,7 @@ draw_bob_loop:
 	tst.b	d6
 	jne		0f			| pre-computed, no need to check/perform mirroring
 
-	jbsr	mirror_planes
+	jbsr	mirror_sprite_planes
 0:
 	btst	#14,d2
 	jeq		0f
@@ -2802,7 +2810,7 @@ draw_bob_loop:
 * < D5: width (bytes)
 * trashes: only unused registers :)
 
-mirror_planes:
+mirror_sprite_planes:
 	movem.l	d0-d2/d5/a0,-(a7)
 	* bitplanes aren't pre-computed: check bitplanes current orientation and swap
 	* if required. This is slow but saves memory
@@ -2821,41 +2829,90 @@ mirror_planes:
 	subq	#1,d1		| minus one for dbf
 11:
 	move.w	d5,d0       | number of byte values (4: 16 bits + shifting)
-	cmp.w	#4,d0		| most common: will be faster
-	jeq		13f
-	* 32->64 bits
-	* note that 32 bits + shifting still amounts to 1 iteration (D0=0 for loop)
-	lea		(a2,d0.w),a3	| position ourselves at the end
-	subq	#2,d0			| remove shift word (at zero)
-	lsr.w	#2,d0			| divide by 4: meet at half
-	subq	#1,d0			| minus one for dbf
-10:
-	move.w	(a2)+,d2
-	move.w	(a1,d2.l*2),-(a3)		| get mirror value
-12:
-	dbf		d0,10b
-	addq	#2,a2					| skip shift zero pad
-	dbf		d1,11b
-1:
+	lea		mirror_function_table(pc),a3
+	jsr		([a3,d0.w*2])
 	* next bitplane
+1:
 	dbf		d6,0b
 	movem.l	(a7)+,d0-d2/d5/a0
 	rts
-	* 16-bit wide: much faster, and common
-13:
+	
+mirror_16_bit_wide:
 	move.w	(a2)+,d2
 	jeq		14f					| zero: optim
 	move.w	(a1,d2.l*2),(-2,a2)
 14:
 	addq	#2,a2					    | skip zero pad
-	dbf		d1,13b						| next
-	jra		1b
+	dbf		d1,mirror_16_bit_wide		| next
+	rts
+
+mirror_32_bit_wide:	
+	moveq	#0,d0
+10:
+	move.w	(a2)+,d2
+	move.w	(a2),d0	
+	move.w	(a1,d2.l*2),(a2)		| get mirror value
+	move.w	(a1,d0.l*2),-(a2)		| get mirror value
+	addq	#6,a2					| skip row
+	dbf		d1,10b
+	rts
+
+mirror_48_bit_wide:
+	moveq	#0,d0
+10:
+	move.w	(a2),d2
+	move.w	(4,a2),d0
+	* edges
+	move.w	(a1,d2.l*2),(4,a2)		| get mirror value
+	move.w	(a1,d0.l*2),(a2)+		| get mirror value
+	* center
+	move.w	(a2),d2
+	move.w	(a1,d2.l*2),(a2)
+	addq	#6,a2					| skip row
+	dbf		d1,10b
+	rts
+
+* this is !untested!
+mirror_64_bit_wide:
+	moveq	#0,d0
+10:
+	move.w	(a2),d2
+	move.w	(6,a2),d0
+	* swap edges
+	move.w	(a1,d2.l*2),(6,a2)		| get mirror value
+	move.w	(a1,d0.l*2),(a2)+		| get mirror value
+	* swap center words
+	move.w	(a2)+,d2
+	move.w	(a2),d0
+	move.w	(a1,d2.l*2),(a2)
+	move.w	(a1,d0.l*2),-(a2)
+	addq	#8,a2					| skip row
+	dbf		d1,10b
+	rts
 	
+mirror_function_table:
+	.long	nope
+	.long	nope
+	.long	mirror_16_bit_wide
+	.long	mirror_32_bit_wide
+	.long	mirror_48_bit_wide
+	.long	mirror_64_bit_wide
+
 y_correction_table:
 	.word	0
 	.word	16
 	.word	48
 	.word	48
+
+* how much must we subtract given the blit width
+* when x-flip is on, knowing that we have artificially
+* grouped the sprites
+x_correction_table:
+	.word	0	| not reached
+	.word	0	| 16 bits no correction
+	.word	16	| 32 bits
+	.word	32	| 48 bits
+	.word	48	| 64 bits
 	
 * < A5: custom
 * < D0,D1: x,y
@@ -5992,11 +6049,13 @@ chip_memory_block:
 fg_screen_buffer_2:
 	.ifne  OPT_ENABLE_DOUBLE_BUFFERING
 	.skip	ONE_FULL_16_BIT_ROW
+	.skip	ONE_FULL_16_BIT_ROW
 	.skip	SCREEN_SIZE
 	.skip	NB_BYTES_PER_ROW*12*3
 	.skip	8
 	.endif	
 fg_screen_buffer_1:
+	.skip	ONE_FULL_16_BIT_ROW
 	.skip	ONE_FULL_16_BIT_ROW
 	.skip	SCREEN_SIZE
 	.skip	NB_BYTES_PER_ROW*12*3
