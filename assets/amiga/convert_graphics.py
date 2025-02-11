@@ -64,6 +64,20 @@ if dump_it:
 def dump_asm_bytes(*args,**kwargs):
     bitplanelib.dump_asm_bytes(*args,**kwargs)
 
+def process_single_tiled_sprite(tile_number,full_tileset,height,width):
+    side_group = side_grouped_dict.get(tile_number)
+    if side_group:
+        group_tiles = [tile_number]+side_group
+        img = Image.new("RGB",(width*len(group_tiles),height))
+        # rebuild bigger pic from unique tile columns
+        for i,gtn in enumerate(group_tiles):
+            img_part = process_sprite(gtn,full_tileset,height,width)
+            img.paste(img_part,(width*i,0))
+
+    else:
+        img = process_sprite(tile_number,full_tileset,height,width)
+    return img
+
 def process_sprite(tile_number,full_tileset,height,width):
     img = Image.new("RGB",(width,height))
     # simple case when there are 2 different sizes used for that sprite
@@ -197,10 +211,10 @@ def load_tileset(image_name,palette_index,side,tileset_name,cluts,name_dict=None
                 multi = True
             else:
                 # simple case
-                tileset_1[tile_number] = process_sprite(tile_number,full_tileset,height,width)
+                tileset_1[tile_number] = process_single_tiled_sprite(tile_number,full_tileset,side,side)
             if dual:
                 # repeat for simple
-                tileset_1[tile_number] = process_sprite(tile_number,full_tileset,height,width)
+                tileset_1[tile_number] = process_single_tiled_sprite(tile_number,full_tileset,side,side)
 
 
             if dump_it:
