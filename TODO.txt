@@ -1,12 +1,9 @@
 - priority of sprites: https://eab.abime.net/showthread.php?p=1731201#post1731201
 
-- level 4 too dull up to 32 colors
-- crash in level 4 (randomly) graphics of trees trashed (tile 0x320)
+- level 4 too dull up to 32 colors, now should really reuse grays for sprites (gray ninja)
 - level 2 ninjas climbing bad grouping
-- spidermen not moving (level 2, level 4)
 - check symmetry for 64 bit wide
-- reloc issue on spidermen (level 4): not moving when relocated, seem ok not relocated
-- 
+
 - level 3: water scroll tiles wrong placement, maybe quadrant shit is different than
   for other mode??? dump 24A000 memory on second write to 246010 MAME/amiga and compare
 - level 3: put water scroll in some other buffer (allocate one?) so changing plans automatically

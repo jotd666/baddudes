@@ -144,7 +144,7 @@ def process_multi_tiled_sprite_single_column(tile_number,full_tileset,h,w,height
 
 # in that implementation, we have to provide a cluts dict as without it it would dump the whole set
 # of tiles/sprites and it's pretty huge in games like BadDudes or other "big" games.
-def load_tileset(image_name,palette_index,side,tileset_name,cluts,name_dict=None,postload_callback=None):
+def load_tileset(image_name,palette_index,side,tileset_name,cluts,name_dict=None,postload_callback=None,is_bob=False):
     if isinstance(image_name,(str,pathlib.Path)):
         full_image_path = os.path.join(this_dir,os.path.pardir,"sheets",image_name)
         tiles_1 = Image.open(full_image_path)
@@ -211,9 +211,13 @@ def load_tileset(image_name,palette_index,side,tileset_name,cluts,name_dict=None
                 multi = True
             else:
                 # simple case
-                tileset_1[tile_number] = process_single_tiled_sprite(tile_number,full_tileset,side,side)
+                if is_bob:
+                    tileset_1[tile_number] = process_single_tiled_sprite(tile_number,full_tileset,side,side)
+                else:
+                    # simple tile, not a bob, we don't want grouping!!
+                    tileset_1[tile_number] = process_sprite(tile_number,full_tileset,side,side)
             if dual:
-                # repeat for simple
+                # repeat for simple (only for bobs)
                 tileset_1[tile_number] = process_single_tiled_sprite(tile_number,full_tileset,side,side)
 
 
@@ -382,7 +386,7 @@ def load_contexted_tileset(tile_sheet_dict,context,nb_colors,is_bob):
     for i in range(16):
         tsd = tile_sheet_dict.get(i)
         if tsd:
-            tp,tile_set = load_tileset(tsd,i,16,context_dir,cluts=used_cluts_dict[context])
+            tp,tile_set = load_tileset(tsd,i,16,context_dir,cluts=used_cluts_dict[context],is_bob=is_bob)
             tile_24a000_set_list.append(tile_set)
             tile_palette.update(tp)
         else:
