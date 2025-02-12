@@ -745,7 +745,7 @@ def decode_sprite(offset):
 
     return sprite_codes,sprite_used_by_entry
 
-if False:
+if True:
     sprite_name_code = {}
     sprite_used_by_entry = {}
     for offset in assembled_sprites:

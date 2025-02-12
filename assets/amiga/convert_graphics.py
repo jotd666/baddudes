@@ -779,6 +779,6 @@ if generate_for_levels[3]:
     process_tile_context("level_3_24a000",level_3_tile_24a000_sheet_dict,16,first_pass=False)
     process_tile_context("game_level_3",sprite_sheet_dict,48,is_bob=True,shift_palette_count=16)
 if generate_for_levels[4]:
-    process_tile_context("level_4_24a000",level_4_tile_24a000_sheet_dict,16,first_pass=False)
-    process_tile_context("game_level_4",sprite_sheet_dict,48,is_bob=True,shift_palette_count=16)
+    process_tile_context("level_4_24a000",level_4_tile_24a000_sheet_dict,32,first_pass=False)
+    process_tile_context("game_level_4",sprite_sheet_dict,32,is_bob=True,shift_palette_count=32)
 

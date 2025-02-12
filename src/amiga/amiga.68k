@@ -2858,6 +2858,7 @@ mirror_32_bit_wide:
 	rts
 
 mirror_48_bit_wide:
+
 	moveq	#0,d0
 10:
 	move.w	(a2),d2
@@ -2874,6 +2875,7 @@ mirror_48_bit_wide:
 
 * this is !untested!
 mirror_64_bit_wide:
+	
 	moveq	#0,d0
 10:
 	move.w	(a2),d2
@@ -2908,6 +2910,7 @@ y_correction_table:
 * when x-flip is on, knowing that we have artificially
 * grouped the sprites
 x_correction_table:
+	.word	0	| not reached
 	.word	0	| not reached
 	.word	0	| 16 bits no correction
 	.word	16	| 32 bits
