@@ -1235,7 +1235,7 @@ palette_and_sprites_ram_op:
 	move.l	a0,-(a7)
 	* boss 2 color change? could be
 	move.l	rom_base,a0
-	add.w	#0x117C,a0
+	add.w	#0x117C+2,a0		| a1 is post-incremented
 	cmp.l	a0,a1
 	jne		0f
 	* writing to palette with 117C as source: boss 2 colors
@@ -5056,7 +5056,7 @@ level_2_load:
 	
 	jbsr 	load_level_sprite_file
 	
-	lea		front_objects_1_file,a0
+	lea		front_objects_2_file,a0
 	jbsr	load_front_objects_file
 
 	* load & relocate truck pics

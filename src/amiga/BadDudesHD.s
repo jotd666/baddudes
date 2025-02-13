@@ -64,7 +64,7 @@ _data   dc.b    "data",0
 _name	dc.b	'Bad Dudes vs Dragonninja',0
 _copy	dc.b	'2025 JOTD',0
 _info
-    *dc.b    "Music by no9",0
+    dc.b    "Music by no9",0
 	dc.b	0
 _kickname   dc.b    0
 ;--- version id

@@ -837,6 +837,20 @@ videoram_write_021e8:
 	RESTORE_REGS
 	RTS				
 
+videoram_write_0891c:
+	STORE_REGS
+	exg		a6,a3
+	exg		d1,d7
+	WRITE_WORD_AND_PLUS		| 0819c: 36c1
+	MOVE.B	3(A1),D1		| 0819e: 12290003
+	ANDI.W	#0xf,D1		| 081a2: 0241000f
+	ADDI.W	#0x30,D1		| 081a6: 06410030
+	jbsr	osd_write_word	| 081aa: 3681
+	exg		a6,a3
+	exg		d1,d7
+	RESTORE_REGS
+	RTS						| 081ac: 4e75
+	
 videoram_write_06dea:
 videoram_write_06da6:
 videoram_write_06c82:

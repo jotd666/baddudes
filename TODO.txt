@@ -1,11 +1,10 @@
-- debug key to dump tiles & sprites in a file in "data", remove all zero page markers
 - priority of sprites: https://eab.abime.net/showthread.php?p=1731201#post1731201
 
 - level 4 too dull up to 32 colors, now should really reuse grays for sprites (gray ninja)
  => tiles don't use all 32 colors, tile processing should return the number of colors really
     used so the sprites can use the first spare colors
-- level 3: quantize seems to quantize up to 15 colors not 16. 1 color wasted
 
+- level 7 should set an offset for vertical scrolling
 - level 2 ninjas climbing bad grouping
 - check symmetry for 64 bit wide
 
@@ -21,8 +20,8 @@
 - optim: group erase on 16 (working) or 32 bit wide blocks
 
 - remove BB9 BB8 BBA BBB (glasses) from log (old artifact)
-- level 2 missing frames player attacking with dagger check again? also player flames
-- level 2 front object (lamp) not displaying (used to work)
+- level 2 missing frames player attacking with dagger
+- level 2 front object (lamp) not displaying (used to work with level 1 objects)
 - truck blit erase issue (front of truck), truck right clip part too soon
  
 - karnov feet erase issue, doesn't seem to be erased (also true for jumping ninjas) probably
@@ -51,6 +50,7 @@
   background refresh. Truck: bottom (wheels) + part between front & tow & exhaust pipe. 
   Rest: not needed. same for big truck & train, with inter-tow: in progress
 
+- level 3: quantize seems to quantize up to 15 colors not 16. 1 color wasted
   
 - use wrap for vertical scrolling (level 7)?? or just make display faded black until
   scroll is right again

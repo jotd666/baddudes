@@ -2726,6 +2726,7 @@ patchlist:
 	PL_W	0x008704,20032
 	PL_W	0x008746,20032
 	PL_PS	0x008848,videoram_write_08848
+	PL_P	0x00891c,videoram_write_0891c
 	PL_W	0x009232,20032
 	PL_W	0x00924a,20032
 	PL_PSS	0x00924e,write_word_imm_0000_to_0030c010,2
