@@ -837,6 +837,8 @@ videoram_write_021e8:
 	RESTORE_REGS
 	RTS				
 
+videoram_write_06dea:
+videoram_write_06da6:
 videoram_write_06c82:
 	STORE_REGS
 	exg		a6,a0

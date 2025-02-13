@@ -1,14 +1,19 @@
-import os,pathlib
+import os,pathlib,shutil
+
+this_dir = pathlib.Path(__file__).absolute().parent
 
 reference_for_bad_dudes = "game_level_1"
 
-used_name = "game_level_4"
+used_name = "game_level_5"
 
 merged_path_file = pathlib.Path("sprites")
 # first 512 tiles are the player tiles. Game level 1 has all the moves, so we have to propagate those to
 # all other levels. 512*16=8192 first bytes must be copied from level 1 logs
 
-used_dump = os.path.join(r"C:\Users\Public\Documents\Amiga Files\WinUAE",used_name)
+data_dir = this_dir / ".." / ".."/ ".."/"data"
+
+# merge sprites with existing file + moves from level 1
+used_dump = data_dir / used_name
 
 with open(merged_path_file / reference_for_bad_dudes,"rb") as f:
     dude_contents_ref = f.read(8192)     # bad dudes marked as used tiles+cluts
@@ -42,3 +47,11 @@ if old_contents == contents:
 else:
     with open(merged_path_file / used_name,"wb") as f:
         f.write(contents)
+
+# move tiles
+for file in data_dir.glob("level_?_24?000"):
+    print(f"importing {file}")
+    dest = this_dir / "tiles" / file.stem
+
+    dest.unlink(missing_ok=True)
+    shutil.move(file,dest)

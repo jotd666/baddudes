@@ -1964,7 +1964,6 @@ addr_24Axxx_tile_layer_op:
 	jcc		0f
 	lea		tile_log_table_24a000,a2
 	move.l 	#video_ram_24a000,0xC
-	move.l	a2,0x8		| store address in zero page
 	move.w	d6,-(a7)
 	lsl.w	#4,d6		| 16 cluts
 	add.w	d5,d6		| clut offset
@@ -2622,7 +2621,6 @@ draw_bob_loop:
 
 	.ifne	OPT_ENABLE_LOGGING
 	lea		sprite_log_table_ffc000,a2
-	move.l	a2,0x24		| store address in zero page
 	movem.w	d1/d2/d4,-(a7)
 	lsl.w	#4,d2		| 16 cluts
 	add.w	d3,d2		| clut offset
@@ -4425,6 +4423,13 @@ handle_keyboard:
 	* 'D': debug scrolling display on/off
 	eor.b	#1,debug_scroll_display
 0:
+	.ifne	OPT_ENABLE_LOGGING
+	cmp.b	#17,d0
+	bne		0f
+	* 'W' (from QWER..): dump all logging buffers to data dir
+	jbsr	dump_logs
+0:
+	.endif
 	cmp.b	#20,d0
 	bne		0f
 	* 'T': toggle truck manual control on/off
@@ -5105,13 +5110,25 @@ level_4_load:
 	jbsr 	load_level_sprite_file
 	move.l	tiles_palette_24a000,a0		| palette
 	jbsr	load_tiles_palette
+
+	move.b	#0xC,road_y_pos
+	jbsr	enable_bottom_scroll
+
 	rts
-level_5_load:	
+level_5_load:
+	lea		tiles_level_5_24a000_file,a0
+	jbsr	load_tiles_file_24a000
 	jbsr 	load_level_sprite_file
-level_6_load:	
-	jbsr 	load_level_sprite_file
+	move.l	tiles_palette_24a000,a0		| palette
+	jbsr	load_tiles_palette
+	rts
+	
+level_6_load:
+	*jbsr 	load_level_sprite_file
+	rts
+	
 level_7_load:
-	jbsr 	load_level_sprite_file
+	*jbsr 	load_level_sprite_file
 	rts
 	
 * inefficient but rarely called algorithm to search a color
@@ -5428,6 +5445,51 @@ osd_sound_start:
 	
 6:
 	jra	10b
+	.ifne	OPT_ENABLE_LOGGING
+dump_logs:
+	movem.l	d0-a6,-(a7)
+	move.l	_resload(pc),a2
+	lea		sprite_log_table_ffc000,a1
+	lea		sprite_log_name(pc),a0
+	lea		sprite_log_name_index(pc),a3
+	move.l	#0x10000,d1
+	jbsr	dump_log
+ 	lea		tile_log_table_24a000,a1
+	lea		tile_24a000_log_name(pc),a0
+	lea		tile_24a000_log_name_index(pc),a3
+	move.l	#0x8000,d1
+	jbsr	dump_log
+ 	lea		tile_log_table_24d000,a1
+	lea		tile_24d000_log_name(pc),a0
+	lea		tile_24d000_log_name_index(pc),a3
+	move.l	#0x8000,d1
+	jbsr	dump_log
+    movem.l (a7)+,d0-a6
+	rts
+	
+dump_log:
+	jbsr	get_current_level
+	add.b	#0x30,d0
+	move.b	d0,(a3)
+	move.l	d1,d0
+	jbsr	resload_SaveFile(a2)
+	rts
+	
+tile_24a000_log_name:
+	.ascii	"level_"
+tile_24a000_log_name_index:
+	.asciz	"1_24a000"
+tile_24d000_log_name:
+	.ascii	"level_"
+tile_24d000_log_name_index:
+	.asciz	"1_24d000"
+	
+sprite_log_name:
+	.ascii	"game_level_"
+sprite_log_name_index:
+	.asciz	"1"
+	.align	2
+	.endif
 
 	
 
@@ -5678,6 +5740,14 @@ tiles_level_3_24a000_file:
 	.asciz	"tiles_level_3_24a000.bin"
 tiles_level_4_24a000_file:
 	.asciz	"tiles_level_4_24a000.bin"
+tiles_level_5_24a000_file:
+	.asciz	"tiles_level_5_24a000.bin"
+tiles_level_5_24d000_file:
+	.asciz	"tiles_level_5_24d000.bin"
+tiles_level_6_24a000_file:
+	.asciz	"tiles_level_6_24a000.bin"
+tiles_level_7_24a000_file:
+	.asciz	"tiles_level_7_24a000.bin"
 dudes_pics_files:
 	.asciz	"dudes.bin"
 rom_file:

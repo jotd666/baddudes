@@ -2628,6 +2628,8 @@ patchlist:
 	PL_PSS	0x006cf6,write_word_imm_0004_to_00246016,2
 	PL_PS	0x006d36,write_word_D4_to_0024841c
 	PL_PS	0x006d3c,write_word_D4_to_0024841e
+	PL_PSS	0x006da6,videoram_write_06da6,12
+	PL_PSS	0x006dea,videoram_write_06dea,12
 	PL_PLEAR_0	0x006e68,0x6e76
 	PL_PSR	0x006e96,0x6fb0
 	PL_PSR	0x006eb0,0x6f88

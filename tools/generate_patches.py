@@ -267,6 +267,8 @@ add_p("copy_to_tile_0_01fa2")
 add_p("display_lives_0e122")
 add_ps("write_to_tile_0_083ac")
 #add_ps("videoram_write_0e3ba")   # not necessary, as MCU check is now disabled
+add_pss("videoram_write_06dea",fill=0xC)
+add_pss("videoram_write_06da6",fill=0xC)
 add_pss("videoram_write_06c82",fill=0xC)
 add_pss("write_to_tiles_0e30e",fill=4)
 add_s(0x083ac+6,0x083c6)

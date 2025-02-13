@@ -1,6 +1,11 @@
+- debug key to dump tiles & sprites in a file in "data", remove all zero page markers
 - priority of sprites: https://eab.abime.net/showthread.php?p=1731201#post1731201
 
 - level 4 too dull up to 32 colors, now should really reuse grays for sprites (gray ninja)
+ => tiles don't use all 32 colors, tile processing should return the number of colors really
+    used so the sprites can use the first spare colors
+- level 3: quantize seems to quantize up to 15 colors not 16. 1 color wasted
+
 - level 2 ninjas climbing bad grouping
 - check symmetry for 64 bit wide
 

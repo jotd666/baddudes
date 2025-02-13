@@ -7,8 +7,10 @@ import convert_dudes_pics
 import convert_truck_pics
 import convert_front_objects
 
+import extract_used_tiles
 import extract_used_sprites
 
+extract_used_tiles.doit()
 extract_used_sprites.doit()
 convert_dudes_pics.doit()
 
@@ -373,6 +375,9 @@ level_2_tile_24a000_sheet_dict = {i:sheets_path / "tiles_24a000" / "level_2" / f
 level_3_tile_24a000_sheet_dict = {i:sheets_path / "tiles_24a000" / "level_3" / f"pal_{i:02x}.png" for i in range(13,16)}
 level_3_tile_24d000_sheet_dict = {i:sheets_path / "tiles_24d000" / "level_3" / f"pal_{i:02x}.png" for i in range(9)}
 level_4_tile_24a000_sheet_dict = {i:sheets_path / "tiles_24a000" / "level_4" / f"pal_{i:02x}.png" for i in range(0,16)}
+level_5_tile_24a000_sheet_dict = {i:sheets_path / "tiles_24a000" / "level_5" / f"pal_{i:02x}.png" for i in range(0,16)}
+level_6_tile_24a000_sheet_dict = {i:sheets_path / "tiles_24a000" / "level_6" / f"pal_{i:02x}.png" for i in range(0,16)}
+level_7_tile_24a000_sheet_dict = {i:sheets_path / "tiles_24a000" / "level_7" / f"pal_{i:02x}.png" for i in range(0,16)}
 tile_0_sheet_dict = {i:sheets_path / "tiles_244000" / f"pal_{i:02x}.png" for i in range(15)}
 sprite_sheet_dict = {i:sheets_path / "sprites" / f"pal_{i:02x}.png" for i in range(16)}
 
@@ -748,7 +753,8 @@ generate_for_levels = [False]*8
 #generate_for_levels[1] = True
 #generate_for_levels[2] = True
 #generate_for_levels[3] = True
-generate_for_levels[4] = True
+#generate_for_levels[4] = True
+generate_for_levels[5] = True
 # set to "False" for faster operation when working on game sprite/tiles
 if generate_for_levels[0]:  # title/intro é game fonts
 
@@ -785,4 +791,7 @@ if generate_for_levels[3]:
 if generate_for_levels[4]:
     process_tile_context("level_4_24a000",level_4_tile_24a000_sheet_dict,32,first_pass=False)
     process_tile_context("game_level_4",sprite_sheet_dict,32,is_bob=True,shift_palette_count=32)
+if generate_for_levels[5]:
+    process_tile_context("level_5_24a000",level_5_tile_24a000_sheet_dict,16,first_pass=False)
+    process_tile_context("game_level_5",sprite_sheet_dict,48,is_bob=True,shift_palette_count=16)
 
