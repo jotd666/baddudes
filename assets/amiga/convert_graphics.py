@@ -754,7 +754,7 @@ generate_for_levels = [False]*8
 #generate_for_levels[2] = True
 #generate_for_levels[3] = True
 #generate_for_levels[4] = True
-generate_for_levels[5] = True
+generate_for_levels[6] = True
 # set to "False" for faster operation when working on game sprite/tiles
 if generate_for_levels[0]:  # title/intro é game fonts
 
@@ -794,4 +794,12 @@ if generate_for_levels[4]:
 if generate_for_levels[5]:
     process_tile_context("level_5_24a000",level_5_tile_24a000_sheet_dict,16,first_pass=False)
     process_tile_context("game_level_5",sprite_sheet_dict,48,is_bob=True,shift_palette_count=16)
+
+if generate_for_levels[6]:
+    process_tile_context("level_6_24a000",level_6_tile_24a000_sheet_dict,16,first_pass=False)
+    process_tile_context("game_level_6",sprite_sheet_dict,48,is_bob=True,shift_palette_count=16)
+
+if generate_for_levels[7]:
+    process_tile_context("level_7_24a000",level_7_tile_24a000_sheet_dict,16,first_pass=False)
+    process_tile_context("game_level_7",sprite_sheet_dict,48,is_bob=True,shift_palette_count=16)
 

@@ -3995,8 +3995,8 @@ scroll_x_24d000_table:
 	.long	scroll_background_x
 	.long	nope
 	.long	move_train
-	.long	0
-	.long	0
+	.long	nope
+	.long	nope
 
 	
 scroll_x_24a000_table:
@@ -4005,7 +4005,7 @@ scroll_x_24a000_table:
 	.long	nope
 	.long	scroll_background_x
 	.long	scroll_background_x
-	.long	0
+	.long	scroll_background_x
 	.long	scroll_background_x
 	
 move_ninjas_truck:
@@ -5124,11 +5124,19 @@ level_5_load:
 	rts
 	
 level_6_load:
-	*jbsr 	load_level_sprite_file
+	lea		tiles_level_6_24a000_file,a0
+	jbsr	load_tiles_file_24a000
+	jbsr 	load_level_sprite_file
+	move.l	tiles_palette_24a000,a0		| palette
+	jbsr	load_tiles_palette
 	rts
 	
 level_7_load:
-	*jbsr 	load_level_sprite_file
+	lea		tiles_level_7_24a000_file,a0
+	jbsr	load_tiles_file_24a000
+	jbsr 	load_level_sprite_file
+	move.l	tiles_palette_24a000,a0		| palette
+	jbsr	load_tiles_palette
 	rts
 	
 * inefficient but rarely called algorithm to search a color
