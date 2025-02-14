@@ -3,7 +3,7 @@ import os,sys,bitplanelib,subprocess,json,pathlib
 
 from shared import *
 
-empty_plane_workaround = False
+empty_plane_workaround = True
 
 def doit(global_palette,name,y_start,level_1_bar,exhaust_height,width,height,wheels_height,y_pos,forced_nb_planes):
     asm_out = generated_src_dir / f"{name}.68k"

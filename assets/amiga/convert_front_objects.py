@@ -4,10 +4,7 @@ import os,sys,bitplanelib,json,pathlib
 from shared import *
 
 dump_subdir = dump_dir / "front_objects"
-dump_it = True
 
-if dump_it:
-    ensure_empty(dump_subdir)
 
 def gen_data_file(asm_out,fo_bin,palette,objects):
     with open(asm_out,"w") as f:
@@ -36,59 +33,60 @@ object_{k}_{j}:""")
 
     asm2bin(asm_out,fo_bin)
 
-def doit_level_1(force=False):
+def doit_level_1(dump_it=False):
     asm_out = generated_src_dir / "front_objects_1.68k"
     fo_bin = data_dir / "front_objects_1.bin"
-    if force or not fo_bin.exists():
-        img = Image.open(whole_pics_dir / "front_objects_1.png")
-        img = img.quantize(16,dither=0)
 
-        palette = bitplanelib.palette_extract(img)
-        transparent_first(palette,transparent)
+    img = Image.open(whole_pics_dir / "front_objects_1.png")
+    img = img.quantize(16,dither=0)
 
-        meter = Image.new("RGB",(64,48))  # 16 is enough
-        meter.paste(img,(-56,-176))
-        lamp_1 = Image.new("RGB",(64,184))   # 16 is enough
-        lamp_1.paste(img,(-376,-40))
-        lamp_2 = Image.new("RGB",lamp_1.size)
-        lamp_2.paste(img,(-628,-40))
-        hydrant = Image.new("RGB",(64,32))   # 16 is enough
-        hydrant.paste(img,(-952,-192))
+    palette = bitplanelib.palette_extract(img)
+    transparent_first(palette,transparent)
 
-        objects = {"meter":meter,"lamp_1":lamp_1,"lamp_2":lamp_2,"hydrant":hydrant}
+    meter = Image.new("RGB",(64,48))  # 16 is enough
+    meter.paste(img,(-56,-176))
+    lamp_1 = Image.new("RGB",(64,184))   # 16 is enough
+    lamp_1.paste(img,(-376,-40))
+    lamp_2 = Image.new("RGB",lamp_1.size)
+    lamp_2.paste(img,(-628,-40))
+    hydrant = Image.new("RGB",(64,32))   # 16 is enough
+    hydrant.paste(img,(-952,-192))
 
-        if dump_it:
-            img.save(dump_subdir / "front_objects_1_16.png")
-            meter.save(dump_subdir / "meter.png")
-            lamp_1.save(dump_subdir / "lamp_1.png")
-            lamp_2.save(dump_subdir / "lamp_2.png")
-            hydrant.save(dump_subdir / "hydrant.png")
+    objects = {"meter":meter,"lamp_1":lamp_1,"lamp_2":lamp_2,"hydrant":hydrant}
 
-        gen_data_file(asm_out,fo_bin,palette,objects)
+    if dump_it:
+        ensure_exists(dump_subdir)
+        img.save(dump_subdir / "front_objects_1_16.png")
+        meter.save(dump_subdir / "meter.png")
+        lamp_1.save(dump_subdir / "lamp_1.png")
+        lamp_2.save(dump_subdir / "lamp_2.png")
+        hydrant.save(dump_subdir / "hydrant.png")
 
-def doit_level_2(force=False):
+    gen_data_file(asm_out,fo_bin,palette,objects)
+
+def doit_level_2(dump_it=False):
     # level 2
     asm_out = generated_src_dir / "front_objects_2.68k"
     fo_bin = data_dir / "front_objects_2.bin"
-    if force or not fo_bin.exists():
-        img = Image.open(whole_pics_dir / "front_objects_2.png")
-        #img = img.quantize(16,dither=0)
-        palette = bitplanelib.palette_extract(img)
-        transparent_first(palette,transparent)
-        palette_pad(palette,16)
 
-        lamp_1 = Image.new("RGB",(64,184))   # 16 is enough
-        lamp_1.paste(img,(-96-8,-40))
+    img = Image.open(whole_pics_dir / "front_objects_2.png")
+    #img = img.quantize(16,dither=0)
+    palette = bitplanelib.palette_extract(img)
+    transparent_first(palette,transparent)
+    palette_pad(palette,16)
 
-        objects = {"lamp_3":lamp_1}
+    lamp_1 = Image.new("RGB",(64,184))   # 16 is enough
+    lamp_1.paste(img,(-96-8,-40))
 
-        if dump_it:
-            #img.save(dump_subdir / "front_objects_2_16.png")
-            lamp_1.save(dump_subdir / "lamp_3.png")
+    objects = {"lamp_3":lamp_1}
 
-        gen_data_file(asm_out,fo_bin,palette,objects)
+    if dump_it:
+        ensure_exists(dump_subdir)
+        lamp_1.save(dump_subdir / "lamp_3.png")
+
+    gen_data_file(asm_out,fo_bin,palette,objects)
 
 if __name__ == "__main__":
 
-    doit_level_1(force=True)
-    doit_level_2(force=True)
+    doit_level_1(True)
+    doit_level_2(True)

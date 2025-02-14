@@ -84,7 +84,7 @@ ONE_TICK = 1
 * note: double buffering eats a lot of memory, it cannot run in debug mode
 * either simple or reloc. Only in "none" (program running in fastmem, data
 * located in low chipmem)
-OPT_ENABLE_DOUBLE_BUFFERING = 0
+OPT_ENABLE_DOUBLE_BUFFERING = 1
 
 _custom = 0xDFF000
 
@@ -379,6 +379,12 @@ _user:
     move.w #0x6200+BORDERBLANK,bplcon0(a5) | 6 bitplanes, borderblank
 	
 
+	move.l	frameskip_flag,d0
+	jne		0f
+	moveq	#1,d0		| auto, starts with full fps
+0:
+	move.b	d0,graphics_update_counter_start
+	move.b	d0,graphics_update_counter
 
 * ALL DIP SWITCHES ARE WRONG ATM
 
@@ -816,15 +822,11 @@ _vblank:
 	WAIT_BLIT
 	
 1100:
+	subq.b	#1,graphics_update_counter
+	jne		1f
+	move.b	graphics_update_counter_start,graphics_update_counter
 	
-	eor.b	#1,flip_flop
-	jeq		1f
 
-	cmp.w	#CTX_GAME,global_context
-	jcs		23f
-	* double buffering only in-game
-	bsr		switch_screen_buffers
-23:
 	tst.b	clear_target_sprites_flag
 	jeq		24f
 	clr.b	clear_target_sprites_flag
@@ -844,7 +846,11 @@ _vblank:
 	bsr		really_update_sprites
 1:
 	* don't blit, but update hw sprites as it doesn't cost a lot
-
+	cmp.w	#CTX_GAME,global_context
+	jcs		23f
+	* double buffering only in-game
+	bsr		switch_screen_buffers
+23:
 	.ifndef		RELEASE
 	tst.b	debug_truck_control
 	jeq		1f
@@ -999,6 +1005,9 @@ erase_level_1_truck:
 	tst.b	truck_previously_drawn
 	jeq		0f
 
+	* truck: amounts to roughly 12 objects ?
+	add.b	#12,nb_erased_objects
+
 	* we cannot just restore the whole truck background, it's
 	* inefficient and makes the game crawl. Just restore parts
 	* that won't be immediately overwritten by the truck itself
@@ -1033,26 +1042,50 @@ erase_level_1_truck:
 	lea		background_restore_buffer,a0
 	jbsr	restore_background
 
+	jbsr	get_current_level
+	cmp.b	#1,d0
+	jne		10f
 	* restore blank between truck front & tow
-	* broken...
-	*lea		prev_truck_params,a1
-	*move.w	(a1),d0		| displayX
-	*sub.w	(6,a1),d0	| truck pos
-	*add.w	#0x320,d0	| correct X
-	*jmi		1f
-	*move.w	(2,a1),d1
-	*move.w  truck_height,d4
-	*sub.w	truck_wheels_height,d4
-	*lea		background_restore_buffer,a0
-	*jbsr	restore_background
-
+	* broken... to re-test
+	lea		prev_truck_params,a1
+	move.w	(a1),d0		| displayX
+	sub.w	(6,a1),d0	| truck pos
+	add.w	#0x320,d0	| correct X
+	jmi		1f
+	move.l	fg_drawed_screen_ptr,a1
+	move.w	truck_y_pos,d1
+	move.w  truck_height,d4
+	sub.w	truck_wheels_height,d4
+	move.w	#4,d2
+	lea		background_restore_buffer,a0
+	jbsr	restore_background
+	jra	20f
+10:
+	* level 2: 2 gaps to restore
+	lea		prev_truck_params,a1
+	move.w	x_secondary_scroll_value,d0	| truck pos
+	sub.w	#0x200,d0
+	jcs		20f			| no need to erase, truck self erases
+	cmp.w	#240,d0
+	jcc		20f			| gap has now scrolled left completely
+	neg.w	d0
+	add.w	(a1),d0		| displayX
+	add.w	#232,d0		| wagon width plus space
+	move.w	truck_y_pos,d1	| displayY
+	move.w  truck_height,d4
+	sub.w	truck_wheels_height,d4
+	lea		background_restore_buffer,a0
+	move.w	#6,d2
+	move.l	fg_drawed_screen_ptr,a1
+	jbsr	restore_background
+20:
 1:
 	clr.b	truck_previously_drawn
 0:
 	rts
 	
-* truck_draw draw_truck
-draw_level_1_truck:
+* truck_draw draw_truck for levels 1 and 2
+draw_truck:
 	move.w	x_secondary_scroll_value,d0
 	jeq		2f		| reached destination
 	cmp.w	#0x400,d0
@@ -1103,7 +1136,7 @@ truck_not_clipped_left:
 	move.l	#0xFFFF0000,bltamask_long_value
 	
 do_truck_draw:
-	move.w	#NB_BYTES_PER_SCREEN_ROW*8,d2
+	move.w	#NB_BYTES_PER_SCREEN_ROW*8+16,d2
 	cmp.w	d6,d2
 	jcc		11f
 	move.w	d2,d6		| maxing out displayed width
@@ -1137,7 +1170,6 @@ do_truck_draw:
 	* now big optim: no need to cookie cut/draw all planes!!
 	* so avoid last blit or even 2 last blits (if background is 16 colors)
 	move.w	nb_tile_planes_24da,d3
-	TMPWRITE
 	jbsr	blit_planes_any_internal_cookie_cut
 2:
 	rts
@@ -1366,7 +1398,7 @@ addr_242xxx_op:
 level_2_boss_color_change:
 	.word	0xeee,0x707
 	.word	0xc62,0xb75
-	.word	0x952,0x853
+	.word	0x953,0x853
 	.word	0x500,0x306
 	.word	0x444,0x555
 	.word	0x731,0x631
@@ -2140,8 +2172,7 @@ addr_24Axxx_tile_layer_op_level_3:
 	move.w	(a0),d7
 	jra		101f
 0:
-	TMPWRITE
-	move.w	#0xD10A,d7	| TEMP§!!!!
+	move.w	#0xD10A,d7	| TEMP!!!!
 	cmp.w	(a0),d7
 	jeq		100f	| already the proper value
 	move.w	d7,(a0)	| set value in memory first
@@ -2534,10 +2565,17 @@ really_update_sprites:
 	move.w	nb_tile_planes_24da,d5
 	neg.w	d5
 	addq.w	#NB_PLAYFIELD_PLANES,d5
+	
+	
+	clr.b	nb_erased_objects	| to count erased objects
+	
 	move.l	bob_previous_drawed_sprites,a4
 1:
 	move.l	(a4),d0
 	jeq		12f				| X=0 & Y=0: inactive and end of list (let's hope it works!)
+
+	addq.b	#1,nb_erased_objects
+	
 	move.w	d0,d1		| Y
 	swap	d0			| X
 	tst		d0
@@ -2585,7 +2623,7 @@ really_update_sprites:
 	jeq		555f
 	
 	jbsr	erase_level_1_truck
-	jbsr	draw_level_1_truck
+	jbsr	draw_truck
 	* reset possibly changed first word mask setting
 	move.l	#-1,bltamask_long_value
 
@@ -2594,6 +2632,24 @@ really_update_sprites:
 	jbsr	update_front_objects
 	
 555:
+	* now compute frameskip for next time
+	tst.b	frameskip_flag+3
+	jne		558f
+	* auto frameskip
+	move.b	nb_erased_objects,d0
+	lsr.b	#3,d0
+	jne		556f
+	* zero: 1
+	moveq	#1,d0
+556:
+	cmp.b	#4,d0
+	jcs		557f
+	move.b	#3,d0		| min 17 fps
+557:
+	* update graphics counter to 1 (50fps), 2 (25fps), or 3 (17fps)
+	* dynamically
+	move.b	d0,graphics_update_counter
+558:
 	GET_RAM_START_IN_A6
 	lea	(0x4000,a6),a0		| sprites
 	.ifne	OPT_ENABLE_LOGGING
@@ -2952,7 +3008,7 @@ clear_fg_plane_any_blitter_internal:
 * < D2: width in bytes (inc. 2 extra for shifting)
 * < D3: number of planes to clear
 * < D4: blit height
-* trashes D0-D6, A2
+* trashes D0-D6, A2, A3
 clear_fg_planes_any_blitter_internal:
     * pre-compute the maximum of shit here
 	move.w	d1,d6
@@ -5600,7 +5656,7 @@ chiprevbits:
 cheat_flags:
 		.long	0
 		.long	WHDLTAG_CUSTOM2_GET
-control_flags:
+frameskip_flag:
 		.long	0
 
 		.long	WHDLTAG_CUSTOM3_GET
@@ -5630,8 +5686,11 @@ mid_screen_interrupt_count:
 system_vbr:
 	.long	0
 
-
-flip_flop:
+nb_erased_objects:
+	.byte	0
+graphics_update_counter_start:
+	.byte	0
+graphics_update_counter:
 	.byte	0
 truck_flip_flop:
 	.align	2

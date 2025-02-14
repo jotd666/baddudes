@@ -381,7 +381,7 @@ level_7_tile_24a000_sheet_dict = {i:sheets_path / "tiles_24a000" / "level_7" / f
 tile_0_sheet_dict = {i:sheets_path / "tiles_244000" / f"pal_{i:02x}.png" for i in range(15)}
 sprite_sheet_dict = {i:sheets_path / "sprites" / f"pal_{i:02x}.png" for i in range(16)}
 
-def load_contexted_tileset(tile_sheet_dict,context,nb_colors,is_bob):
+def load_contexted_tileset(tile_sheet_dict,context,nb_colors,is_bob,postload_callback=None):
     tile_palette = set()
     tile_24a000_set_list = []
 
@@ -391,7 +391,7 @@ def load_contexted_tileset(tile_sheet_dict,context,nb_colors,is_bob):
     for i in range(16):
         tsd = tile_sheet_dict.get(i)
         if tsd:
-            tp,tile_set = load_tileset(tsd,i,16,context_dir,cluts=used_cluts_dict[context],is_bob=is_bob)
+            tp,tile_set = load_tileset(tsd,i,16,context_dir,cluts=used_cluts_dict[context],is_bob=is_bob,postload_callback=postload_callback)
             tile_24a000_set_list.append(tile_set)
             tile_palette.update(tp)
         else:
@@ -641,10 +641,11 @@ def dump_tiles(file_radix,palette,tile_table,tile_plane_cache,add_dimension_info
     tiles_1_bin = os.path.join(data_dir,os.path.basename(os.path.splitext(tiles_1_src)[0])+".bin")
     asm2bin(tiles_1_src,tiles_1_bin)
 
-def process_tile_context(context_name,tile_sheet_dict,nb_colors,is_bob=False,shift_palette_count=0,first_pass=False,first_colors=None):
+def process_tile_context(context_name,tile_sheet_dict,nb_colors,is_bob=False,shift_palette_count=0,first_pass=False,
+                            first_colors=None,postload_callback=None):
 
 
-    tile_24a000_set_list,bg_palette = load_contexted_tileset(tile_sheet_dict,context_name,nb_colors,is_bob)
+    tile_24a000_set_list,bg_palette = load_contexted_tileset(tile_sheet_dict,context_name,nb_colors,is_bob,postload_callback=postload_callback)
     tile_24a000_cache = {}
 
     if shift_palette_count:
@@ -725,6 +726,17 @@ def process_8x8_tile_layer(context,max_colors,colors_last,postload_callback=None
 
 # tiles
 
+water_color_replacement_dict = {(71,90,104):(104,104,90),
+(56,71,90):(195,195,176),
+(34,56,71):(90,90,71)}
+
+def postprocess_game_level_2_tiles(tileset,palette_index):
+    if palette_index == 0xF:
+        # water
+        for img in tileset:  # change water tiles to gray
+            if img:
+                bitplanelib.replace_color_from_dict(img,water_color_replacement_dict)
+
 def postprocess_game_osd_tiles(tileset,palette_index):
     old_len = len(tileset)
     if palette_index == 1:
@@ -751,10 +763,10 @@ def postprocess_game_osd_tiles(tileset,palette_index):
 generate_for_levels = [False]*8
 
 #generate_for_levels[1] = True
-#generate_for_levels[2] = True
+generate_for_levels[2] = True
 #generate_for_levels[3] = True
 #generate_for_levels[4] = True
-generate_for_levels[6] = True
+#generate_for_levels[6] = True
 # set to "False" for faster operation when working on game sprite/tiles
 if generate_for_levels[0]:  # title/intro é game fonts
 
@@ -771,18 +783,18 @@ if generate_for_levels[1]:
     process_tile_context("level_1_24a000",level_1_tile_24a000_sheet_dict,32,first_pass=True)
     truck_used_colors = convert_truck_pics.doit_truck_1(palette_dict["level_1_24a000"],truck_nb_planes)
     process_tile_context("level_1_24a000",level_1_tile_24a000_sheet_dict,32,first_pass=False,first_colors=truck_used_colors)
-    convert_front_objects.doit_level_1()
+    convert_front_objects.doit_level_1(dump_it=dump_it)
     process_tile_context("game_level_1",sprite_sheet_dict,32,is_bob=True,shift_palette_count=32)
 
 if generate_for_levels[2]:
     truck_nb_planes = 3
     nb_truck_colors = 1<<truck_nb_planes
-    nb_tiles_colors = 8
+    nb_tiles_colors = 16
     process_tile_context("level_2_24a000",level_2_tile_24a000_sheet_dict,nb_tiles_colors,first_pass=True)
     truck_used_colors = convert_truck_pics.doit_truck_2(palette_dict["level_2_24a000"],truck_nb_planes)
     process_tile_context("level_2_24a000",level_2_tile_24a000_sheet_dict,nb_tiles_colors,first_pass=False,first_colors=truck_used_colors)
     process_tile_context("game_level_2",sprite_sheet_dict,64-nb_tiles_colors,is_bob=True,shift_palette_count=nb_tiles_colors)
-    convert_front_objects.doit_level_2()
+    convert_front_objects.doit_level_2(dump_it=dump_it)
 
 if generate_for_levels[3]:
     process_tile_context("level_3_24d000",level_3_tile_24d000_sheet_dict,16,first_pass=False)

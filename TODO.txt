@@ -1,11 +1,12 @@
 - priority of sprites: https://eab.abime.net/showthread.php?p=1731201#post1731201
-
+- scroll debug: add Y scroll in the available rightmost 000
+- level 2: no lamps if objects 2 loaded. Ok if objects 1 loaded
+- level 2 front object (lamp) not displaying (used to work with level 1 objects)
 - level 4 too dull up to 32 colors, now should really reuse grays for sprites (gray ninja)
  => tiles don't use all 32 colors, tile processing should return the number of colors really
     used so the sprites can use the first spare colors
 
 - level 7 should set an offset for vertical scrolling
-- level 2 ninjas climbing bad grouping
 - check symmetry for 64 bit wide
 
 - level 3: water scroll tiles wrong placement, maybe quadrant shit is different than
@@ -15,13 +16,10 @@
   
 - truck jailbars when simpler blit with no source and BLTBDAT=0 in some cases?????
   => OK with actual zero source is minterm right???
-- try to display truck 1 times out of 2??? see effect?
 
-- optim: group erase on 16 (working) or 32 bit wide blocks
+- use audio mixer (optional): https://powerprograms.nl/resources/audio_mixer_v3_6_docs.html#combining
 
 - remove BB9 BB8 BBA BBB (glasses) from log (old artifact)
-- level 2 missing frames player attacking with dagger
-- level 2 front object (lamp) not displaying (used to work with level 1 objects)
 - truck blit erase issue (front of truck), truck right clip part too soon
  
 - karnov feet erase issue, doesn't seem to be erased (also true for jumping ninjas) probably
@@ -31,21 +29,19 @@
   scroll / check when the sprite draw is avoided and see what values it would yield
 - multiplex sprites 4 to 7 to do (lower hud): ATM only one object is displayed at a time
 
-- level 2: copper shade yellow/white (24 bit preferably)
-- level 2: remove blue colors for tiles 7F 76 77 (collect the colors), replace by existing, same for scrolling road, then
-  restore them using copper, which will also leave more colors for the rest
 
-- easy ?? level 2 purple boss red: => should dynamically change it when boss appears like in the game, maybe hook
-     on the set palette:
-	 ex: load_boss_2_purple_colors_0102c if write to 3103E0 with A1 = 0x0117c+rom_base
-	 then load level 2 boss palette: to test
-- same for bosses 3 and 4
+- optim: group erase on 16 (working) or 32 bit wide blocks
 
-- FPS options: full 50, 25, adaptative (depending on number of enemies)	 
+- boss 2 color change wrong colors...
+- boss 3 color change
+- boss 4 color change
+- boss 5 color change
+- boss 6 color change
+
 - level complete messages should use front object sprites
 - left osd mssing 1 char ("G"AME OVER), middle lower OSD also missing 1 char
 - log & rip missing sounds: breakpoint on sound not found so able to go to mame and rip it
-
+- use roondar's mixing engine (optional?)
 - need to optimize truck/train erase: depending on the level, compute the parts that need
   background refresh. Truck: bottom (wheels) + part between front & tow & exhaust pipe. 
   Rest: not needed. same for big truck & train, with inter-tow: in progress

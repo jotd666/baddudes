@@ -33,6 +33,7 @@ _config
 	dc.b	"C1:X:invincibility:0;"
 	dc.b	"C1:X:infinite lives:1;"
 	dc.b	"C1:X:cheat keys:4;"
+	dc.b    "C2:L:frameskip:auto,none,one,two;"
 	dc.b    "C4:L:start level:city,truck,sewer,forest,train,cave,boss base;"
 	dc.b    "C5:L:start lives:default,1,2,3,5;"
 	IFD		DEV_MODE
