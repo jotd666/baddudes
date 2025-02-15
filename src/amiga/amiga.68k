@@ -4881,7 +4881,7 @@ set_high_score_context:
 set_game_context:
 	lea		tiles_game_244000_file,a0
 	jbsr	load_tiles_file_as_sprites_244000
-	
+	clr.l	background_sprite_table
 	
 	jbsr	get_current_level
 	subq	#1,d0	
@@ -5008,7 +5008,32 @@ load_truck:
 1:
 	dbf		d0,0b
 	rts
+
+* < A0: filename	
+load_background_file:
+	jbsr	allocate_and_load_chip_mem_file
+	move.l	d0,a0
+	move.l	d0,background_sprite_table
+	moveq	#7,d1
+	* relocate
+0:
+	add.l	d0,(a0)+
+	dbf		d1,0b
+	move.l	a0,a1		| palette start
 	
+	* set sprites palette
+*	lea		osd_upper_sprites_palette+2+8,a0
+*	moveq	#3,d1
+*1:
+*	moveq	#3,d0
+*0:
+*	move.w	(a1)+,(a0)
+*	addq	#4,a0
+*	dbf		d0,0b
+*	dbf		d1,1b	
+	rts
+	
+
 * display a front object
 * < D0: X
 * < D2: object index (-1: blank object)
@@ -5167,8 +5192,9 @@ level_4_load:
 	move.l	tiles_palette_24a000,a0		| palette
 	jbsr	load_tiles_palette
 
-	move.b	#0xC,road_y_pos
-	jbsr	enable_bottom_scroll
+	
+	lea		forest_sprites_file,a0
+	jbsr	load_background_file
 
 	rts
 level_5_load:
@@ -5177,6 +5203,10 @@ level_5_load:
 	jbsr 	load_level_sprite_file
 	move.l	tiles_palette_24a000,a0		| palette
 	jbsr	load_tiles_palette
+
+	move.b	#0xC,road_y_pos
+	jbsr	enable_bottom_scroll
+
 	rts
 	
 level_6_load:
@@ -5185,6 +5215,10 @@ level_6_load:
 	jbsr 	load_level_sprite_file
 	move.l	tiles_palette_24a000,a0		| palette
 	jbsr	load_tiles_palette
+
+	lea		cave_sprites_file,a0
+	jbsr	load_background_file
+
 	rts
 	
 level_7_load:
@@ -5274,46 +5308,84 @@ install_osd_hardware_sprites:
 	
 	lea		intro_sprites,a0
 	lea		osd_left_sprite,a2
+	move.l	a2,a3
 	move.w	#48,d0
 	move.w	#32,d1
 	move.w	#sprpt,d2
 	jbsr	install_osd_sprite
 	lea		osd_left_center_sprite,a2
+	move.l	a2,a3
 	move.w	#48+64,d0
 	move.w	#32,d1
 	jbsr	install_osd_sprite
 	lea		osd_right_center_sprite,a2
+	move.l	a2,a3
 	move.w	#48+64*2,d0
 	move.w	#32,d1
 	jbsr	install_osd_sprite
 	
 	lea		osd_right_sprite,a2
+	move.l	a2,a3
 	move.w	#48+64*3,d0
 	move.w	#32,d1
 	jbsr	install_osd_sprite
 	
+	* now 2 cases here.
+	* if forest or cave, we're already using sprites 4 to 7
+	* for static background, so those sprites have to multiplex
+	* from the other ones
+	move.l	background_sprite_table,d0
+	jra		10f
+	rts
+	
+	move.l	d0,a4
+	moveq	#0,d0
+	moveq	#0,d1
+	moveq	#3,d7
+	
+0:
+	movem.w	d0-d1,-(a7)
+	lea		HW_SpriteYTable_200,a1
+	move.l	(a4),a3
+	move.l	a2,a3
+	jbsr	install_any_sprite
+	addq	#8,a1		| next sprite
+	movem.w	(a7)+,d0-d1
+	add		#64,d0		| next X
+	dbf		d7,0b
+	rts
+10:
 	lea		osd_bottom_left_sprite,a2
+	move.l	a2,a3
 	move.w	#32,d0
 	move.w	#240,d1
 	jbsr	install_osd_sprite
 	
 	lea		osd_bottom_left_center_sprite,a2
+	move.l	a2,a3
 	move.w	#96+32,d0
 	move.w	#240,d1
 	jbsr	install_osd_sprite
 	
 	lea		osd_bottom_right_center_sprite,a2
+	move.l	a2,a3
 	move.w	#96+32+64,d0
 	move.w	#240,d1
 	jbsr	install_osd_sprite
 	
 	lea		osd_bottom_right_sprite,a2
+	move.l	a2,a3
 	move.w	#216,d0
 	move.w	#240,d1
 	jbsr	install_osd_sprite
 	rts
 	
+* < A2: sprite start
+* < A3: sprite control word (can be A2 or other for multiplexing)
 install_osd_sprite:
+	lea		HW_SpriteYTable_16,a1
+	subq	#1,d0		| apply small offset
+install_any_sprite:
 	move.l	a2,d3
 	move.w	d2,(a0)+	| sprite pointer high address
 	swap	d3
@@ -5324,12 +5396,10 @@ install_osd_sprite:
 	move.w	d3,(a0)+	| low 16 bits address
 	addq	#2,d2
 	* position fixed
-	subq	#1,d0		| apply small offset
-	lea		HW_SpriteYTable_16,a1
 	jbsr	store_sprite_pos
-	move.w	d0,8(a2)
+	move.w	d0,8(a3)
 	swap	d0
-	move.w	d0,(a2)
+	move.w	d0,(a3)
 	rts
 	
 	* set game intro palette
@@ -5771,6 +5841,10 @@ debug_truck_message:
 debug_scroll_message:
 	.asciz	"SCRO 000000"
 	.endif
+forest_sprites_file:
+	.asciz	"forest.bin"
+cave_sprites_file:
+	.asciz	"cave.bin"
 front_objects_1_file:
 	.asciz	"front_objects_1.bin"
 front_objects_2_file:
@@ -5894,6 +5968,7 @@ HW_SpriteYTable_\height:
 	DEF_HW_SPRITE_Y_TABLE	32
 	DEF_HW_SPRITE_Y_TABLE	48
 	DEF_HW_SPRITE_Y_TABLE	184
+	DEF_HW_SPRITE_Y_TABLE	200
 
 	.macro	STORE_SPRITE_Y_ENTRY	offset
 	lea	HW_SpriteYTable_\offset,a1
@@ -5955,6 +6030,8 @@ truck_nb_planes:
 front_objects_palette:
 	.long	0
 front_objects_table:
+	.long	0
+background_sprite_table:
 	.long	0
 front_objects_y_table:
 	.skip	8*2		| hopefully will be enough
@@ -6126,7 +6203,6 @@ intro_intreq_block:
 	
 	* pal limit
     .word  0xFFDF,0xFFFE       | PAL wait
-	.word	 intreq,0x8010	| no bobs from now on, get more drawing time
 
 	* set road scroll
 road_y_pos:
@@ -6145,6 +6221,7 @@ fine_x_road_scroll_value:
 	.word	bplcon4,BASE_BPLCON4_VALUE
 	* change palette for lower OSD sprites (lives & energy)
 	.word	0x0C01,0xFFFE
+	.word	 intreq,0x8010	| no bobs from now on
 
 	DECL_COLOR_BANK	2
 	.word	color+2*10,0xEBB		| flesh pink
