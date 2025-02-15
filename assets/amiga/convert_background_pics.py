@@ -12,7 +12,7 @@ def doit(name,transparent_pix_coord):
 
     img = Image.open(whole_pics_dir / f"{name}.png")
 
-    y_max = 200  # should be enough
+    y_max = 240
     img=img.crop((0,0,256,y_max))
 
 

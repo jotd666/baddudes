@@ -50,6 +50,7 @@ ONE_FULL_16_BIT_ROW = 3*Y_MAX_SPRITE*2
 
 BASE_BPLCON3_VALUE = (BORDERBLANK<<5)
 BASE_BPLCON2_VALUE = 0x0264  | killehb (we're using 6 real bitplanes) sprites above all playfields
+SPRITES_BELOW_BPLCON2_VALUE = 0x0210  | killehb (we're using 6 real bitplanes) sprites above all playfields
 BASE_BPLCON4_VALUE = 0x0044	| even sprites palette starts at color 64, odd also at 64
 SCREEN_ADDRESS = 0x244000
 
@@ -3768,8 +3769,6 @@ platform_init:
 
 	* restrict borders: we don't see bobs on the borders!
 	* try to hide color 0 on the border (except on OCS)
-    move.w #BASE_BPLCON2_VALUE,bplcon2(a5)
-
 
     move.w #(SPRITE_FMODE<<2)+0x1,fmode(a5)	| 32 bit bitplane fetch, 64 bit wide sprites
 
@@ -4595,6 +4594,11 @@ osd_set_context:
 	move.l	#addr_24Dxxx_tile_layer_op,addr_24Dxxx_tile_layer_op_address
 	move.l	#addr_246xxx_op,addr_246xxx_tile_layer_op_address
 	
+	* default: sprites above
+	move.w	#BASE_BPLCON2_VALUE,sprites_bplcon2
+	* no attached sprites
+
+	move.w	#0x1FE,attached_sprites_bplcon4
 	* then we wait a little while to make sure the interrupt has run
 	
 	jbsr	wait_vbl
@@ -5280,6 +5284,9 @@ load_front_objects_file:
 	move.w	(a1)+,(a0)
 	addq	#4,a0
 	dbf		d0,0b
+	
+	* enable attached sprite colorbank
+	move.w	#bplcon4,attached_sprites_bplcon4
 	rts
 	
 install_osd_hardware_sprites:
@@ -5325,8 +5332,10 @@ install_osd_hardware_sprites:
 	* for static background, so those sprites have to multiplex
 	* from the other ones
 	move.l	background_sprite_table,d0
-	jra		10f
-	rts
+	jeq		10f
+	
+	* default: sprites above for sprites 0-3, below for 4-7
+	move.w	#SPRITES_BELOW_BPLCON2_VALUE,sprites_bplcon2
 	
 	move.l	d0,a4
 	moveq	#0,d0
@@ -5335,12 +5344,13 @@ install_osd_hardware_sprites:
 	
 0:
 	movem.w	d0-d1,-(a7)
-	lea		HW_SpriteYTable_200,a1
+	lea		HW_SpriteYTable_240,a1
 	move.l	(a4),a3
-	move.l	a2,a3
+	move.l	a3,a2
 	jbsr	install_any_sprite
 	addq	#8,a1		| next sprite
 	movem.w	(a7)+,d0-d1
+	addq	#8,A4
 	add		#64,d0		| next X
 	dbf		d7,0b
 	rts
@@ -5958,7 +5968,7 @@ HW_SpriteYTable_\height:
 	DEF_HW_SPRITE_Y_TABLE	32
 	DEF_HW_SPRITE_Y_TABLE	48
 	DEF_HW_SPRITE_Y_TABLE	184
-	DEF_HW_SPRITE_Y_TABLE	200
+	DEF_HW_SPRITE_Y_TABLE	240
 
 	.macro	STORE_SPRITE_Y_ENTRY	offset
 	lea	HW_SpriteYTable_\offset,a1
@@ -6149,7 +6159,9 @@ fine_x_scroll_value:
 
 	.word	bplcon4
 	.word	BASE_BPLCON4_VALUE
-
+	.word	bplcon2
+sprites_bplcon2:
+	.word	BASE_BPLCON2_VALUE
 intro_sprites:
 	DECL_SPRITES
 
@@ -6175,7 +6187,9 @@ letters_palette:
 	.word	0x2C01+0x2700,0xFFFE
 	* change bplcon4 to point on another palette range
 	* for 16-color attached sprites: bank 3
-	.word	bplcon4,0x0066
+attached_sprites_bplcon4:
+	.word	0x1FE
+	.word	0x66
 	DECL_COLOR_BANK	3
 front_object_colors:
 	DECL_COLORS	0,16
@@ -6207,6 +6221,11 @@ bitplanes_road:
 	.word	bplcon1
 fine_x_road_scroll_value:
 	.word	0
+
+	* re-set all sprites above playfields
+	.word	bplcon2
+	.word	BASE_BPLCON2_VALUE
+	
 	* re-set palette for non-attached sprites
 	.word	bplcon4,BASE_BPLCON4_VALUE
 	* change palette for lower OSD sprites (lives & energy)
