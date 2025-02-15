@@ -4959,33 +4959,6 @@ specific_level_load_table:
 	.long	level_6_load
 	.long	level_7_load
 	
-level_1_load:
-	lea		tiles_level_1_24a000_file,a0
-	jbsr	load_tiles_file_24a000
-	jbsr 	load_level_sprite_file
-	lea		front_objects_1_file,a0
-	jbsr	load_front_objects_file
-	* load & relocate truck pics
-	lea		truck_1_pic_file,a0
-	jbsr	load_truck
-	
-
-	
-	* testing front objects!!!
-	*move	#55,D0
-	*move	#2,d2
-	*move	#0,d3
-	*jbsr	display_front_object
-	*move	#156,D0
-	*move	#3,d2
-	*move	#1,d3
-	*jbsr	display_front_object
-	
-	move.l	tiles_palette_24a000,a0		| palette
-	jbsr	load_tiles_palette
-
-
-	rts
 	
 load_truck:
 	jbsr	allocate_and_load_chip_mem_file
@@ -5130,12 +5103,33 @@ display_front_object:
 	movem.l	(a7)+,d0-a6
 	rts
 
+
+level_1_load:
+	lea		tiles_level_1_24a000_file,a0
+	jbsr	load_level_tiles_and_bobs
+
+	lea		front_objects_1_file,a0
+	jbsr	load_front_objects_file
+	* load & relocate truck pics
+	lea		truck_1_pic_file,a0
+	jbsr	load_truck
 	
+
+	
+	* testing front objects!!!
+	*move	#55,D0
+	*move	#2,d2
+	*move	#0,d3
+	*jbsr	display_front_object
+	*move	#156,D0
+	*move	#3,d2
+	*move	#1,d3
+	*jbsr	display_front_object
+	
+	rts	
 level_2_load:
 	lea		tiles_level_2_24a000_file,a0
-	jbsr	load_tiles_file_24a000
-	
-	jbsr 	load_level_sprite_file
+	jbsr	load_level_tiles_and_bobs
 	
 	lea		front_objects_2_file,a0
 	jbsr	load_front_objects_file
@@ -5147,8 +5141,6 @@ level_2_load:
 	move.b	#0xC,road_y_pos
 	jbsr	enable_bottom_scroll
 	
-	move.l	tiles_palette_24a000,a0		| palette
-	jbsr	load_tiles_palette
 	
 	rts
 	
@@ -5157,6 +5149,8 @@ level_3_load:
 	jbsr	load_tiles_file_24d000
 	lea		tiles_level_3_24a000_file,a0
 	jbsr	load_tiles_file_24a000
+	move.l	tiles_palette_24d000,a0		| palette
+	jbsr	load_tiles_palette
 	jbsr 	load_level_sprite_file
 
 	* change behaviour for write to 24Axxx: this controls the running water
@@ -5170,8 +5164,6 @@ level_3_load:
 	move.b	#0x4,road_y_pos
 	jbsr	enable_bottom_scroll
 
-	move.l	tiles_palette_24d000,a0		| palette
-	jbsr	load_tiles_palette
 	
 	* install running water palette (bottom of screen)
 	lea		road_colors,a0
@@ -5187,22 +5179,17 @@ level_3_load:
 	
 level_4_load:	
 	lea		tiles_level_4_24a000_file,a0
-	jbsr	load_tiles_file_24a000
-	jbsr 	load_level_sprite_file
-	move.l	tiles_palette_24a000,a0		| palette
-	jbsr	load_tiles_palette
+	jbsr	load_level_tiles_and_bobs
 
-	
 	lea		forest_sprites_file,a0
 	jbsr	load_background_file
 
 	rts
 level_5_load:
 	lea		tiles_level_5_24a000_file,a0
-	jbsr	load_tiles_file_24a000
+	jbsr	load_level_tiles_and_bobs
+
 	jbsr 	load_level_sprite_file
-	move.l	tiles_palette_24a000,a0		| palette
-	jbsr	load_tiles_palette
 
 	move.b	#0xC,road_y_pos
 	jbsr	enable_bottom_scroll
@@ -5211,10 +5198,7 @@ level_5_load:
 	
 level_6_load:
 	lea		tiles_level_6_24a000_file,a0
-	jbsr	load_tiles_file_24a000
-	jbsr 	load_level_sprite_file
-	move.l	tiles_palette_24a000,a0		| palette
-	jbsr	load_tiles_palette
+	jbsr	load_level_tiles_and_bobs
 
 	lea		cave_sprites_file,a0
 	jbsr	load_background_file
@@ -5223,10 +5207,16 @@ level_6_load:
 	
 level_7_load:
 	lea		tiles_level_7_24a000_file,a0
+	jbsr	load_level_tiles_and_bobs
+	rts
+	
+load_level_tiles_and_bobs:
 	jbsr	load_tiles_file_24a000
-	jbsr 	load_level_sprite_file
 	move.l	tiles_palette_24a000,a0		| palette
 	jbsr	load_tiles_palette
+	* load bobs, possibly overwriting tiles
+	* end of palette (the unused colors)
+	jbsr 	load_level_sprite_file
 	rts
 	
 * inefficient but rarely called algorithm to search a color

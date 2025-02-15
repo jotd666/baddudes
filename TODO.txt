@@ -1,14 +1,10 @@
 - autoframeskip not limited
-- copper interrupt maybe too early (bottom screen sprite flicker)
-
+- quantize loop: count the colors with RGB4 rounding to get more colors!!
 - priority of sprites: https://eab.abime.net/showthread.php?p=1731201#post1731201
 - scroll debug: add Y scroll in the available rightmost 000
-- front objects: bottom is trashed
+- front objects: bottom pixels are trashed
 - level 2: no lamps if objects 2 loaded. Ok if objects 1 loaded
 - level 2 front object (lamp) not displaying (used to work with level 1 objects)
-- level 4 too dull up to 32 colors, now should really reuse grays for sprites (gray ninja)
- => tiles don't use all 32 colors, tile processing should return the number of colors really
-    used so the sprites can use the first spare colors
 
 - level 7 should set an offset for vertical scrolling
 - check symmetry for 64 bit wide
