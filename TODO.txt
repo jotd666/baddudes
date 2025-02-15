@@ -1,5 +1,4 @@
 - autoframeskip not limited
-- quantize loop: count the colors with RGB4 rounding to get more colors!!
 - priority of sprites: https://eab.abime.net/showthread.php?p=1731201#post1731201
 - scroll debug: add Y scroll in the available rightmost 000
 - front objects: bottom pixels are trashed

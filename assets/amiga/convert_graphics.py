@@ -288,8 +288,8 @@ def quantize_palette(rgb_tuples,img_type,nb_quantize,transparent=None):
 
     # get the reduced palette
     reduced_palette = [reduced_colors_clut_img.getpixel((i,0)) for i,_ in enumerate(rgb_configs)]
-    # apply rounding now
-    # reduced_palette = bitplanelib.palette_round(reduced_palette,0xF0)
+    # apply rounding now, else possible color duplicates, which would be a pity
+    reduced_palette = bitplanelib.palette_round(reduced_palette,0xF0)
     #print(len(set(reduced_palette))) # should still be 15
     # now create a dictionary by associating the original & reduced colors
     rval = dict(zip(rgb_configs,reduced_palette))
