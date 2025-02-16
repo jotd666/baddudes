@@ -1,14 +1,20 @@
+- background sprites: multiplex to bottom status bar,
+  then try to extend to 240 high sprites
+- 2 player mode!!!!!
+- 2nd button doesn't seem to work
+- level 6: we should add 16 mirror Y tile
 - autoframeskip not limited
-- priority of sprites: https://eab.abime.net/showthread.php?p=1731201#post1731201
+- comb effect on tiles (level 1)
 - scroll debug: add Y scroll in the available rightmost 000
-- front objects: bottom pixels are trashed
 - level 2: no lamps if objects 2 loaded. Ok if objects 1 loaded
 - level 2 front object (lamp) not displaying (used to work with level 1 objects)
-
+- background sprites: forest: try to add browns, remove browns from trunk so
+  3 greens and dynamic brown
 - level 7 should set an offset for vertical scrolling
 - check symmetry for 64 bit wide
 
 - bitplane fmode 3 would it work?
+- level 2: road colors are trashed??
 - level 3: water scroll tiles wrong placement, maybe quadrant shit is different than
   for other mode??? dump 24A000 memory on second write to 246010 MAME/amiga and compare
 - level 3: put water scroll in some other buffer (allocate one?) so changing plans automatically

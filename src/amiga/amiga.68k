@@ -51,7 +51,7 @@ ONE_FULL_16_BIT_ROW = 3*Y_MAX_SPRITE*2
 BASE_BPLCON3_VALUE = (BORDERBLANK<<5)
 BASE_BPLCON2_VALUE = 0x0264  | killehb (we're using 6 real bitplanes) sprites above all playfields
 SPRITES_BELOW_BPLCON2_VALUE = 0x0210  | killehb (we're using 6 real bitplanes) sprites above all playfields
-BASE_BPLCON4_VALUE = 0x0044	| even sprites palette starts at color 64, odd also at 64
+BASE_BPLCON4_VALUE = 0x0045	| even sprites palette starts at color 64, odd at 80
 SCREEN_ADDRESS = 0x244000
 
 * set both to nonzero for full static screen, no scroll, 1 screen tile
@@ -4996,18 +4996,7 @@ load_background_file:
 0:
 	add.l	d0,(a0)+
 	dbf		d1,0b
-	move.l	a0,a1		| palette start
-	
-	* set sprites palette
-*	lea		osd_upper_sprites_palette+2+8,a0
-*	moveq	#3,d1
-*1:
-*	moveq	#3,d0
-*0:
-*	move.w	(a1)+,(a0)
-*	addq	#4,a0
-*	dbf		d0,0b
-*	dbf		d1,1b	
+	move.l	a0,background_sprites_palette
 	rts
 	
 
@@ -5289,9 +5278,7 @@ load_front_objects_file:
 	move.w	#bplcon4,attached_sprites_bplcon4
 	rts
 	
-install_osd_hardware_sprites:
-	* same palette for 4 first sprites
-	lea		osd_upper_sprites_palette+2,a0
+copy_osd_sprite_palette:
 	* 2 first sprites (upper part)
 	moveq	#3,d1
 1:
@@ -5302,7 +5289,18 @@ install_osd_hardware_sprites:
 	addq	#4,a0
 	dbf		d0,0b
 	dbf		d1,1b
+	rts
 	
+install_osd_hardware_sprites:
+	* same palette for sprites, but separate slots
+	* so we can use separate palette for background objects
+	lea		sprites_palette_even+2,a0
+	jbsr	copy_osd_sprite_palette
+	
+	lea		sprites_palette_odd+2,a0
+	jbsr	copy_osd_sprite_palette
+	
+	* now put them on screen
 	lea		intro_sprites,a0
 	lea		osd_left_sprite,a2
 	move.l	a2,a3
@@ -5334,17 +5332,36 @@ install_osd_hardware_sprites:
 	move.l	background_sprite_table,d0
 	jeq		10f
 	
-	* default: sprites above for sprites 0-3, below for 4-7
+	* change sprites vs bitplanes priority (partially)
+	* sprites above for sprites 0-3, below for 4-7
 	move.w	#SPRITES_BELOW_BPLCON2_VALUE,sprites_bplcon2
 	
+	* install palette for sprites 4,5,6,7
+	move.l	background_sprites_palette,a3
+	lea		sprites_palette_even+2+32,a1	| colors for sprite 4
+	lea		sprites_palette_odd+2+32,a2  | colors for sprite 5
+	.rept	4
+	move.w	(a3),(a1)
+	addq	#4,a1
+	move.w	(a3)+,(a2)
+	addq	#4,a2
+	.endr
+	move.l	background_sprites_palette,a3
+	.rept	4
+	move.w	(a3),(a1)
+	addq	#4,a1
+	move.w	(a3)+,(a2)
+	addq	#4,a2
+	.endr
+
 	move.l	d0,a4
-	moveq	#0,d0
+	moveq	#32,d0
 	moveq	#0,d1
 	moveq	#3,d7
 	
 0:
 	movem.w	d0-d1,-(a7)
-	lea		HW_SpriteYTable_240,a1
+	lea		HW_SpriteYTable_232,a1
 	move.l	(a4),a3
 	move.l	a3,a2
 	jbsr	install_any_sprite
@@ -5968,7 +5985,7 @@ HW_SpriteYTable_\height:
 	DEF_HW_SPRITE_Y_TABLE	32
 	DEF_HW_SPRITE_Y_TABLE	48
 	DEF_HW_SPRITE_Y_TABLE	184
-	DEF_HW_SPRITE_Y_TABLE	240
+	DEF_HW_SPRITE_Y_TABLE	232
 
 	.macro	STORE_SPRITE_Y_ENTRY	offset
 	lea	HW_SpriteYTable_\offset,a1
@@ -6027,6 +6044,8 @@ truck_planes:
 	.long	0
 truck_nb_planes:
 	.word	0
+background_sprites_palette:
+	.long	0
 front_objects_palette:
 	.long	0
 front_objects_table:
@@ -6147,8 +6166,10 @@ intro_copperlist:
 	* on color bank 2 (64-)
 	
 	DECL_COLOR_BANK	2
-osd_upper_sprites_palette:
+sprites_palette_even:
 	DECL_COLORS	0,16
+sprites_palette_odd:
+	DECL_COLORS	16,16
 
 bitplanes_intro:
 	DECL_BITPLANES	0,NB_PLAYFIELD_PLANES
@@ -6180,7 +6201,7 @@ letters_palette:
 
 	* yellow color for time seconds
 	DECL_COLOR_BANK	2
-	.word	color+2*3,0xDD0
+	.word	color+2*3+32,0xDD0
 	
 	* wait 16 lines to declare multiplexed/attached sprites
 	* (front objects) in levels 1 and 2
@@ -6226,10 +6247,10 @@ fine_x_road_scroll_value:
 	.word	bplcon2
 	.word	BASE_BPLCON2_VALUE
 	
-	* re-set palette for non-attached sprites
-	.word	bplcon4,BASE_BPLCON4_VALUE
 	* change palette for lower OSD sprites (lives & energy)
 	.word	0x0C01,0xFFFE
+	* re-set palette for non-attached sprites
+	.word	bplcon4,BASE_BPLCON4_VALUE
 	.word	 intreq,0x8010	| no bobs from now on
 
 	DECL_COLOR_BANK	2

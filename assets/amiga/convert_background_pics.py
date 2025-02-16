@@ -12,14 +12,16 @@ def doit(name,transparent_pix_coord):
 
     img = Image.open(whole_pics_dir / f"{name}.png")
 
-    y_max = 240
+    y_max = 232
     img=img.crop((0,0,256,y_max))
 
+    # lose the black for transparent, background is black anyway (saves 1 color)
+    bitplanelib.replace_color(img,{(0,0,0)},transparent)
 
     img_sprite = img.quantize(colors=4,dither=0).convert('RGB')
 
     changed_transparent = img.getpixel(transparent_pix_coord)   # where to find a transparent color
-    bitplanelib.replace_color(img_sprite,changed_transparent,img.getpixel(transparent_pix_coord))
+    bitplanelib.replace_color(img_sprite,{changed_transparent},img.getpixel(transparent_pix_coord))
 
 
     # cut in 4 64-pixel wide pics
@@ -54,4 +56,4 @@ def doit(name,transparent_pix_coord):
 if __name__ == "__main__":
 
     doit("forest",(0,140))
-    #doit("cave")
+    doit("cave",(0,140))
