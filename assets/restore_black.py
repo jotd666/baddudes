@@ -51,6 +51,17 @@ def fix_tileset(name,target_palette,black_reveal_palette_index,fake_black):
     pic.save(out_pic_name)
 
 
+# it's too hard to dynamically change boss 4 palette with quantization
+# better insert the proper colors
+boss_4_source = this_dir /"sheets"/"misc"/"boss_4_0F.png"
+img = PIL.Image.open(boss_4_source)
+boss4 = img.crop((0,608,1024,656))
+sprites_black_0F = this_dir /"sheets"/"sprites_black"/"pal_0F.png"
+img2 = PIL.Image.open(sprites_black_0F)
+img2.paste(boss4,(0,608))
+# overwrite black pic
+img2.save(sprites_black_0F)
+
 fix_tileset("sprites",0x4,0x9,gray(71))   # red ninja girl
 fix_tileset("sprites",0x3,0x9,gray(71))   # gray ninja
 fix_tileset("tiles_244000",0,4,(159,90,56))

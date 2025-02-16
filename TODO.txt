@@ -1,14 +1,16 @@
-- 2 player mode!!!!!
-- player killed and lying on ground: seems that facing left it displays at the wrong
+- player killed and lying on ground: facing right it displays at the wrong
   location!
-- level 6: failling stalactite  not gray at all
+- walking with flaming punch enabled: missing character legs (abusive vertical grouping?)
+- level 5,6: karnov wrong colors
 - repair front objects (will destroy status bar)
 - 2nd button doesn't seem to work
+- enemy + power bar wrong color now that sprites changed slots
 - level 6: we should add 16 mirror Y tile (end of level)
 - autoframeskip not limited/frameskip doesn't display sprites!!!
 - comb effect on tiles (level 1)
 - scroll debug: add Y scroll in the available rightmost 000
 - level 2: no lamps if objects 2 loaded. Ok if objects 1 loaded
+- 2 player mode
 - level 2 front object (lamp) not displaying (used to work with level 1 objects)
 - background sprites: forest: try to add browns, remove browns from trunk so
   3 greens and dynamic brown
@@ -16,7 +18,6 @@
 - handle flashing attibute (enemies die, less blitting!!)
 - check symmetry for 64 bit wide
 - save/load highscores
-- dump sprite ram state on dump key (to mockup boss fights)
 - bitplane fmode 3 would it work?
 - level 2: road colors are trashed??
 - level 3: water scroll tiles wrong placement, maybe quadrant shit is different than

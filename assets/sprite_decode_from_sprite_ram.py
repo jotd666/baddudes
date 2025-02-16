@@ -1,4 +1,5 @@
 import os,json,pathlib,struct
+import bitplanelib
 
 this_dir = pathlib.Path(__file__).absolute().parent
 
@@ -25,4 +26,7 @@ def doit(filename):
             name = sprite_name_code.get(code,"unknown")
             print(f"address={i+0xFFC000:06x}, x={x}, y={y}, code={code:x}, attrs={attrs:x}, name={name}")
 
-doit("boss2")
+    with open(filename+".68k","w") as f:
+        bitplanelib.dump_asm_bytes(sprite_ram,f,mit_format=True)
+
+doit("boss_4")

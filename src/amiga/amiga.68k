@@ -58,6 +58,9 @@ SCREEN_ADDRESS = 0x244000
 OPT_NO_SCROLLING_X = 0
 OPT_NO_SCROLLING_Y = 0
 
+* load fixed sprites, mostly bosses as they're long to reach & test
+OPT_BOSS_SPRITES_MOCKUP = 0
+
 * if the alloc_sprite & update_sprite routines
 * are reused, changing those offsets can make
 * a quick reuse from game to game as most sprite
@@ -1283,6 +1286,7 @@ an_ports:
 	jra		special_memory_op_out
 
 * virtual address 0x31xxxx
+* track in mame: wpset 3103e0,20,W
 palette_and_sprites_ram_op:
 	.ifndef RELEASE
 	add.w	#0x31-0xD,d2
@@ -1421,19 +1425,22 @@ addr_242xxx_op:
 * for level 2 before and after boss color change, then matches
 * the quantized colors (so aren't the actual colors but very close)
 * we cannot use the original palette change commands as the order
-* and count don't match
+* and count don't match. This is trial and error based on mockup sprites
+* captured during boss fight, and manual adjustments
 level_2_boss_color_change:
-	.word	0xeee,0x707
-	.word	0xc62,0xb75
-	.word	0x953,0x853
-	.word	0x500,0x306
-	.word	0x444,0x555
-	.word	0x731,0x631
-	.word	0x700,0x408
-	.word	0xb00,0x52b
-	.word	0x400,0x204
-	.word	0xd86,0xd97
+	.word	0x500,0x306 | purple #3, slightly conflicts with bad dudes but doesn't matter
+	.word	0x700,0x408 | purple #2
+	.word	0xd00,0x62b	| purple #1
+	*.word	0xeee,0x707   | conflicts with bad dudes trousers after quantizing, leaving white...
+	*.word	0xc62,0xb75	 | those diffs seem not to have any effect, drop them
+	*.word	0x953,0x853
+	*.word	0x444,0x555
+	*.word	0x731,0x631
+	*.word	0x400,0x204
+	*.word	0xd86,0xd97
 	.long	-1		| end
+	
+
 	
 * 8x8 tile layer, for osd (not scrolled) but also row scrolled
 * for front objects (lamps...)
@@ -2679,10 +2686,15 @@ really_update_sprites:
 558:
 	GET_RAM_START_IN_A6
 	lea	(0x4000,a6),a0		| sprites
-	.ifne	OPT_ENABLE_LOGGING
-	move.l	a0,0x20			| store address in zero page
-	.endif
 	
+	.ifne		OPT_BOSS_SPRITES_MOCKUP
+	cmp.w	#CTX_GAME,global_context
+	jcs		600f
+	jbsr	mockup_boss_palette_load
+	lea		sprite_ram_mockup,a0
+	
+600:
+	.endif
     lea _custom,A5
 	move.l	bob_previous_drawed_sprites,a6
 	move.l		sprite_table_base,a4
@@ -5296,6 +5308,7 @@ change_palette:
 	jmi	3f
 	swap	d2		| search key D2.W
 	lea	base_palette,a1
+	lea	base_palette+64*2-4,a1
 	move.w	#63,d0
 1:
 	move.w	(a1)+,d1
@@ -5309,13 +5322,14 @@ change_palette:
 	swap	d2
 	move.w	d2,(-2,a1)
 2:
+	subq	#8,a1
 	dbf		d0,1b
 	jra		0b		| next search entry
 3:
 	movem.l	(a7)+,d0-d2/a1
 	rts
 4:
-	addq	#2,a1
+	subq	#6,a1
 	jra		1b		| bank switch, skip this copperlist entry
 
 	
@@ -5703,6 +5717,13 @@ dump_logs:
 	lea		tile_24d000_log_name_index(pc),a3
 	move.l	#0x8000,d1
 	jbsr	dump_log
+	
+	GET_RAM_START_IN_A6
+	lea		sprites_ram_name(pc),a0
+	lea	(0x4000,a6),a1		| sprites
+	move.l	#0x800,d0
+	jbsr	resload_SaveFile(a2)
+	
     movem.l (a7)+,d0-a6
 	rts
 	
@@ -5713,7 +5734,9 @@ dump_log:
 	move.l	d1,d0
 	jbsr	resload_SaveFile(a2)
 	rts
-	
+
+sprites_ram_name:
+	.asciz	"sprite_ram"
 tile_24a000_log_name:
 	.ascii	"level_"
 tile_24a000_log_name_index:
@@ -5935,10 +5958,40 @@ debug_scroll_display:
 	.align	2
 debug_truck_move:
 	.word	0
-
+	.ifne		OPT_BOSS_SPRITES_MOCKUP
+mockup_palette_loaded:
+	.word	0
+	.endif
 * in 244758
 boss_life:
       .word	0x006A,0x0068,0x006B,0x069,0x006F,0x006F,0x006F,0x006F,0x006F,0x006F,0x006D,0
+
+	.ifne		OPT_BOSS_SPRITES_MOCKUP
+mockup_boss_palette_load:
+	tst.b	mockup_palette_loaded
+	jne		0f
+	.ifeq		OPT_BOSS_SPRITES_MOCKUP-2
+	lea		level_2_boss_color_change(pc),a0
+	.endif
+	.ifeq		OPT_BOSS_SPRITES_MOCKUP-4
+	jra		0f		| no color change
+	.endif
+	jbsr	change_palette
+	st		mockup_palette_loaded
+0:
+	rts
+	
+sprite_ram_mockup:
+	.ifeq		OPT_BOSS_SPRITES_MOCKUP-2
+	.include	"mockup/boss_2.68k"
+	.endif
+	.ifeq		OPT_BOSS_SPRITES_MOCKUP-4
+	.include	"mockup/boss_4.68k"
+	.endif
+	.ifeq		OPT_BOSS_SPRITES_MOCKUP-6
+	.include	"mockup/boss_6.68k"
+	.endif
+	.endif
 
 debug_truck_message:
 	.asciz	"TPOS 000000"
