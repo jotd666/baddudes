@@ -5442,29 +5442,31 @@ install_osd_hardware_sprites:
 	* sprites above for sprites 0-3, below for 4-7
 	move.w	#SPRITES_BELOW_BPLCON2_VALUE,sprites_bplcon2
 	
-	* install palette for sprites 4,5,6,7
+	* install palette for sprites 4,5,6,7 (background
+
 	move.l	background_sprites_palette,a3
 	lea		sprites_palette_even+2+32,a1	| colors for sprite 4
 	lea		sprites_palette_odd+2+32,a2  | colors for sprite 5
 	.rept	4
 	move.w	(a3),(a1)
 	addq	#4,a1
-	move.w	(a3)+,(a2)
+	move.w	(a3)+,(a2)		| odd
 	addq	#4,a2
 	.endr
 	move.l	background_sprites_palette,a3
 	.rept	4
 	move.w	(a3),(a1)
 	addq	#4,a1
-	move.w	(a3)+,(a2)
+	move.w	(a3)+,(a2)		| odd
 	addq	#4,a2
 	.endr
 
+	
+	* now install the sprites themselves
 	move.l	d0,a4
 	moveq	#32,d0
 	moveq	#0,d1
 	moveq	#3,d7
-	
 0:
 	movem.w	d0-d1,-(a7)
 	lea		HW_SpriteYTable_240,a1
@@ -5476,6 +5478,7 @@ install_osd_hardware_sprites:
 	addq	#8,A4
 	add		#64,d0		| next X
 	dbf		d7,0b
+
 
 10:	
 	rts
@@ -6164,21 +6167,22 @@ BROWN_COLOR_3 = 0x431
 forest_object_colors_block:
 	DECL_COLOR_BANK	2
 	.word	0x2C01+0x3200,0xFFFE
-	.word	color+2+16,BROWN_COLOR_1	| color 1 sprite 4
-	.word	color+4+16,BROWN_COLOR_2	| color 2 sprite 4
-	.word	color+6+16,BROWN_COLOR_3	| color 3 sprite 4
+	.word	color+2+8*2,BROWN_COLOR_1	| color 1 sprite 4
+	.word	color+4+8*2,BROWN_COLOR_2	| color 2 sprite 4
+	.word	color+6+8*2,BROWN_COLOR_3	| color 3 sprite 4
 	
 	.word	0x2C01+0x3800,0xFFFE
-	.word	color+2+24,BROWN_COLOR_1	| color 1 sprite 6
-	.word	color+4+24,BROWN_COLOR_2	| color 2 sprite 6
-	.word	color+6+24,BROWN_COLOR_3	| color 3 sprite 6
+	.word	color+2+12*2,BROWN_COLOR_1	| color 1 sprite 4
+	.word	color+4+12*2,BROWN_COLOR_2	| color 2 sprite 4
+	.word	color+6+12*2,BROWN_COLOR_3	| color 3 sprite 4
+
+	.word	color+2+24*2,BROWN_COLOR_1	| color 1 sprite 6
+	.word	color+4+24*2,BROWN_COLOR_2	| color 2 sprite 6
+	.word	color+6+24*2,BROWN_COLOR_3	| color 3 sprite 6
 	
-	.word	color+2+8,0xF00	| color 1 sprite 6
-	.word	color+4+8,0xF00	| color 2 sprite 6
-	.word	color+6+8,0xF00	| color 3 sprite 6
-	.word	color+2+8,0xF00	| color 1 sprite 6
-	.word	color+4+8,0xF00	| color 2 sprite 6
-	.word	color+6+8,0xF00	| color 3 sprite 6
+	.word	color+2+28*2,BROWN_COLOR_1	| color 1 sprite 6
+	.word	color+4+28*2,BROWN_COLOR_2	| color 2 sprite 6
+	.word	color+6+28*2,BROWN_COLOR_3	| color 3 sprite 6
 forest_object_colors_block_end:
 
 * 2 words: first shift (as bplcon value), then

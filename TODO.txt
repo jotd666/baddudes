@@ -1,7 +1,10 @@
 - 2 player mode!!!!!
+- player killed and lying on ground: seems that facing left it displays at the wrong
+  location!
+- level 6: failling stalactite  not gray at all
 - repair front objects (will destroy status bar)
 - 2nd button doesn't seem to work
-- level 6: we should add 16 mirror Y tile
+- level 6: we should add 16 mirror Y tile (end of level)
 - autoframeskip not limited/frameskip doesn't display sprites!!!
 - comb effect on tiles (level 1)
 - scroll debug: add Y scroll in the available rightmost 000
