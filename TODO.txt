@@ -1,9 +1,8 @@
-- background sprites: multiplex to bottom status bar,
-  then try to extend to 240 high sprites
 - 2 player mode!!!!!
+- repair front objects (will destroy status bar)
 - 2nd button doesn't seem to work
 - level 6: we should add 16 mirror Y tile
-- autoframeskip not limited
+- autoframeskip not limited/frameskip doesn't display sprites!!!
 - comb effect on tiles (level 1)
 - scroll debug: add Y scroll in the available rightmost 000
 - level 2: no lamps if objects 2 loaded. Ok if objects 1 loaded
@@ -11,8 +10,10 @@
 - background sprites: forest: try to add browns, remove browns from trunk so
   3 greens and dynamic brown
 - level 7 should set an offset for vertical scrolling
+- handle flashing attibute (enemies die, less blitting!!)
 - check symmetry for 64 bit wide
-
+- save/load highscores
+- dump sprite ram state on dump key (to mockup boss fights)
 - bitplane fmode 3 would it work?
 - level 2: road colors are trashed??
 - level 3: water scroll tiles wrong placement, maybe quadrant shit is different than

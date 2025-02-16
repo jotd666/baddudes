@@ -153,7 +153,33 @@ mul\value\()_table:
 	.endr
 .endm
 
+.macro	DECL_BITPLANES	bpoff_start,nb_planes
+	.set	bpoff,\bpoff_start
+	.rept	\nb_planes
+	dc.w  bplpt+bpoff,0
+	dc.w  bplpt+bpoff+2,0
+	.set	bpoff,bpoff+4
+	.endr
+	.endm
 
+.macro	DECL_COLOR_BANK	bankno
+	.word	bplcon3,BASE_BPLCON3_VALUE+(\bankno<<13)
+	.endm
+	
+.macro	DECL_COLORS	offset,nb_colors
+	.set	colidx,\offset
+	.rept	\nb_colors
+	dc.w	color+(colidx*2),0
+	.set	colidx,colidx+1
+	.endr
+	.endm
+
+.macro	DECL_SPRITES	nb_sprites
+	.rept	\nb_sprites*2
+	* 2 slots
+	.word	0x1FE,0
+    .endr
+	.endm
 * debug macro that colors the screen until LMB pressed
 .macro 	blitz_bypass
 	move.w	d0,-(a7)
@@ -3782,7 +3808,8 @@ platform_init:
 	
 	* set sprite registers in copperlist to blank
 	jbsr	clear_all_hardware_sprites
-
+	* neutralize forest color copper change area
+	jbsr	clear_forest_background_colors
 
 	* wait 300 lines
 	move.w	#100,d0
@@ -4548,10 +4575,33 @@ toggle_pause:
 0:
 	rts
 
+clear_forest_background_colors:
+	movem.l	a0/a1/d0,-(a7)
+	lea	forest_colors,a0
+	lea	forest_colors_end,a1
+	move.l	#0x1FE0000,d0	| nop copper
+0:
+	move.l	d0,(a0)+
+	cmp.l	a0,a1
+	jne		0b
+	movem.l	(a7)+,a0/a1/d0
+	rts
+	
+set_forest_background_colors:
+	lea	forest_colors,a0
+	lea	forest_colors_end,a2
+	lea	forest_object_colors_block,a1
+0:
+	move.l	(a1)+,(a0)+
+	cmp.l	a0,a2
+	jne		0b
+	rts
+	
+* set all sprites to blank, also position the sprite registers
 clear_all_hardware_sprites:
 	movem.l	d0-d2/a0,-(a7)
 	move.l	#blank_sprite,d1
-	lea		intro_sprites,a0
+	lea		osd_upper_sprites,a0
 	move.w	#sprpt,d0
 	move.w	#NB_HOST_SPRITES-1,d2		| 7
 0:
@@ -4565,6 +4615,23 @@ clear_all_hardware_sprites:
 	
 	addq	#2,d0
 	dbf		d2,0b
+	
+	lea		osd_lower_sprites,a0
+	move.w	#sprpt,d0
+	move.w	#NB_HOST_SPRITES/2-1,d2		| 3
+0:
+	move.w	d0,(a0)+
+	swap	d1
+	move.w	d1,(a0)+
+	swap	d1
+	addq	#2,d0
+	move.w	d0,(a0)+
+	move.w	d1,(a0)+
+	
+	addq	#2,d0
+	dbf		d2,0b
+	
+	
 	movem.l	(a7)+,d0-d2/a0
 	rts
 	
@@ -4579,7 +4646,7 @@ wait_vbl:
 	
 osd_set_context:
 	movem.l	d0-a6,-(a7)
-	move.w	d0,d7		| save in d7
+	move.w	d0,-(a7)		| save in d7
 	
 	* we need to make sure that the sprite update interrupt is updating the
 	* sprites while we're changing the sprite set, or it can cause issues
@@ -4588,6 +4655,9 @@ osd_set_context:
 	* remove pointer on truck planes, this will disable any remaining truck
 	* draw, and also front objects
 	clr.l	truck_planes
+	
+	* no forest background colors
+	jbsr	clear_forest_background_colors
 	
 	* default for operation on 24Axxx => normal
 	move.l	#addr_24Axxx_tile_layer_op,addr_24Axxx_tile_layer_op_address
@@ -4640,7 +4710,7 @@ osd_set_context:
 	dbf	d0,0b
 	
 	
-	move	d7,d0		| restore state
+	move	(a7)+,d0		| restore state
 	
 	* by default, no double buffering on non-game parts
 	move.l	fg_drawed_screen_ptr,fg_displayed_screen_ptr
@@ -5170,12 +5240,16 @@ level_3_load:
 	dbf		d0,0b
 	rts
 	
+* forest level
 level_4_load:	
 	lea		tiles_level_4_24a000_file,a0
 	jbsr	load_level_tiles_and_bobs
 
 	lea		forest_sprites_file,a0
 	jbsr	load_background_file
+
+	* install forest background colors
+	jbsr	set_forest_background_colors
 
 	rts
 level_5_load:
@@ -5301,7 +5375,7 @@ install_osd_hardware_sprites:
 	jbsr	copy_osd_sprite_palette
 	
 	* now put them on screen
-	lea		intro_sprites,a0
+	lea		osd_upper_sprites,a0
 	lea		osd_left_sprite,a2
 	move.l	a2,a3
 	move.w	#48,d0
@@ -5325,12 +5399,44 @@ install_osd_hardware_sprites:
 	move.w	#32,d1
 	jbsr	install_osd_sprite
 	
-	* now 2 cases here.
-	* if forest or cave, we're already using sprites 4 to 7
-	* for static background, so those sprites have to multiplex
-	* from the other ones
+	* lower part reuse the same sprites 0-3 as multiplexed
+	* which leaves sprites 4-7 free for other things
+	
+	move.w	#sprpt,d2		| start from sprite 0 again
+	lea		upper_osd_next_cw_table,a4
+	lea		osd_lower_sprites,a0
+	lea		osd_bottom_left_sprite+16,a2
+	move.l	(a4)+,a3
+	move.w	#32,d0
+	move.w	#240,d1
+	jbsr	install_osd_sprite
+	
+	lea		osd_bottom_left_center_sprite+16,a2
+	move.l	(a4)+,a3
+	move.w	#96+32,d0
+	move.w	#240,d1
+	jbsr	install_osd_sprite
+	
+	lea		osd_bottom_right_center_sprite+16,a2
+	move.l	(a4)+,a3
+	move.l	a2,a3
+	move.w	#96+32+64,d0
+	move.w	#240,d1
+	jbsr	install_osd_sprite
+	
+	lea		osd_bottom_right_sprite+16,a2
+	move.l	(a4)+,a3
+	move.w	#216,d0
+	move.w	#240,d1
+	jbsr	install_osd_sprite	
+	
+
+	* if forest or cave, we're already sprites 4 to 7
+	* for static background
 	move.l	background_sprite_table,d0
 	jeq		10f
+
+	lea		background_sprites,a0
 	
 	* change sprites vs bitplanes priority (partially)
 	* sprites above for sprites 0-3, below for 4-7
@@ -5361,7 +5467,7 @@ install_osd_hardware_sprites:
 	
 0:
 	movem.w	d0-d1,-(a7)
-	lea		HW_SpriteYTable_232,a1
+	lea		HW_SpriteYTable_240,a1
 	move.l	(a4),a3
 	move.l	a3,a2
 	jbsr	install_any_sprite
@@ -5370,35 +5476,14 @@ install_osd_hardware_sprites:
 	addq	#8,A4
 	add		#64,d0		| next X
 	dbf		d7,0b
+
+10:	
 	rts
-10:
-	lea		osd_bottom_left_sprite,a2
-	move.l	a2,a3
-	move.w	#32,d0
-	move.w	#240,d1
-	jbsr	install_osd_sprite
-	
-	lea		osd_bottom_left_center_sprite,a2
-	move.l	a2,a3
-	move.w	#96+32,d0
-	move.w	#240,d1
-	jbsr	install_osd_sprite
-	
-	lea		osd_bottom_right_center_sprite,a2
-	move.l	a2,a3
-	move.w	#96+32+64,d0
-	move.w	#240,d1
-	jbsr	install_osd_sprite
-	
-	lea		osd_bottom_right_sprite,a2
-	move.l	a2,a3
-	move.w	#216,d0
-	move.w	#240,d1
-	jbsr	install_osd_sprite
-	rts
+
 	
 * < A2: sprite start
 * < A3: sprite control word (can be A2 or other for multiplexing)
+* < D2: current sprpt
 install_osd_sprite:
 	lea		HW_SpriteYTable_16,a1
 	subq	#1,d0		| apply small offset
@@ -5985,7 +6070,7 @@ HW_SpriteYTable_\height:
 	DEF_HW_SPRITE_Y_TABLE	32
 	DEF_HW_SPRITE_Y_TABLE	48
 	DEF_HW_SPRITE_Y_TABLE	184
-	DEF_HW_SPRITE_Y_TABLE	232
+	DEF_HW_SPRITE_Y_TABLE	240
 
 	.macro	STORE_SPRITE_Y_ENTRY	offset
 	lea	HW_SpriteYTable_\offset,a1
@@ -6069,6 +6154,33 @@ prev_truck_params:
 truck_previously_drawn:
 	.byte	0
 	.align	2
+	
+* copperlist data for forest level
+BROWN_COLOR_1 = 0x210
+BROWN_COLOR_2 = 0x320
+BROWN_COLOR_3 = 0x431
+	* optional color change for forest background, copperlist bit copied
+	* in copperlist only at level 4
+forest_object_colors_block:
+	DECL_COLOR_BANK	2
+	.word	0x2C01+0x3200,0xFFFE
+	.word	color+2+16,BROWN_COLOR_1	| color 1 sprite 4
+	.word	color+4+16,BROWN_COLOR_2	| color 2 sprite 4
+	.word	color+6+16,BROWN_COLOR_3	| color 3 sprite 4
+	
+	.word	0x2C01+0x3800,0xFFFE
+	.word	color+2+24,BROWN_COLOR_1	| color 1 sprite 6
+	.word	color+4+24,BROWN_COLOR_2	| color 2 sprite 6
+	.word	color+6+24,BROWN_COLOR_3	| color 3 sprite 6
+	
+	.word	color+2+8,0xF00	| color 1 sprite 6
+	.word	color+4+8,0xF00	| color 2 sprite 6
+	.word	color+6+8,0xF00	| color 3 sprite 6
+	.word	color+2+8,0xF00	| color 1 sprite 6
+	.word	color+4+8,0xF00	| color 2 sprite 6
+	.word	color+6+8,0xF00	| color 3 sprite 6
+forest_object_colors_block_end:
+
 * 2 words: first shift (as bplcon value), then
 * offset in bytes
 scroll_table:
@@ -6102,14 +6214,7 @@ tile_log_table_end:
 	.endif
 
 
-.macro	DECL_BITPLANES	bpoff_start,nb_planes
-	.set	bpoff,\bpoff_start
-	.rept	\nb_planes
-	dc.w  bplpt+bpoff,0
-	dc.w  bplpt+bpoff+2,0
-	.set	bpoff,bpoff+4
-	.endr
-	.endm
+
 
 upper_osd_next_cw_table:
 	.long	osd_left_next_cw
@@ -6119,25 +6224,6 @@ upper_osd_next_cw_table:
 
 	.section	.datachip
 
-
-.macro	DECL_COLOR_BANK	bankno
-	.word	bplcon3,BASE_BPLCON3_VALUE+(\bankno<<13)
-	.endm
-	
-.macro	DECL_COLORS	offset,nb_colors
-	.set	colidx,\offset
-	.rept	\nb_colors
-	dc.w	color+(colidx*2),0
-	.set	colidx,colidx+1
-	.endr
-	.endm
-
-.macro	DECL_SPRITES
-	.rept	16
-	* 2 slots
-	.word	0x1FE,0
-    .endr
-	.endm
 
 	
 
@@ -6156,7 +6242,6 @@ debug_color:
 	dc.w	0
 	dc.l	-2
 	
-
 
 
 	
@@ -6183,9 +6268,11 @@ fine_x_scroll_value:
 	.word	bplcon2
 sprites_bplcon2:
 	.word	BASE_BPLCON2_VALUE
-intro_sprites:
-	DECL_SPRITES
-
+osd_upper_sprites:
+	DECL_SPRITES	4
+	* must follow !!!!
+background_sprites:
+	DECL_SPRITES	4
 
 	DECL_COLOR_BANK 0
 base_palette:
@@ -6215,7 +6302,13 @@ attached_sprites_bplcon4:
 front_object_colors:
 	DECL_COLORS	0,16
 front_object_sprites:
-	DECL_SPRITES
+	DECL_SPRITES	8
+
+	* optional color change for forest background
+
+forest_colors:
+	.skip	forest_object_colors_block_end-forest_object_colors_block
+forest_colors_end:
 	
 	* mid-line wait & extra interrupt
 	.word	0x8001,0xFFFE
@@ -6224,8 +6317,6 @@ intro_intreq_block:
 	* non-black: we can set color 0 to light blue now
 	.word	 intreq,0x8014  | call copper interrupt in the middle of a frame, also flag so copper interrupt knows that we're going to call copper int
 
-
-	
 	* pal limit
     .word  0xFFDF,0xFFFE       | PAL wait
 
@@ -6243,9 +6334,8 @@ bitplanes_road:
 fine_x_road_scroll_value:
 	.word	0
 
-	* re-set all sprites above playfields
-	.word	bplcon2
-	.word	BASE_BPLCON2_VALUE
+osd_lower_sprites:
+	DECL_SPRITES	4
 	
 	* change palette for lower OSD sprites (lives & energy)
 	.word	0x0C01,0xFFFE
@@ -6254,12 +6344,12 @@ fine_x_road_scroll_value:
 	.word	 intreq,0x8010	| no bobs from now on
 
 	DECL_COLOR_BANK	2
-	.word	color+2*10,0xEBB		| flesh pink
-	.word	color+2*11,0xE9A		| flesh pink #2
+	.word	color+2*2,0xEBB		| flesh pink
+	.word	color+2*3,0xE9A		| flesh pink #2
 	.word	0x1401,0xFFFE
-	.word	color+2*11,0xEEE		| back to white for "LIFE" letters
-	.word	color+2*10,0xB29		| magenta for dots
-	.word	color+2*14,0xB29		| magenta for dots (right part of "enemy" dots)
+	.word	color+2*3,0xEEE		| back to white for "LIFE" letters
+	.word	color+2*2,0xB29		| magenta for dots
+	.word	color+2*6,0xB29		| magenta for dots (right part of "enemy" dots)
 
 	
     .long    -2
