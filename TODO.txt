@@ -18,7 +18,6 @@
 - handle flashing attibute (enemies die, less blitting!!)
 - check symmetry for 64 bit wide
 - save/load highscores
-- bitplane fmode 3 would it work?
 - level 2: road colors are trashed??
 - level 3: water scroll tiles wrong placement, maybe quadrant shit is different than
   for other mode??? dump 24A000 memory on second write to 246010 MAME/amiga and compare
@@ -34,7 +33,7 @@
 - truck blit erase issue (front of truck), truck right clip part too soon
  
 - karnov feet erase issue, doesn't seem to be erased (also true for jumping ninjas) probably
-  group erase not working
+  group erase not working. Same for level 6 devil pole
 - karnov/in general when scrolling at 0, existing screen buffer is slightly trashed:
   with restored tiles: add debug key to toggle screen with/without 
   scroll / check when the sprite draw is avoided and see what values it would yield

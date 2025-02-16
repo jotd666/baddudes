@@ -44,6 +44,21 @@ SPRITE_Y_CORRECTION = 0
 HW_SPRITE_X_CORRECTION = 0
 HW_SPRITE_Y_CORRECTION = 0
 
+* 3 & 3: most performant
+BITPLANE_FMODE = 3			| works with 1, albeit slower
+SPRITE_FMODE = 3			| required!!
+
+	.ifeq	BITPLANE_FMODE-3
+* bitplane fmode = 3 needs this
+HW_SPRITE_SHIFT = 32
+	.else
+	.ifeq	BITPLANE_FMODE-1
+HW_SPRITE_SHIFT = 0
+	.else
+	.error	"unsupported BITPLANE_FMODE"
+	.endif
+	.endif
+	
 Y_MAX = 240
 Y_MAX_SPRITE = 256
 ONE_FULL_16_BIT_ROW = 3*Y_MAX_SPRITE*2
@@ -101,7 +116,6 @@ NB_PLAYFIELD_PLANES = 6
 NB_BYTES_PER_SCREEN_ROW = 32
 NB_BYTES_PER_ROW = NB_BYTES_PER_SCREEN_ROW*3
 
-SPRITE_FMODE = 3
 
 PROGRAM_SIZE = 0x60000
 
@@ -498,7 +512,7 @@ _user:
 
 * so memory is quadword-aligned (not trusting .align directives)
 align_for_fmode:
-	add.w	#0x10,a0
+	add.w	#0x8,a0
 	move.l	a0,d0
 	and.b	#0xF8,d0
 	move.l	d0,a0
@@ -3800,18 +3814,22 @@ platform_init:
 *0:
 
  	*         VVHH
-    move.w #0x2CA0,diwstrt(a5)
-    move.w #0x24A0,diwstop(a5)
+    move.w #0x2CA0+HW_SPRITE_SHIFT,diwstrt(a5)
+    move.w #0x24A0+HW_SPRITE_SHIFT,diwstop(a5)
     move.w #0x0038,ddfstrt(a5)
     move.w #0x00D0,ddfstop(a5)
 
 	* restrict borders: we don't see bobs on the borders!
 	* try to hide color 0 on the border (except on OCS)
 
-    move.w #(SPRITE_FMODE<<2)+0x1,fmode(a5)	| 32 bit bitplane fetch, 64 bit wide sprites
+    move.w #(SPRITE_FMODE<<2)+BITPLANE_FMODE,fmode(a5)	| 32 bit bitplane fetch, 64 bit wide sprites
 
 	move.w	#0,bplcon1(a5)
+	.ifeq	BITPLANE_FMODE-3
+	moveq	#-8+NB_BYTES_PER_ROW-40,d0
+	.else
 	moveq	#-4+NB_BYTES_PER_ROW-40,d0
+	.endif
     move.w d0,bpl1mod(a5)
     move.w d0,bpl2mod(a5)
 
@@ -5392,24 +5410,24 @@ install_osd_hardware_sprites:
 	lea		osd_upper_sprites,a0
 	lea		osd_left_sprite,a2
 	move.l	a2,a3
-	move.w	#48,d0
+	move.w	#48+HW_SPRITE_SHIFT,d0
 	move.w	#32,d1
 	move.w	#sprpt,d2
 	jbsr	install_osd_sprite
 	lea		osd_left_center_sprite,a2
 	move.l	a2,a3
-	move.w	#48+64,d0
+	move.w	#48+64+HW_SPRITE_SHIFT,d0
 	move.w	#32,d1
 	jbsr	install_osd_sprite
 	lea		osd_right_center_sprite,a2
 	move.l	a2,a3
-	move.w	#48+64*2,d0
+	move.w	#48+64*2+HW_SPRITE_SHIFT,d0
 	move.w	#32,d1
 	jbsr	install_osd_sprite
 	
 	lea		osd_right_sprite,a2
 	move.l	a2,a3
-	move.w	#48+64*3,d0
+	move.w	#48+64*3+HW_SPRITE_SHIFT,d0
 	move.w	#32,d1
 	jbsr	install_osd_sprite
 	
@@ -5421,26 +5439,26 @@ install_osd_hardware_sprites:
 	lea		osd_lower_sprites,a0
 	lea		osd_bottom_left_sprite+16,a2
 	move.l	(a4)+,a3
-	move.w	#32,d0
+	move.w	#32+HW_SPRITE_SHIFT,d0
 	move.w	#240,d1
 	jbsr	install_osd_sprite
 	
 	lea		osd_bottom_left_center_sprite+16,a2
 	move.l	(a4)+,a3
-	move.w	#96+32,d0
+	move.w	#96+32+HW_SPRITE_SHIFT,d0
 	move.w	#240,d1
 	jbsr	install_osd_sprite
 	
 	lea		osd_bottom_right_center_sprite+16,a2
 	move.l	(a4)+,a3
 	move.l	a2,a3
-	move.w	#96+32+64,d0
+	move.w	#96+32+64+HW_SPRITE_SHIFT,d0
 	move.w	#240,d1
 	jbsr	install_osd_sprite
 	
 	lea		osd_bottom_right_sprite+16,a2
 	move.l	(a4)+,a3
-	move.w	#216,d0
+	move.w	#216+HW_SPRITE_SHIFT,d0
 	move.w	#240,d1
 	jbsr	install_osd_sprite	
 	
@@ -6241,7 +6259,11 @@ forest_object_colors_block_end:
 * 2 words: first shift (as bplcon value), then
 * offset in bytes
 scroll_table:
-	.include	"scroll_table.68k"
+	.ifeq	BITPLANE_FMODE-3
+	.include	"scroll_table_64.68k"
+	.else
+	.include	"scroll_table_32.68k"	
+	.endif
 * 65536 word values to flip bits. Costs 128k of memory but worth it
 * as it saves a lot of chip and it's way faster than byte per byte swap
 mirror_table:

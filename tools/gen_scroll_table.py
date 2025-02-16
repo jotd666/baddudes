@@ -7,9 +7,10 @@ src_dir = this_dir / os.pardir / "src" / "amiga"
 
 # http://amiga-dev.wikidot.com/hardware:bplcon1
 
+
 # table with fine shift + byte offset
-def doit(asm_output):
-    width = 32   # FMODE=1 (64 for FMODE=3)
+def doit(width):
+    asm_output = src_dir / f"scroll_table_{width}.68k"
     wmask = width-1
     scroll_table = [0]*512
 
@@ -33,4 +34,5 @@ def doit(asm_output):
     return items
 
 if __name__ == "__main__":
-    doit(src_dir / "scroll_table.68k")
+    doit(width = 32)   # FMODE=1
+    doit(width = 64)   # FMODE=3
