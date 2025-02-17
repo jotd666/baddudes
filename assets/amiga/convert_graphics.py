@@ -767,10 +767,10 @@ def postprocess_game_osd_tiles(tileset,palette_index):
 
 generate_for_levels = [False]*8
 
-#generate_for_levels[1] = True
+generate_for_levels[1] = True
 #generate_for_levels[2] = True
 #generate_for_levels[3] = True
-generate_for_levels[4] = True
+#generate_for_levels[4] = True
 #generate_for_levels[6] = True
 #generate_for_levels[7] = True
 # set to "False" for faster operation when working on game sprite/tiles
@@ -805,7 +805,7 @@ if generate_for_levels[2]:
 
 if generate_for_levels[3]:
     process_tile_context("level_3_24d000",level_3_tile_24d000_sheet_dict,16,first_pass=False)
-    process_tile_context("level_3_24a000",level_3_tile_24a000_sheet_dict,16,first_pass=False)
+    #process_tile_context("level_3_24a000",level_3_tile_24a000_sheet_dict,16,first_pass=False)
     process_tile_context("game_level_3",sprite_sheet_dict,48,is_bob=True,shift_palette_count=16)
 if generate_for_levels[4]:
     # 32 is too much, but 16 would be washed down. We need to keep it a power of 2

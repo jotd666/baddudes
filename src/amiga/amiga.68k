@@ -34,7 +34,7 @@ AFB_68020 = 1
 	.endif
 	
 TOTAL_PUBLIC_MEMORY_SIZE = 350000
-TOTAL_CHIP_MEMORY_SIZE = 980000
+TOTAL_CHIP_MEMORY_SIZE = 1080000
 
 PREVIOUS_SPRITE_SIZE = 8
 BORDERBLANK = 1
@@ -922,7 +922,11 @@ _vblank:
 	lea		debug_truck_message(pc),a0
 	jbsr	encode_debug_message
 	jbsr	osd_write_right_debug_message
-	move.w	x_background_scroll_value,d0
+	moveq	#0,d0
+	move.w	y_background_scroll_value,d0
+	swap	d0
+	lsr.l	#4,d0
+	or.w	x_background_scroll_value,d0
 	lea		debug_scroll_message(pc),a0
 	jbsr	encode_debug_message
 	jbsr	osd_write_left_debug_message
@@ -3918,6 +3922,11 @@ load_and_decrunch_file:
  	jsr	(resload_LoadFileDecrunch,a2)
 	rts
 	
+load_music_module:
+	jbsr	allocate_and_load_chip_mem_file
+	move.l	d0,current_tune
+	rts
+	
 * < A0: filename
 * > D0: size (decrunch supported)
 get_file_size:
@@ -5198,6 +5207,9 @@ display_front_object:
 
 
 level_1_load:
+	lea		fist_of_fury_music_file,a0
+	jbsr	load_music_module
+	
 	lea		tiles_level_1_24a000_file,a0
 	jbsr	load_level_tiles_and_bobs
 
@@ -5238,6 +5250,9 @@ level_2_load:
 	rts
 	
 level_3_load:	
+	lea		fist_of_fury_music_file,a0
+	jbsr	load_music_module
+
 	lea		tiles_level_3_24d000_file,a0
 	jbsr	load_tiles_file_24d000
 	lea		tiles_level_3_24a000_file,a0
@@ -5272,6 +5287,9 @@ level_3_load:
 	
 * forest level
 level_4_load:	
+	lea		fist_of_fury_music_file,a0
+	jbsr	load_music_module
+
 	lea		tiles_level_4_24a000_file,a0
 	jbsr	load_level_tiles_and_bobs
 
@@ -5294,6 +5312,8 @@ level_5_load:
 	rts
 	
 level_6_load:
+	lea		fist_of_fury_music_file,a0
+	jbsr	load_music_module
 	lea		tiles_level_6_24a000_file,a0
 	jbsr	load_level_tiles_and_bobs
 
@@ -5496,7 +5516,7 @@ install_osd_hardware_sprites:
 	
 	* now install the sprites themselves
 	move.l	d0,a4
-	moveq	#32,d0
+	moveq	#32+HW_SPRITE_SHIFT,d0
 	moveq	#0,d1
 	moveq	#3,d7
 0:
@@ -5623,7 +5643,6 @@ force_sound_stop:
 	movem.l	(a7)+,d0-d1/a0/a6
 	rts
 	
-* tunes sounds are: sound index followed by 0x15,0x16,0x17 (that we ignore!)
 osd_sound_start:
 	movem.l	d0/d1/a0/a6,-(a7)
 	lea		_custom,a6
@@ -5679,18 +5698,18 @@ osd_sound_start:
 	* play the proper module pattern
 	* load up the countdown if loop
 	
-	move.w	(2,a0,d0.w),d1	| pattern number in .mod file
+	*move.w	(2,a0,d0.w),d1	| pattern number in .mod file
 	* since it's not zero, next vbl tick will play the music
 	
-	cmp.b	music_track_start_number(pc),d1
-	beq.b	10b		| same track, skip
+	*cmp.b	music_track_start_number(pc),d1
+	*beq.b	10b		| same track, skip
 
     movem.l d0-a6,-(a7)
 	bsr		force_sound_stop
     lea _custom,a6
  	movem.l	d0/a0,-(a7)
-	*lea	pooyan_tunes,a0
-
+	move.l	current_tune,a0
+	moveq	#0,d1
 	
 	move.b	d1,music_track_start_number
 	move.w	d1,d0
@@ -5833,6 +5852,8 @@ old_actiview:
 old_stack:
 	.long	0
 return_address:
+	.long	0
+current_tune:
 	.long	0
 global_context:
 	.word	0
@@ -6017,6 +6038,8 @@ debug_truck_message:
 debug_scroll_message:
 	.asciz	"SCRO 000000"
 	.endif
+fist_of_fury_music_file:
+	.asciz	"bd-fist_of_fury.mod"
 forest_sprites_file:
 	.asciz	"forest.bin"
 cave_sprites_file:

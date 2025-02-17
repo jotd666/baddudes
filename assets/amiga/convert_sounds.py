@@ -53,9 +53,9 @@ def convert():
     "MAN_SCREAM_SND"               :{"index":0x2C,"channel":2,"sample_rate":hq_sample_rate,"priority":30},
     "IM_BAD_SND"               :{"index":0x36,"channel":3,"sample_rate":hq_sample_rate,"priority":30},
 
-#    "LEVEL_1_TUNE_SND"                :{"index":0x1F,"pattern":0x13,"volume":32,'loops':False,"ticks":180},
-#    "KARNOV_TUNE_SND"                :{"index":0x26,"pattern":0x13,"volume":32,'loops':False,"ticks":180},
-#    "WIN_TUNE_SND"                :{"index":0x22,"pattern":0x13,"volume":32,'loops':False,"ticks":180},
+    "LEVEL_1_TUNE_SND"                :{"index":0x1F,"pattern":0,"volume":20,'loops':True},
+    "KARNOV_TUNE_SND"                :{"index":0x26,"pattern":0,"volume":24,'loops':True},
+    "WIN_TUNE_SND"                   :{"index":0x22,"pattern":0,"volume":24,'loops':False,"ticks":180},
 
 
     }
@@ -203,11 +203,6 @@ def convert():
 
 
         # make sure next section will be aligned
-#        with open(os.path.join(sound_dir,f"{gamename}_conv.mod"),"rb") as f:
-#            contents = f.read()
-
-        fw.write("{}:".format(music_module_label))
-#        write_asm(contents,fw)
         fw.write("\t.align\t8\n")
 
 

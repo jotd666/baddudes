@@ -1,20 +1,19 @@
 - player killed and lying on ground: facing right it displays at the wrong
   location!
-- walking with flaming punch enabled: missing character legs (abusive vertical grouping?)
 - level 5,6: karnov wrong colors
 - repair front objects (will destroy status bar)
 - 2nd button doesn't seem to work
 - enemy + power bar wrong color now that sprites changed slots
 - level 6: we should add 16 mirror Y tile (end of level)
 - autoframeskip not limited/frameskip doesn't display sprites!!!
-- comb effect on tiles (level 1)
 - scroll debug: add Y scroll in the available rightmost 000
 - level 2: no lamps if objects 2 loaded. Ok if objects 1 loaded
-- 2 player mode
+- drop 2 player mode, use rightmost OSD sprite for real parallax in levels 4 and 6
+  see if we can blit the score afterwards if 2P mode is reinstated
 - level 2 front object (lamp) not displaying (used to work with level 1 objects)
-- background sprites: forest: try to add browns, remove browns from trunk so
-  3 greens and dynamic brown
 - level 7 should set an offset for vertical scrolling
+- Unclip sprites on left patch original code (to make up for horizontal grouping, ex
+  level 2 car)
 - handle flashing attibute (enemies die, less blitting!!)
 - check symmetry for 64 bit wide
 - save/load highscores
