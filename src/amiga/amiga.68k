@@ -3002,27 +3002,7 @@ mirror_64_bit_wide:
 	addq	#8,a2					| skip row
 	dbf		d1,10b
 	rts
-* this is !untested!
-mirror_80_bit_wide:
-	
-	moveq	#0,d0
-10:
-	move.w	(a2),d2
-	move.w	(8,a2),d0
-	* swap edges
-	move.w	(a1,d2.l*2),(8,a2)		| get mirror value
-	move.w	(a1,d0.l*2),(a2)+		| get mirror value
-	* swap center words
-	move.w	(a2),d2
-	move.w	(4,a2),d0
-	move.w	(a1,d2.l*2),(a2)+
-	move.w	(a1,d0.l*2),(2,a2)
-	* center
-	move.w	(a2),d2
-	move.w	(a1,d2.l*2),(a2)
-	addq	#8,a2					| skip row
-	dbf		d1,10b
-	rts
+
 	
 mirror_function_table:
 	.long	nope
@@ -3031,7 +3011,8 @@ mirror_function_table:
 	.long	mirror_32_bit_wide
 	.long	mirror_48_bit_wide
 	.long	mirror_64_bit_wide
-	.long	mirror_80_bit_wide
+	.long	nope		| just in case, but there are no such objects
+	.long	nope
 
 y_correction_table:
 	.word	0
@@ -4695,6 +4676,9 @@ osd_set_context:
 	* draw, and also front objects
 	clr.l	truck_planes
 	
+	* free music
+	clr.l	current_tune
+	
 	* no forest background colors
 	jbsr	clear_forest_background_colors
 	
@@ -5706,8 +5690,10 @@ osd_sound_start:
 
     movem.l d0-a6,-(a7)
 	bsr		force_sound_stop
-    lea _custom,a6
+	tst.l	current_tune
+	jeq		5f
  	movem.l	d0/a0,-(a7)
+    lea _custom,a6
 	move.l	current_tune,a0
 	moveq	#0,d1
 	
@@ -5731,6 +5717,7 @@ osd_sound_start:
     jsr	_mt_mastervol
 	st.b	music_playing
     jsr _mt_start
+5:
     movem.l (a7)+,d0-a6
 	
 6:
