@@ -4,6 +4,8 @@
   then if y scroll gets <= 0x100 do the same thing in reverse
   (optim: clear all "to delete" objects when doing the full restore)
   
+  doesn't work for backgrounds but the rest does!
+  
 - level 4 boss: missing black
 - level 5,6,7: karnov wrong colors, maybe paste direct proper colors like level 4 boss
 - repair front objects (will destroy status bar)
@@ -25,10 +27,13 @@
 - level 3: put water scroll in some other buffer (allocate one?) so changing plans automatically
   clips the sprites without any other side effect
   
+- save chipmem: RESTORE_SCREEN_SIZE = RESTORE_SCREEN_PLANE_SIZE*6   | max 5 planes, can be 4 too ATM 6 for convenience (8x8 fonts)
+  could be 5 planes, or even allocated per context. When allocating, always zero
+  the last 6th plane (for intro)
+  
 - truck jailbars when simpler blit with no source and BLTBDAT=0 in some cases?????
   => OK with actual zero source is minterm right???
 
-- use audio mixer (optional): https://powerprograms.nl/resources/audio_mixer_v3_6_docs.html#combining
 
 - remove BB9 BB8 BBA BBB (glasses) from log (old artifact)
 - truck blit erase issue (front of truck), truck right clip part too soon
@@ -43,30 +48,23 @@
 
 - optim: group erase on 16 (working) or 32 bit wide blocks
 
-- boss 2 color change wrong colors...
 - boss 3 color change
-- boss 4 color change
 - boss 5 color change
 - boss 6 color change
 
-- level complete messages should use front object sprites
+- level complete messages should use front object sprites (sprites 4-7, unload backgrounds first
+  in levels 4 and 6)
 - left osd mssing 1 char ("G"AME OVER), middle lower OSD also missing 1 char
 - log & rip missing sounds: breakpoint on sound not found so able to go to mame and rip it
-- use roondar's mixing engine (optional?)
+- use roondar's mixing engine (optional?) use audio mixer (optional): https://powerprograms.nl/resources/audio_mixer_v3_6_docs.html#combining
 - need to optimize truck/train erase: depending on the level, compute the parts that need
   background refresh. Truck: bottom (wheels) + part between front & tow & exhaust pipe. 
   Rest: not needed. same for big truck & train, with inter-tow: in progress
 
 - level 3: quantize seems to quantize up to 15 colors not 16. 1 color wasted
-  
-- use wrap for vertical scrolling (level 7)?? or just make display faded black until
-  scroll is right again
-- level 4 backgruond trees: get image: then use static 3 color sprite image with 3 greens
-  or 3 browns with dynamic color change, use sprites 4-7 with priority: behind playfields
+
 - level 4: maybe remove foreground trees if possible
 - level 6: same
-- level 6 background cave maybe OK with 3 grays
-- sprite mirror_planes: mirroring with width != 16 to implement: test on 32 then make a special case for 32 bits (d0=6)
 - levels with trains/trucks: load traintrucks bitplanes in non-displayed screen buffer
   to save chipmem
 

@@ -44,6 +44,10 @@ SPRITE_Y_CORRECTION = 0
 HW_SPRITE_X_CORRECTION = 0
 HW_SPRITE_Y_CORRECTION = 0
 
+SCROLL_NONE = 0
+SCROLL_DOWN = 4
+SCROLL_UP = 16
+
 * 3 & 3: most performant
 BITPLANE_FMODE = 3			| works with 1, albeit slower
 SPRITE_FMODE = 3			| required!!
@@ -2115,6 +2119,9 @@ preprocess_16x16_tile:
 	bset	#5,D3	| add 32 to X
 	bset	#8,d4	| add 256 to Y
 20:
+	* make up for shifted Y scroll (levels 6 and 7)
+	add.w	y_extra_offset,d4
+
 	move.l	fg_drawed_screen_ptr,a1
 	.ifne	OPT_ENABLE_DOUBLE_BUFFERING
 	move.l	fg_displayed_screen_ptr,a5
@@ -2558,7 +2565,68 @@ is_game_playing:
 	
 
 
+scroll_command_table:
+	.long	0
+	.long	do_scroll_down    | 4
+	.long	do_scroll_down    | 8
+	.long 	do_scroll_done    | 12
+	.long	do_scroll_up      | 16
+	.long	do_scroll_up      | 20
+	.long 	do_scroll_done    | 24
+	
+do_scroll_done:
+	* sequence complete
+	clr.w	y_scroll_command
+	rts
+	
+
+do_scroll_down:
+do_scroll_up:
+	* scroll up: we went down too much and overtook y scroll 0x100
+	* we need to copy all tiles from restore buffer upper part
+	* to display buffer lower part and the other way round and offset
+	* scroll value by 0x100 to simulate a wrap
+	*
+	* this is a very blitter expensive operation!
+
+	move.l	fg_drawed_screen_ptr,a1	| destination: first half of screen
+	sub.l	#SCREEN_PLANE_SIZE/2,a1		| make up for 0x100 Y offset
+	lea		background_restore_buffer,a0
+	move.w	#0x100,d1
+	jbsr	copy_background
+	
+	move.l	fg_drawed_screen_ptr,a1	| destination: first half of screen
+	add.l	#SCREEN_PLANE_SIZE/2,a1		| add 0x100 Y offset
+	lea		background_restore_buffer,a0
+	moveq	#0,d1
+	jbsr	copy_background
+
+	* we still have to erase the remaining bitplanes on visible screens
+	* (non-background backuped ones)
+	move.l	#draw_sprites,(a7)		| skip erase
+	rts
+
+* < A0: source
+* < A1: destination (with possible offset)
+* < D1: Y start
+copy_background:
+	moveq	#0,d0
+	move.w	#NB_BYTES_PER_ROW,D2
+	move.w	#256,D4		| height
+	jbsr	restore_background
+	rts
+	
+	
 really_update_sprites:
+	* first, check y scroll commands
+	move.w	y_scroll_command,d0
+	jeq		0f
+	* non-null scroll command
+	lea		scroll_command_table,a0
+	addq.w	#4,y_scroll_command		| next scroll command
+	jsr		([a0,d0.w])
+
+0:
 	move.l	bob_previous_drawed_sprites,a4
 	move.w	(a4),d2		| init prev X with first val
 	add.w	#16,d2			| previous += 16
@@ -2682,8 +2750,9 @@ really_update_sprites:
 	tst.l	front_objects_table
 	jeq		555f
 	jbsr	update_front_objects
-	
 555:
+
+draw_sprites:
 	* now compute frameskip for next time
 	tst.b	frameskip_flag+3
 	jne		558f
@@ -2875,7 +2944,7 @@ draw_bob_loop:
 	sub.w	(a1,d5.w),d0
 0:
 	add.w	y_background_scroll_value(pc),d1
-	* TODO maybe some Y-clipping to do.... in Y scrollable levels
+	add.w	y_extra_offset,d1
 	
 	* now A0 points on the first bitplane of the bob
 	tst.b	d6
@@ -4052,7 +4121,28 @@ set_scroll_y_24a000_layer:
 	jne		0f
 	rts
 0:
-
+	* we don't have chipmem room for extra Y wrap buffer in 3 screens
+	* let alone restore buffer
+	* we need to detect when Y scroll passes the 0x100 value in any direction
+	cmp.w	#0x101,d0
+	jcc		1f
+	* new value <= 0x100. Check if previous value was > 0x100
+	cmp.w 	#0x101,d1
+	jcs		2f		| was also <= 0x100, nothing to do
+	* new value below 0x100 again, old value > 0x100
+	* we just crossed the 0x100 Y scroll value boundary downwards (scroll value wrapped
+	* or elevator is rising)
+	clr.w	y_extra_offset
+	move.w	#SCROLL_DOWN,y_scroll_command
+1:
+	* new value > 0x100: happens in levels 6 and 7. Is previous value <= 0x100?
+	cmp.w	#0x101,d1
+	jcc		2f		| same half: do nothing
+	* we just crossed the 0x100 Y scroll value boundary
+	* we have to translate everything upwards
+	move.w	#-0x100,y_extra_offset
+	move.w	#SCROLL_UP,y_scroll_command
+2:
 	move.w	d0,y_background_scroll_value
 	rts
 
@@ -4138,6 +4228,8 @@ set_playfield_bitplanes:
 	* set bitplanes
 	moveq	#0,d0
 	move.w	y_background_scroll_value,d0
+	add.w	y_extra_offset,d0
+	
 	lea		mulNB_BYTES_PER_ROW_table,a2
 	move.w	(a2,d0.w*2),d0		| compute Y offset
 	move.w	x_background_scroll_value,d2	
@@ -4675,6 +4767,9 @@ osd_set_context:
 	* remove pointer on truck planes, this will disable any remaining truck
 	* draw, and also front objects
 	clr.l	truck_planes
+	
+	clr.w	y_extra_offset
+	move.w	#SCROLL_NONE,y_scroll_command
 	
 	* free music
 	clr.l	current_tune
@@ -5854,6 +5949,8 @@ x_background_scroll_value:
 	.word	0
 y_background_scroll_value:
 	.word	0
+y_extra_offset:
+	.word	0
 contents_of_x_scroll_246010:
 	.word	0
 contents_of_y_scroll_246012:
@@ -5863,6 +5960,8 @@ x_secondary_scroll_value:
 y_secondary_scroll_value:
 	.word	0
 x_road_layer_scroll_value:
+	.word	0
+y_scroll_command:
 	.word	0
 first_half_flag:
 	.byte	0
