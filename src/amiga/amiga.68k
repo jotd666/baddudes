@@ -34,7 +34,7 @@ AFB_68020 = 1
 	.endif
 	
 TOTAL_PUBLIC_MEMORY_SIZE = 350000
-TOTAL_CHIP_MEMORY_SIZE = 1080000
+TOTAL_CHIP_MEMORY_SIZE = 1380000
 
 PREVIOUS_SPRITE_SIZE = 8
 BORDERBLANK = 1
@@ -132,7 +132,6 @@ NB_PLAYFIELD_LINES = 256
 SCREEN_PLANE_SIZE = NB_BYTES_PER_ROW*NB_PLAYFIELD_LINES*2
 RESTORE_SCREEN_PLANE_SIZE = NB_BYTES_PER_SCREEN_ROW*3*NB_PLAYFIELD_LINES*2
 SCREEN_SIZE =  SCREEN_PLANE_SIZE*NB_PLAYFIELD_PLANES
-RESTORE_SCREEN_SIZE = RESTORE_SCREEN_PLANE_SIZE*6   | max 5 planes, can be 4 too ATM 6 for convenience (8x8 fonts)
 
 
 NB_HOST_SPRITES = 8
@@ -816,7 +815,7 @@ _vblank:
 	move.l	(a2),a2		| first dude struct data
 
 	move.l	fg_drawed_screen_ptr,a1
-	lea		background_restore_buffer,a0
+	move.l	background_restore_buffer,a0
 	move.w	(a2)+,d0			| X
 	move.w	(a2)+,d1			| Y
 	move.w	(a2)+,d2			| width
@@ -1076,7 +1075,7 @@ erase_level_1_truck:
 	sub.w	d3,d4
 	add.w	d4,d1
 	move.w	d3,d4
-	lea		background_restore_buffer,a0
+	move.l	background_restore_buffer,a0
 	jbsr	restore_background
 
 	* rear should be erased only when X > 0
@@ -1091,7 +1090,7 @@ erase_level_1_truck:
 	move.w  truck_height,d4
 	* clip to bottom of truck (wheels)
 	sub.w	truck_wheels_height,d4
-	lea		background_restore_buffer,a0
+	move.l	background_restore_buffer,a0
 	jbsr	restore_background
 
 	jbsr	get_current_level
@@ -1109,7 +1108,7 @@ erase_level_1_truck:
 	move.w  truck_height,d4
 	sub.w	truck_wheels_height,d4
 	move.w	#4,d2
-	lea		background_restore_buffer,a0
+	move.l	background_restore_buffer,a0
 	jbsr	restore_background
 	jra	20f
 10:
@@ -1126,7 +1125,7 @@ erase_level_1_truck:
 	move.w	truck_y_pos,d1	| displayY
 	move.w  truck_height,d4
 	sub.w	truck_wheels_height,d4
-	lea		background_restore_buffer,a0
+	move.l	background_restore_buffer,a0
 	move.w	#6,d2
 	move.l	fg_drawed_screen_ptr,a1
 	jbsr	restore_background
@@ -1572,7 +1571,7 @@ addr_244xxx_tile_layer_op:
 
 	
 	move.l	fg_drawed_screen_ptr,a1
-	lea		background_restore_buffer,a5
+	move.l	background_restore_buffer,a5
 	lea		mulNB_BYTES_PER_ROW_table,a2
 	add.w	(a2,d2.w*2),d3
 	add.w	d3,a1			| screen dest address on bg playfield
@@ -2119,20 +2118,25 @@ preprocess_16x16_tile:
 	bset	#5,D3	| add 32 to X
 	bset	#8,d4	| add 256 to Y
 20:
-	* make up for shifted Y scroll (levels 6 and 7)
-	add.w	y_extra_offset,d4
+
 
 	move.l	fg_drawed_screen_ptr,a1
 	.ifne	OPT_ENABLE_DOUBLE_BUFFERING
 	move.l	fg_displayed_screen_ptr,a5
 	.endif
-	lea		background_restore_buffer,a4
+	move.l	background_restore_buffer,a4
 	lea		mulNB_BYTES_PER_ROW_table,a2
 	moveq	#0,d5
 	move.w	(a2,d4.w*2),d5
 	add.l	d3,d5
-	add.l	d5,a1			| screen dest address on playfield
 	add.l	d5,a4			| screen dest address on restore playfield
+	
+	* now make up for shifted Y scroll (levels 6 and 7) on screen
+	tst.w	y_extra_offset
+	jeq		25f
+	add.w	#SCREEN_PLANE_SIZE/2,d5
+25:
+	add.l	d5,a1			| screen dest address on playfield
 	.ifne	OPT_ENABLE_DOUBLE_BUFFERING
 	add.l	d5,a5
 	.endif
@@ -2591,13 +2595,13 @@ do_scroll_up:
 
 	move.l	fg_drawed_screen_ptr,a1	| destination: first half of screen
 	sub.l	#SCREEN_PLANE_SIZE/2,a1		| make up for 0x100 Y offset
-	lea		background_restore_buffer,a0
+	move.l	background_restore_buffer,a0
 	move.w	#0x100,d1
-	jbsr	copy_background
 	
+	jbsr	copy_background
 	move.l	fg_drawed_screen_ptr,a1	| destination: first half of screen
 	add.l	#SCREEN_PLANE_SIZE/2,a1		| add 0x100 Y offset
-	lea		background_restore_buffer,a0
+	move.l	background_restore_buffer,a0
 	moveq	#0,d1
 	jbsr	copy_background
 
@@ -2718,7 +2722,11 @@ really_update_sprites:
 	neg		d4
 11:
 	* restore background
-	lea		background_restore_buffer,a0
+	move.l	background_restore_buffer,a0
+	tst.w	y_extra_offset
+	jeq		25f
+	add.w	#SCREEN_PLANE_SIZE/2,a0
+25:	
 	jbsr	restore_background
 	* clear the rest of the planes (background can be 4 or 5 planes, we need to
 	* clear the rest 1 or 2 planes)
@@ -4954,6 +4962,17 @@ load_tiles_palette_244000:
 	move.w	#8,d0
 	jbsr	load_palette
 	rts
+
+* < D0: nb of background planes to save	
+allocate_background_buffer:
+	* max 5 planes, can be 4 too ATM 6 for convenience (8x8 fonts)
+	move.l	#RESTORE_SCREEN_PLANE_SIZE,d1
+	mulu.w	d0,d1
+	exg		d0,d1
+	moveq	#1,d1
+	jbsr	allocate_memory		| chip
+	move.l	d0,background_restore_buffer
+	rts
 	
 **********************
 * GAME INTRO CONTEXT *
@@ -4969,6 +4988,9 @@ set_game_intro_context:
 	lea		tiles_game_intro_24a000_file,a0
 	jbsr	load_tiles_file_24a000
 
+	move	#NB_PLAYFIELD_PLANES,d0   | all 6 planes
+	jbsr	allocate_background_buffer
+	
 	jbsr	load_intro_palette
 	
 	* load a few sprites: glasses & talking mouth of the guy
@@ -5058,6 +5080,8 @@ set_high_score_context:
 
 	lea		tiles_title_244000_file,a0
 	jbsr	load_tiles_file_244000
+	move.w	#NB_PLAYFIELD_PLANES,d0
+	jbsr	allocate_background_buffer
 	
 	lea		tiles_highs_24a000_file,a0
 	jbsr	load_tiles_file_24a000
@@ -5080,7 +5104,9 @@ set_game_context:
 	lea		specific_level_load_table(pc),a0
 	jsr		([a0,d0.w*4])
 	
-	
+	move.w	nb_tile_planes_24da,d0
+	jbsr	allocate_background_buffer	
+
 	move.l	fg_screen_data_1,fg_drawed_screen_ptr
 	move.l	fg_screen_data_2,fg_displayed_screen_ptr
 
@@ -5094,10 +5120,12 @@ set_intro_context:
 
 	lea		tiles_title_244000_file,a0
 	jbsr	load_tiles_file_244000
-	
+
 	
 	lea		tiles_title_24a000_file,a0
 	jbsr	load_tiles_file_24a000
+	move.w	#NB_PLAYFIELD_PLANES,d0
+	jbsr	allocate_background_buffer
 	
 	lea		dudes_pics_files,a0
 	jbsr	allocate_and_load_chip_mem_file
@@ -6298,6 +6326,8 @@ tile_data_244000:
 nb_tile_planes_24da:
 	.word	0
 
+background_restore_buffer:
+	.long	0
 nb_tile_colors_24a000:
 	.word	0
 nb_tile_colors_24d000:
@@ -6587,8 +6617,6 @@ osd_\name\()_next_cw:
 	RESERVE_SPRITE	bottom_right_center
 	
 
-background_restore_buffer:
-	.skip	RESTORE_SCREEN_SIZE
 
 chip_memory_block:
 	.skip	TOTAL_CHIP_MEMORY_SIZE
