@@ -54,6 +54,7 @@ def convert():
     "IM_BAD_SND"               :{"index":0x36,"channel":3,"sample_rate":hq_sample_rate,"priority":30},
 
     "LEVEL_1_TUNE_SND"                :{"index":0x1F,"pattern":0,"volume":20,'loops':True},
+    "LEVEL_2_TUNE_SND"                :{"index":0x20,"pattern":0,"volume":20,'loops':True},
     "KARNOV_TUNE_SND"                :{"index":0x26,"pattern":0,"volume":24,'loops':True},
     "WIN_TUNE_SND"                   :{"index":0x22,"pattern":0,"volume":24,'loops':False,"ticks":180},
 

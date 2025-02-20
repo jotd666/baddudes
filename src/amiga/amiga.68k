@@ -2580,6 +2580,7 @@ scroll_command_table:
 	
 do_scroll_done:
 	* sequence complete
+	addq.b	#1,nb_scroll_swaps
 	clr.w	y_scroll_command
 	rts
 	
@@ -2636,6 +2637,12 @@ really_update_sprites:
 	add.w	#16,d2			| previous += 16
 	move.w	(2,a4),d3	| init prev Y with first val
 
+	.ifdef		RELEASE
+	tst.b	stop_updating_bobs
+	jeq		10f
+	rts
+10:
+	.endif
 	* erase optimization pre-processing
 	* scan previous positions to group the consecutive ones
 	*
@@ -2824,7 +2831,6 @@ draw_bob_loop:
 	jeq		0f
 	* called only when a new sprite config is discovered, so will flash
 	* only then
-	**move.w	#0x0F0,_custom+color
 	move.b	d4,(a2,d2.l)	| merge/log as used, with properties
 0:
 	movem.w	(a7)+,d1/d2/d4
@@ -4142,6 +4148,24 @@ set_scroll_y_24a000_layer:
 	* or elevator is rising)
 	clr.w	y_extra_offset
 	move.w	#SCROLL_DOWN,y_scroll_command
+	cmp.b	#3,nb_scroll_swaps
+	jne		2f
+	* 3 scroll swaps means level 7 and the elevator:
+	TMPBREAK
+	.ifne	OPT_ENABLE_LOGGING
+	* clear sprite log from stuff that won't repeat in the upper
+	* part of the level, saving a lot of sprite memory
+	lea		sprite_log_table_ffc000,a0
+	move.w	#0x3FFF,d2
+10:
+	clr.l	(a0)+
+	dbf		d2,10b
+	.endif
+	* now we have to load the second part of level 7
+	* reset memory pointer just before sprites were loaded
+	move.l	chip_memory_before_sprites_ptr,chip_memory_current_ptr
+		
+	jra		2f
 1:
 	* new value > 0x100: happens in levels 6 and 7. Is previous value <= 0x100?
 	cmp.w	#0x101,d1
@@ -4150,6 +4174,7 @@ set_scroll_y_24a000_layer:
 	* we have to translate everything upwards
 	move.w	#-0x100,y_extra_offset
 	move.w	#SCROLL_UP,y_scroll_command
+
 2:
 	move.w	d0,y_background_scroll_value
 	rts
@@ -4638,6 +4663,11 @@ handle_keyboard:
 	eor.b	#1,debug_truck_control
 	move.b	debug_truck_control,debug_scroll_display
 0:
+	cmp.b	#37,d0
+	bne		0f
+	* 'H': toggle bobs display
+	eor.b	#1,stop_updating_bobs
+0:
 	cmp.b	#32,d0
 	bne		0f
 	* 'A': move truck by 1 pixel left
@@ -4781,6 +4811,9 @@ osd_set_context:
 	
 	* free music
 	clr.l	current_tune
+	
+	* clear number of scroll swaps
+	clr.b	nb_scroll_swaps
 	
 	* no forest background colors
 	jbsr	clear_forest_background_colors
@@ -5340,6 +5373,8 @@ level_1_load:
 	
 	rts	
 level_2_load:
+	lea		greased_lightning_music_file,a0
+	jbsr	load_music_module
 	lea		tiles_level_2_24a000_file,a0
 	jbsr	load_level_tiles_and_bobs
 	
@@ -5393,7 +5428,7 @@ level_3_load:
 	rts
 	
 * forest level
-level_4_load:	
+level_4_load:
 	lea		fist_of_fury_music_file,a0
 	jbsr	load_music_module
 
@@ -5408,6 +5443,8 @@ level_4_load:
 
 	rts
 level_5_load:
+	lea		greased_lightning_music_file,a0
+	jbsr	load_music_module
 	lea		tiles_level_5_24a000_file,a0
 	jbsr	load_level_tiles_and_bobs
 
@@ -5430,6 +5467,8 @@ level_6_load:
 	rts
 	
 level_7_load:
+	lea		fist_of_fury_music_file,a0
+	jbsr	load_music_module
 	lea		tiles_level_7_24a000_file,a0
 	jbsr	load_level_tiles_and_bobs
 	rts
@@ -5440,6 +5479,7 @@ load_level_tiles_and_bobs:
 	jbsr	load_tiles_palette
 	* load bobs, possibly overwriting tiles
 	* end of palette (the unused colors)
+	move.l	chip_memory_current_ptr,chip_memory_before_sprites_ptr
 	jbsr 	load_level_sprite_file
 	rts
 	
@@ -5995,6 +6035,8 @@ first_half_flag:
 	.byte	0
 clear_target_sprites_flag:
 	.byte	0
+nb_scroll_swaps:
+	.byte	0
 	.align	2
 _tag:
 		.long	WHDLTAG_MONITOR_GET
@@ -6106,6 +6148,8 @@ cheat_used:
 	.ifndef	RELEASE
 debug_truck_control:
 	.byte	0
+stop_updating_bobs:
+	.byte	0
 debug_scroll_display:
 	.byte	0
 	.align	2
@@ -6154,6 +6198,8 @@ debug_scroll_message:
 	.endif
 fist_of_fury_music_file:
 	.asciz	"bd-fist_of_fury.mod"
+greased_lightning_music_file:
+	.asciz	"bd-greasedlight.mod"
 forest_sprites_file:
 	.asciz	"forest.bin"
 cave_sprites_file:
@@ -6300,6 +6346,8 @@ init_sprite_y_table_table:
 public_memory_current_ptr:
 	.long	0
 chip_memory_current_ptr:
+	.long	0
+chip_memory_before_sprites_ptr:
 	.long	0
 
 	* format of the file is first palette (32 bytes)

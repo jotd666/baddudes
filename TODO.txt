@@ -7,11 +7,13 @@
   doesn't work for backgrounds but the rest does!
   could probably be optimized to only restore the buffers partially
 
+- level 6: karnov jumps: sprites go complete berzerk at some point
 - split level 7 in 2 parts (too much memory in boss rush!!)
-  could be done during scroll swap if elevator tile is on screen  
+  done during 3rd scroll swap: rip rest of level_7 tiles
+  rip second half too
+  
 - when ninja is "clipped" at start of level 7, half top of the ninja is drawed on the hard
   left!
-- complete grouping for bosses 5, 6, 7 (level 7)
 - player dies to the right: bobs remain at a wrong location!!
 - level 4 boss: missing black
 - elevator door tiles: missing black
@@ -94,5 +96,5 @@ low/not reproduced
 
 howto:
 - skip music level 1: bpset 0df2a,D0==$1F || D0==$27 || D0 == $2C || D0 == $26,{CURPC=$13DA;g}
-
+- log sounds: bpset 0df2a,,{printf "%x",D0;g}
 
