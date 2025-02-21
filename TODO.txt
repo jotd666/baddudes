@@ -10,7 +10,7 @@
   
   could probably be optimized to only restore the buffers partially
 
-  
+- background restore: complete wrapping (line 2760)  
 - crash at 4A3A1C6D when completing the last level
 - isolate player sprite tiles from level 1 dump and make it an accurate list to
   propagate to other levels (that may miss some frames)
@@ -70,28 +70,23 @@
   background refresh. Truck: bottom (wheels) + part between front & tow & exhaust pipe. 
   Rest: not needed. same for big truck & train, with inter-tow: in progress
 
-- level 3: quantize seems to quantize up to 15 colors not 16. 1 color wasted
+- "bad dudes" title still small glitches
+- "CREDIT" not written when coin inserted
+
+
+
+
+low priority:
 
 - levels with trains/trucks: load traintrucks bitplanes in non-displayed screen buffer
   to save chipmem
-
-
-
-
-low/not reproduced
-
-
+- level 3: quantize seems to quantize up to 15 colors not 16. 1 color wasted
 - level 4: maybe remove foreground trees if possible
 - level 6: same
 - restore buffer uses 3 horizontal playfields, they should use only 2 plus a few tiles
   to restore bobs that "wrap"
   alternative: if bob X + width wrap, clip it and perform 2 restores (but 2x as blits!)
 - quantize should be improved: definitely consider color weights/frequencies
-
-- "bad dudes" title still small glitches
-- "CREDIT" not written when coin inserted
-
-
 - osd_write_byte not working properly
 
 howto:

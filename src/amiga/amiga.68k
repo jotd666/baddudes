@@ -34,7 +34,7 @@ AFB_68020 = 1
 	.endif
 	
 TOTAL_PUBLIC_MEMORY_SIZE = 350000
-TOTAL_CHIP_MEMORY_SIZE = 1380000
+TOTAL_CHIP_MEMORY_SIZE = 1300000
 
 PREVIOUS_SPRITE_SIZE = 8
 BORDERBLANK = 1
@@ -2736,9 +2736,32 @@ really_update_sprites:
 	move.l	background_restore_buffer,a0
 	tst.w	y_extra_offset
 	jeq		25f
+	* handle wrapping, but in some case we have to
+	* restore the buffer in 2 operations if absolute Y+height > 0x100
+	cmp.w	#0x100,d1
+	jcs		24f 
+	| completely wrapped, 1 restore blit only
+	sub.w	#SCREEN_PLANE_SIZE/2,a0
+	jra		25f
+24:
 	add.w	#SCREEN_PLANE_SIZE/2,a0
+	move.w	d1,d6
+	add.w	d4,d6		| y max
+	cmp.w	#0x100,d6
+	jcs		25f			| no wrap!
+	* wrap!!!
+	* reduce height for the first restore
+	movem.w	d0-d1/d4,-(a7)
+	move.w	#0x100,d4
+	sub.w	d1,d4		| clipped height
+	
+	jbsr	restore_background
+	movem.w	(a7)+,d0-d1/d4
+	* now the second restore blit, wrapped around TODO
+	jra		26f
 25:	
 	jbsr	restore_background
+26:
 	* clear the rest of the planes (background can be 4 or 5 planes, we need to
 	* clear the rest 1 or 2 planes)
 	* a1 is returned by restore_background as the last cleared start address
