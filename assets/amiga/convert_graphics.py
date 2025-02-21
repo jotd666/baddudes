@@ -825,4 +825,5 @@ if generate_for_levels[6]:
 if generate_for_levels[7]:
     process_tile_context("level_7_24a000",level_7_tile_24a000_sheet_dict,16,first_pass=False)
     process_tile_context("game_level_7",sprite_sheet_dict,48,is_bob=True,shift_palette_count=16)
+    process_tile_context("game_level_8",sprite_sheet_dict,48,is_bob=True,shift_palette_count=16)
 

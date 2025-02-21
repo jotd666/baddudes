@@ -890,13 +890,17 @@ _vblank:
 	dbf	d1,0b
 
 24:
-	bsr		really_update_sprites
+	tst.b	level_7_load_second_part_flag
+	jeq		25f
+	jbsr	level_7_load_second_part
+25:
+	jbsr		really_update_sprites
 1:
 	* don't blit, but update hw sprites as it doesn't cost a lot
 	cmp.w	#CTX_GAME,global_context
 	jcs		23f
 	* double buffering only in-game
-	bsr		switch_screen_buffers
+	jbsr		switch_screen_buffers
 23:
 	.ifndef		RELEASE
 	tst.b	debug_truck_control
@@ -4151,20 +4155,7 @@ set_scroll_y_24a000_layer:
 	cmp.b	#3,nb_scroll_swaps
 	jne		2f
 	* 3 scroll swaps means level 7 and the elevator:
-	TMPBREAK
-	.ifne	OPT_ENABLE_LOGGING
-	* clear sprite log from stuff that won't repeat in the upper
-	* part of the level, saving a lot of sprite memory
-	lea		sprite_log_table_ffc000,a0
-	move.w	#0x3FFF,d2
-10:
-	clr.l	(a0)+
-	dbf		d2,10b
-	.endif
-	* now we have to load the second part of level 7
-	* reset memory pointer just before sprites were loaded
-	move.l	chip_memory_before_sprites_ptr,chip_memory_current_ptr
-		
+	move.b	#1,level_7_load_second_part_flag
 	jra		2f
 1:
 	* new value > 0x100: happens in levels 6 and 7. Is previous value <= 0x100?
@@ -4815,6 +4806,10 @@ osd_set_context:
 	* clear number of scroll swaps
 	clr.b	nb_scroll_swaps
 	
+	* level 7 part 2 loaded flag
+	clr.b	level_7_load_second_part_loaded
+	clr.b	level_7_load_second_part_flag
+	
 	* no forest background colors
 	jbsr	clear_forest_background_colors
 	
@@ -5038,7 +5033,8 @@ set_game_intro_context:
 	
 load_level_sprite_file:
 	jbsr	get_current_level
-	add.b	#48,d0	
+	add.b	#48,d0
+	add.b	level_7_load_second_part_flag,d0
 	move.b	d0,file_level_index
 	lea		sprites_game_level_file,a0
 	
@@ -5473,6 +5469,26 @@ level_7_load:
 	jbsr	load_level_tiles_and_bobs
 	rts
 	
+level_7_load_second_part:
+	.ifne	OPT_ENABLE_LOGGING
+	* clear sprite log from stuff that won't repeat in the upper
+	* part of the level, saving a lot of sprite memory
+	lea		sprite_log_table_ffc000,a0
+	move.w	#0x3FFF,d2
+10:
+	clr.l	(a0)+
+	dbf		d2,10b
+	.endif
+	* now we have to load the second part of level 7
+	* reset memory pointer just before sprites were loaded
+	move.l	chip_memory_before_sprites_ptr,chip_memory_current_ptr
+	jbsr 	load_level_sprite_file
+		
+	clr.b	level_7_load_second_part_flag
+	move.b	#1,level_7_load_second_part_loaded
+	
+	rts
+	
 load_level_tiles_and_bobs:
 	jbsr	load_tiles_file_24a000
 	move.l	tiles_palette_24a000,a0		| palette
@@ -5893,7 +5909,7 @@ dump_logs:
 	lea		sprite_log_name(pc),a0
 	lea		sprite_log_name_index(pc),a3
 	move.l	#0x10000,d1
-	jbsr	dump_log
+	jbsr	dump_sprite_log
  	lea		tile_log_table_24a000,a1
 	lea		tile_24a000_log_name(pc),a0
 	lea		tile_24a000_log_name_index(pc),a3
@@ -5917,6 +5933,15 @@ dump_logs:
 dump_log:
 	jbsr	get_current_level
 	add.b	#0x30,d0
+	move.b	d0,(a3)
+	move.l	d1,d0
+	jbsr	resload_SaveFile(a2)
+	rts
+	
+dump_sprite_log:
+	jbsr	get_current_level
+	add.b	#0x30,d0
+	add.b	level_7_load_second_part_loaded,d0
 	move.b	d0,(a3)
 	move.l	d1,d0
 	jbsr	resload_SaveFile(a2)
@@ -6032,6 +6057,10 @@ x_road_layer_scroll_value:
 y_scroll_command:
 	.word	0
 first_half_flag:
+	.byte	0
+level_7_load_second_part_flag:
+	.byte	0
+level_7_load_second_part_loaded:
 	.byte	0
 clear_target_sprites_flag:
 	.byte	0
