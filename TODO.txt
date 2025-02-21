@@ -10,17 +10,13 @@
   
   could probably be optimized to only restore the buffers partially
 
-- finalize y clipping (amiga copy.68k is buggy)
-- level 6: karnov jumps: sprites go complete berzerk at some point
   
 - crash at 4A3A1C6D when completing the last level
 - isolate player sprite tiles from level 1 dump and make it an accurate list to
   propagate to other levels (that may miss some frames)
 - boss 6 & 7 wrong grouping / missing tiles  
 - level 7 display helicopter!
-- when ninja is "clipped" at start of level 7, half top of the ninja is drawed on the hard
-  left!
-- player dies to the right: bobs remain at a wrong location!!
+
 - level 4 boss: missing black
 - elevator door tiles: missing black
 - level 5,6,7: karnov wrong colors, maybe paste direct proper colors like level 4 boss

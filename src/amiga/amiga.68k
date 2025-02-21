@@ -2932,7 +2932,7 @@ draw_bob_loop:
 	* for no visible effect but slowdowns...)
 	tst.w	d0
 	jpl		0f
-	cmp.w	#0xFFF0,d0
+	cmp.w	#0xFFE0,d0
 	jcs		30f		| too negative: no can do (slightly negative works)	
 	jra		10f
 0:
@@ -2974,8 +2974,6 @@ draw_bob_loop:
 	* wider than 16 bits means grouped sprite: we have to change X
 	sub.w	(a1,d5.w),d0
 0:
-	add.w	y_background_scroll_value(pc),d1
-	add.w	y_extra_offset,d1
 	
 	* now A0 points on the first bitplane of the bob
 	tst.b	d6
@@ -2993,15 +2991,30 @@ draw_bob_loop:
 	move.l	(NB_PLAYFIELD_PLANES*4,a0),d2
 	beq.b	29f		| mask is zero: blank tile => skip
 	move.l	d2,a3	| mask bitplane
-	moveq	#0,d2	| no y-clip
+	moveq	#0,d3	| default: no y-clip
+	* if negative before adding y background scroll, clip
+	tst.w	d1
+	jpl		32f
+	add.w	d1,d4	| less high
+	jmi		29f		| too much clipping: skip
+	jeq		29f
+	neg.w	d1
+	move.w	d1,d3	| Y-clip
+	mulu.w	d5,d3	| is computed in bytes offset of source
+	moveq	#0,d1
+32:
+	cmp.w	#Y_MAX,d1
+	jcc		29f		| skip if too high before adding scroll value (some coords look bogus)
+	add.w	y_extra_offset,d1
+	add.w	y_background_scroll_value(pc),d1
 	* note down that this bob will have to be erased
 	move.w	d0,(a6)+			| store current sprite attributes to previous ones
 	move.w	d1,(a6)+			| store current sprite attributes to previous ones
 	move.w	d5,(a6)+			| store width
 	move.w	d4,(a6)+			| store height
 	
-	move.w	d5,d2			| width in bytes, 4 for 16 pixels+shift
-	moveq	#0,d5			| Y-offset
+	move.w	d5,d2			| width in bytes, 4 for 16 pixels+shift		
+	move.l	d3,d5			| Y-offset in bytes (often 0 but supports Y clip!)
 	moveq	#0,d6			| X-offset
 	moveq	#NB_PLAYFIELD_PLANES,d3
 	bsr		blit_planes_any_internal_cookie_cut

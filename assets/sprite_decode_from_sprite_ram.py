@@ -18,6 +18,10 @@ def doit(filename):
             attrs = y & 0xFE00
             x &= 0x1FF
             y &= 0x1FF
+##            if x >= 256:
+##                x -= 0x200
+##            if y >= 256:
+##                y -= 0x200
             x = 240 - x
             y = 240 - y
             y_flip = attrs & 0x4000
@@ -29,4 +33,4 @@ def doit(filename):
     with open(filename+".68k","w") as f:
         bitplanelib.dump_asm_bytes(sprite_ram,f,mit_format=True)
 
-doit("on_fire")
+doit("level_7")
