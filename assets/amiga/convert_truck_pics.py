@@ -39,7 +39,7 @@ def doit(global_palette,name,y_start,level_1_bar,exhaust_height,width,height,whe
 
         bitplanelib.replace_color(reduced_colors_truck1_img,{changed_transparent},transparent)
         truck1_palette = bitplanelib.palette_extract(reduced_colors_truck1_img)
-        reduced_colors_truck1_img.save("foo.png")
+
         transparent_first(truck1_palette,transparent)
 
         color_replacement_dict = bitplanelib.closest_colors_replacement_dict(truck1_palette,global_palette)

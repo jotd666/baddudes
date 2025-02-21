@@ -86,6 +86,77 @@ def process_sprite(tile_number,full_tileset,height,width):
     img.paste(full_tileset[tile_number])
     return img
 
+def process_helicopter(global_palette):
+    asm_out = generated_src_dir / f"helicopter.68k"
+    heli_bin = data_dir / f"helicopter.bin"
+
+    pad_value =(0X10,0x20,0x30)
+    heli_img = Image.open(whole_pics_dir / f"helicopter.png")
+
+    heli_img=heli_img.crop((192,352,512,468))
+
+    heli_img.save(dump_dir/f"helicopter.png")
+
+    forced_nb_planes = 6
+    reduced_nb_colors = 32
+
+    reduced_colors_heli_img = heli_img #.quantize(colors=reduced_nb_colors,dither=0).convert('RGB')
+    # restore the transparent color afterwards (transparent may have been quantized too), we know that top right
+    # pixel is "empty" so whatever color is there is the replacement for transparent
+    changed_transparent = reduced_colors_heli_img.getpixel((reduced_colors_heli_img.size[0]-1,0))
+
+    bitplanelib.replace_color(reduced_colors_heli_img,{changed_transparent},transparent)
+    heli_palette = bitplanelib.palette_extract(reduced_colors_heli_img)
+
+    transparent_first(heli_palette,transparent)
+
+    color_replacement_dict = bitplanelib.closest_colors_replacement_dict(heli_palette,global_palette)
+    color_replacement_dict.pop(transparent)
+    bitplanelib.replace_color_from_dict(reduced_colors_heli_img,color_replacement_dict)
+    reduced_colors_heli_img.save(dump_dir/f"helicopter_reduced.png")
+
+    reduced_palette = bitplanelib.palette_extract(reduced_colors_heli_img)
+    if len(reduced_palette) < reduced_nb_colors:
+        reduced_palette += [(0x10,0x20,0x30)]*(len(reduced_palette) - reduced_nb_colors)
+    raw = bitplanelib.palette_image2raw(reduced_colors_heli_img,None,reduced_palette,forced_nb_planes=forced_nb_planes,
+    generate_mask=True,blit_pad=True,mask_color=transparent)
+
+    nb_planes = forced_nb_planes+1
+    real_width,height = reduced_colors_heli_img.size
+
+    width = (real_width // 8) + 2
+
+    plane_size = len(raw)//nb_planes # mask included
+
+
+    if width*height != plane_size:
+        raise Exception(f"Computed w*h = {width}*{height} != plane size ({plane_size})")
+    with open(asm_out,"w") as f:
+
+        f.write(f"\tdc.w\t7,{width},{height},0,0   ; nb planes (with mask), width in bytes, height, padding\n")
+
+        empty_plane_workaround = True
+
+        f.write(f"; bpldata (plane size = {plane_size})\n")
+        offset = 0
+        f.write("main_table:\n")
+        # make it suitable for 6 plane display
+        for j in range(nb_planes-1):
+            f.write(f"\tdc.l    heli_plane_{j}-main_table\n")
+        for j in range(7-nb_planes):
+            f.write("\tdc.l\t0\n")
+        f.write(f"\tdc.l    heli_plane_{nb_planes-1}-main_table\n")
+        for j in range(nb_planes):
+            f.write(f"heli_plane_{j}:\n")
+            block = raw[offset:offset+plane_size]
+            if any(block) or empty_plane_workaround:
+                bitplanelib.dump_asm_bytes(block,f)
+
+            offset += plane_size
+
+
+    asm2bin(asm_out,heli_bin)
+
 
 def process_multi_tiled_sprite(tile_number,full_tileset,h,w,height,width):
     side_group = side_grouped_dict.get(tile_number)
@@ -823,7 +894,8 @@ if generate_for_levels[6]:
     process_tile_context("game_level_6",sprite_sheet_dict,48,is_bob=True,shift_palette_count=16)
 
 if generate_for_levels[7]:
-    process_tile_context("level_7_24a000",level_7_tile_24a000_sheet_dict,16,first_pass=False)
-    process_tile_context("game_level_7",sprite_sheet_dict,48,is_bob=True,shift_palette_count=16)
-    process_tile_context("game_level_8",sprite_sheet_dict,48,is_bob=True,shift_palette_count=16)
+    #process_tile_context("level_7_24a000",level_7_tile_24a000_sheet_dict,16,first_pass=False)
+    #process_tile_context("game_level_7",sprite_sheet_dict,48,is_bob=True,shift_palette_count=16)
+    bobs_level_8 = process_tile_context("game_level_8",sprite_sheet_dict,48,is_bob=True,shift_palette_count=16)
+    process_helicopter(palette_dict["game_level_8"]["palette"])
 

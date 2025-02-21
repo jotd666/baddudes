@@ -17,6 +17,7 @@
 - isolate player sprite tiles from level 1 dump and make it an accurate list to
   propagate to other levels (that may miss some frames)
 - boss 6 & 7 wrong grouping / missing tiles  
+- level 7 display helicopter!
 - when ninja is "clipped" at start of level 7, half top of the ninja is drawed on the hard
   left!
 - player dies to the right: bobs remain at a wrong location!!
