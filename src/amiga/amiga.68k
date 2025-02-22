@@ -34,7 +34,7 @@ AFB_68020 = 1
 	.endif
 	
 TOTAL_PUBLIC_MEMORY_SIZE = 350000
-TOTAL_CHIP_MEMORY_SIZE = 1300000
+TOTAL_CHIP_MEMORY_SIZE = 1250000
 
 PREVIOUS_SPRITE_SIZE = 8
 BORDERBLANK = 1
@@ -107,7 +107,7 @@ ONE_TICK = 1
 * note: double buffering eats a lot of memory, it cannot run in debug mode
 * either simple or reloc. Only in "none" (program running in fastmem, data
 * located in low chipmem)
-OPT_ENABLE_DOUBLE_BUFFERING = 1
+OPT_ENABLE_DOUBLE_BUFFERING = 0
 
 _custom = 0xDFF000
 
@@ -1681,7 +1681,16 @@ pick_8x8_tile_code:
 	* 1) "cookie cut" or "clear mask" data for first planes (which contain background)
 	* 2) "copy data" or "clear" for the last planes
 	move.l		tile_data_244000,a0
+
 	add.l	(a0,d6.w*4),a0	| select tile code
+	.ifndef	RELEASE
+	cmp.l	#0,a0
+	jne		0f
+	BREAKPOINT	"no 8x8 tiles loaded"
+	moveq	#0,d6
+	rts
+0:
+	.endif
 	move.l	(a0,d5.w*4),d6
 	rts
 	
@@ -2590,6 +2599,7 @@ do_scroll_done:
 	
 
 do_scroll_down:
+	TMPBREAK
 do_scroll_up:
 	* scroll up: we went down too much and overtook y scroll 0x100
 	* we need to copy all tiles from restore buffer upper part
@@ -2627,6 +2637,7 @@ copy_background:
 	
 	
 really_update_sprites:
+
 	* first, check y scroll commands
 	move.w	y_scroll_command,d0
 	jeq		0f
@@ -4889,7 +4900,7 @@ osd_set_context:
 	cmp.w	#CTX_GAME,d0
 	jeq		0f
 	cmp.w	global_context,d0
-	jeq		1f		| skip if context already set (except for game)
+	jeq		2f		| skip if context already set (except for game)
 0:
 	* remove front objects
 	clr.l	front_objects_table
@@ -4940,7 +4951,10 @@ osd_set_context:
 	jbsr	restore_interrupt_state
 	movem.l	(a7)+,d0-a6
 	rts
-
+2:
+	move	(a7)+,d0		| restore state
+	jra		1b
+	
 save_interrupt_state:
 	lea	_custom,a5
 	move.w	(intenar,a5),saved_intena
@@ -4974,6 +4988,7 @@ game_context_table:
 	.long	set_high_score_context		| CTX_HIGH_SCORE
 	.long	set_game_intro_context	    | CTX_GAME_INTRO
 	.long	set_game_context		    | CTX_GAME
+	.long	set_ending_1_context	    | CTX_ENDING_1
 	
 load_tiles_file_244000:
 	jbsr	allocate_and_load_public_mem_file
@@ -5056,6 +5071,21 @@ allocate_background_buffer:
 	moveq	#1,d1
 	jbsr	allocate_memory		| chip
 	move.l	d0,background_restore_buffer
+	rts
+	
+************************
+* END SEQUENCE CONTEXT *
+************************
+
+set_ending_1_context:
+	lea		tiles_ending_1_24a000_file,a0
+	jbsr	load_tiles_file_24a000
+	lea		tiles_game_intro_244000_file,a0
+	jbsr	load_tiles_file_244000
+	
+	* re-apply letter colors 56-63 (the sprites in that context only use 24 colors
+	* so we're good!)
+	jbsr	load_tiles_palette_244000
 	rts
 	
 **********************
@@ -6309,6 +6339,8 @@ sprites_game_level_file:
 	.ascii	"sprites_game_level_"
 file_level_index:
 	.asciz	"1.bin"
+tiles_ending_1_24a000_file:
+	.asciz	"tiles_ending_1_24a000.bin"
 sprites_game_intro_file:
 	.asciz	"sprites_game_intro.bin"
 tiles_title_244000_file:

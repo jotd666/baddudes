@@ -8,6 +8,12 @@
 
 	.include 	"baddudes.inc"
 	
+	.macro	ROM_JUMP	address
+	move.l	rom_base,-(a7)
+	add.l	#\address,(a7)
+	rts
+	.endm
+	
 baddudes_reset:
 	move.l	rom_base,a0
 	move.l	ram_base,a1
@@ -76,10 +82,7 @@ baddudes_reset:
 	moveq	#1,d0
 	jbsr	osd_install_trap
 	
-	
-	move.l	rom_base,-(a7)
-	add.l	#0x13dc,(a7)
-	rts
+	ROM_JUMP		0x13dc
 	
 	
 
@@ -824,7 +827,39 @@ lb_01fba:
 	DBF	D0,lb_01fa2
 	exg		a6,a1
 	RESTORE_REGS
-	RTS				
+	RTS		
+	
+clear_8x8_tile_layer_1b322:
+	LEA	0x244000,A6
+	MOVEQ	#0,D7
+lb_1b32a:
+	WRITE_WORD_AND_PLUS
+	CMPA.L	#0x00246000,A6
+	BNE.S	lb_1b32a
+	RTS			
+clear_24a000_tile_layer_1b336:
+	LEA	0x24A000,A6
+	MOVEQ	#0,D7	
+lb_1b33e:
+	WRITE_WORD_AND_PLUS
+	CMPA.L	#0x0024a800,A6
+	BNE.S	lb_1b33e
+	RTS
+clear_24d000_tile_layer_1b34a:
+	LEA	0x24d000,A6
+	MOVEQ	#0,D7
+lb_1b352:
+	WRITE_WORD_AND_PLUS
+	CMPA.L	#0x0024d800,A6
+	BNE.S	lb_1b352
+	RTS
+	
+before_end_sequence_01bac:
+	move.w	#CTX_END_SEQUENCE,d0
+	jbsr 	osd_set_context
+	ROM_JUMP	0x1cd8	| clear_pretty_much_all_video
+	
+
 	
 videoram_write_021e8:
 	STORE_REGS
@@ -913,6 +948,17 @@ videoram_write_01fca:
 	RESTORE_REGS
 	RTS				
 	
+write_to_tile_1bb8e:
+	STORE_REGS
+	exg	a2,a6
+	LSL.W	#4,D2
+	ADD.W	D1,D2
+	MOVE.W	D2,D7
+	WRITE_WORD_AND_PLUS
+	exg	a0,a6
+	RESTORE_REGS
+	RTS
+	
 copy_to_palette_007be:
 	STORE_REGS
 	exg	a0,a6
@@ -927,12 +973,21 @@ copy_to_palette_007be:
 	RESTORE_REGS
 	RTS
 	
+write_tile_244000_1bc78:
+	STORE_REGS
+	LEA	0(A1,D0.L),A1
+	MOVE.W	D1,D7
+	move.l	a1,a6
+	jbsr	osd_write_word
+	RESTORE_REGS
+	RTS
+	
 copy_rom_to_video_1b310:
 	move.w	d7,-(a7)
 	exg		a6,a1
 0:
     MOVE.W    (A2)+,d7
-	jbsr	osd_write_byte
+	WRITE_WORD_AND_PLUS
     SUBQ.W    #1,D1            
     BCC.S    0b
     SUBQ.W    #1,D0

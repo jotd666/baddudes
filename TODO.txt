@@ -11,7 +11,7 @@
   could probably be optimized to only restore the buffers partially
 
 - group BB2 BB3
-
+- ninja nails missing black
 - background restore: complete wrapping (line 2760)  
 - crash at 4A3A1Cxx when completing the last level
 - isolate player sprite tiles from level 1 dump and make it an accurate list to

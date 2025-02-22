@@ -2220,7 +2220,7 @@ patchlist:
 	PL_W	0x001b38,20032
 	PL_W	0x001b42,20032
 	PL_PSR	0x001ba6,0x1f32
-	PL_PSR	0x001bac,0x1cd8
+	PL_PS	0x001bac,before_end_sequence_01bac
 	PL_PSR	0x001bec,0x73de
 	PL_PLEAR_3	0x001c42,0x1c5c
 	PL_PSR	0x001c78,0x7290
@@ -2870,12 +2870,17 @@ patchlist:
 	PL_PSS	0x01b2c4,write_word_imm_0004_to_0030c010,2
 	PL_L	0x01b2fe,0x48E7FFFE	| fix movem.w
 	PL_L	0x01b30a,0x4CDF7FFF	| fix movem.w
-	PL_PS	0x01b310,copy_rom_to_video_1b310
+	PL_P	0x01b310,copy_rom_to_video_1b310
+	PL_P	0x01b322,clear_8x8_tile_layer_1b322
+	PL_P	0x01b336,clear_24a000_tile_layer_1b336
+	PL_P	0x01b34a,clear_24d000_tile_layer_1b34a
 	PL_L	0x01b368,0x48E7FFFE	| fix movem.w
 	PL_L	0x01b374,0x4CDF7FFF	| fix movem.w
 	PL_L	0x01b58a,0x48E7FFFE	| fix movem.w
 	PL_L	0x01b596,0x4CDF7FFF	| fix movem.w
 	PL_PSS	0x01bb2e,write_word_imm_0000_to_0030c010,2
+	PL_PS	0x01bb8e,write_to_tile_1bb8e
+	PL_PS	0x01bc78,write_tile_244000_1bc78
 	PL_END
 
 read_byte_0030c003_to_D0:
