@@ -870,7 +870,7 @@ _vblank:
 	
 1100:
 	subq.b	#1,graphics_update_counter
-	jne		1f
+	jne		23f
 	move.b	graphics_update_counter_start,graphics_update_counter
 	
 
@@ -2757,7 +2757,13 @@ really_update_sprites:
 	
 	jbsr	restore_background
 	movem.w	(a7)+,d0-d1/d4
-	* now the second restore blit, wrapped around TODO
+
+	* now the second restore blit, wrapped around
+	move.l	background_restore_buffer,a0
+	*move.w	#0x100,d1
+	*sub.w	d1,d6
+	*move.w	d6,d4
+	*jbsr	restore_background
 	jra		26f
 25:	
 	jbsr	restore_background
@@ -2824,7 +2830,7 @@ draw_sprites:
 557:
 	* update graphics counter to 1 (50fps), 2 (25fps), or 3 (17fps)
 	* dynamically
-	move.b	d0,graphics_update_counter
+	move.b	d0,graphics_update_counter_start
 558:
 	GET_RAM_START_IN_A6
 	lea	(0x4000,a6),a0		| sprites

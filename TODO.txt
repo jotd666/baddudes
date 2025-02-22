@@ -10,8 +10,10 @@
   
   could probably be optimized to only restore the buffers partially
 
+- group BB2 BB3
+
 - background restore: complete wrapping (line 2760)  
-- crash at 4A3A1C6D when completing the last level
+- crash at 4A3A1Cxx when completing the last level
 - isolate player sprite tiles from level 1 dump and make it an accurate list to
   propagate to other levels (that may miss some frames)
 - boss 6 & 7 wrong grouping / missing tiles  
@@ -70,14 +72,14 @@
   background refresh. Truck: bottom (wheels) + part between front & tow & exhaust pipe. 
   Rest: not needed. same for big truck & train, with inter-tow: in progress
 
-- "bad dudes" title still small glitches
-- "CREDIT" not written when coin inserted
 
 
 
 
 low priority:
 
+- "bad dudes" title still small glitches (in "BAD DUDES" title)
+- "CREDIT" not written when coin inserted
 - levels with trains/trucks: load traintrucks bitplanes in non-displayed screen buffer
   to save chipmem
 - level 3: quantize seems to quantize up to 15 colors not 16. 1 color wasted
