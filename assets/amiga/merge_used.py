@@ -1,16 +1,17 @@
-import os,pathlib,shutil
+import os,pathlib,shutil,json
 
-this_dir = pathlib.Path(__file__).absolute().parent
+from shared import *
 
-reference_for_bad_dudes = "game_level_1"
 
-used_name = "game_level_7"
+used_name = "game_level_3"
 
-merged_path_file = pathlib.Path("sprites")
+merged_path_file = this_dir / "used_graphics" / "sprites"
+reference_for_bad_dudes = merged_path_file / "game_level_1"
+
 # first 512 tiles are the player tiles. Game level 1 has all the moves, so we have to propagate those to
 # all other levels. 512*16=8192 first bytes must be copied from level 1 logs
 
-data_dir = this_dir / ".." / ".."/ ".."/"data"
+data_dir = this_dir / ".." / ".."/"data"
 
 # merge sprites with existing file + moves from level 1
 used_dump = data_dir / used_name
@@ -51,7 +52,7 @@ else:
 # move tiles
 for file in data_dir.glob("level_?_24?000"):
     print(f"importing {file}")
-    dest = this_dir / "tiles" / file.stem
+    dest = merged_path_file / ".." / "tiles" / file.stem
 
     dest.unlink(missing_ok=True)
     shutil.move(file,dest)

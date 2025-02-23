@@ -69,6 +69,14 @@ def doit():
 
             d.update(new_d)
 
+    with open(this_dir / "shared_sprite_cluts.json") as f:
+        # this file has been extracted from a complete list of player moves
+        # bonuses/weapons as well
+        player_moves = json.load(f)
+    for k,v in used_dict.items():
+        if k.startswith("game_level_"):
+            v.update(player_moves)
+
     with open(used_cluts_file,"w") as f:
         json.dump(used_dict,f,indent=2)
 

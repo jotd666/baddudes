@@ -39,6 +39,11 @@ TOTAL_CHIP_MEMORY_SIZE = 1250000
 PREVIOUS_SPRITE_SIZE = 8
 BORDERBLANK = 1
 
+* how negative we can tolerate before clipping
+* some bobs are grouped up to 64 pixels wide, we
+* don't want them clipped on the left
+CLIPPED_WIDTH_MARGIN = 64
+
 SPRITE_X_CORRECTION = 0
 SPRITE_Y_CORRECTION = 0
 HW_SPRITE_X_CORRECTION = 0
@@ -916,15 +921,15 @@ _vblank:
 0:
 	and.w	#0x3FF,x_secondary_scroll_value
 	
-*	* display test boss energy
-*	lea		boss_life,a0
-*	lea		0x244758,a6
-*0:
-*	move.w	(a0)+,d7
-*	jeq		1f
-*	jbsr	osd_write_word
-*	addq	#2,a6
-*	jra	0b
+	* display test boss energy
+	lea		boss_life,a0
+	lea		0x244758,a6
+0:
+	move.w	(a0)+,d7
+	jeq		1f
+	jbsr	osd_write_word
+	addq	#2,a6
+	jra	0b
 1:
 	tst.b	debug_scroll_display
 	jeq		2f
@@ -1121,7 +1126,7 @@ erase_level_1_truck:
 	move.w  big_machine_height,d4
 	sub.w	truck_wheels_height,d4
 	move.w	#4,d2
-	move.l	background_restore_buffer,a0
+	move.l	background_restore_buffer,a0  | TEMP TEMP
 	*jbsr	restore_background
 	moveq	#4,D3
 	jbsr	clear_fg_planes_any_blitter_internal
@@ -2941,6 +2946,8 @@ draw_bob_loop:
 	move.w	D2,(a6)+    | sprite code 0-0x1000
 	move.l	D4,(a6)+	| pointer on sprite clut table
 	move.w	#0xDEAD,(a6)+
+	
+
 	move.l	(a7)+,a6
 	.endif
 	
@@ -2956,7 +2963,6 @@ draw_bob_loop:
 
 	btst	#11,d0		| check if flashing attribute
 	jeq		777f
-	TMPWRITE
 	tst.b	flashing_flip_flop
 	jne		30f			| skip to create flash effect
 777:
@@ -2972,8 +2978,15 @@ draw_bob_loop:
 	* we cannot rely on sprite height as it could have been cropped to optimize
 	* 
 	* correct X/Y: 240-x
-	FIX_COORD	d1
+
 	FIX_COORD	d0
+	FIX_COORD	d1
+	
+	* another kludge: if X > 0x200-64 it should be negative
+	cmp.w	#0x200-CLIPPED_WIDTH_MARGIN,d0
+	jcs		0f
+	sub.w	#0x200,d0
+0:
 	
 	
 	tst.b	d6			| single sprite: skip Y correction
@@ -2993,7 +3006,7 @@ draw_bob_loop:
 	* for no visible effect but slowdowns...)
 	tst.w	d0
 	jpl		0f
-	cmp.w	#0xFFE0,d0
+	cmp.w	#-CLIPPED_WIDTH_MARGIN,d0
 	jcs		30f		| too negative: no can do (slightly negative works)	
 	jra		10f
 0:
@@ -3002,7 +3015,7 @@ draw_bob_loop:
 10:
 	add.w	x_background_scroll_value(pc),d0
 	jpl		0f
-	cmp.w	#0xFFE0,d0
+	cmp.w	#-CLIPPED_WIDTH_MARGIN,d0
 	jcs		30f		| too negative: no can do (slightly negative works)	
 0:
 	move.l	a0,-(a7)
@@ -4884,7 +4897,10 @@ osd_set_context:
 	* draw, and also front objects
 	clr.l	truck_planes
 	clr.l	heli_planes
-	
+
+	* no bottom scrolling
+	jbsr	disable_road_scroll
+
 	clr.w	y_extra_offset
 	move.w	#SCROLL_NONE,y_scroll_command
 	
@@ -5299,7 +5315,6 @@ set_intro_context:
 
 	jbsr	load_intro_palette
 	
-	jbsr	disable_road_scroll
 	
 	lea		intro_copperlist,a0
 	move.l	a0,cop1lc(a5)
@@ -6332,6 +6347,7 @@ sprite_ram_mockup:
 	.ifeq		OPT_BOSS_SPRITES_MOCKUP-6
 	.include	"mockup/boss_6.68k"
 	.endif
+	.include	"mockup/porsche.68k"
 	.endif
 
 debug_truck_message:
@@ -6760,6 +6776,12 @@ osd_lower_sprites:
 	.word	 intreq,0x8010	| no bobs from now on
 
 	DECL_COLOR_BANK	2
+	
+	* restore from yellow color for time seconds
+	DECL_COLOR_BANK	2
+	.word	color+2*3+32,0xEEE
+	.word	color+2*2+32,0xB29
+	
 	.word	color+2*2,0xEBB		| flesh pink
 	.word	color+2*3,0xE9A		| flesh pink #2
 	.word	0x1401,0xFFFE
@@ -6821,17 +6843,25 @@ chip_memory_block:
 	
 fg_screen_buffer_2:
 	.ifne  OPT_ENABLE_DOUBLE_BUFFERING
+	.rept	CLIPPED_WIDTH_MARGIN/16
 	.skip	ONE_FULL_16_BIT_ROW
-	.skip	ONE_FULL_16_BIT_ROW
+	.endr
 	.skip	SCREEN_SIZE
 	.skip	NB_BYTES_PER_ROW*12*3
 	.skip	8
+	.rept	CLIPPED_WIDTH_MARGIN/16
+	.skip	ONE_FULL_16_BIT_ROW
+	.endr
 	.endif	
 fg_screen_buffer_1:
+	.rept	CLIPPED_WIDTH_MARGIN/16
 	.skip	ONE_FULL_16_BIT_ROW
-	.skip	ONE_FULL_16_BIT_ROW
+	.endr
 	.skip	SCREEN_SIZE
 	.skip	NB_BYTES_PER_ROW*12*3
+	.rept	CLIPPED_WIDTH_MARGIN/16
+	.skip	ONE_FULL_16_BIT_ROW
+	.endr
 	.skip	8
 	
 
