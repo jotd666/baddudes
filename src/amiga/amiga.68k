@@ -425,7 +425,7 @@ _user:
 	
     move.w #0x6200+BORDERBLANK,bplcon0(a5) | 6 bitplanes, borderblank
 	
-
+	
 	move.l	frameskip_flag,d0
 	jne		0f
 	moveq	#1,d0		| auto, starts with full fps
@@ -869,8 +869,12 @@ _vblank:
 	WAIT_BLIT
 	
 1100:
+
 	subq.b	#1,graphics_update_counter
 	jne		23f
+
+	eor.b	#1,flashing_flip_flop
+
 	move.b	graphics_update_counter_start,graphics_update_counter
 	
 
@@ -1056,6 +1060,9 @@ update_front_objects:
 	rts
 	
 * truck_erase erase_truck
+* complete nightmare to do properly given
+* that we're trying to avoid erasing the parts
+* that don't need erasing (huge tow rectangles)
 erase_level_1_truck:
 	tst.b	truck_previously_drawn
 	jeq		0f
@@ -1115,16 +1122,19 @@ erase_level_1_truck:
 	sub.w	truck_wheels_height,d4
 	move.w	#4,d2
 	move.l	background_restore_buffer,a0
-	jbsr	restore_background
+	*jbsr	restore_background
+	moveq	#4,D3
+	jbsr	clear_fg_planes_any_blitter_internal
 	jra	20f
 10:
 	* level 2: 2 gaps to restore
 	lea		prev_truck_params,a1
 	move.w	x_secondary_scroll_value,d0	| truck pos
-	sub.w	#0x200,d0
+	sub.w	#0x1F0,d0
 	jcs		20f			| no need to erase, truck self erases
 	cmp.w	#240,d0
 	jcc		20f			| gap has now scrolled left completely
+	TMPWRITE
 	neg.w	d0
 	add.w	(a1),d0		| displayX
 	add.w	#232,d0		| wagon width plus space
@@ -1134,7 +1144,9 @@ erase_level_1_truck:
 	move.l	background_restore_buffer,a0
 	move.w	#6,d2
 	move.l	fg_drawed_screen_ptr,a1
-	jbsr	restore_background
+	*jbsr	restore_background
+	moveq	#4,D3
+	jbsr	clear_fg_planes_any_blitter_internal
 20:
 1:
 	clr.b	truck_previously_drawn
@@ -2942,6 +2954,12 @@ draw_bob_loop:
 *		const int h = (1 << ((data0 & 0x1800) >> 11));   /* 1x, 2x, 4x, 8x height */
 *		const int w = (1 << ((data0 & 0x0600) >>  9));   /* 1x, 2x, 4x, 8x width */
 
+	btst	#11,d0		| check if flashing attribute
+	jeq		777f
+	TMPWRITE
+	tst.b	flashing_flip_flop
+	jne		30f			| skip to create flash effect
+777:
 	move.w	d1,d6		| Y coord + attributes
 	move.w	d6,d2		| copy full attributes in D2
 	rol.w	#5,d6		| data0 height properly times 16
@@ -6204,6 +6222,8 @@ system_vbr:
 	.long	0
 
 nb_erased_objects:
+	.byte	0
+flashing_flip_flop:
 	.byte	0
 graphics_update_counter_start:
 	.byte	0

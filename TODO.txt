@@ -1,11 +1,19 @@
-- easy: ending 1 tiles display has a problem
+- easy: ending 1 tiles display has a problem (crash)
 - easy: isolate player sprite tiles from level 1 dump and make it an accurate list to
   propagate to other levels (that may miss some frames)
 - easy: enemy + power bar wrong color now that sprites changed slots
-- level 2 truck display: missing right part debug and increase width
+- level 2 truck display: gaps not always cleared, bottom not properly erased,
+  end of truck not properly erased: debug line 1130 with black instead of restore
+  starts all right (get the values) but at some point it loses sync with the gap
+  
 - handle flashing attibute (enemies die, less blitting!!)
 - Unclip sprites on left patch original code (to make up for horizontal grouping, ex
-  level 2 car, or player couches and punches left)
+  level 2 car, or player couches and punches left) debug porsche: 
+   553c6,5532c,55292,55460
+  
+- boss 2 color change doesn't trigger
+- karnov dying missing frames (wrong grouping??)
+- crash at the end of level 1
 
 - level 7 vertical scrolling "trick": if y scroll gets > 0x100, then
   * blit restore buffer from y=0x100 to 0x200 in 0
@@ -17,16 +25,16 @@
     besides off-screen tiles seem wrong
   * fails for "scroll down" completely
   
-  could probably be optimized to only restore the buffers partially
+  could probably be optimized to only restore the buffers partially, not the whole width
 
 - group BB2 BB3
 - ninja nails missing black
+- level 4 boss: missing black
 - background restore: complete wrapping (line 2760)  
 
 - boss 6 & 7 wrong grouping / missing tiles  
 - level 7 display helicopter!
 
-- level 4 boss: missing black
 - elevator door tiles: missing black
 - level 5,6,7: karnov wrong colors, maybe paste direct proper colors like level 4 boss
 - repair front objects (will destroy status bar)
@@ -49,7 +57,7 @@
 
 
 - remove BB9 BB8 BBA BBB (glasses) from log (old artifact)
-- truck blit erase issue (front of truck), truck right clip part too soon
+- truck blit erase issue (front of truck)
  
 - karnov feet erase issue, doesn't seem to be erased (also true for jumping ninjas) probably
   group erase not working. Same for level 6 devil pole
