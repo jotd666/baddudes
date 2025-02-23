@@ -1,3 +1,12 @@
+- easy: ending 1 tiles display has a problem
+- easy: isolate player sprite tiles from level 1 dump and make it an accurate list to
+  propagate to other levels (that may miss some frames)
+- easy: enemy + power bar wrong color now that sprites changed slots
+- level 2 truck display: missing right part debug and increase width
+- handle flashing attibute (enemies die, less blitting!!)
+- Unclip sprites on left patch original code (to make up for horizontal grouping, ex
+  level 2 car, or player couches and punches left)
+
 - level 7 vertical scrolling "trick": if y scroll gets > 0x100, then
   * blit restore buffer from y=0x100 to 0x200 in 0
   * set y_extra_scroll_offset at -0x100
@@ -13,9 +22,7 @@
 - group BB2 BB3
 - ninja nails missing black
 - background restore: complete wrapping (line 2760)  
-- crash at 4A3A1Cxx when completing the last level
-- isolate player sprite tiles from level 1 dump and make it an accurate list to
-  propagate to other levels (that may miss some frames)
+
 - boss 6 & 7 wrong grouping / missing tiles  
 - level 7 display helicopter!
 
@@ -24,17 +31,13 @@
 - level 5,6,7: karnov wrong colors, maybe paste direct proper colors like level 4 boss
 - repair front objects (will destroy status bar)
 - 2nd button doesn't seem to work
-- enemy + power bar wrong color now that sprites changed slots
 - autoframeskip not limited/frameskip doesn't display sprites!!!
 - level 2: no lamps if objects 2 loaded. Ok if objects 1 loaded
 - drop 2 player mode, use rightmost OSD sprite for real parallax in levels 4 and 6
   see if we can blit the score afterwards if 2P mode is reinstated
 - level 2 front object (lamp) not displaying (used to work with level 1 objects)
-- Unclip sprites on left patch original code (to make up for horizontal grouping, ex
-  level 2 car, or player couches and punches left)
-- handle flashing attibute (enemies die, less blitting!!)
 - save/load highscores
-- level 2: road colors are trashed??
+- level 2: road colors are trashed?? check non-quantized
 - level 3: water scroll tiles wrong placement, maybe quadrant shit is different than
   for other mode??? dump 24A000 memory on second write to 246010 MAME/amiga and compare
 - level 3: put water scroll in some other buffer (allocate one?) so changing plans automatically

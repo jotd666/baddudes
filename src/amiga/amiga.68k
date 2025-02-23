@@ -1092,8 +1092,10 @@ erase_level_1_truck:
 	moveq	#4,d2		| just the first bytes
 	move.l	fg_drawed_screen_ptr,a1
 	move.w  big_machine_height,d4
-	* clip to bottom of truck (wheels)
-	sub.w	truck_wheels_height,d4
+	* clip to bottom of truck (wheels) doesn't work,
+	* as the back of the truck leaves a trail
+	*sub.w	truck_wheels_height,d4
+	
 	move.l	background_restore_buffer,a0
 	jbsr	restore_background
 
@@ -1168,7 +1170,8 @@ truck_clipped_left:
 	lsr.w	#3,d5			| in bytes
 	bclr	#0,d5			| multiple of 16
 
-	and.w	#0xF,d0		| of course X is at 0 (except fine shift)
+	| of course X is at 0 (except fine shift)
+	and.w	#0xF,d0
 	jeq		11f
 	add.w	#16,d6		| increase length
 	sub.w	#0x10,d0
@@ -1181,7 +1184,7 @@ truck_not_clipped_left:
 	* D0 is the actual X, check really displayed truck width (has to be clipped right)
 	*move.w	big_machine_width,d6	| full truck size
 	*lsl.w	#3,d6			| in pixels
-	move.w	#NB_BYTES_PER_SCREEN_ROW*8,d6	| truck/train is wider than screen anyway
+	move.w	#NB_BYTES_PER_SCREEN_ROW*8+16,d6	| truck/train is wider than screen anyway
 	sub.w 	d0,d6
 	
 	* start of truck will "benefit" from the shifted / rotated bits
@@ -1191,7 +1194,7 @@ truck_not_clipped_left:
 	move.l	#0xFFFF0000,bltamask_long_value
 	
 do_truck_draw:
-	move.w	#NB_BYTES_PER_SCREEN_ROW*8+16,d2
+	move.w	#NB_BYTES_PER_SCREEN_ROW*8+32,d2
 	cmp.w	d6,d2
 	jcc		11f
 	move.w	d2,d6		| maxing out displayed width
