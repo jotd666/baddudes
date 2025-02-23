@@ -855,11 +855,28 @@ lb_1b352:
 	RTS
 	
 before_end_sequence_01bac:
-	move.w	#CTX_END_SEQUENCE,d0
+	move.w	#CTX_END_SEQUENCE_1,d0
 	jbsr 	osd_set_context
 	ROM_JUMP	0x1cd8	| clear_pretty_much_all_video
 	
-
+switch_to_ending_2_1bb3e:
+	move.w	#CTX_END_SEQUENCE_2,d0
+	jbsr 	osd_set_context
+	MOVE.W	#0x000f,D0
+	MOVE.W	#0x000f,D1
+	rts
+	
+copy_to_8x8_tiles_1b5b0:
+	STORE_REGS
+	exg		a6,a3
+	move	d0,d7
+0:
+	WRITE_WORD_AND_PLUS
+	CMPA.L	#0x00242040,A6
+	BNE.S	0b
+	exg		a6,a3
+	RESTORE_REGS
+	RTS				
 	
 videoram_write_021e8:
 	STORE_REGS

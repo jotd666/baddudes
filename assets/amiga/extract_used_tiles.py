@@ -15,7 +15,8 @@ def add_digits_and_letters(n):
         used_dict[n][i]["cluts"].append(0)
     for i in range(ord("0"),ord("9")+1):
         used_dict[n][i]["cluts"].append(0)
-
+    for i in [ord(x) for x in ['!',"'"]]:
+        used_dict[n][i]["cluts"].append(0)
 def doit():
     # get dude tiles (big dude pics in intro) and don't consider their tiles
     for i in range(2):

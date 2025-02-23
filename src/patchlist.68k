@@ -2878,7 +2878,9 @@ patchlist:
 	PL_L	0x01b374,0x4CDF7FFF	| fix movem.w
 	PL_L	0x01b58a,0x48E7FFFE	| fix movem.w
 	PL_L	0x01b596,0x4CDF7FFF	| fix movem.w
+	PL_PSS	0x01b5b0,copy_to_8x8_tiles_1b5b0,4
 	PL_PSS	0x01bb2e,write_word_imm_0000_to_0030c010,2
+	PL_PSS	0x01bb3e,switch_to_ending_2_1bb3e,2
 	PL_PS	0x01bb8e,write_to_tile_1bb8e
 	PL_PS	0x01bc78,write_tile_244000_1bc78
 	PL_END

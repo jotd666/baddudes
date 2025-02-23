@@ -1,4 +1,7 @@
-- easy: ending 1 tiles display has a problem (crash)
+- easy: second screen sequence sprites (president+bad dudes)
+- first ending sequence picture is ghosted...
+- end sequence should use scrolling sprites for credits
+
 - intercept palette change level 3, use amiga colored ninja ripped to change
   red => green
 - level 2 truck display: gaps not always cleared, bottom not properly erased,
@@ -7,7 +10,7 @@
   
 - boss 2 color change doesn't trigger
 - karnov dying missing frames (wrong grouping??)
-- crash at the end of level 1
+- crash at the end of level 1 => level 2 (other levels switch OK!)
 
 - level 7 vertical scrolling "trick": if y scroll gets > 0x100, then
   * blit restore buffer from y=0x100 to 0x200 in 0
@@ -24,12 +27,12 @@
 - group BB2 BB3
 - ninja nails missing black
 - level 4 boss: missing black:
+- elevator door tiles: missing black
 - background restore: complete wrapping (line 2760)  
 
 - boss 6 & 7 wrong grouping / missing tiles  
 - level 7 display helicopter!
 
-- elevator door tiles: missing black
 - level 5,6,7: karnov wrong colors, maybe paste direct proper colors like level 4 boss
 - repair front objects (will destroy status bar)
 - 2nd button doesn't seem to work
@@ -66,6 +69,7 @@
 - boss 3 color change
 - boss 5 color change
 - boss 6 color change
+- boss 7 color change
 
 - rip train pic if possible (to avoid special treatment)
 - level complete messages should use front object sprites (sprites 4-7, unload backgrounds first

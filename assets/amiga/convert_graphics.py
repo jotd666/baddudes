@@ -451,7 +451,8 @@ level_6_tile_24a000_sheet_dict = {i:sheets_path / "tiles_24a000" / "level_6" / f
 level_7_tile_24a000_sheet_dict = {i:sheets_path / "tiles_24a000" / "level_7" / f"pal_{i:02x}.png" for i in range(0,16)}
 tile_0_sheet_dict = {i:sheets_path / "tiles_244000" / f"pal_{i:02x}.png" for i in range(15)}
 sprite_sheet_dict = {i:sheets_path / "sprites" / f"pal_{i:02x}.png" for i in range(16)}
-ending_1_tile_24a000_sheet_dict = {i:sheets_path / "tiles_24a000" / "ending_1" / f"pal_{i:02x}.png" for i in range(0,10)}
+ending_tile_24a000_sheet_dict = {i:sheets_path / "tiles_24a000" / "ending" / f"pal_{i:02x}.png" for i in range(0,10)}
+ending_tile_24d000_sheet_dict = {i:sheets_path / "tiles_24d000" / "ending" / f"pal_{i:02x}.png" for i in range(0,6)}
 
 def load_contexted_tileset(tile_sheet_dict,context,nb_colors,is_bob,postload_callback=None):
     tile_palette = set()
@@ -839,13 +840,14 @@ def postprocess_game_osd_tiles(tileset,palette_index):
 
 generate_for_levels = [False]*9
 
+#generate_for_levels[0] = True
 #generate_for_levels[1] = True
-generate_for_levels[2] = True
+#generate_for_levels[2] = True
 #generate_for_levels[3] = True
 #generate_for_levels[4] = True
 #generate_for_levels[6] = True
 #generate_for_levels[7] = True
-#generate_for_levels[8] = True
+generate_for_levels[8] = True
 
 
 # set to "False" for faster operation when working on game sprite/tiles
@@ -904,6 +906,7 @@ if generate_for_levels[7]:
     process_helicopter(palette_dict["game_level_8"]["palette"])
 if generate_for_levels[8]:
     # game ending
-    process_tile_context("ending_1_24a000",ending_1_tile_24a000_sheet_dict,64,first_pass=False)
+    process_tile_context("ending_1_24a000",ending_tile_24a000_sheet_dict,64,first_pass=False)
+    process_tile_context("ending_2_24d000",ending_tile_24d000_sheet_dict,32,first_pass=False)
 
 

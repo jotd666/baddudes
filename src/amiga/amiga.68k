@@ -1633,8 +1633,12 @@ addr_244xxx_tile_layer_op:
 	lea		(SCREEN_PLANE_SIZE,a1),a1
 	lea		(RESTORE_SCREEN_PLANE_SIZE,a5),a5
 	dbf		d6,0b
-	* plain copy loop on the planes without background
-	move.w	nb_tile_planes_24da,d6
+	* plain copy loop on the planes without background (if any!)
+	move.w	#NB_PLAYFIELD_PLANES,d6
+	sub.w	nb_tile_planes_24da,d6
+	jeq		100f			| 6 planes for tiles, nothing to do
+	subq	#1,d6
+	
 0:	
 	move.l	(a0)+,d2
 	jeq		3f		| erase plane
@@ -1648,9 +1652,8 @@ addr_244xxx_tile_layer_op:
 	subq	#8,a4
 11:
 	lea		(SCREEN_PLANE_SIZE,a1),a1
-	addq	#1,d6
-	cmp.w	#NB_PLAYFIELD_PLANES,d6
-	jne	0b
+
+	dbf	d6,0b
 	
 100:	
 	move.w	(a7)+,d2
@@ -1727,7 +1730,10 @@ erase_tile_8:
 	lea		(RESTORE_SCREEN_PLANE_SIZE,a5),a5
 	dbf		d6,0b
 	
-	move.w	nb_tile_planes_24da,d6
+	move.w	#NB_PLAYFIELD_PLANES,d6
+	sub.w	nb_tile_planes_24da,d6
+	jeq		100b
+	subq	#1,d6
 0:
 	.set	offset,0
 	.rept	8
@@ -1735,9 +1741,7 @@ erase_tile_8:
 	.set	offset,offset+NB_BYTES_PER_ROW
 	.endr
 	lea		(SCREEN_PLANE_SIZE,a1),a1
-	addq	#1,d6
-	cmp.w	#NB_PLAYFIELD_PLANES,d6
-	jne	0b
+	dbf 	d6,0b
 	
 	jra		100b
 	rts
@@ -2328,6 +2332,8 @@ addr_24Dxxx_tile_layer_op_level_3:
 	* on the amiga, on the other hand, I don't care about that so I'm
 	* redirecting a write to this layer into a write to the other layer
 	* if the level uses it
+	*
+	* ending sequence also uses that tile layer
 	and.w	#0x7FF,d2
 
 	.ifndef		RELEASE
@@ -4313,6 +4319,7 @@ scroll_x_24d000_table:
 	.long	move_train
 	.long	nope
 	.long	nope
+	.long	nope
 
 	
 scroll_x_24a000_table:
@@ -4323,6 +4330,7 @@ scroll_x_24a000_table:
 	.long	scroll_background_x
 	.long	scroll_background_x
 	.long	scroll_background_x
+	.long	nope
 	
 move_ninjas_truck:
 	* in debug mode, when debug truck display is set, don't move truck
@@ -5026,6 +5034,7 @@ game_context_table:
 	.long	set_game_intro_context	    | CTX_GAME_INTRO
 	.long	set_game_context		    | CTX_GAME
 	.long	set_ending_1_context	    | CTX_ENDING_1
+	.long	set_ending_2_context	    | CTX_ENDING_2
 	
 load_tiles_file_244000:
 	jbsr	allocate_and_load_public_mem_file
@@ -5117,12 +5126,33 @@ allocate_background_buffer:
 set_ending_1_context:
 	lea		tiles_ending_1_24a000_file,a0
 	jbsr	load_tiles_file_24a000
-	lea		tiles_game_intro_244000_file,a0
+	lea		tiles_title_244000_file,a0
 	jbsr	load_tiles_file_244000
 	
+	move.l	tiles_palette_24a000,a0		| palette
+	jbsr	load_tiles_palette
+
 	* re-apply letter colors 56-63 (the sprites in that context only use 24 colors
 	* so we're good!)
 	jbsr	load_tiles_palette_244000
+	rts
+	
+set_ending_2_context:
+	lea		tiles_ending_2_24d000_file,a0
+	jbsr	load_tiles_file_24d000
+	lea		tiles_title_244000_file,a0
+	jbsr	load_tiles_file_244000
+	
+	move.l	tiles_palette_24d000,a0		| palette
+	jbsr	load_tiles_palette
+
+	* re-apply letter colors 56-63 (the sprites in that context only use 24 colors
+	* so we're good!)
+	jbsr	load_tiles_palette_244000
+	
+	move.l	#nope,addr_24Axxx_tile_layer_op_address
+	move.l	#addr_24Dxxx_tile_layer_op_level_3,addr_24Dxxx_tile_layer_op_address
+
 	rts
 	
 **********************
@@ -6380,6 +6410,8 @@ file_level_index:
 	.asciz	"1.bin"
 tiles_ending_1_24a000_file:
 	.asciz	"tiles_ending_1_24a000.bin"
+tiles_ending_2_24d000_file:
+	.asciz	"tiles_ending_2_24d000.bin"
 sprites_game_intro_file:
 	.asciz	"sprites_game_intro.bin"
 tiles_title_244000_file:
