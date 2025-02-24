@@ -1,6 +1,10 @@
 - easy: second screen sequence sprites (president+bad dudes)
 - first ending sequence picture is ghosted...
-- end sequence should use scrolling sprites for credits
+- end sequence should use scrolling sprites for credits: allocate huge 2x high sprite buffers
+  first find a way to reach sequence faster
+
+- level 3: flowing water completely off, probably write to 24Axxx not efficient/buggy
+- road scroll: colors trashed, but not when OPT_NO_BOTTOM_SCROLL is 1...
 
 - intercept palette change level 3, use amiga colored ninja ripped to change
   red => green
@@ -8,9 +12,10 @@
   end of truck not properly erased: debug line 1130 with black instead of restore
   starts all right (get the values) but at some point it loses sync with the gap
   
+- cars in level 2 still parts not displayed at times...
 - boss 2 color change doesn't trigger
-- karnov dying missing frames (wrong grouping??)
-- crash at the end of level 1 => level 2 (other levels switch OK!)
+- karnov dying missing frames (wrong grouping??): capture when dead
+- crash at the end of level 1 => level 2 (other levels switch OK!): front object conflict
 
 - level 7 vertical scrolling "trick": if y scroll gets > 0x100, then
   * blit restore buffer from y=0x100 to 0x200 in 0
@@ -24,7 +29,6 @@
   
   could probably be optimized to only restore the buffers partially, not the whole width
 
-- group BB2 BB3
 - ninja nails missing black
 - level 4 boss: missing black:
 - elevator door tiles: missing black
@@ -42,7 +46,7 @@
   see if we can blit the score afterwards if 2P mode is reinstated
 - level 2 front object (lamp) not displaying (used to work with level 1 objects)
 - save/load highscores
-- level 2: road colors are trashed?? check non-quantized
+- level 2: road colors are trashed when scroll is enabled
 - level 3: water scroll tiles wrong placement, maybe quadrant shit is different than
   for other mode??? dump 24A000 memory on second write to 246010 MAME/amiga and compare
 - level 3: put water scroll in some other buffer (allocate one?) so changing plans automatically
@@ -87,6 +91,7 @@
 
 low priority:
 
+- invincibility: still hit when falling on road (level 2)
 - "bad dudes" title still small glitches (in "BAD DUDES" title)
 - "CREDIT" not written when coin inserted
 - levels with trains/trucks: load traintrucks bitplanes in non-displayed screen buffer

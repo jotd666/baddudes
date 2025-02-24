@@ -81,6 +81,7 @@ SCREEN_ADDRESS = 0x244000
 * set both to nonzero for full static screen, no scroll, 1 screen tile
 OPT_NO_SCROLLING_X = 0
 OPT_NO_SCROLLING_Y = 0
+OPT_NO_BOTTOM_SCROLL = 0
 
 * load fixed sprites, mostly bosses as they're long to reach & test
 OPT_BOSS_SPRITES_MOCKUP = 0
@@ -112,7 +113,7 @@ ONE_TICK = 1
 * note: double buffering eats a lot of memory, it cannot run in debug mode
 * either simple or reloc. Only in "none" (program running in fastmem, data
 * located in low chipmem)
-OPT_ENABLE_DOUBLE_BUFFERING = 0
+OPT_ENABLE_DOUBLE_BUFFERING = 1
 
 _custom = 0xDFF000
 
@@ -428,7 +429,7 @@ _user:
 	
 	lea		_custom,a5
 	
-    move.w #0x6200+BORDERBLANK,bplcon0(a5) | 6 bitplanes, borderblank
+    *move.w #0x6200+BORDERBLANK,bplcon0(a5) | 6 bitplanes, borderblank
 	
 	
 	move.l	frameskip_flag,d0
@@ -1139,7 +1140,6 @@ erase_level_1_truck:
 	jcs		20f			| no need to erase, truck self erases
 	cmp.w	#240,d0
 	jcc		20f			| gap has now scrolled left completely
-	TMPWRITE
 	neg.w	d0
 	add.w	(a1),d0		| displayX
 	add.w	#232,d0		| wagon width plus space
@@ -4374,7 +4374,7 @@ set_playfield_bitplanes:
     lea	bitplanes_intro+2,a0
 	jbsr	set_bitplanes
 	
-	
+	.ifeq	OPT_NO_BOTTOM_SCROLL
 	jbsr	get_current_level
 	cmp.w	#2,d0
 	jeq		0f
@@ -4382,8 +4382,10 @@ set_playfield_bitplanes:
 	jne		1f
 0:
 	* level 2 level road layer
+	
 	move.w	x_road_layer_scroll_value,d2
 	lea		scroll_table,a2
+	move.l	#0x1FE0000,fine_x_road_scroll_value-2
 	move.w	(a2,d2.w*4),fine_x_road_scroll_value
 	moveq	#0,d0
  	move.w	(2,a2,d2.w*4),d0		| truck level: y scrolling = 0
@@ -4391,13 +4393,18 @@ set_playfield_bitplanes:
  	add.l	#NB_BYTES_PER_ROW*(256-32),d0
 
     lea	bitplanes_road+2,a0
-	jbsr	set_bitplanes
+	move.w	nb_tile_planes_24da,d1
+	jbsr	set_any_bitplanes
 	
 1:	
+	.endif
+	
 	rts
 
 set_bitplanes:
-    moveq #NB_PLAYFIELD_PLANES-1,d1
+    moveq #NB_PLAYFIELD_PLANES,d1
+set_any_bitplanes:
+	subq	#1,d1
 	move.l	#SCREEN_PLANE_SIZE,d2
 0:
     swap d0
@@ -4410,8 +4417,13 @@ set_bitplanes:
 	rts
 	
 enable_bottom_scroll:
+	.ifne	OPT_NO_BOTTOM_SCROLL
+	rts
+	.endif
+	
     lea	bitplanes_road,a0
-    moveq #NB_PLAYFIELD_PLANES-1,d1
+    move.w	nb_tile_planes_24da,d1
+	subq	#1,d1
 	move.w	#bplpt,d0
 0:
     move.w d0,(a0)
@@ -4420,14 +4432,34 @@ enable_bottom_scroll:
     addq	#2,d0
     addq.w  #8,a0
     dbf d1,0b
+	
+	* rest of the planes should be neutral/zeroed
+	move.w	#NB_PLAYFIELD_PLANES,d1
+	sub.w	nb_tile_planes_24da,d1
+	jeq		1f
+	subq	#1,d1
+	move.w	#0x1FE,D0		| copper nop
+0:
+    move.w d0,(a0)
+    move.w d0,(4,a0)    
+    addq.w  #8,a0
+    dbf d1,0b
+	
+1:	
+	* activate shiftable bitplanes
 	move.w	#bplcon1,(a0)
+	* less bitplanes
+	move.w	#bplcon0,(4,a0)	
+	move.w	nb_tile_planes_24da,d1
+	ror.w	#4,d1
+	or.w	#0x200,d1
+	move.w	d1,(6,a0)
 	
 	* also change colors of the road
-	
+
 	rts
 	
 disable_road_scroll:
-	
     lea	bitplanes_road,a0
     moveq #NB_PLAYFIELD_PLANES-1,d1
 	move.w	#0x1FE,d0
@@ -4436,7 +4468,9 @@ disable_road_scroll:
     move.w d0,(4,a0)    
     addq.w  #8,a0
     dbf d1,0b
+	* disable bplcon writes
 	move.w	d0,(a0)
+	move.w	d0,(4,a0)
 	rts
 	
 set_game_bitplanes:	
@@ -4896,6 +4930,12 @@ wait_vbl:
 osd_set_context:
 	movem.l	d0-a6,-(a7)
 	move.w	d0,-(a7)		| save in d7
+
+	jbsr	wait_vbl
+	jbsr	wait_vbl
+	* then we can safely load the new context
+	jbsr	save_interrupt_state
+	jbsr	osd_disable_interrupts
 	
 	* we need to make sure that the sprite update interrupt is updating the
 	* sprites while we're changing the sprite set, or it can cause issues
@@ -4937,11 +4977,6 @@ osd_set_context:
 	move.w	#0x1FE,attached_sprites_bplcon4
 	* then we wait a little while to make sure the interrupt has run
 	
-	jbsr	wait_vbl
-	jbsr	wait_vbl
-	* then we can safely load the new sprite set
-	jbsr	save_interrupt_state
-	jbsr	osd_disable_interrupts
 	cmp.w	#CTX_GAME,d0
 	jeq		0f
 	cmp.w	global_context,d0
@@ -6711,6 +6746,8 @@ debug_color:
 	
 	* intro copperlist
 intro_copperlist:
+	.word	bplcon0,0x6200+BORDERBLANK | 6 bitplanes, borderblank
+
 	* all sprites have the same palette no need to specify odd or even
 	* on color bank 2 (64-)
 	
@@ -6794,10 +6831,12 @@ road_colors:
 	.endr
 bitplanes_road:
 	DECL_BITPLANES	0,NB_PLAYFIELD_PLANES
-	.word	bplcon1
+	.word	0x1FE		| room for bplcon1
 fine_x_road_scroll_value:
 	.word	0
-
+	* must follow the above!!
+	.word	0x1FE,0		| room for bplcon0
+	
 osd_lower_sprites:
 	DECL_SPRITES	4
 	
