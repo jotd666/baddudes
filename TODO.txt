@@ -4,7 +4,6 @@
   first find a way to reach sequence faster
 
 - level 3: flowing water completely off, probably write to 24Axxx not efficient/buggy
-- road scroll: colors trashed, but not when OPT_NO_BOTTOM_SCROLL is 1...
 
 - intercept palette change level 3, use amiga colored ninja ripped to change
   red => green

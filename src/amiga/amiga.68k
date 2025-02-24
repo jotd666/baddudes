@@ -4385,7 +4385,6 @@ set_playfield_bitplanes:
 	
 	move.w	x_road_layer_scroll_value,d2
 	lea		scroll_table,a2
-	move.l	#0x1FE0000,fine_x_road_scroll_value-2
 	move.w	(a2,d2.w*4),fine_x_road_scroll_value
 	moveq	#0,d0
  	move.w	(2,a2,d2.w*4),d0		| truck level: y scrolling = 0
@@ -6824,11 +6823,6 @@ intro_intreq_block:
 	* set road scroll
 road_y_pos:
 	.word	0x0401,0xFFFE
-	DECL_COLOR_BANK	0
-road_colors:
-	.rept	16
-	.long	0x01FE0000
-	.endr
 bitplanes_road:
 	DECL_BITPLANES	0,NB_PLAYFIELD_PLANES
 	.word	0x1FE		| room for bplcon1
@@ -6836,6 +6830,11 @@ fine_x_road_scroll_value:
 	.word	0
 	* must follow the above!!
 	.word	0x1FE,0		| room for bplcon0
+	DECL_COLOR_BANK	0
+road_colors:
+	.rept	16
+	.long	0x01FE0000
+	.endr
 	
 osd_lower_sprites:
 	DECL_SPRITES	4
