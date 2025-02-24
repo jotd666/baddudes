@@ -5,10 +5,14 @@
 - end sequence should use scrolling sprites for credits: allocate huge 2x high sprite buffers
   first find a way to reach sequence faster
 
-- level 3: flowing water completely off, probably write to 24Axxx not efficient/buggy
+- level 3: flowing water some tiles not written... should turn off scrolling?
+
+
 
 - intercept palette change level 3, use amiga colored ninja ripped to change
-  red => green
+  red => green: config done in level_3_boss_color_change, intercept
+  
+  
 - level 2 truck display: gaps not always cleared, bottom not properly erased,
   end of truck not properly erased: debug line 1130 with black instead of restore
   starts all right (get the values) but at some point it loses sync with the gap

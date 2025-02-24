@@ -480,6 +480,7 @@ def load_contexted_tileset(tile_sheet_dict,context,nb_colors,is_bob,postload_cal
     # tile_palette = {bitplanelib.rgb4_to_rgb_triplet(bitplanelib.to_rgb4_color(x)) for x in tile_palette}
     bg_palette = sorted(tile_palette)
 
+
     lfp = len(bg_palette)
     if lfp==1:
         raise Exception(f"{context}: no colors found, empty tiles?")
@@ -841,9 +842,9 @@ def postprocess_game_osd_tiles(tileset,palette_index):
 generate_for_levels = [False]*9
 
 #generate_for_levels[0] = True
-generate_for_levels[1] = True
+#generate_for_levels[1] = True
 #generate_for_levels[2] = True
-#generate_for_levels[3] = True
+generate_for_levels[3] = True
 #generate_for_levels[4] = True
 #generate_for_levels[6] = True
 #generate_for_levels[7] = True
@@ -881,8 +882,8 @@ if generate_for_levels[2]:
     convert_front_objects.doit_level_2(dump_it=dump_it)
 
 if generate_for_levels[3]:
+    process_tile_context("level_3_24a000",level_3_tile_24a000_sheet_dict,16,first_pass=False)
     process_tile_context("level_3_24d000",level_3_tile_24d000_sheet_dict,16,first_pass=False)
-    #process_tile_context("level_3_24a000",level_3_tile_24a000_sheet_dict,16,first_pass=False)
     process_tile_context("game_level_3",sprite_sheet_dict,48,is_bob=True,shift_palette_count=16)
 if generate_for_levels[4]:
     # 32 is too much, but 16 would be washed down. We need to keep it a power of 2

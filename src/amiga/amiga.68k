@@ -113,7 +113,7 @@ ONE_TICK = 1
 * note: double buffering eats a lot of memory, it cannot run in debug mode
 * either simple or reloc. Only in "none" (program running in fastmem, data
 * located in low chipmem)
-OPT_ENABLE_DOUBLE_BUFFERING = 1
+OPT_ENABLE_DOUBLE_BUFFERING = 0
 
 _custom = 0xDFF000
 
@@ -1350,7 +1350,18 @@ palette_and_sprites_ram_op:
 	* (reds => purples)
 	lea		level_2_boss_color_change(pc),a0
 	jbsr	change_palette
+	jra		10f
 0:
+	move.l	rom_base,a0
+	add.w	#0x127C+2,a0		| a1 is post-incremented
+	cmp.l	a0,a1
+	jne		0f
+	lea		level_3_boss_color_change(pc),a0
+	jbsr	change_palette
+	jra		10f
+0:
+	nop
+10:
 	move.l	(a7)+,a0
 1:
 	jra		special_memory_op_out
@@ -1485,6 +1496,13 @@ level_2_boss_color_change:
 	*.word	0xd86,0xd97
 	.long	-1		| end
 	
+level_3_boss_color_change:
+	.word	0xC00,0x363
+	.word	0x700,0x242
+	.word	0x400,0x020
+	.word	0x500,0x131
+	.long	-1		| end
+
 
 	
 * 8x8 tile layer, for osd (not scrolled) but also row scrolled
@@ -2046,6 +2064,7 @@ addr_246xxx_op:
 addr_24Axxx_tile_layer_op:
 	and.w	#0x7FF,d2
 
+
 	cmp.b	#2,d0
 	jne		0f
 	swap	d7	
@@ -2184,10 +2203,10 @@ preprocess_16x16_tile:
 * < A0: tile clut array
 * < D2: number of planes
 * < D5: clut index
+* < D6: tile code
 * checks first_half_flag
 
 write_16x16_tile:
-
 	add.l	(a0,d6.w*4),a0  | skip palette select tile code
 	move.l	(a0,d5.w*4),d6
 	jeq		1000f				| tile not found/ignored, skip
@@ -2231,6 +2250,8 @@ write_16x16_tile:
 	dbf		d6,0b
 1000:
 	rts
+
+	
 23:
 	* plane contains data: copy it
 	.set	offset,0
@@ -2260,6 +2281,7 @@ write_16x16_tile:
 addr_24Dxxx_tile_layer_op:
 	rts
 	
+* sewer water tiles
 addr_24Axxx_tile_layer_op_level_3:
 	
 	movem.l	a0-a5/d2-d6,-(a7)
@@ -2272,10 +2294,11 @@ addr_24Axxx_tile_layer_op_level_3:
 	move.w	(a0),d7
 	jra		101f
 0:
-	*move.w	#0xD10A,d7	| TEMP!!!!
+	*move.w	#0xF10E,d7	| fix tile
 	cmp.w	(a0),d7
 	jeq		100f	| already the proper value
 	move.w	d7,(a0)	| set value in memory first
+
 
 	jbsr	preprocess_16x16_tile
 
@@ -2294,8 +2317,8 @@ addr_24Axxx_tile_layer_op_level_3:
 	.ifne	OPT_ENABLE_LOGGING
 	cmp.w	#0x800,d6			| when logging on title: 1FF, else increase!
 	jcc		0f
-	lea		tile_log_table_24d000,a2
-	move.l 	#video_ram_24d000,0x18
+	lea		tile_log_table_24a000,a2
+	move.l 	#video_ram_24a000,0x18
 1111:
 	move.l	a2,0x28		| store address in zero page
 	move.w	d6,-(a7)
