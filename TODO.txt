@@ -5,10 +5,6 @@
 - end sequence should use scrolling sprites for credits: allocate huge 2x high sprite buffers
   first find a way to reach sequence faster
 
-- level 3: flowing water some tiles not written... should turn off scrolling?
-
-
-
 - intercept palette change level 3, use amiga colored ninja ripped to change
   red => green: config done in level_3_boss_color_change, intercept
   
@@ -74,7 +70,7 @@
 
 - optim: group erase on 16 (working) or 32 bit wide blocks
 
-- boss 3 color change
+- boss 3 color change doesn't trigger
 - boss 5 color change
 - boss 6 color change
 - boss 7 color change
