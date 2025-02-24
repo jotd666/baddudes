@@ -2272,7 +2272,7 @@ addr_24Axxx_tile_layer_op_level_3:
 	move.w	(a0),d7
 	jra		101f
 0:
-	move.w	#0xD10A,d7	| TEMP!!!!
+	*move.w	#0xD10A,d7	| TEMP!!!!
 	cmp.w	(a0),d7
 	jeq		100f	| already the proper value
 	move.w	d7,(a0)	| set value in memory first
@@ -5527,11 +5527,21 @@ display_front_object:
 	movem.l	(a7)+,d0-a6
 	rts
 
-
-level_1_load:
+load_fist_of_fury:
 	lea		fist_of_fury_music_file,a0
 	jbsr	load_music_module
+	rts
 	
+load_greased_lightning:
+	lea		fist_of_fury_music_file,a0
+	jbsr	load_music_module
+	rts
+		
+
+
+	
+level_1_load:
+	jbsr	load_fist_of_fury
 	lea		tiles_level_1_24a000_file,a0
 	jbsr	load_level_tiles_and_bobs
 
@@ -5555,8 +5565,7 @@ level_1_load:
 	
 	rts	
 level_2_load:
-	lea		greased_lightning_music_file,a0
-	jbsr	load_music_module
+	jbsr	load_greased_lightning
 	lea		tiles_level_2_24a000_file,a0
 	jbsr	load_level_tiles_and_bobs
 	
@@ -5575,8 +5584,7 @@ level_2_load:
 	rts
 	
 level_3_load:	
-	lea		fist_of_fury_music_file,a0
-	jbsr	load_music_module
+	jbsr	load_fist_of_fury
 
 	lea		tiles_level_3_24d000_file,a0
 	jbsr	load_tiles_file_24d000
@@ -5612,8 +5620,7 @@ level_3_load:
 	
 * forest level
 level_4_load:
-	lea		fist_of_fury_music_file,a0
-	jbsr	load_music_module
+	jbsr	load_fist_of_fury
 
 	lea		tiles_level_4_24a000_file,a0
 	jbsr	load_level_tiles_and_bobs
@@ -5626,8 +5633,8 @@ level_4_load:
 
 	rts
 level_5_load:
-	lea		greased_lightning_music_file,a0
-	jbsr	load_music_module
+	jbsr	load_greased_lightning
+
 	lea		tiles_level_5_24a000_file,a0
 	jbsr	load_level_tiles_and_bobs
 
@@ -5639,8 +5646,7 @@ level_5_load:
 	rts
 	
 level_6_load:
-	lea		fist_of_fury_music_file,a0
-	jbsr	load_music_module
+	jbsr	load_fist_of_fury
 	lea		tiles_level_6_24a000_file,a0
 	jbsr	load_level_tiles_and_bobs
 
@@ -5650,8 +5656,7 @@ level_6_load:
 	rts
 	
 level_7_load:
-	lea		fist_of_fury_music_file,a0
-	jbsr	load_music_module
+	jbsr	load_fist_of_fury
 	lea		tiles_level_7_24a000_file,a0
 	jbsr	load_level_tiles_and_bobs
 	
@@ -6420,6 +6425,8 @@ debug_truck_message:
 debug_scroll_message:
 	.asciz	"SCRO 000000"
 	.endif
+boss_fight_music_file:
+	.asciz	"bd-bossfight.mod"
 fist_of_fury_music_file:
 	.asciz	"bd-fist_of_fury.mod"
 greased_lightning_music_file:

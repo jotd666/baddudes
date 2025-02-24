@@ -1,7 +1,7 @@
 import subprocess,os,struct,glob,tempfile
 import shutil
 
-
+this_dir = os.path.dirname(__file__)
 gamename = "baddudes"
 sox = "sox"
 
@@ -12,10 +12,10 @@ def convert():
 
     #wav_files = glob.glob("sounds/*.wav")
 
-    this_dir = os.path.dirname(__file__)
+
     sound_dir = os.path.join(this_dir,"..","sounds")
 
-    this_dir = os.path.dirname(__file__)
+
     src_dir = os.path.join(this_dir,"../../src/amiga")
     outfile = os.path.join(src_dir,"sounds.68k")
     sndfile = os.path.join(src_dir,"sound_entries.68k")
@@ -56,6 +56,7 @@ def convert():
     "LEVEL_1_TUNE_SND"                :{"index":0x1F,"pattern":0,"volume":20,'loops':True},
     "LEVEL_2_TUNE_SND"                :{"index":0x20,"pattern":0,"volume":20,'loops':True},
     "KARNOV_TUNE_SND"                :{"index":0x26,"pattern":0,"volume":24,'loops':True},
+    "BOSS_TUNE_SND"                :{"index":0x21,"pattern":4,"volume":24,'loops':True},
     "WIN_TUNE_SND"                   :{"index":0x22,"pattern":0,"volume":24,'loops':False,"ticks":180},
 
 
@@ -72,9 +73,12 @@ def convert():
             else:
                 f.write("\t.byte    0\t| {:02x}\n".format(i))
 
+    max_mod_size = max(os.path.getsize(x) for x in glob.glob(os.path.join(sound_dir,"*.mod")))
+
     with open(os.path.join(src_dir,"..","sounds.inc"),"w") as f:
         for k,v in sorted(sound_dict.items(),key = lambda x:x[1]["index"]):
             f.write(f"\t.equ\t{k},  0x{v['index']:x}\n")
+        f.write(f"\nMAX_MODULE_SIZE = {max_mod_size}\n")
 
     max_sound = 0x80  # max(x["index"] for x in sound_dict.values())+1
     sound_table = [""]*max_sound

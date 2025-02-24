@@ -45,7 +45,6 @@
   see if we can blit the score afterwards if 2P mode is reinstated
 - level 2 front object (lamp) not displaying (used to work with level 1 objects)
 - save/load highscores
-- level 2: road colors are trashed when scroll is enabled
 - level 3: water scroll tiles wrong placement, maybe quadrant shit is different than
   for other mode??? dump 24A000 memory on second write to 246010 MAME/amiga and compare
 - level 3: put water scroll in some other buffer (allocate one?) so changing plans automatically
