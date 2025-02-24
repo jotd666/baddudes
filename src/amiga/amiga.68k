@@ -4092,13 +4092,33 @@ allocate_and_load_chip_mem_file:
 	rts
 	
 load_and_decrunch_file:
+	movem.l d0-d1/a0-a2,-(a7)
 	move.l	_resload,a2
  	jsr	(resload_LoadFileDecrunch,a2)
+	movem.l (a7)+,d0-d1/a0-a2
 	rts
 	
+* we're allocating a fixed amount of memory
+* so we're able to fit the boss module in the same
+* memory chunk
 allocate_and_load_music_module:
-	jbsr	allocate_and_load_chip_mem_file
-	move.l	d0,current_tune
+	jbsr	get_file_size
+	move.l	#MAX_MODULE_SIZE,d2
+	cmp.l	d0,d2
+	jcc		0f
+	BREAKPOINT	"max module size disrepancy"
+	jbsr		quit_to_os
+0:
+	* allocate memory
+	moveq	#1,d1
+	move.l	#MAX_MODULE_SIZE,d0
+	jbsr 	allocate_memory
+	move.l	d0,a1
+	move.l	a1,-(a7)
+	jbsr	load_and_decrunch_file
+	move.l	(a7)+,a1
+
+	move.l	a1,current_tune
 	rts
 	
 * < A0: filename
