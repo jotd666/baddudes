@@ -1,3 +1,5 @@
+- new clipping limit (to fix clipped porsche on left) seems to have
+  side effects
 - easy: second screen sequence sprites (president+bad dudes)
 - first ending sequence picture is ghosted...
 - end sequence should use scrolling sprites for credits: allocate huge 2x high sprite buffers

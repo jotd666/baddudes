@@ -4091,13 +4091,22 @@ allocate_and_load_chip_mem_file:
 	move.l	(a7)+,d1
 	rts
 	
+* < A0: filename
+* < A1: memory
 load_and_decrunch_file:
 	movem.l d0-d1/a0-a2,-(a7)
 	move.l	_resload,a2
  	jsr	(resload_LoadFileDecrunch,a2)
 	movem.l (a7)+,d0-d1/a0-a2
 	rts
+
+load_boss_music_module:
+	move.l	current_tune,A1
+	lea		boss_fight_music_file,a0
+	jbsr	load_and_decrunch_file
+	rts
 	
+
 * we're allocating a fixed amount of memory
 * so we're able to fit the boss module in the same
 * memory chunk
@@ -5553,7 +5562,7 @@ load_fist_of_fury:
 	rts
 	
 load_greased_lightning:
-	lea		fist_of_fury_music_file,a0
+	lea		greased_lightning_music_file,a0
 	jbsr	allocate_and_load_music_module
 	rts
 		
@@ -6078,7 +6087,7 @@ osd_sound_start:
 	* play the proper module pattern
 	* load up the countdown if loop
 	
-	*move.w	(2,a0,d0.w),d1	| pattern number in .mod file
+	move.w	(2,a0,d0.w),d1	| pattern number in .mod file
 	* since it's not zero, next vbl tick will play the music
 	
 	*cmp.b	music_track_start_number(pc),d1
@@ -6090,8 +6099,17 @@ osd_sound_start:
 	jeq		5f
  	movem.l	d0/a0,-(a7)
     lea _custom,a6
+	cmp.w	#BOSS_TUNE_SND*8,d0
+	jeq		110f
+	cmp.w	#KARNOV_TUNE_SND*8,d0
+	jne		111f
+110:
+	* both same module, in both cases module not loaded
+	* but level tune loaded.
+	* reuse memory
+	jbsr	load_boss_music_module
+111:
 	move.l	current_tune,a0
-	moveq	#0,d1
 	
 	move.b	d1,music_track_start_number
 	move.w	d1,d0
