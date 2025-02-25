@@ -1,3 +1,4 @@
+- mockup boss crashes
 - new clipping limit (to fix clipped porsche on left) seems to have
   side effects
 - easy: second screen sequence sprites (president+bad dudes)
@@ -14,7 +15,7 @@
   starts all right (get the values) but at some point it loses sync with the gap
   
 - cars in level 2 still parts not displayed at times...
-- boss 2 color change doesn't trigger
+- boss 3 color change triggers but does nothing
 - karnov dying missing frames (wrong grouping??): capture when dead
 - crash at the end of level 1 => level 2 (other levels switch OK!): front object conflict
 
@@ -106,6 +107,6 @@ low priority:
 - osd_write_byte not working properly
 
 howto:
-- skip music level 1: bpset 0df2a,D0==$1F || D0==$27 || D0 == $2C || D0 == $26,{CURPC=$13DA;g}
+- skip music: bpset 0df2a,D0==$1F || D0==$22  || D0==$21 || D0==$20 || D0==$27 || D0 == $2C || D0 == $26,{CURPC=$13DA;g}
 - log sounds: bpset 0df2a,,{printf "%x",D0;g}
 

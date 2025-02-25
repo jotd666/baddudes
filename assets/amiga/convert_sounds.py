@@ -52,6 +52,8 @@ def convert():
     "STAR_THROWN_SND"               :{"index":0x9,"channel":3,"sample_rate":hq_sample_rate,"priority":30},
     "MAN_SCREAM_SND"               :{"index":0x2C,"channel":2,"sample_rate":hq_sample_rate,"priority":30},
     "IM_BAD_SND"               :{"index":0x36,"channel":3,"sample_rate":hq_sample_rate,"priority":30},
+    "NINJA_ATTACK_SCREAM_SND"     :{"index":0x3B,"channel":3,"sample_rate":hq_sample_rate,"priority":30},
+    "NINJA_CLONE_SND"     :{"index":0x1B,"channel":3,"sample_rate":hq_sample_rate,"priority":30},
 
     "LEVEL_1_TUNE_SND"                :{"index":0x1F,"pattern":0,"volume":20,'loops':True},
     "LEVEL_2_TUNE_SND"                :{"index":0x20,"pattern":0,"volume":20,'loops':True},

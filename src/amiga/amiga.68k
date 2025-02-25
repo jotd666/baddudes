@@ -114,7 +114,7 @@ ONE_TICK = 1
 * note: double buffering eats a lot of memory, it cannot run in debug mode
 * either simple or reloc. Only in "none" (program running in fastmem, data
 * located in low chipmem)
-OPT_ENABLE_DOUBLE_BUFFERING = 1
+OPT_ENABLE_DOUBLE_BUFFERING = 0
 
 _custom = 0xDFF000
 
@@ -6461,6 +6461,9 @@ mockup_boss_palette_load:
 	.ifeq		OPT_BOSS_SPRITES_MOCKUP-2
 	lea		level_2_boss_color_change(pc),a0
 	.endif
+	.ifeq		OPT_BOSS_SPRITES_MOCKUP-3
+	lea		level_3_boss_color_change(pc),a0
+	.endif
 	.ifeq		OPT_BOSS_SPRITES_MOCKUP-4
 	jra		0f		| no color change
 	.endif
@@ -6472,6 +6475,9 @@ mockup_boss_palette_load:
 sprite_ram_mockup:
 	.ifeq		OPT_BOSS_SPRITES_MOCKUP-2
 	.include	"mockup/boss_2.68k"
+	.endif
+	.ifeq		OPT_BOSS_SPRITES_MOCKUP-3
+	.include	"mockup/boss_3.68k"
 	.endif
 	.ifeq		OPT_BOSS_SPRITES_MOCKUP-4
 	.include	"mockup/boss_4.68k"
