@@ -1,23 +1,17 @@
-- restore clip on max scroll (around 0x300) too strict (no restore!), probably same for clear, debug TMPWRITE
-- blitter on boundary 0x300 should also be clipped properly: just add a small margin
-- 
-
+- level 6 regenerate sprites (player killed not displayed??)
+- level 6: player killed on wrap boundary still issues, check sprite
+  clipping
+- level 6 => level 7: should reset scroll value to avoid fake detection
+  of Y scroll boundary crossing
 - new clipping limit (to fix clipped porsche on left) seems to have
   side effects (incorrect left clip for ninjas...)
-- debug TMPWRITE when clearing/restoring background, seems to have improved
-  some erase artifacts, but still not 100%
+- karnov killed missing body (try with karnov_dead mockup!)
 - easy: second screen sequence sprites (president+bad dudes)
 - first ending sequence picture is ghosted...
 - end sequence should use scrolling sprites for credits: allocate huge 2x high sprite buffers
   first find a way to reach sequence faster
 
-- intercept palette change level 3, use amiga colored ninja ripped to change
-  red => green: config done in level_3_boss_color_change, intercept
   
-- restore buffer memory size optimize:
-RESTORE_SCREEN_PLANE_SIZE = NB_BYTES_PER_SCREEN_ROW*3*NB_PLAYFIELD_LINES*2
-could be
-RESTORE_SCREEN_PLANE_SIZE = NB_BYTES_PER_SCREEN_ROW*2*NB_PLAYFIELD_LINES*2
 
 - level 2 truck display: gaps not always cleared, bottom not properly erased,
   end of truck not properly erased: debug line 1130 with black instead of restore
@@ -38,6 +32,7 @@ RESTORE_SCREEN_PLANE_SIZE = NB_BYTES_PER_SCREEN_ROW*2*NB_PLAYFIELD_LINES*2
   * fails for "scroll down" completely
   
   could probably be optimized to only restore the buffers partially, not the whole width
+- level 6 vertical y wrap completely off (screen copy is wrong, screen restore is OK)
 
 - ninja nails missing black
 - level 4 boss: missing black:
@@ -67,15 +62,12 @@ RESTORE_SCREEN_PLANE_SIZE = NB_BYTES_PER_SCREEN_ROW*2*NB_PLAYFIELD_LINES*2
  
 - karnov feet erase issue, doesn't seem to be erased (also true for jumping ninjas) probably
   group erase not working. Same for level 6 devil pole
-- karnov/in general when scrolling at 0, existing screen buffer is slightly trashed:
-  with restored tiles: add debug key to toggle screen with/without 
-  scroll / check when the sprite draw is avoided and see what values it would yield
 - multiplex sprites 4 to 7 to do (lower hud): ATM only one object is displayed at a time
 
 
 - optim: group erase on 16 (working) or 32 bit wide blocks
 
-- boss 3 color change doesn't trigger
+
 - boss 5 color change
 - boss 6 color change
 - boss 7 color change
@@ -83,7 +75,7 @@ RESTORE_SCREEN_PLANE_SIZE = NB_BYTES_PER_SCREEN_ROW*2*NB_PLAYFIELD_LINES*2
 - rip train pic if possible (to avoid special treatment)
 - level complete messages should use front object sprites (sprites 4-7, unload backgrounds first
   in levels 4 and 6)
-- left osd mssing 1 char ("G"AME OVER), middle lower OSD also missing 1 char
+- left osd mssing 1 char ("G"AME OVER/"P"USH BUTTON), middle lower OSD also missing 1 char
 - log & rip missing sounds: breakpoint on sound not found so able to go to mame and rip it
 - need to optimize truck/train erase: depending on the level, compute the parts that need
   background refresh. Truck: bottom (wheels) + part between front & tow & exhaust pipe. 
@@ -94,6 +86,16 @@ RESTORE_SCREEN_PLANE_SIZE = NB_BYTES_PER_SCREEN_ROW*2*NB_PLAYFIELD_LINES*2
 
 
 low priority:
+
+- reinstate erase grouping when karnov & devil pole feet erase issues are fixed
+- debug TMPWRITE when clearing/restoring background, seems to have improved
+  some erase artifacts, but still not 100%
+- restore buffer memory size optimize:
+RESTORE_SCREEN_PLANE_SIZE = NB_BYTES_PER_SCREEN_ROW*3*NB_PLAYFIELD_LINES*2
+could be
+RESTORE_SCREEN_PLANE_SIZE = NB_BYTES_PER_SCREEN_ROW*2*NB_PLAYFIELD_LINES*2
+
+- restore clip on max scroll (around 0x300) too strict (no restore!), probably same for clear, debug TMPWRITE
 
 - level 3: put water scroll in some other buffer (allocate one?) so changing plans automatically
   clips the sprites without any other side effect

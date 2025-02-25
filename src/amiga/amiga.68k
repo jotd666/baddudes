@@ -126,7 +126,7 @@ _custom = 0xDFF000
 NB_PLAYFIELD_PLANES = 6
 *TOTAL_NB_COLORS = 1<<NB_PLAYFIELD_PLANES
 NB_BYTES_PER_SCREEN_ROW = 32
-NB_BYTES_PER_ROW = NB_BYTES_PER_SCREEN_ROW*3
+NB_BYTES_PER_ROW = (NB_BYTES_PER_SCREEN_ROW*3)+8   | add 64 extra pixels to clip properly
 
 
 PROGRAM_SIZE = 0x60000
@@ -2619,7 +2619,7 @@ osd_wait:
 is_game_playing:
 	movem.l	d0/a6,-(a7)
 	GET_RAM_START_IN_A6
-	tst.b	(0x215,a6)	| POOYAN!!
+	tst.b	(0x215,a6)
 	jpl		0f			| negative: game in play
 	moveq	#1,d0
 	jra		1f
@@ -2719,6 +2719,8 @@ really_update_sprites:
 	rts
 10:
 	.endif
+	
+	.ifdef		GROUP_BACKGROUND_RESTORE
 	* erase optimization pre-processing
 	* scan previous positions to group the consecutive ones
 	*
@@ -2763,6 +2765,7 @@ really_update_sprites:
 	add.w	#16,d2			| previous += 16
 	dbf		d7,0b
 12:
+	.endif
 	
 	lea		_custom,a5
 	* clear previous positions
@@ -3322,7 +3325,6 @@ clear_fg_planes_any_blitter_internal:
 	sub.w	#NB_BYTES_PER_ROW,d6
 	jcs		24f
 	* width too big: clip height
-	TMPWRITE
 	sub.w	d6,d2
 24:
     add.w   d0,d1
@@ -3652,7 +3654,6 @@ restore_background:
 	add.w	d2,d3
 	sub.w	#NB_BYTES_PER_ROW,d3
 	jcs		24f		| okay!
-	TMPWRITE
 	* width too big: clip height
 	sub.w	d3,d2
 24:
@@ -4635,22 +4636,34 @@ read_system_inputs:
 	bclr	#BIT_START_2P,d0
 0:	
 
+	bsr		is_game_playing
+	bne.b	2f
 
-*	* directions + fire
-*	move.l	_joypad_state,d1
-*	btst	#JPB_BTN_UP,d1
-*	beq.b	0f
-*	bclr	#3,d0
-*0:
-*	btst	#JPB_BTN_DOWN,d1
-*	beq.b	0f
-*	bclr	#2,d0
-*0:
-*
-*	btst	#JPB_BTN_RED,d1
-*	beq.b	0f
-*	bclr	#5,d0
-*0:
+	* if game not playing, or within "continue" loop
+	* consider "fire" as insert coin
+	move.l	_joypad_state,d1
+	* save prev state as game loops within vblank
+	* pushing fire would either lockup the game
+	* or insert a lot of credits simulatenously
+
+	* game not in play, accept start 1P game with "up"
+	btst	#JPB_BTN_UP,d1
+	beq.b	0f
+	bclr	#BIT_START_1P,d0
+0:
+	* game not in play, accept start 2P game with "down"
+	* temp: disabled ATM, 2P mode is buggy!
+	btst	#JPB_BTN_DOWN,d1
+	beq.b	0f
+	bclr	#BIT_START_2P,d0
+0:
+	btst	#JPB_BTN_RED,d1
+	beq.b	1f
+	* game not in play, accept insert coin with fire
+	bclr	#BIT_INSERT_COIN_1,d0
+1:
+2:
+
 	movem.l	(a7)+,a0/d1
 	rts
 	
@@ -4724,57 +4737,6 @@ read_controls:
 	rts
 
 
-osd_read_inputs:
-
-	moveq	#-1,d0
-		
-	movem.l	a0/d1,-(a7)
-
-*	bsr		is_game_playing
-*	bne.b	2f
-*0:
-	* if game not playing, or within "continue" loop
-	* consider "fire" as insert coin
-	move.l	_joypad_state,d1
-	* save prev state as game loops within vblank
-	* pushing fire would either lockup the game
-	* or insert a lot of credits simulatenously
-
-	* game not in play, accept start 1P game with "up"
-	btst	#JPB_BTN_UP,d1
-	beq.b	0f
-	bclr	#BIT_START_1P,d0
-0:
-	* game not in play, accept start 2P game with "down"
-	* temp: disabled ATM, 2P mode is buggy!
-	btst	#JPB_BTN_DOWN,d1
-	beq.b	0f
-	bclr	#BIT_START_2P,d0
-0:
-	btst	#JPB_BTN_RED,d1
-	beq.b	1f
-	* game not in play, accept insert coin with fire
-	bclr	#BIT_INSERT_COIN_1,d0
-1:
-2:
-
-	lea		keyboard_table,a0
-	* misc control keys
-	tst.b	(5,a0)		| "5" key like in MAME
-	beq.b	0f
-	bclr	#BIT_INSERT_COIN_1,d0		| insert coin
-0:
-	tst.b	(1,a0)		| "1" key like in MAME
-	beq.b	0f
-	bclr	#BIT_START_1P,d0
-0:
-	tst.b	(2,a0)		| "2" key like in MAME
-	beq.b	0f
-	bclr	#BIT_START_2P,d0
-0:	
-	movem.l	(a7)+,a0/d1
-
-	rts
 	
 osd_read_dsw1:
 	* actual dipswitches
@@ -6114,10 +6076,6 @@ osd_sound_start:
 0:
 
 
-	cmp.b	#CREDIT_SND,d0
-	jne		1f
-	jbsr	osd_music_stop
-1:
 
 	lsl.w	#3,d0
 	lea		sound_table,a0
@@ -7054,21 +7012,14 @@ fg_screen_buffer_2:
 	.skip	ONE_FULL_16_BIT_ROW
 	.endr
 	.skip	SCREEN_SIZE
-	.skip	NB_BYTES_PER_ROW*12*3
-	.skip	8
-	.rept	CLIPPED_WIDTH_MARGIN/16
-	.skip	ONE_FULL_16_BIT_ROW
-	.endr
+
 	.endif	
 fg_screen_buffer_1:
 	.rept	CLIPPED_WIDTH_MARGIN/16
 	.skip	ONE_FULL_16_BIT_ROW
 	.endr
 	.skip	SCREEN_SIZE
-	.skip	NB_BYTES_PER_ROW*12*3
-	.rept	CLIPPED_WIDTH_MARGIN/16
-	.skip	ONE_FULL_16_BIT_ROW
-	.endr
+
 	.skip	8
 	
 
