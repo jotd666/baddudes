@@ -1490,6 +1490,10 @@ level_2_boss_color_change:
 	.word	0x500,0x306 | purple #3, slightly conflicts with bad dudes but doesn't matter
 	.word	0x700,0x408 | purple #2
 	.word	0xd00,0x62b	| purple #1
+
+*	.word	0x600,0x306 | purple #3, slightly conflicts with bad dudes but doesn't matter
+*	.word	0x800,0x408 | purple #2
+*	.word	0xb00,0x62b	| purple #1
 	*.word	0xeee,0x707   | conflicts with bad dudes trousers after quantizing, leaving white...
 	*.word	0xc62,0xb75	 | those diffs seem not to have any effect, drop them
 	*.word	0x953,0x853
@@ -5767,8 +5771,8 @@ change_palette:
 	move.l	(a0)+,d2
 	jmi	3f
 	swap	d2		| search key D2.W
-	lea	base_palette,a1
-	lea	base_palette+64*2-4,a1
+	* from end of color
+	lea	base_palette_end-4,a1
 	move.w	#63,d0
 1:
 	move.w	(a1)+,d1
@@ -5780,7 +5784,11 @@ change_palette:
 	jne		2f
 	* found a matching color: replace by the other one
 	swap	d2
+		
 	move.w	d2,(-2,a1)
+
+	* next color to replace
+	jra	0b
 2:
 	subq	#8,a1
 	dbf		d0,1b
@@ -6464,15 +6472,18 @@ debug_scroll_display:
 	.align	2
 debug_truck_move:
 	.word	0
-	.ifne		OPT_BOSS_SPRITES_MOCKUP
-mockup_palette_loaded:
-	.word	0
-	.endif
 * in 244758
+	.ifndef	RELEASE
 boss_life:
       .word	0x006A,0x0068,0x006B,0x069,0x006F,0x006F,0x006F,0x006F,0x006F,0x006F,0x006D,0
+	.endif
+	
 
 	.ifne		OPT_BOSS_SPRITES_MOCKUP
+
+mockup_palette_loaded:
+	.word	0
+
 mockup_boss_palette_load:
 	tst.b	mockup_palette_loaded
 	jne		0f
@@ -6503,7 +6514,6 @@ sprite_ram_mockup:
 	.ifeq		OPT_BOSS_SPRITES_MOCKUP-6
 	.include	"mockup/boss_6.68k"
 	.endif
-	.include	"mockup/porsche.68k"
 	.endif
 
 debug_truck_message:
@@ -6879,6 +6889,7 @@ dudes_palette:
 	DECL_COLORS	0,24
 letters_palette:
 	DECL_COLORS	24,8
+base_palette_end:
 
 	.word	0x2C01+0x1800,0xFFFE
 
