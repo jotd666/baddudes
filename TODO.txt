@@ -1,6 +1,6 @@
 - mockup boss crashes
 - new clipping limit (to fix clipped porsche on left) seems to have
-  side effects
+  side effects (incorrect left clip for ninjas...)
 - easy: second screen sequence sprites (president+bad dudes)
 - first ending sequence picture is ghosted...
 - end sequence should use scrolling sprites for credits: allocate huge 2x high sprite buffers
@@ -16,7 +16,6 @@
   
 - cars in level 2 still parts not displayed at times...
 - boss 3 color change triggers but does nothing
-- karnov dying missing frames (wrong grouping??): capture when dead
 - crash at the end of level 1 => level 2 (other levels switch OK!): front object conflict
 
 - level 7 vertical scrolling "trick": if y scroll gets > 0x100, then
@@ -42,16 +41,12 @@
 - level 5,6,7: karnov wrong colors, maybe paste direct proper colors like level 4 boss
 - repair front objects (will destroy status bar)
 - 2nd button doesn't seem to work
-- autoframeskip not limited/frameskip doesn't display sprites!!!
+- autoframeskip not tuned properly
 - level 2: no lamps if objects 2 loaded. Ok if objects 1 loaded
 - drop 2 player mode, use rightmost OSD sprite for real parallax in levels 4 and 6
   see if we can blit the score afterwards if 2P mode is reinstated
 - level 2 front object (lamp) not displaying (used to work with level 1 objects)
 - save/load highscores
-- level 3: water scroll tiles wrong placement, maybe quadrant shit is different than
-  for other mode??? dump 24A000 memory on second write to 246010 MAME/amiga and compare
-- level 3: put water scroll in some other buffer (allocate one?) so changing plans automatically
-  clips the sprites without any other side effect
   
   
 - truck jailbars when simpler blit with no source and BLTBDAT=0 in some cases?????
@@ -81,7 +76,6 @@
   in levels 4 and 6)
 - left osd mssing 1 char ("G"AME OVER), middle lower OSD also missing 1 char
 - log & rip missing sounds: breakpoint on sound not found so able to go to mame and rip it
-- use roondar's mixing engine (optional?) use audio mixer (optional): https://powerprograms.nl/resources/audio_mixer_v3_6_docs.html#combining
 - need to optimize truck/train erase: depending on the level, compute the parts that need
   background refresh. Truck: bottom (wheels) + part between front & tow & exhaust pipe. 
   Rest: not needed. same for big truck & train, with inter-tow: in progress
@@ -92,6 +86,8 @@
 
 low priority:
 
+- level 3: put water scroll in some other buffer (allocate one?) so changing plans automatically
+  clips the sprites without any other side effect
 - invincibility: still hit when falling on road (level 2)
 - "bad dudes" title still small glitches (in "BAD DUDES" title)
 - "CREDIT" not written when coin inserted
