@@ -1083,7 +1083,7 @@ erase_level_1_truck:
 	* that won't be immediately overwritten by the truck itself
 	* again (which is pretty rectangular and moves only to the right)
 	
-	lea		prev_truck_params,a1
+	lea		prev_truck_params+2,a1
 	move.w	truck_wheels_height,d3		| bottom part which needs restoring
 	move.w	(a1)+,d0	| X
 	move.w	truck_y_pos,d1	| Y
@@ -1098,7 +1098,7 @@ erase_level_1_truck:
 	jbsr	restore_background
 
 	* rear should be erased only when X > 0
-	lea		prev_truck_params,a1
+	lea		prev_truck_params+2,a1
 	move.w	(a1)+,d0	| X
 	subq.w	#8,d0
 	jeq		1f			| X=0 on displayed screen: no need to erase
@@ -1130,7 +1130,7 @@ erase_level_1_truck:
 	sub.w	truck_wheels_height,d4
 	move.w	#4,d2
 	move.l	background_restore_buffer,a0  | TEMP TEMP
-	sub.w	#16,d1				| TEMP TEMP
+	sub.w	#30,d1				| TEMP TEMP
 	*jbsr	restore_background
 	moveq	#4,D3
 	jbsr	clear_fg_planes_any_blitter_internal
@@ -1138,14 +1138,16 @@ erase_level_1_truck:
 10:
 	* level 2: 2 gaps to restore
 	lea		prev_truck_params,a1
-	move.w	x_secondary_scroll_value,d0	| truck pos
-	sub.w	#0x1F0,d0
-	jcs		20f			| no need to erase, truck self erases
-	cmp.w	#240,d0
-	jcc		20f			| gap has now scrolled left completely
-	neg.w	d0
-	add.w	(a1),d0		| displayX
-	add.w	#232,d0		| wagon width plus space
+	move.w	(a1)+,d0	| absolute secondary scroll pos
+	*add.w	#NB_BYTES_PER_SCREEN_ROW*16,d0	| now scroll value 0->0x400
+	* this is the X coord of start of truck
+	TMPWRITE
+	add.w	#208,d0
+	jmi		20f
+	cmp.w	#0x100,d0
+	jcc		20f
+	add.w	x_background_scroll_value,d0
+
 	move.w	truck_y_pos,d1	| displayY
 	move.w  big_machine_height,d4
 	sub.w	truck_wheels_height,d4
@@ -1154,6 +1156,7 @@ erase_level_1_truck:
 	move.l	fg_drawed_screen_ptr,a1
 	*jbsr	restore_background
 	moveq	#4,D3
+	sub.w	#30,d1				| TEMP TEMP
 	jbsr	clear_fg_planes_any_blitter_internal
 20:
 1:
@@ -1178,7 +1181,9 @@ draw_truck:
 	* offset to skip start (and also adjust real width)
 	moveq	#0,d5			| XY-offset
 	neg	d0
+	lea		prev_truck_params,a1
 	add.w	#NB_BYTES_PER_SCREEN_ROW*16,d0	| now scroll value -0x200->0x200
+	move.w	d0,(a1)+		| absolute secondary scroll start position (no back scroll)
 	jpl		truck_not_clipped_left
 	add.w	d0,d6	| adjust width to remove start/end of truck
 	jmi		2f		| rightmost part still negative: too far right: don't display
@@ -1240,7 +1245,6 @@ do_truck_draw:
 	* store the restore clip values for later
 	
 	st.b	truck_previously_drawn
-	lea		prev_truck_params,a1
 	move.w	d0,(a1)+	| X
 	move.w	d6,(a1)+	| real width
 	move.w	x_secondary_scroll_value,(a1)	| note truck position
@@ -1488,7 +1492,7 @@ addr_242xxx_op:
 * captured during boss fight, and manual adjustments
 level_2_boss_color_change:
 	.word	0x500,0x306 | purple #3, slightly conflicts with bad dudes but doesn't matter
-	.word	0x700,0x408 | purple #2
+	.word	0x700,0x408 | purple #2: careful!! hit color
 	.word	0xd00,0x62b	| purple #1
 
 *	.word	0x600,0x306 | purple #3, slightly conflicts with bad dudes but doesn't matter
@@ -1505,7 +1509,7 @@ level_2_boss_color_change:
 	
 level_3_boss_color_change:
 	.word	0xC00,0x363
-	.word	0x700,0x242
+	*.word	0x700,0x242  | 0x700,0xE00,0x900 used for hit sprite
 	.word	0x400,0x020
 	.word	0x500,0x131
 	.long	-1		| end
@@ -3302,13 +3306,24 @@ clear_fg_planes_any_blitter_internal:
 	jpl		0f
 	moveq	#0,d1
 0:
-    and.w   #0x1F0,d0
-    beq.b   2f				| zero X optimization
-    asr.w   #3,d0			| X displacement in bytes
+    asr.w   #4,d0			| X displacement in bytes
 	jpl		22f
 	moveq	#0,d0				| was negative: clip to 0 (erase don't need shifting)
 22:
-	
+	add.w	d0,d0			| in bytes but multiple of 2
+	* now clip width
+	cmp.w	#NB_BYTES_PER_ROW,d0
+	jcs		23f
+	* too far: exit
+	rts
+23:
+	move.w	d0,d6
+	add.w	d2,d6
+	sub.w	#NB_BYTES_PER_ROW,d6
+	jcs		24f
+	* width too big: clip height
+	sub.w	d6,d2
+24:
     add.w   d0,d1
 	bclr	#0,d1
 2:   
@@ -3646,7 +3661,7 @@ restore_background:
 	add.l	d3,a1
 	add.l	d3,a0
 	add.w	d0,a1	| real coord (can be > 0x2xx)
-	and.w	#0x3F,d0
+	and.w	#0x3F,d0  | THIS IS WRONG SINCE THE START!!!!
 	add.w	d0,a0	| wraps
 
     move.l  #0x09f00000,d3    | A->D copy, ascending mode	

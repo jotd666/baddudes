@@ -1,4 +1,5 @@
-- mockup boss crashes
+- mockup boss 2/3 try
+- fight boss no invincible: try red "hit" sprite: must remain red
 - new clipping limit (to fix clipped porsche on left) seems to have
   side effects (incorrect left clip for ninjas...)
 - easy: second screen sequence sprites (president+bad dudes)
@@ -15,7 +16,7 @@
   starts all right (get the values) but at some point it loses sync with the gap
   
 - cars in level 2 still parts not displayed at times...
-- boss 3 color change triggers but does nothing
+
 - crash at the end of level 1 => level 2 (other levels switch OK!): front object conflict
 
 - level 7 vertical scrolling "trick": if y scroll gets > 0x100, then
