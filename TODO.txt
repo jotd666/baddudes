@@ -1,7 +1,11 @@
-- mockup boss 2/3 try
-- fight boss no invincible: try red "hit" sprite: must remain red
+- restore clip on max scroll (around 0x300) too strict (no restore!), probably same for clear, debug TMPWRITE
+- blitter on boundary 0x300 should also be clipped properly: just add a small margin
+- 
+
 - new clipping limit (to fix clipped porsche on left) seems to have
   side effects (incorrect left clip for ninjas...)
+- debug TMPWRITE when clearing/restoring background, seems to have improved
+  some erase artifacts, but still not 100%
 - easy: second screen sequence sprites (president+bad dudes)
 - first ending sequence picture is ghosted...
 - end sequence should use scrolling sprites for credits: allocate huge 2x high sprite buffers
@@ -10,7 +14,11 @@
 - intercept palette change level 3, use amiga colored ninja ripped to change
   red => green: config done in level_3_boss_color_change, intercept
   
-  
+- restore buffer memory size optimize:
+RESTORE_SCREEN_PLANE_SIZE = NB_BYTES_PER_SCREEN_ROW*3*NB_PLAYFIELD_LINES*2
+could be
+RESTORE_SCREEN_PLANE_SIZE = NB_BYTES_PER_SCREEN_ROW*2*NB_PLAYFIELD_LINES*2
+
 - level 2 truck display: gaps not always cleared, bottom not properly erased,
   end of truck not properly erased: debug line 1130 with black instead of restore
   starts all right (get the values) but at some point it loses sync with the gap

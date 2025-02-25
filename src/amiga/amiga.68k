@@ -1509,7 +1509,7 @@ level_2_boss_color_change:
 	
 level_3_boss_color_change:
 	.word	0xC00,0x363
-	*.word	0x700,0x242  | 0x700,0xE00,0x900 used for hit sprite
+	.word	0x700,0x242  | 0x700,0xE00,0x900 used for hit sprite
 	.word	0x400,0x020
 	.word	0x500,0x131
 	.long	-1		| end
@@ -3322,6 +3322,7 @@ clear_fg_planes_any_blitter_internal:
 	sub.w	#NB_BYTES_PER_ROW,d6
 	jcs		24f
 	* width too big: clip height
+	TMPWRITE
 	sub.w	d6,d2
 24:
     add.w   d0,d1
@@ -3636,13 +3637,25 @@ restore_background:
 	jpl		0f
 	moveq	#0,d1		| clip to 0 if Y < 0
 0:
-	asr.w	#3,d0		| in bytes
+	asr.w	#4,d0		| in bytes
 	jpl		1f
 	* clip to 0 (never happens...)
 	moveq	#0,d0
 1:
-	bclr	#0,d0		| make it even
+	add.w	d0,d0			| in bytes but multiple of 2
 
+	* now clip width to avoid overshoot
+	cmp.w	#NB_BYTES_PER_ROW,d0
+	jcc		1f	| too far: do nothing
+
+	move.w	d0,d3
+	add.w	d2,d3
+	sub.w	#NB_BYTES_PER_ROW,d3
+	jcs		24f		| okay!
+	TMPWRITE
+	* width too big: clip height
+	sub.w	d3,d2
+24:
 	
 	lea		mulNB_BYTES_PER_ROW_table,a4
 	moveq	#0,d3
@@ -3660,9 +3673,11 @@ restore_background:
 	* doesn't duplicate like the background which needs 3 screens)
 	add.l	d3,a1
 	add.l	d3,a0
+	
+	* here we need to clip to 0x300 (NB_BYTES_PER_ROW*8) FUCK
 	add.w	d0,a1	| real coord (can be > 0x2xx)
 	and.w	#0x3F,d0  | THIS IS WRONG SINCE THE START!!!!
-	add.w	d0,a0	| wraps
+	add.w	d0,a0	| wrap source
 
     move.l  #0x09f00000,d3    | A->D copy, ascending mode	
 	move.w	#NB_BYTES_PER_ROW,d1		| blit modulo
