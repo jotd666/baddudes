@@ -1,8 +1,9 @@
 *
-*	Amiga-specific portions of baddudes (AGA version)
+*	Amiga-specific portions of Bad Dudes vs Dragonninja (AGA version)
 *
-* (c) JOTD 2025
+* (c) JOTD 2025 (hopefully not 2026 as well!)
 *
+* music modules by no9
 
 
 
@@ -1129,6 +1130,7 @@ erase_level_1_truck:
 	sub.w	truck_wheels_height,d4
 	move.w	#4,d2
 	move.l	background_restore_buffer,a0  | TEMP TEMP
+	sub.w	#16,d1				| TEMP TEMP
 	*jbsr	restore_background
 	moveq	#4,D3
 	jbsr	clear_fg_planes_any_blitter_internal
@@ -4131,6 +4133,12 @@ load_boss_music_module:
 	jbsr	load_and_decrunch_file
 	rts
 	
+load_win_music_module:
+	move.l	current_tune,A1
+	lea		stage_completed_music_file,a0
+	jbsr	load_and_decrunch_file
+	rts
+	
 
 * we're allocating a fixed amount of memory
 * so we're able to fit the boss module in the same
@@ -6124,16 +6132,7 @@ osd_sound_start:
 	jeq		5f
  	movem.l	d0/a0,-(a7)
     lea _custom,a6
-	cmp.w	#BOSS_TUNE_SND*8,d0
-	jeq		110f
-	cmp.w	#KARNOV_TUNE_SND*8,d0
-	jne		111f
-110:
-	* both same module, in both cases module not loaded
-	* but level tune loaded.
-	* reuse memory
-	jbsr	load_boss_music_module
-111:
+	jbsr	handle_tune_switch
 	move.l	current_tune,a0
 	
 	move.b	d1,music_track_start_number
@@ -6188,6 +6187,25 @@ dump_logs:
 	jbsr	resload_SaveFile(a2)
 	
     movem.l (a7)+,d0-a6
+	rts
+	
+handle_tune_switch:
+	cmp.w	#BOSS_TUNE_SND*8,d0
+	jeq		110f
+	cmp.w	#KARNOV_TUNE_SND*8,d0
+	jne		111f
+110:
+	* both same module, in both cases module not loaded
+	* but level tune loaded.
+	* reuse memory
+	jbsr	load_boss_music_module
+	rts
+111:
+	cmp.w	#WIN_TUNE_SND*8,d0
+	jne		112f
+	jbsr	load_win_music_module
+	
+112:
 	rts
 	
 dump_log:
@@ -6496,6 +6514,8 @@ debug_scroll_message:
 	.endif
 boss_fight_music_file:
 	.asciz	"bd-bossfight.mod"
+stage_completed_music_file:
+	.asciz	"bd-clear.mod"
 fist_of_fury_music_file:
 	.asciz	"bd-fist_of_fury.mod"
 greased_lightning_music_file:
