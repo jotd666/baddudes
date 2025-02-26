@@ -5006,14 +5006,17 @@ osd_set_context:
 	* no bottom scrolling
 	jbsr	disable_road_scroll
 
+	* clear scroll swap shit
+	clr.b	nb_scroll_swaps
+	* each level starts on Y scroll < 0x100
+	* clear this to avoid swap when warping 6 -> 7
+	clr.w	y_background_scroll_value
 	clr.w	y_extra_offset
 	move.w	#SCROLL_NONE,y_scroll_command
 	
 	* free music
 	clr.l	current_tune
 	
-	* clear number of scroll swaps
-	clr.b	nb_scroll_swaps
 	
 	* level 7 part 2 loaded flag
 	clr.b	level_7_load_second_part_loaded

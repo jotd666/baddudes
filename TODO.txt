@@ -1,8 +1,6 @@
 - level 6 regenerate sprites (player killed not displayed??)
 - level 6: player killed on wrap boundary still issues, check sprite
   clipping
-- level 6 => level 7: should reset scroll value to avoid fake detection
-  of Y scroll boundary crossing
 - new clipping limit (to fix clipped porsche on left) seems to have
   side effects (incorrect left clip for ninjas...)
 - karnov killed missing body (try with karnov_dead mockup!)
@@ -36,7 +34,8 @@
 
 - ninja nails missing black
 - level 4 boss: missing black:
-- elevator door tiles: missing black
+- elevator door tiles: missing black: a80-ab6 pal 0e: maybe get proper palette
+  directly in sheet as it's wrong... at the animal fight (else palette is wrong)
 - background restore: complete wrapping (line 2760)  
 
 - boss 6 & 7 wrong grouping / missing tiles  
