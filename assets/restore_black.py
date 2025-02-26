@@ -13,31 +13,19 @@ import PIL.Image,pathlib
 
 this_dir = pathlib.Path(__file__).absolute().parent
 
+transparent_color = (255,0,255)
+black_color = (0,0,0)
+
 def gray(c):
     return (c,)*3
 
-def fix_tileset(name,target_palette,black_reveal_palette_index,fake_black):
-
-    tiles_dir = this_dir /"sheets"/f"{name}_black"
-    tiles_out_dir = this_dir /"sheets"/name
-
-    transparent_color = (255,0,255)
-    black_color = (0,0,0)
-
-    if target_palette==black_reveal_palette_index:
-        raise Exception("target & reveal palette can't be identical")
-
-    shadow_pic = f"pal_{black_reveal_palette_index:02x}.png"
-
-    pic = PIL.Image.open(tiles_dir / shadow_pic)
-
+def fix_black(pic_name,shadow_pic_name,fake_black):
+    pic = PIL.Image.open(shadow_pic_name)
     # extract X,Y where pixels are supposed to be black
     really_black_coords = {(x,y) for x in range(pic.size[0]) for y in range(pic.size[1]) if pic.getpixel((x,y)) == fake_black}
 
-    img = tiles_dir / f"pal_{target_palette:02x}.png"
 
-    pic = PIL.Image.open(img)
-    out_pic_name = tiles_out_dir / img.name
+    pic = PIL.Image.open(pic_name)
     for x in range(pic.size[0]):
         for y in range(pic.size[1]):
             # convert all black to transparent
@@ -47,8 +35,26 @@ def fix_tileset(name,target_palette,black_reveal_palette_index,fake_black):
             # with a possible bogus palette), restore it
             if (x,y) in really_black_coords:
                 pic.putpixel((x,y),black_color)
+    return pic
+
+def fix_tileset(name,target_palette,black_reveal_palette_index,fake_black):
+
+    tiles_dir = this_dir /"sheets"/f"{name}_black"
+    tiles_out_dir = this_dir /"sheets"/name
+
+
+    if target_palette==black_reveal_palette_index:
+        raise Exception("target & reveal palette can't be identical")
+
+    shadow_pic_name = f"pal_{black_reveal_palette_index:02x}.png"
+    pic_name = f"pal_{target_palette:02x}.png"
+
+    pic = fix_black(tiles_dir / pic_name,tiles_dir / shadow_pic_name,fake_black)
+
+    out_pic_name = tiles_out_dir / pic_name
     print(f"Saving {out_pic_name}")
     pic.save(out_pic_name)
+
 
 
 # it's too hard to dynamically change boss 4 palette with quantization
@@ -62,13 +68,15 @@ img2.paste(boss4,(0,608))
 # overwrite black pic
 img2.save(sprites_black_0F)
 
-fix_tileset("sprites",0x4,0x9,gray(71))   # red ninja girl
-fix_tileset("sprites",0x3,0x9,gray(71))   # gray ninja
-fix_tileset("tiles_244000",0,4,(159,90,56))
-fix_tileset("sprites",0,0xA,gray(195))   # player tiles
-fix_tileset("sprites",2,0x9,gray(71))   # ninja tiles
+##fix_tileset("sprites",0x4,0x9,gray(71))   # red ninja girl
+##fix_tileset("sprites",0x3,0x9,gray(71))   # gray ninja
+##fix_tileset("tiles_244000",0,4,(159,90,56))
+##fix_tileset("sprites",0,0xA,gray(195))   # player tiles
+##fix_tileset("sprites",2,0x9,gray(71))   # ninja tiles
 fix_tileset("sprites",0xF,0x9,gray(71))   # karnov tiles
-fix_tileset("sprites",0xB,0x7,(230,230,0))   # tires
-fix_tileset("sprites",0x9,0x7,(230,230,0))   # tires
-fix_tileset("sprites",0xA,0x7,(230,230,0))   # cars
-fix_tileset("sprites",0xC,0x7,(230,230,0))   # cars
+fix_tileset("sprites",0xF,0x9,gray(104))   # animal tiles
+##fix_tileset("sprites",0xB,0x7,(230,230,0))   # tires
+##fix_tileset("sprites",0x9,0x7,(230,230,0))   # tires
+##fix_tileset("sprites",0xA,0x7,(230,230,0))   # cars
+##fix_tileset("sprites",0xC,0x7,(230,230,0))   # cars
+fix_tileset("sprites",0x5,0xD,(56,34,1))   # ninja nails

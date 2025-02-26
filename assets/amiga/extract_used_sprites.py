@@ -44,7 +44,8 @@ def doit():
     0xC,  # player head part (used in nunchuck)
     0x32,0x30,  # crouched player head part (used in nunchuck)
     0x470,      # karnov head
-    0x64C,0x64E,0x650  # boss 2 parts
+    0x64C,0x64E,0x650,  # boss 2 parts
+     0x980,  # animal head
     }
 
 

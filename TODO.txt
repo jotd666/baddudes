@@ -32,12 +32,12 @@
   could probably be optimized to only restore the buffers partially, not the whole width
 - level 6 vertical y wrap completely off (screen copy is wrong, screen restore is OK)
 
-- ninja nails missing black
-- level 4 boss: missing black:
 - elevator door tiles: missing black: a80-ab6 pal 0e: maybe get proper palette
   directly in sheet as it's wrong... at the animal fight (else palette is wrong)
 - background restore: complete wrapping (line 2760)  
 
+- difficulty level what does it do? maybe using "easy" would reduce number of enemies
+  and make game smoother??
 - boss 6 & 7 wrong grouping / missing tiles  
 - level 7 display helicopter!
 

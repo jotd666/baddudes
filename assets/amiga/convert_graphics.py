@@ -845,9 +845,9 @@ generate_for_levels = [False]*9
 #generate_for_levels[1] = True
 #generate_for_levels[2] = True
 #generate_for_levels[3] = True
-#generate_for_levels[4] = True
+generate_for_levels[4] = True
 #generate_for_levels[6] = True
-generate_for_levels[7] = True
+#generate_for_levels[7] = True
 #generate_for_levels[8] = True
 
 
