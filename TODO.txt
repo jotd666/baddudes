@@ -46,8 +46,6 @@
 - boss 6 & 7 wrong grouping / missing tiles  
 - level 7 display helicopter!
 
-- level 5,6,7: karnov wrong colors, maybe paste direct proper colors like level 4 boss
-  palette 9 burgundy trousers, green skin
 - repair front objects (will destroy status bar)
 - 2nd button doesn't seem to work
 - autoframeskip not tuned properly
