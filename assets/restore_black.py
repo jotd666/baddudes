@@ -68,15 +68,28 @@ img2.paste(boss4,(0,608))
 # overwrite black pic
 img2.save(sprites_black_0F)
 
+karnov_9_source = this_dir /"sheets"/"misc"/"karnov_09.png"
+img = PIL.Image.open(karnov_9_source)
+boss4 = img.crop((0,256,1024,256+16*3))
+sprites_black_09 = this_dir /"sheets"/"sprites_black"/"pal_09.png"
+img2 = PIL.Image.open(sprites_black_09)
+img2.paste(boss4,(0,256))
+y = 480
+boss4 = img.crop((0,y,1024,y+16))
+img2.paste(boss4,(0,y))
+# overwrite black pic
+img2.save(sprites_black_09)
+
 ##fix_tileset("sprites",0x4,0x9,gray(71))   # red ninja girl
 ##fix_tileset("sprites",0x3,0x9,gray(71))   # gray ninja
 ##fix_tileset("tiles_244000",0,4,(159,90,56))
 ##fix_tileset("sprites",0,0xA,gray(195))   # player tiles
 ##fix_tileset("sprites",2,0x9,gray(71))   # ninja tiles
-fix_tileset("sprites",0xF,0x9,gray(71))   # karnov tiles
-fix_tileset("sprites",0xF,0x9,gray(104))   # animal tiles
+fix_tileset("sprites",0xF,0xD,(56,34,1))   # karnov tiles
+#fix_tileset("sprites",0xF,0x9,gray(104))   # animal tiles
 ##fix_tileset("sprites",0xB,0x7,(230,230,0))   # tires
-##fix_tileset("sprites",0x9,0x7,(230,230,0))   # tires
+#fix_tileset("sprites",0x9,0x7,(230,230,0))   # tires
+fix_tileset("sprites",0x9,0xD,(56,34,1))   # karnov 2
 ##fix_tileset("sprites",0xA,0x7,(230,230,0))   # cars
 ##fix_tileset("sprites",0xC,0x7,(230,230,0))   # cars
-fix_tileset("sprites",0x5,0xD,(56,34,1))   # ninja nails
+#fix_tileset("sprites",0x5,0xD,(56,34,1))   # ninja nails
