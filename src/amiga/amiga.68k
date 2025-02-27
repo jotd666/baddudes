@@ -1142,8 +1142,29 @@ erase_level_1_truck:
 	*add.w	#NB_BYTES_PER_SCREEN_ROW*16,d0	| now scroll value 0->0x400
 	* this is the X coord of start of truck
 	TMPWRITE
-	add.w	#208,d0
+	
+	add.w	#208+32,d0
 	jmi		20f
+	cmp.w	#0x30,d0
+	jcc		19f
+	* we must restore the tow/truck gap
+
+	move.w	d0,-(a7)
+	add.w	x_background_scroll_value,d0
+	move.w	truck_y_pos,d1	| displayY
+	move.w  big_machine_height,d4
+	sub.w	truck_wheels_height,d4
+	move.l	background_restore_buffer,a0	
+	move.w	#4,d2
+	move.l	fg_drawed_screen_ptr,a1
+	*jbsr	restore_background
+	add.w	#0x90,d0   | to tune!!
+	sub.w	#30,d1     | TEMP
+	moveq	#4,D3
+	jbsr	clear_fg_planes_any_blitter_internal
+	move.w	(a7)+,d0
+	
+19:
 	cmp.w	#0x100,d0
 	jcc		20f
 	add.w	x_background_scroll_value,d0
@@ -1154,10 +1175,7 @@ erase_level_1_truck:
 	move.l	background_restore_buffer,a0
 	move.w	#6,d2
 	move.l	fg_drawed_screen_ptr,a1
-	*jbsr	restore_background
-	moveq	#4,D3
-	sub.w	#30,d1				| TEMP TEMP
-	jbsr	clear_fg_planes_any_blitter_internal
+	jbsr	restore_background
 20:
 1:
 	clr.b	truck_previously_drawn
@@ -1334,6 +1352,7 @@ ports_ram_op:
 
 	jra		special_memory_op_out
 an_ports:
+	* not used! (analogue ports?)
 	BREAKPOINT		"an ports"
 	jra		special_memory_op_out
 
@@ -1641,7 +1660,7 @@ addr_244xxx_tile_layer_op:
 	move.w	nb_tile_planes_24da,d6
 	subq	#1,d6
 	move.l	a0,a3			| base ptr
-	move.l	(24,a0),a4		| where the mask is
+	move.l	(NB_PLAYFIELD_PLANES*4,a0),a4		| where the mask is
 	add.l	a3,a4
 	* cookie cut loop against background
 0:
@@ -5698,8 +5717,6 @@ level_5_load:
 
 	lea		tiles_level_5_24a000_file,a0
 	jbsr	load_level_tiles_and_bobs
-
-	jbsr 	load_level_sprite_file
 
 	move.b	#0xC,road_y_pos
 	jbsr	enable_bottom_scroll

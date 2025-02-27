@@ -1,3 +1,5 @@
+- level 2 lots of background trashing
+- level 2 wheels black is gone again!
 - level 6 regenerate sprites (player killed not displayed??)
 - level 6: player killed on wrap boundary still issues, check sprite
   clipping
@@ -5,10 +7,11 @@
   side effects (incorrect left clip for ninjas...)
 - karnov killed missing body (try with karnov_dead mockup!)
 - easy: second screen sequence sprites (president+bad dudes)
-- first ending sequence picture is ghosted...
+- first ending sequence: letters trash the pic (6 planes = limit case?) around line 1660
 - end sequence should use scrolling sprites for credits: allocate huge 2x high sprite buffers
   first find a way to reach sequence faster
 
+- boss rush: a lot of bosses have wrong blacks & wrong colors
 - train: rebuild pic, see if can be loaded!
   
 
@@ -37,8 +40,6 @@
 	
 - level 6 vertical y wrap completely off (screen copy is wrong, screen restore is OK)
 
-- elevator door tiles: missing black: a80-ab6 pal 0e: maybe get proper palette
-  directly in sheet as it's wrong... at the animal fight (else palette is wrong)
 - background restore: complete wrapping (line 2760)  
 
 - difficulty level what does it do? maybe using "easy" would reduce number of enemies
