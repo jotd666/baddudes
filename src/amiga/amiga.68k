@@ -5531,10 +5531,10 @@ display_front_object:
 	move.l	front_objects_y_table,a0
 	move.w	(a0,d2.w*2),d1
 	move.l	front_objects_table,a0
-	lsl.w	#3,d2
+	lsl.w	#4,d2
 	add.w	d2,a0
-	move.l	(a0)+,a2		| part #1
-	move.l	(a0)+,a5		| part #2
+	move.l	(a0),a2			| part #1
+	move.l	(8,a0),a5		| part #2
 	move.w	(-2,a2),d6		| height
 1:	
 	lea		sprite_y_table_table,a4
@@ -5549,26 +5549,52 @@ display_front_object:
 	move.l	d6,a1
 	jbsr	store_sprite_pos
 
-	* enable multiplexed sprite
+	* enable multiplexed sprite for sprites 0-3 to link with upper OSD
 1:
+
 	lea		upper_osd_next_cw_table,a3
-	move.w	d3,d5
-	lsl.w	#3,d5
-	add.w	d5,a3		| pick proper slot
+	cmp.w	#2,d3
+	jcs		2f
+	* not multiplexed: sprite scan starts with front object
+	lea		free_front_sprites,a1
 	cmp.l	a6,a2
 	jne		1f
 	moveq	#0,d0		| blank: don't display, don't multiplex
 1:
-	move.l	(a3)+,a0
+	move.w	d3,d5
+	lsl.w	#3,d5
+	lea		(a1,d5.w),a1
+	jra		10f 		| TEMP do nothing
+	
+2:
+	cmp.l	a6,a2
+	jne		1f
+	moveq	#0,d0		| blank: don't display, but still multiplex (restore upper/lower OSD link)
+1:
+
+	* multiplexed
+	move.w	d3,d5
+	lsl.w	#4,d5
+	add.w	d5,a3		| pick proper slots start 0-1 or 2-3
+	move.l	(a3),a0
+	* before overwriting the cw, save it: it is the control word
+	* for lower OSD sprites
+	* we have to pick the proper OSD lower sprite slot
+	move.l	(4,a3),a1
+	move.w	(8,a0),(8,a1)
 	move.w	d0,(8,a0)
 	swap	d0
+	move.w	(a0),(a1)
 	move.w	d0,(a0)
 	swap	d0
 	
-	move.l	(a3)+,a0
-	bset	#7,d0
+	move.l	(8,a3),a0
+	move.l	(12,a3),a1
+	bset	#7,d0			| attach
+	move.w	(8,a0),(8,a1)
 	move.w	d0,(8,a0)
 	swap	d0
+	move.w	(a0),(a1)
 	move.w	d0,(a0)
 	
 	cmp.l	a6,a2
@@ -5604,6 +5630,7 @@ display_front_object:
 	move.w	d2,(a0)+
 	move.w	d0,(a0)+
 1:
+10:
 	movem.l	(a7)+,d0-a6
 	rts
 
@@ -5826,6 +5853,7 @@ load_front_objects_file:
 	move.l 	a0,d2		| base
 	move.w	nb_front_objects,d0
 	add.w	d0,d0
+	add.w	d0,d0		| 4 pointers per object
 	subq	#1,d0
 	* make it absolute
 0:
@@ -6834,6 +6862,12 @@ upper_osd_next_cw_table:
 	.long	osd_right_center_next_cw
 	.long	osd_right_next_cw
 
+*lower_osd_cw_table:
+*	.long	osd_bottom_left_sprite
+*	.long	osd_bottom_left_center_sprite
+*	.long	osd_bottom_right_center_sprite
+*	.long	osd_bottom_right_sprite
+
 	.section	.datachip
 
 
@@ -6885,6 +6919,7 @@ sprites_bplcon2:
 osd_upper_sprites:
 	DECL_SPRITES	4
 	* must follow !!!!
+free_front_sprites:
 background_sprites:
 	DECL_SPRITES	4
 

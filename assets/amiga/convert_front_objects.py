@@ -15,21 +15,21 @@ def gen_data_file(asm_out,fo_bin,palette,objects):
             y = 240-o.size[1]
             f.write(f"\tdc.w\t{y}\n")
         f.write("main_table:\n")
-        for k,o, in objects.items():
+        for k,o in objects.items():
             for j in range(2):
                 f.write(f"\tdc.l\tobject_{k}_{j}-main_table\n")
+                f.write(f"\tdc.l\tobject_{k}_{j}_end-16-main_table  ; end control word position\n")
 
         for k,o in objects.items():
             outs = bitplanelib.palette_image2attached_sprites(o,None,palette,sprite_fmode=3)
-            cw_offset = len(outs[0])-16
             for j,out in enumerate(outs):
-                f.write(f"""\tdc.w\t${cw_offset:04x}  ; offset of end control word for next object
-\tCNOP\t0,8     ; align on 8 bytes else sprite is not properly displayed
+                f.write(f"""\tCNOP\t0,8     ; align on 8 bytes else sprite is not properly displayed
 \tdc.w 0,0,0    ; keep this alignment
 \tdc.w\t{o.size[1]}   ; sprite height
 object_{k}_{j}:""")
 
                 bitplanelib.dump_asm_bytes(out,f)
+                f.write(f"object_{k}_{j}_end:\n")
 
     asm2bin(asm_out,fo_bin)
 

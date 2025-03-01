@@ -1,5 +1,7 @@
-- level 2 lots of background trashing
-- level 2 wheels black is gone again!
+- level 1 repair front objects (status bar showing but destroyed, debug this)
+- level 2 lots of background trashing - related to truck?
+  level 2 when jumping at start, seems that restore is partial
+- level 2 wheels black is gone again! same for level 2 boss
 - level 6 regenerate sprites (player killed not displayed??)
 - level 6: player killed on wrap boundary still issues, check sprite
   clipping
@@ -11,13 +13,10 @@
 - end sequence should use scrolling sprites for credits: allocate huge 2x high sprite buffers
   first find a way to reach sequence faster
 
-- boss rush: a lot of bosses have wrong blacks & wrong colors
+- boss rush: a lot of bosses have wrong colors: reset colors before replacing palette
+  (boss 2 => boss 3 in level 7)
 - train: rebuild pic, see if can be loaded!
   
-
-- level 2 truck display: gaps not always cleared, bottom not properly erased,
-  end of truck not properly erased: debug line 1130 with black instead of restore
-  starts all right (get the values) but at some point it loses sync with the gap
   
 - cars in level 2 still parts not displayed at times...
 
@@ -32,7 +31,9 @@
   * works for "scroll up" (1st time) but restore background fails on lower Y (planes destroyed)
     besides off-screen tiles seem wrong
   * fails for "scroll down" completely
-  
+  * try just clearing the buffers to see what is restored properly
+  * don't blit 3x horizontally, use 2x width then 1x width, optimally around the
+    displayed screen (as the game will draw the tiles furter than that)
   could probably be optimized to only restore the buffers partially, not the whole width
   
   * temporary: just clear the playfield, see what the game does around with tiles draw
@@ -47,7 +48,6 @@
 - boss 6 & 7 wrong grouping / missing tiles  
 - level 7 display helicopter!
 
-- repair front objects (will destroy status bar)
 - 2nd button doesn't seem to work
 - autoframeskip not tuned properly
 - level 2: no lamps if objects 2 loaded. Ok if objects 1 loaded
