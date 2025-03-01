@@ -103,6 +103,11 @@ def doit_truck_2(global_palette,nb_planes):
     y_start=352,height=128-16,exhaust_height=16,width=544+8,wheels_height=16,   # save 16 pixels, animated sprite wheels cover the lower part!
     y_pos = 16*23 - 256)
 
+def doit_train(global_palette,nb_planes):
+    return doit(global_palette,name="train",level_1_bar=False,forced_nb_planes=nb_planes,
+    y_start=96+16,height=64+16,exhaust_height=0,width=1920,wheels_height=16,
+    y_pos = 96+16)
+
 if __name__ == "__main__":
     gp = [(0, 0, 0),
  (56, 71, 90),

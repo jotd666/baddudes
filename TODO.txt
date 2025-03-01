@@ -15,7 +15,8 @@
 
 - boss rush: a lot of bosses have wrong colors: reset colors before replacing palette
   (boss 2 => boss 3 in level 7)
-- train: rebuild pic, see if can be loaded!
+- level 5: train working but wheels not blitted and lateral shift issue (off by one wagon),
+  also road scroll trashed (trashes lower OSD sprites)
   
   
 - cars in level 2 still parts not displayed at times...

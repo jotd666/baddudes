@@ -843,10 +843,10 @@ generate_for_levels = [False]*9
 
 #generate_for_levels[0] = True
 #generate_for_levels[1] = True
-generate_for_levels[2] = True
+#generate_for_levels[2] = True
 #generate_for_levels[3] = True
 #generate_for_levels[4] = True
-#generate_for_levels[5] = True
+generate_for_levels[5] = True
 #generate_for_levels[6] = True
 #generate_for_levels[7] = True
 #generate_for_levels[8] = True
@@ -894,7 +894,10 @@ if generate_for_levels[4]:
     # now compute sprite colors with more than 32 colors
     process_tile_context("game_level_4",sprite_sheet_dict,nb_bob_colors,is_bob=True,shift_palette_count=nb_tile_colors)
 if generate_for_levels[5]:
-    process_tile_context("level_5_24a000",level_5_tile_24a000_sheet_dict,16,first_pass=False)
+    truck_nb_planes = 4
+    process_tile_context("level_5_24a000",level_5_tile_24a000_sheet_dict,16,first_pass=True)
+    train_used_colors = convert_truck_pics.doit_train(palette_dict["level_5_24a000"]["palette"],truck_nb_planes)
+    process_tile_context("level_5_24a000",level_5_tile_24a000_sheet_dict,16,first_pass=False,first_colors=train_used_colors)
     process_tile_context("game_level_5",sprite_sheet_dict,48,is_bob=True,shift_palette_count=16)
 
 if generate_for_levels[6]:

@@ -5745,6 +5745,11 @@ level_5_load:
 	lea		tiles_level_5_24a000_file,a0
 	jbsr	load_level_tiles_and_bobs
 
+	* load & relocate truck pics
+	lea		train_pic_file,a0
+	jbsr	load_big_machine
+	move.l	d0,truck_planes
+
 	move.b	#0xC,road_y_pos
 	jbsr	enable_bottom_scroll
 
@@ -6580,6 +6585,8 @@ truck_1_pic_file:
 	.asciz	"truck_1.bin"
 truck_2_pic_file:
 	.asciz	"truck_2.bin"
+train_pic_file:
+	.asciz	"train.bin"
 sprites_game_level_file:
 	.ascii	"sprites_game_level_"
 file_level_index:
