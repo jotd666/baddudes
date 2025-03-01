@@ -1246,8 +1246,8 @@ do_truck_draw:
 	move.l	truck_planes,a0
 	move.w	big_machine_width,d2			| real object size
 	move.w  big_machine_height,d4
-	move.w	#NB_PLAYFIELD_PLANES,d3
-	move.l		(6*4,a0),a3	| mask
+	move.w	big_machine_nb_planes,d3							| 4 planes max for those objects
+	move.l		(a0,d3.w*4),a3	| mask
 	
 	* displayed width is positive: okay display something
 	lsr.w	#3,d6	| re-convert width to bytes
@@ -5479,7 +5479,7 @@ load_big_machine:
 	jbsr	allocate_and_load_chip_mem_file
 	move.l	d0,big_machine_pic
 	move.l	d0,a0
-	addq	#2,a0		| nb planes (skip it, not needed)
+	move.w	(a0)+,big_machine_nb_planes
 	move.w	(a0)+,big_machine_width
 	move.w	(a0)+,big_machine_height
 	move.w	(a0)+,truck_y_pos
@@ -6782,6 +6782,8 @@ background_sprite_table:
 front_objects_y_table:
 	.skip	8*2		| hopefully will be enough
 nb_front_objects:
+	.word	0
+big_machine_nb_planes:
 	.word	0
 big_machine_width:
 	.word	0

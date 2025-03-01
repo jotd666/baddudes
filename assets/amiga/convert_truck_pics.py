@@ -19,8 +19,11 @@ def doit(global_palette,name,y_start,level_1_bar,exhaust_height,width,height,whe
 
         reduced_nb_colors = 1<<forced_nb_planes
 
+        if forced_nb_planes>4:
+            # could work with 32 colors but would take too much memory and blitter bandwidth
+            raise Exception("max number of planes for trucks/train is 4")
         if empty_plane_workaround:
-            forced_nb_planes = 6
+            forced_nb_planes = 4
 
         if level_1_bar:
             # remove some rows to show the upper iron bar (lame trick)
@@ -105,7 +108,7 @@ def doit_truck_2(global_palette,nb_planes):
 
 def doit_train(global_palette,nb_planes):
     return doit(global_palette,name="train",level_1_bar=False,forced_nb_planes=nb_planes,
-    y_start=96+16,height=64+16,exhaust_height=0,width=1920,wheels_height=16,
+    y_start=96+16,height=64+48,exhaust_height=0,width=1920,wheels_height=16,
     y_pos = 96+16)
 
 if __name__ == "__main__":
