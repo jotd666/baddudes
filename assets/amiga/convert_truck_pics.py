@@ -108,7 +108,7 @@ def doit_truck_2(global_palette,nb_planes):
 
 def doit_train(global_palette,nb_planes):
     return doit(global_palette,name="train",level_1_bar=False,forced_nb_planes=nb_planes,
-    y_start=96+16,height=64+48,exhaust_height=0,width=1920,wheels_height=16,
+    y_start=96+16,height=64+48,exhaust_height=0,width=1920+256,wheels_height=16,
     y_pos = 96+16)
 
 if __name__ == "__main__":

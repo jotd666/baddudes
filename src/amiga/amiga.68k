@@ -35,7 +35,7 @@ AFB_68020 = 1
 	.endif
 	
 TOTAL_PUBLIC_MEMORY_SIZE = 350000
-TOTAL_CHIP_MEMORY_SIZE = 1300000
+TOTAL_CHIP_MEMORY_SIZE = 1350000
 
 PREVIOUS_SPRITE_SIZE = 8
 BORDERBLANK = 1
@@ -1114,9 +1114,26 @@ erase_level_1_truck:
 	move.l	background_restore_buffer,a0
 	jbsr	restore_background
 
+	lea		specific_big_machine_restore,a0
 	jbsr	get_current_level
-	cmp.b	#1,d0
-	jne		10f
+	jsr		([a0,d0.w*4])
+
+1:
+	clr.b	truck_previously_drawn
+0:
+	rts
+	
+specific_big_machine_restore:
+	.long	nope
+	.long	specific_level_1_truck_erase
+	.long	specific_level_2_truck_erase
+	.long	nope
+	.long	nope
+	.long	specific_level_5_train_erase
+	.long	nope
+	.long	nope
+		
+specific_level_1_truck_erase:
 	* restore blank between truck front & tow
 	* broken... to re-test
 	lea		prev_truck_params,a1
@@ -1134,8 +1151,9 @@ erase_level_1_truck:
 	*jbsr	restore_background
 	moveq	#4,D3
 	jbsr	clear_fg_planes_any_blitter_internal
-	jra	20f
-10:
+	rts
+	
+specific_level_2_truck_erase:
 	* level 2: 2 gaps to restore
 	lea		prev_truck_params,a1
 	move.w	(a1)+,d0	| absolute secondary scroll pos
@@ -1177,9 +1195,9 @@ erase_level_1_truck:
 	move.l	fg_drawed_screen_ptr,a1
 	jbsr	restore_background
 20:
-1:
-	clr.b	truck_previously_drawn
-0:
+	rts
+	
+specific_level_5_train_erase:
 	rts
 	
 * truck_draw draw_truck for levels 1 and 2
@@ -1201,6 +1219,7 @@ draw_truck:
 	neg	d0
 	lea		prev_truck_params,a1
 	add.w	#NB_BYTES_PER_SCREEN_ROW*16,d0	| now scroll value -0x200->0x200
+
 	move.w	d0,(a1)+		| absolute secondary scroll start position (no back scroll)
 	jpl		truck_not_clipped_left
 	add.w	d0,d6	| adjust width to remove start/end of truck
@@ -1247,7 +1266,7 @@ do_truck_draw:
 	move.w	big_machine_width,d2			| real object size
 	move.w  big_machine_height,d4
 	move.w	big_machine_nb_planes,d3							| 4 planes max for those objects
-	move.l		(a0,d3.w*4),a3	| mask
+	move.l	(4*NB_PLAYFIELD_PLANES,a0),a3	| mask
 	
 	* displayed width is positive: okay display something
 	lsr.w	#3,d6	| re-convert width to bytes
@@ -5684,6 +5703,7 @@ level_2_load:
 	jbsr	load_big_machine
 	move.l	d0,truck_planes
 
+	
 	move.b	#0xC,road_y_pos
 	jbsr	enable_bottom_scroll
 	
@@ -5750,8 +5770,9 @@ level_5_load:
 	jbsr	load_big_machine
 	move.l	d0,truck_planes
 
-	move.b	#0xC,road_y_pos
-	jbsr	enable_bottom_scroll
+
+	*move.b	#0xC,road_y_pos
+	*jbsr	enable_bottom_scroll
 
 	rts
 	
@@ -6785,6 +6806,7 @@ nb_front_objects:
 	.word	0
 big_machine_nb_planes:
 	.word	0
+
 big_machine_width:
 	.word	0
 big_machine_height:	

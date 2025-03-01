@@ -454,7 +454,7 @@ sprite_sheet_dict = {i:sheets_path / "sprites" / f"pal_{i:02x}.png" for i in ran
 ending_tile_24a000_sheet_dict = {i:sheets_path / "tiles_24a000" / "ending" / f"pal_{i:02x}.png" for i in range(0,10)}
 ending_tile_24d000_sheet_dict = {i:sheets_path / "tiles_24d000" / "ending" / f"pal_{i:02x}.png" for i in range(0,6)}
 
-def load_contexted_tileset(tile_sheet_dict,context,nb_colors,is_bob,postload_callback=None):
+def load_contexted_tileset(tile_sheet_dict,context,nb_colors,is_bob,postload_callback=None,forced_palette=set()):
     tile_palette = set()
     tile_24a000_set_list = []
 
@@ -464,7 +464,8 @@ def load_contexted_tileset(tile_sheet_dict,context,nb_colors,is_bob,postload_cal
     for i in range(16):
         tsd = tile_sheet_dict.get(i)
         if tsd:
-            tp,tile_set = load_tileset(tsd,i,16,context_dir,cluts=used_cluts_dict[context],is_bob=is_bob,postload_callback=postload_callback)
+            tp,tile_set = load_tileset(tsd,i,16,context_dir,cluts=used_cluts_dict[context],is_bob=is_bob,
+            postload_callback=postload_callback)
             tile_24a000_set_list.append(tile_set)
             tile_palette.update(tp)
         else:
@@ -472,6 +473,8 @@ def load_contexted_tileset(tile_sheet_dict,context,nb_colors,is_bob,postload_cal
 
     if (0,0,0) not in tile_palette:
         tile_palette.add((0,0,0))
+
+    tile_palette.update(forced_palette)
 
     # convert to rgb4
     # subtract the colors contained in "reuse_colors"
@@ -716,10 +719,11 @@ def dump_tiles(file_radix,palette,tile_table,tile_plane_cache,add_dimension_info
     asm2bin(tiles_1_src,tiles_1_bin)
 
 def process_tile_context(context_name,tile_sheet_dict,nb_colors,is_bob=False,shift_palette_count=0,first_pass=False,
-                            first_colors=None,postload_callback=None):
+                            first_colors=None,postload_callback=None,forced_palette=set()):
 
 
-    tile_24a000_set_list,bg_palette,nb_used_colors = load_contexted_tileset(tile_sheet_dict,context_name,nb_colors,is_bob,postload_callback=postload_callback)
+    tile_24a000_set_list,bg_palette,nb_used_colors = load_contexted_tileset(tile_sheet_dict,context_name,nb_colors,is_bob,
+    postload_callback=postload_callback,forced_palette=forced_palette)
     tile_24a000_cache = {}
 
     if shift_palette_count:
@@ -895,10 +899,17 @@ if generate_for_levels[4]:
     process_tile_context("game_level_4",sprite_sheet_dict,nb_bob_colors,is_bob=True,shift_palette_count=nb_tile_colors)
 if generate_for_levels[5]:
     truck_nb_planes = 4
-    process_tile_context("level_5_24a000",level_5_tile_24a000_sheet_dict,16,first_pass=True)
+    # add actual train colors for more vivid train colors as we can't really rely on the background to provide approx colors
+    # (unlike in levels 1 and 2).
+    forced_palette = {(142,0,0),(176,90,56),(159,142,0),(142,56,17),(123,104,0)}
+    process_tile_context("level_5_24a000",level_5_tile_24a000_sheet_dict,32,first_pass=True,forced_palette=forced_palette)
+
+    # get hold of the really used number of colors (without padding)
+    nb_tile_colors,nb_bob_colors = balance_tile_bob_colors("level_5_24a000")
+
     train_used_colors = convert_truck_pics.doit_train(palette_dict["level_5_24a000"]["palette"],truck_nb_planes)
-    process_tile_context("level_5_24a000",level_5_tile_24a000_sheet_dict,16,first_pass=False,first_colors=train_used_colors)
-    process_tile_context("game_level_5",sprite_sheet_dict,48,is_bob=True,shift_palette_count=16)
+    process_tile_context("level_5_24a000",level_5_tile_24a000_sheet_dict,32,first_pass=False,first_colors=train_used_colors,forced_palette=forced_palette)
+    process_tile_context("game_level_5",sprite_sheet_dict,nb_bob_colors,is_bob=True,shift_palette_count=nb_tile_colors)
 
 if generate_for_levels[6]:
     process_tile_context("level_6_24a000",level_6_tile_24a000_sheet_dict,16,first_pass=False)

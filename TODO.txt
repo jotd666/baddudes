@@ -1,3 +1,7 @@
+- truck/train jailbars when simpler blit with no source and BLTBDAT=0 in some cases?????
+  => OK with actual zero source is minterm right???
+- level 5: lateral shift issue (off by one wagon), also road scroll trashed (trashes lower OSD sprites)
+- level 5: specific erase, specific draw of top of last wagon (to save useless blitting of top of wagons)
 - level 1 repair front objects (status bar showing but destroyed, debug this)
 - level 2 lots of background trashing - related to truck?
   level 2 when jumping at start, seems that restore is partial
@@ -15,8 +19,6 @@
 
 - boss rush: a lot of bosses have wrong colors: reset colors before replacing palette
   (boss 2 => boss 3 in level 7)
-- level 5: train working but wheels not blitted and lateral shift issue (off by one wagon),
-  also road scroll trashed (trashes lower OSD sprites)
   
   
 - cars in level 2 still parts not displayed at times...
@@ -58,8 +60,6 @@
 - save/load highscores
   
   
-- truck jailbars when simpler blit with no source and BLTBDAT=0 in some cases?????
-  => OK with actual zero source is minterm right???
 
 
 - remove BB9 BB8 BBA BBB (glasses) from log (old artifact)
