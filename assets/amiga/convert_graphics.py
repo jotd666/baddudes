@@ -613,7 +613,7 @@ def read_tileset(img_set_list,palette,cache,is_bob,generate_mask):
                                         bitplane_plane_ids.append(next_cache_id)
                                         next_cache_id += 1
                                     else:
-                                        bitplane_plane_ids.append(0)  # blank
+                                        bitplane_plane_ids.append(0)  # blank. If inverted mask, that means "full data, no mask"
                             entry[plane_name] = {"height":height,"width":width,"y_start":y_start,"bitplanes":bitplane_plane_ids}
 
                 tile_entry.append(entry)
@@ -845,7 +845,7 @@ def postprocess_game_osd_tiles(tileset,palette_index):
 
 generate_for_levels = [False]*9
 
-generate_for_levels[0] = True
+#generate_for_levels[0] = True
 #generate_for_levels[1] = True
 #generate_for_levels[2] = True
 #generate_for_levels[3] = True

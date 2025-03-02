@@ -1,12 +1,7 @@
-- jailbars because wrong mask on last zeroed plane. Why?????? removing 1 plane fixes it but
-  background is showing... (train)
-- ask help on EAB on blitting modes!
-- offset issue in train: first wagon not displayed, check D6 x offset vs total width
-- train gap should be 8 pixels left (round wagon corners)
-- truck/train jailbars when simpler blit with no source and BLTBDAT=0 in some cases?????
-  => OK with actual zero source is minterm right???
-- level 5: lateral shift issue (off by one wagon), also road scroll trashed (trashes lower OSD sprites)
+- train gap should be shifted 8 pixels left (round wagon corners)
+- level 5: road scroll trashed (trashes lower OSD sprites)
 - level 5: specific erase, specific draw of top of last wagon (to save useless blitting of top of wagons)
+=> publish video when working
 - level 1 repair front objects (status bar showing but destroyed, debug this)
 - level 2 lots of background trashing - related to truck?
   level 2 when jumping at start, seems that restore is partial

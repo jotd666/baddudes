@@ -6,6 +6,7 @@ Credits:
 - JOTD: reverse engineering amiga port, graphics conversion
 - no9: music tracks and sound remastering
 - Data East: original code, sounds, music & graphics
+- paraj,a/b & all tech experts @ EAB: support with amiga hardware quirks
 
 This port is special because it's not a transcode. It's running using the original 68000
 code of the arcade game, with a lot of patches to redirect graphical & sound operations to

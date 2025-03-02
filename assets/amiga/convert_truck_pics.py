@@ -5,7 +5,7 @@ from shared import *
 
 empty_plane_workaround = True
 
-def doit(global_palette,name,y_start,level_1_bar,exhaust_height,width,height,wheels_height,y_pos,forced_nb_planes):
+def doit(global_palette,name,y_start,level_1_bar,exhaust_height,width,height,wheels_height,y_pos,forced_nb_planes,pic_rework_callback=None):
     asm_out = generated_src_dir / f"{name}.68k"
     dudes_bin = data_dir / f"{name}.bin"
 
@@ -49,11 +49,20 @@ def doit(global_palette,name,y_start,level_1_bar,exhaust_height,width,height,whe
         color_replacement_dict.pop(transparent)
         bitplanelib.replace_color_from_dict(reduced_colors_truck1_img,color_replacement_dict)
 
+
         reduced_palette = bitplanelib.palette_extract(reduced_colors_truck1_img)
         if len(reduced_palette) < reduced_nb_colors:
             reduced_palette += [(0x10,0x20,0x30)]*(len(reduced_palette) - reduced_nb_colors)
+
+        extra_pic = extra_raw = None
+        if pic_rework_callback:
+            reduced_colors_truck1_img,extra_pic = pic_rework_callback(reduced_colors_truck1_img)
+
         raw = bitplanelib.palette_image2raw(reduced_colors_truck1_img,None,reduced_palette,forced_nb_planes=forced_nb_planes,
         generate_mask=True,blit_pad=True,mask_color=transparent)
+        if extra_pic:
+            extra_raw = bitplanelib.palette_image2raw(extra_pic,None,reduced_palette,forced_nb_planes=forced_nb_planes,
+            generate_mask=True,blit_pad=True,mask_color=transparent)
 
         nb_planes = forced_nb_planes+1
         real_width,height = reduced_colors_truck1_img.size
@@ -106,10 +115,26 @@ def doit_truck_2(global_palette,nb_planes):
     y_start=352,height=128-16,exhaust_height=16,width=544+8,wheels_height=16,   # save 16 pixels, animated sprite wheels cover the lower part!
     y_pos = 16*23 - 256)
 
+def rework_train(train_pic):
+    """ split pic into 2 pics
+    """
+    train_top_pic=train_pic.crop((240,0,320,16))
+    train_top_pic.save(dump_dir/f"train_top.png")
+    # remove top
+    train_pic = train_pic.crop((0,16,train_pic.size[0],train_pic.size[1]))
+    return train_pic,train_top_pic
+
 def doit_train(global_palette,nb_planes):
+
+    truck1_img = Image.open(whole_pics_dir / "train.png")
+
+    truck1_img=truck1_img.crop((240,96,320,80+32))
+
+    truck1_img.save(dump_dir/f"train_top.png")
+
     return doit(global_palette,name="train",level_1_bar=False,forced_nb_planes=nb_planes,
-    y_start=96+16,height=64+48,exhaust_height=0,width=1920+256,wheels_height=16,
-    y_pos = 96+16)
+    y_start=96,height=64+48+16,exhaust_height=0,width=1920+256,wheels_height=16,
+    y_pos = 96+16,pic_rework_callback=rework_train)
 
 if __name__ == "__main__":
     gp = [(0, 0, 0),
