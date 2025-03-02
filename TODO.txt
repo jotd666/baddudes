@@ -1,3 +1,8 @@
+- jailbars because wrong mask on last zeroed plane. Why?????? removing 1 plane fixes it but
+  background is showing... (train)
+- ask help on EAB on blitting modes!
+- offset issue in train: first wagon not displayed, check D6 x offset vs total width
+- train gap should be 8 pixels left (round wagon corners)
 - truck/train jailbars when simpler blit with no source and BLTBDAT=0 in some cases?????
   => OK with actual zero source is minterm right???
 - level 5: lateral shift issue (off by one wagon), also road scroll trashed (trashes lower OSD sprites)
@@ -105,7 +110,6 @@ RESTORE_SCREEN_PLANE_SIZE = NB_BYTES_PER_SCREEN_ROW*2*NB_PLAYFIELD_LINES*2
 - level 3: put water scroll in some other buffer (allocate one?) so changing plans automatically
   clips the sprites without any other side effect
 - invincibility: still hit when falling on road (level 2)
-- "bad dudes" title still small glitches (in "BAD DUDES" title)
 - "CREDIT" not written when coin inserted
 - levels with trains/trucks: load traintrucks bitplanes in non-displayed screen buffer
   to save chipmem

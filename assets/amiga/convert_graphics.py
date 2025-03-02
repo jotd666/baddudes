@@ -845,7 +845,7 @@ def postprocess_game_osd_tiles(tileset,palette_index):
 
 generate_for_levels = [False]*9
 
-#generate_for_levels[0] = True
+generate_for_levels[0] = True
 #generate_for_levels[1] = True
 #generate_for_levels[2] = True
 #generate_for_levels[3] = True
@@ -857,7 +857,7 @@ generate_for_levels[5] = True
 
 
 # set to "False" for faster operation when working on game sprite/tiles
-if generate_for_levels[0]:  # title/intro é game fonts
+if generate_for_levels[0]:  # title/intro & game fonts
 
     process_8x8_tile_layer("title_244000",colors_last=True,max_colors=8)
     process_8x8_tile_layer("game_intro_244000",colors_last=True,max_colors=8)
