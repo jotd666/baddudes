@@ -1071,7 +1071,7 @@ update_front_objects:
 * complete nightmare to do properly given
 * that we're trying to avoid erasing the parts
 * that don't need erasing (huge tow rectangles)
-erase_level_1_truck:
+erase_big_machine:
 	tst.b	truck_previously_drawn
 	jeq		0f
 
@@ -1198,18 +1198,68 @@ specific_level_2_truck_erase:
 	rts
 	
 specific_level_5_train_erase:
+	* there are 2 wagon gaps that need restoring
+	lea		prev_truck_params,a1
+	move.w	(a1)+,d0	| absolute secondary scroll pos
+	add.w	#0x800,d0
+	* this is the X coord of start of truck	
+	
+19:
+	* this is great! it sometimes restores too much data
+	* but it works... let's not change this...
+	move.w	d0,d7		| save value
+	add.w	#0x80,d0
+	and.w	#0xFF,d0	| modulus
+	* first gap
+	jbsr	restore_gap
+	
+	move.w	d7,d0
+	sub.w	#0x40,d0
+	and.w	#0xFF,d0	| modulus
+	* second gap
+	jbsr	restore_gap
+	
+20:
 	rts
 	
-* truck_draw draw_truck for levels 1 and 2
-draw_truck:
+restore_gap:
+	* don't restore if not in visible screen
+	tst.w	d0
+	jpl		1f
+	cmp.w	#0xFFE0,d0
+	jcc		2f
+1:
+	cmp.w	#0x100,d0
+	jcc		2f
+	
+	add.w	x_background_scroll_value,d0
+	move.w	truck_y_pos,d1	| displayY
+	move.w  big_machine_height,d4
+	sub.w	truck_wheels_height,d4
+	move.l	background_restore_buffer,a0
+	move.w	#6,d2
+	move.l	fg_drawed_screen_ptr,a1
+	*sub.w	#10,d1	| temp, that was to see where areas were restored
+	*moveq	#5,D3
+	*jbsr	clear_fg_planes_any_blitter_internal
+	jbsr	restore_background
+2:
+	rts
+	
+* truck_draw draw_truck for level 1
+draw_truck_level_1:
 	move.w	x_secondary_scroll_value,d0
 	jeq		2f		| reached destination
 	cmp.w	#0x400,d0
-	jeq		2f		| not started
+	jeq		2f		| not started: only on level 1
 	cmp.w	#0x100,d0
 	jcs		2f 		| out of the screen already
+	jbsr	draw_big_machine
+2:
+	rts
 	
-	
+draw_big_machine:
+	move.w	x_secondary_scroll_value,d0
 	move.w	big_machine_width,d6	| full truck size
 	lsl.w	#3,d6			| in pixels
 	
@@ -1218,7 +1268,7 @@ draw_truck:
 	moveq	#0,d5			| XY-offset
 	neg	d0
 	lea		prev_truck_params,a1
-	add.w	#NB_BYTES_PER_SCREEN_ROW*16,d0	| now scroll value -0x200->0x200
+	add.w	big_machine_x_offset,d0	| now scroll value -0x200->0x200
 
 	move.w	d0,(a1)+		| absolute secondary scroll start position (no back scroll)
 	jpl		truck_not_clipped_left
@@ -2916,8 +2966,15 @@ really_update_sprites:
 	tst.l truck_planes
 	jeq		555f
 	
-	jbsr	erase_level_1_truck
-	jbsr	draw_truck
+	jbsr	erase_big_machine
+	jbsr	get_current_level
+	cmp.b	#1,d0
+	jne		50f
+	jbsr	draw_truck_level_1
+	jra		51f
+50:
+	jbsr	draw_big_machine
+51:
 	* reset possibly changed first word mask setting
 	move.l	#-1,bltamask_long_value
 
@@ -5040,7 +5097,7 @@ osd_set_context:
 	* draw, and also front objects
 	clr.l	truck_planes
 	clr.l	heli_planes
-
+	move.w	#NB_BYTES_PER_SCREEN_ROW*16,big_machine_x_offset
 	* no bottom scrolling
 	jbsr	disable_road_scroll
 
@@ -5770,7 +5827,9 @@ level_5_load:
 	jbsr	load_big_machine
 	move.l	d0,truck_planes
 
-
+	* seems not to follow the offset shit
+	sub.w	#256,big_machine_x_offset
+	
 	*move.b	#0xC,road_y_pos
 	*jbsr	enable_bottom_scroll
 
@@ -6807,6 +6866,8 @@ nb_front_objects:
 big_machine_nb_planes:
 	.word	0
 
+big_machine_x_offset:
+	.word	0
 big_machine_width:
 	.word	0
 big_machine_height:	
