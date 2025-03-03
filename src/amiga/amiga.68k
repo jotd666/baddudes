@@ -1623,7 +1623,6 @@ level_3_boss_color_change:
 	.long	-1		| end
 
 level_5_boss_color_change:   | TEMP not the proper colors probably
-	.long	-1		| end
 	.word	0xB00,0x464
 	.word	0x500,0x121
 	.word	0x700,0x232

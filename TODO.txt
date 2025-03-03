@@ -1,20 +1,21 @@
+- when picking sprites palette, if tiles palette contains the exact color in sprite palette,
+  remove from sprite palette, use the color from tile palette (will save quantize, maybe would
+  avoid wrong gray on level 5, brown trousers on level 7.1 ?)
 - train gap should be shifted 8 pixels left (round wagon corners), even like this sometimes
-  deletion is delayed
-- boss 5 color change: doesn't work!
-- level 5: specific erase, specific draw of top of last wagon (to save useless blitting of top of wagons)
-=> publish video when working
+  deletion is delayed: re-check with simple black erase
+- level 5: on low secondary x position, specific erase, specific draw of top of last wagon (to save useless blitting of top of wagons)
+- level 2 wheels black is gone again! same for level 2, 5 boss
+=> publish video when all of the above is fixed!
+
+- level 1: truck destroys scenery and has blitter bugs when arriving, also maybe make it 16 colors
 - level 1 repair front objects (status bar showing but destroyed, debug this)
 - level 2 lots of background trashing - related to truck?
-  level 2 when jumping at start, seems that restore is partial
-- level 2 wheels black is gone again! same for level 2 boss
+  level 2 when jumping at start, seems that background restore is partial
 - level 6 regenerate sprites (player killed not displayed??)
-- level 6: player killed on wrap boundary still issues, check sprite
-  clipping
 - new clipping limit (to fix clipped porsche on left) seems to have
   side effects (incorrect left clip for ninjas...)
 - karnov killed missing body (try with karnov_dead mockup!)
 - easy: second screen sequence sprites (president+bad dudes)
-- first ending sequence: letters trash the pic (6 planes = limit case?) around line 1660
 - end sequence should use scrolling sprites for credits: allocate huge 2x high sprite buffers
   first find a way to reach sequence faster
 
@@ -69,6 +70,7 @@
 - karnov feet erase issue, doesn't seem to be erased (also true for jumping ninjas) probably
   group erase not working. Same for level 6 devil pole
 - multiplex sprites 4 to 7 to do (lower hud): ATM only one object is displayed at a time
+- invincibility: still hit when falling on road (level 2)
 
 
 - optim: group erase on 16 (working) or 32 bit wide blocks
@@ -92,9 +94,9 @@
 
 low priority:
 
+- bosses 2 and 5: rework sheets to change white by some other color that doesn't
+  conflict with main character (0xEEE => ????) so dynamic color change works fully
 - reinstate erase grouping when karnov & devil pole feet erase issues are fixed
-- debug TMPWRITE when clearing/restoring background, seems to have improved
-  some erase artifacts, but still not 100%
 - restore buffer memory size optimize:
 RESTORE_SCREEN_PLANE_SIZE = NB_BYTES_PER_SCREEN_ROW*3*NB_PLAYFIELD_LINES*2
 could be
@@ -104,7 +106,6 @@ RESTORE_SCREEN_PLANE_SIZE = NB_BYTES_PER_SCREEN_ROW*2*NB_PLAYFIELD_LINES*2
 
 - level 3: put water scroll in some other buffer (allocate one?) so changing plans automatically
   clips the sprites without any other side effect
-- invincibility: still hit when falling on road (level 2)
 - "CREDIT" not written when coin inserted
 - levels with trains/trucks: load traintrucks bitplanes in non-displayed screen buffer
   to save chipmem
