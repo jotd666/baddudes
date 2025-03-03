@@ -1157,9 +1157,8 @@ specific_level_2_truck_erase:
 	* level 2: 2 gaps to restore
 	lea		prev_truck_params,a1
 	move.w	(a1)+,d0	| absolute secondary scroll pos
-	*add.w	#NB_BYTES_PER_SCREEN_ROW*16,d0	| now scroll value 0->0x400
 	* this is the X coord of start of truck
-	TMPWRITE
+
 	
 	add.w	#208+32,d0
 	jmi		20f
@@ -1212,7 +1211,7 @@ specific_level_5_train_erase:
 	* but not really a problem, always much better than a full erase
 	* as the redraw of the train does most of the job
 	move.w	d0,d7		| save value
-	add.w	#0x80,d0
+	add.w	#0x78,d0
 	and.w	#0xFF,d0	| modulus
 	* first gap
 	jbsr	restore_gap
@@ -1233,6 +1232,8 @@ specific_level_5_train_erase:
 	
 	jbsr	restore_gap
 
+	rts
+	
 restore_gap:
 	* don't restore if not in visible screen
 	tst.w	d0
@@ -1465,7 +1466,16 @@ palette_and_sprites_ram_op:
 	jbsr	change_palette
 	jra		10f
 0:
+	move.l	rom_base,a0
+	add.l	#0x51abc+4+2,a0		| a1 is post-incremented
+	cmp.l	a0,a1
+	jne		0f
+	lea		level_5_boss_color_change(pc),a0
+	jbsr	change_palette
+	jra		10f
+0:
 	nop
+
 10:
 	move.l	(a7)+,a0
 1:
@@ -1612,6 +1622,12 @@ level_3_boss_color_change:
 	.word	0x500,0x131
 	.long	-1		| end
 
+level_5_boss_color_change:   | TEMP not the proper colors probably
+	.long	-1		| end
+	.word	0xB00,0x464
+	.word	0x500,0x121
+	.word	0x700,0x232
+	.long	-1		| end
 
 	
 * 8x8 tile layer, for osd (not scrolled) but also row scrolled
@@ -4599,6 +4615,8 @@ set_playfield_bitplanes:
 	jbsr	get_current_level
 	cmp.w	#2,d0
 	jeq		0f
+	cmp.w	#5,d0
+	jeq		0f
 	cmp.w	#3,d0
 	jne		1f
 0:
@@ -5790,7 +5808,7 @@ level_2_load:
 	move.l	d0,truck_planes
 
 	
-	move.b	#0xC,road_y_pos
+	move.b	#0xB,road_y_pos
 	jbsr	enable_bottom_scroll
 	
 	
@@ -5859,8 +5877,8 @@ level_5_load:
 	* seems not to follow the offset shit
 	sub.w	#512,big_machine_x_offset
 	
-	*move.b	#0xC,road_y_pos
-	*jbsr	enable_bottom_scroll
+	move.b	#0xB,road_y_pos
+	jbsr	enable_bottom_scroll
 
 	rts
 	
@@ -6643,6 +6661,9 @@ mockup_boss_palette_load:
 	.ifeq		OPT_BOSS_SPRITES_MOCKUP-3
 	lea		level_3_boss_color_change(pc),a0
 	.endif
+	.ifeq		OPT_BOSS_SPRITES_MOCKUP-5
+	lea		level_5_boss_color_change(pc),a0
+	.endif
 	.ifeq		OPT_BOSS_SPRITES_MOCKUP-4
 	jra		0f		| no color change
 	.endif
@@ -6660,6 +6681,9 @@ sprite_ram_mockup:
 	.endif
 	.ifeq		OPT_BOSS_SPRITES_MOCKUP-4
 	.include	"mockup/boss_4.68k"
+	.endif
+	.ifeq		OPT_BOSS_SPRITES_MOCKUP-5
+	.include	"mockup/boss_5.68k"
 	.endif
 	.ifeq		OPT_BOSS_SPRITES_MOCKUP-6
 	.include	"mockup/boss_6.68k"

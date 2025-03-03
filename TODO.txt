@@ -1,5 +1,6 @@
-- train gap should be shifted 8 pixels left (round wagon corners)
-- level 5: road scroll trashed (trashes lower OSD sprites)
+- train gap should be shifted 8 pixels left (round wagon corners), even like this sometimes
+  deletion is delayed
+- boss 5 color change: doesn't work!
 - level 5: specific erase, specific draw of top of last wagon (to save useless blitting of top of wagons)
 => publish video when working
 - level 1 repair front objects (status bar showing but destroyed, debug this)
@@ -73,7 +74,6 @@
 - optim: group erase on 16 (working) or 32 bit wide blocks
 
 
-- boss 5 color change
 - boss 6 color change
 - boss 7 color change
 
