@@ -15,6 +15,7 @@ used_tile_cluts_file = this_dir / "used_tile_cluts.json"
 used_graphics_dir = this_dir / "used_graphics"
 
 transparent = (255,0,255)
+impossible_color = (0x10,0x20,0x30)
 
 def load_grouped_dicts():
 

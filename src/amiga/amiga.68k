@@ -1101,8 +1101,6 @@ erase_big_machine:
 	lea		prev_truck_params+2,a1
 	move.w	(a1)+,d0	| X
 	subq.w	#8,d0
-	jeq		1f			| X=0 on displayed screen: no need to erase
-	jmi		1f			| X<0 on displayed screen: no need to erase
 	move.w	truck_y_pos,d1	| Y
 	moveq	#4,d2		| just the first bytes
 	move.l	fg_drawed_screen_ptr,a1
@@ -1190,7 +1188,7 @@ specific_level_2_truck_erase:
 	move.w  big_machine_height,d4
 	sub.w	truck_wheels_height,d4
 	move.l	background_restore_buffer,a0
-	move.w	#6,d2
+	move.w	#4,d2
 	move.l	fg_drawed_screen_ptr,a1
 	jbsr	restore_background
 20:
@@ -1200,60 +1198,63 @@ specific_level_5_train_erase:
 	* there are 2 wagon gaps that need restoring
 	lea		prev_truck_params,a1
 	move.w	(a1)+,d0	| absolute secondary scroll pos
-	TMPWRITE
 	add.w	#0x800,d0
 	* this is the X coord of start of truck	
-19:
+
 	* this is great! it sometimes restores too much data
 	* but it works... let's not change this...
 	* worst case: 2 gaps to restore
 	* best case: 1 gap to restore, and the other restore is useless
 	* but not really a problem, always much better than a full erase
 	* as the redraw of the train does most of the job
+
 	move.w	d0,d7		| save value
-	add.w	#0x78,d0
+
+	add.w	#0x80,d0
 	and.w	#0xFF,d0	| modulus
+	sub.w	#0x8,d0		| adjust for round corners
 	* first gap
+	move.w	#4,d2	| no need to restore a lot
 	jbsr	restore_gap
 	
 	move.w	d7,d0
 	cmp.w	#0xB0,d0
 	jcs		21f
-	sub.w	#0x40,d0
-	and.w	#0xFF,d0	| modulus
-	* second gap
-	jbsr	restore_gap
-	
+
 20:
 	rts
 21:
 	* gap for tail wagon
-	move.w	#0x100-32,d0
-	
+	move.w	#0x100-48,d0
+	move.w	#8,d2	| no need to restore a lot	
 	jbsr	restore_gap
 
 	rts
 	
+* < D2: width in bytes
+* < D0: X (without scroll)
 restore_gap:
 	* don't restore if not in visible screen
 	tst.w	d0
 	jpl		1f
 	cmp.w	#0xFFE0,d0
-	jcc		2f
+	jcs		2f
+	jra		3f
 1:
 	cmp.w	#0x100,d0
 	jcc		2f
-	
+3:	
 	add.w	x_background_scroll_value,d0
 	move.w	truck_y_pos,d1	| displayY
 	move.w  big_machine_height,d4
 	sub.w	truck_wheels_height,d4
 	move.l	background_restore_buffer,a0
-	move.w	#6,d2
 	move.l	fg_drawed_screen_ptr,a1
+
 	*sub.w	#10,d1	| temp, that was to see where areas were restored
 	*moveq	#5,D3
 	*jbsr	clear_fg_planes_any_blitter_internal
+	
 	jbsr	restore_background
 2:
 	rts
@@ -1624,8 +1625,9 @@ level_3_boss_color_change:
 
 level_5_boss_color_change:   | TEMP not the proper colors probably
 	.word	0xB00,0x464
-	.word	0x500,0x121
-	.word	0x700,0x232
+	.word	0x400,0x121
+	.word	0x500,0x232
+	.word	0x700,0x343
 	.long	-1		| end
 
 	

@@ -1,12 +1,10 @@
-- when picking sprites palette, if tiles palette contains the exact color in sprite palette,
-  remove from sprite palette, use the color from tile palette (will save quantize, maybe would
-  avoid wrong gray on level 5, brown trousers on level 7.1 ?)
-- train gap should be shifted 8 pixels left (round wagon corners), even like this sometimes
-  deletion is delayed: re-check with simple black erase
-- level 5: on low secondary x position, specific erase, specific draw of top of last wagon (to save useless blitting of top of wagons)
-- still not restored transparency ex: tile 4ae/02 (sword level 5)
+- level 5: third leg for boss... erase issue again with grouping??
+- level 5: on low secondary x position (<0x140), specific erase, specific draw of top of last wagon (to save useless blitting of top of wagons)
 => publish video when all of the above is fixed!
 
+- still not restored black color ex: tile 4ae/02 (sword level 5)
+- levels 1 and 2: use restore_gap for gaps too, calibrate properly with same techniques as
+  in level 5
 - level 1: truck destroys scenery and has blitter bugs when arriving, also maybe make it 16 colors
 - level 1 repair front objects (status bar showing but destroyed, debug this)
 - level 2 lots of background trashing - related to truck?
@@ -49,7 +47,8 @@
 - background restore: complete wrapping (line 2760)  
 
 - difficulty level what does it do? maybe using "easy" would reduce number of enemies
-  and make game smoother??
+  and make game smoother?? boss energy is lower on low difficulty (which the port gets
+  by default!)
 - boss 6 & 7 wrong grouping / missing tiles  
 - level 7 display helicopter!
 

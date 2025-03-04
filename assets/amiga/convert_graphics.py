@@ -17,6 +17,7 @@ convert_dudes_pics.doit()
 sprite_names = dict()
 palette_dict = dict()
 
+
 # blue ninja tiles are pre-mirrored as there are a lot of them
 # at the same time
 pre_mirrored_sprites = {k:{2} for k in range(0x200,0x348)}
@@ -90,7 +91,7 @@ def process_helicopter(global_palette):
     asm_out = generated_src_dir / f"helicopter.68k"
     heli_bin = data_dir / f"helicopter.bin"
 
-    pad_value =(0X10,0x20,0x30)
+    pad_value =impossible_color
     heli_img = Image.open(whole_pics_dir / f"helicopter.png")
 
     heli_img=heli_img.crop((192,352,512,468))
@@ -117,7 +118,7 @@ def process_helicopter(global_palette):
 
     reduced_palette = bitplanelib.palette_extract(reduced_colors_heli_img)
     if len(reduced_palette) < reduced_nb_colors:
-        reduced_palette += [(0x10,0x20,0x30)]*(len(reduced_palette) - reduced_nb_colors)
+        reduced_palette += [impossible_color]*(len(reduced_palette) - reduced_nb_colors)
     raw = bitplanelib.palette_image2raw(reduced_colors_heli_img,None,reduced_palette,forced_nb_planes=forced_nb_planes,
     generate_mask=True,blit_pad=True,mask_color=transparent)
 
@@ -498,7 +499,7 @@ def load_contexted_tileset(tile_sheet_dict,context,nb_colors,is_bob,postload_cal
 
             qc = set(quantized.values())
             if len(qc) < nb_colors:
-                print(f"retry: {len(qc)} < {nb_colors}, try with {nb_colors_to_try}")
+                #print(f"retry: {len(qc)} < {nb_colors}, try with {nb_colors_to_try}")
                 nb_colors_to_try += 1
                 prev_quantized = quantized
             else:
@@ -719,8 +720,8 @@ def dump_tiles(file_radix,palette,tile_table,tile_plane_cache,add_dimension_info
     asm2bin(tiles_1_src,tiles_1_bin)
 
 def process_tile_context(context_name,tile_sheet_dict,nb_colors,is_bob=False,shift_palette_count=0,first_pass=False,
-                            first_colors=None,postload_callback=None,forced_palette=set()):
-
+                            first_colors=None,postload_callback=None,forced_palette=set(),reuse_colors_from=None):
+    # reuse_colors_from not leveraged ATM, should be done in load_contexted_tileset
 
     tile_24a000_set_list,bg_palette,nb_used_colors = load_contexted_tileset(tile_sheet_dict,context_name,nb_colors,is_bob,
     postload_callback=postload_callback,forced_palette=forced_palette)
@@ -728,7 +729,7 @@ def process_tile_context(context_name,tile_sheet_dict,nb_colors,is_bob=False,shi
 
     if shift_palette_count:
         # temp: just fill with as many dummy colors as in reuse_colors
-        bg_palette = [(0x10,0x20,0x30)]*shift_palette_count + bg_palette
+        bg_palette = [impossible_color]*shift_palette_count + bg_palette
 
     elif first_colors:
         # imposed first colors, that HAVE to be in the palette
@@ -739,9 +740,29 @@ def process_tile_context(context_name,tile_sheet_dict,nb_colors,is_bob=False,shi
         # to that layer with less bitplanes so faster/less data to store
         bg_palette = first_colors + bg_palette_no_first_colors
 
+##    if reuse_colors_from:
+##        reuse_colors = {c:i for i,c in enumerate(palette_dict[reuse_colors_from]["palette"])}
+##
+##        new_bg_palette = [impossible_color]*shift_palette_count
+##        nb_saved_colors = 0
+##        for i in range(shift_palette_count,len(bg_palette)):
+##            c = bg_palette[i]
+##            idx = reuse_colors.get(c)
+##            if idx is not None:
+##                # a color in palette is the same as color to reuse: assign it
+##                new_bg_palette[idx] = c
+##                nb_saved_colors += 1
+##            else:
+##                # not found: just add to palette
+##                new_bg_palette.append(c)
+##
+##        if nb_saved_colors:
+##            print(f"{context_name}: could reuse {nb_saved_colors} colors from {reuse_colors_from}")
+##            bg_palette = new_bg_palette
+
     if len(bg_palette)<nb_colors:
         # pad (is it usedful?)
-        bg_palette += [(0x10,0x20,0x30)]*(nb_colors-len(bg_palette))
+        bg_palette += [impossible_color]*(nb_colors-len(bg_palette))
 
 
     if first_pass:
@@ -794,12 +815,12 @@ def process_8x8_tile_layer(context,max_colors,colors_last,postload_callback=None
     transparent_first(fg_palette,transparent)
 
     if lfp<max_colors:
-        fg_palette += [(0x10,0x20,0x30)]*(max_colors-lfp)
+        fg_palette += [impossible_color]*(max_colors-lfp)
 
     tile_244000_cache = {}
     if colors_last:
         # pad so colors are last (not very useful for sprites, though)
-        fg_palette = [(0x10,0x20,0x30)]*(64-max_colors) + fg_palette
+        fg_palette = [impossible_color]*(64-max_colors) + fg_palette
 
     tile_244000_table = read_tileset(tile_244000_set_list,fg_palette,
     cache=tile_244000_cache,
@@ -845,15 +866,16 @@ def postprocess_game_osd_tiles(tileset,palette_index):
 
 generate_for_levels = [False]*9
 
-#generate_for_levels[0] = True
-#generate_for_levels[1] = True
-#generate_for_levels[2] = True
-#generate_for_levels[3] = True
-#generate_for_levels[4] = True
+
+##generate_for_levels[0] = True
+##generate_for_levels[1] = True
+##generate_for_levels[2] = True
+##generate_for_levels[3] = True
+##generate_for_levels[4] = True
 generate_for_levels[5] = True
-#generate_for_levels[6] = True
-#generate_for_levels[7] = True
-#generate_for_levels[8] = True
+##generate_for_levels[6] = True
+##generate_for_levels[7] = True
+##generate_for_levels[8] = True
 
 
 # set to "False" for faster operation when working on game sprite/tiles
@@ -873,7 +895,7 @@ if generate_for_levels[1]:
     truck_used_colors = convert_truck_pics.doit_truck_1(palette_dict["level_1_24a000"]["palette"],truck_nb_planes)
     process_tile_context("level_1_24a000",level_1_tile_24a000_sheet_dict,32,first_pass=False,first_colors=truck_used_colors)
     convert_front_objects.doit_level_1(dump_it=dump_it)
-    process_tile_context("game_level_1",sprite_sheet_dict,32,is_bob=True,shift_palette_count=32)
+    process_tile_context("game_level_1",sprite_sheet_dict,32,is_bob=True,shift_palette_count=32,reuse_colors_from="game_level_1")
 
 if generate_for_levels[2]:
     truck_nb_planes = 3
@@ -883,20 +905,20 @@ if generate_for_levels[2]:
     truck_used_colors = convert_truck_pics.doit_truck_2(palette_dict["level_2_24a000"]["palette"],truck_nb_planes)
     process_tile_context("level_2_24a000",level_2_tile_24a000_sheet_dict,nb_tiles_colors,first_pass=False,first_colors=truck_used_colors)
 
-    process_tile_context("game_level_2",sprite_sheet_dict,64-nb_tiles_colors,is_bob=True,shift_palette_count=nb_tiles_colors)
+    process_tile_context("game_level_2",sprite_sheet_dict,64-nb_tiles_colors,is_bob=True,shift_palette_count=nb_tiles_colors,reuse_colors_from="level_2_24a000")
     convert_front_objects.doit_level_2(dump_it=dump_it)
 
 if generate_for_levels[3]:
     process_tile_context("level_3_24a000",level_3_tile_24a000_sheet_dict,16,first_pass=False)
     process_tile_context("level_3_24d000",level_3_tile_24d000_sheet_dict,16,first_pass=False)
-    process_tile_context("game_level_3",sprite_sheet_dict,48,is_bob=True,shift_palette_count=16)
+    process_tile_context("game_level_3",sprite_sheet_dict,48,is_bob=True,shift_palette_count=16,reuse_colors_from="level_3_24d000")
 if generate_for_levels[4]:
     # 32 is too much, but 16 would be washed down. We need to keep it a power of 2
     process_tile_context("level_4_24a000",level_4_tile_24a000_sheet_dict,32)
     # get hold of the really used number of colors (without padding)
     nb_tile_colors,nb_bob_colors = balance_tile_bob_colors("level_4_24a000")
     # now compute sprite colors with more than 32 colors
-    process_tile_context("game_level_4",sprite_sheet_dict,nb_bob_colors,is_bob=True,shift_palette_count=nb_tile_colors)
+    process_tile_context("game_level_4",sprite_sheet_dict,nb_bob_colors,is_bob=True,shift_palette_count=nb_tile_colors,reuse_colors_from="level_4_24a000")
 if generate_for_levels[5]:
     truck_nb_planes = 4
     # add actual train colors for more vivid train colors as we can't really rely on the background to provide approx colors
@@ -909,7 +931,7 @@ if generate_for_levels[5]:
 
     train_used_colors = convert_truck_pics.doit_train(palette_dict["level_5_24a000"]["palette"],truck_nb_planes)
     process_tile_context("level_5_24a000",level_5_tile_24a000_sheet_dict,32,first_pass=False,first_colors=train_used_colors,forced_palette=forced_palette)
-    process_tile_context("game_level_5",sprite_sheet_dict,nb_bob_colors,is_bob=True,shift_palette_count=nb_tile_colors)
+    process_tile_context("game_level_5",sprite_sheet_dict,nb_bob_colors,is_bob=True,shift_palette_count=nb_tile_colors,reuse_colors_from="level_5_24a000")
 
 if generate_for_levels[6]:
     process_tile_context("level_6_24a000",level_6_tile_24a000_sheet_dict,16,first_pass=False)
@@ -917,8 +939,8 @@ if generate_for_levels[6]:
 
 if generate_for_levels[7]:
     process_tile_context("level_7_24a000",level_7_tile_24a000_sheet_dict,16,first_pass=False)
-    process_tile_context("game_level_7",sprite_sheet_dict,48,is_bob=True,shift_palette_count=16)
-    bobs_level_8 = process_tile_context("game_level_8",sprite_sheet_dict,48,is_bob=True,shift_palette_count=16)
+    process_tile_context("game_level_7",sprite_sheet_dict,48,is_bob=True,shift_palette_count=16,reuse_colors_from="level_7_24a000")
+    bobs_level_8 = process_tile_context("game_level_8",sprite_sheet_dict,48,is_bob=True,shift_palette_count=16,reuse_colors_from="level_7_24a000")
     process_helicopter(palette_dict["game_level_8"]["palette"])
 if generate_for_levels[8]:
     # game ending
