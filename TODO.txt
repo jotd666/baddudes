@@ -4,7 +4,7 @@
 - train gap should be shifted 8 pixels left (round wagon corners), even like this sometimes
   deletion is delayed: re-check with simple black erase
 - level 5: on low secondary x position, specific erase, specific draw of top of last wagon (to save useless blitting of top of wagons)
-- level 2 wheels black is gone again! same for level 2, 5 boss
+- still not restored transparency ex: tile 4ae/02 (sword level 5)
 => publish video when all of the above is fixed!
 
 - level 1: truck destroys scenery and has blitter bugs when arriving, also maybe make it 16 colors
