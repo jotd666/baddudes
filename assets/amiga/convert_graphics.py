@@ -19,7 +19,7 @@ palette_dict = dict()
 
 
 # blue ninja tiles are pre-mirrored as there are a lot of them
-# at the same time
+# at the same time. We can afford the memory, and this will speed display a lot!
 pre_mirrored_sprites = {k:{2} for k in range(0x200,0x348)}
 
 side_grouped_dict,vert_grouped_dict = load_grouped_dicts()

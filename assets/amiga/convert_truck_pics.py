@@ -80,8 +80,12 @@ def doit(global_palette,name,y_start,level_1_bar,exhaust_height,width,height,whe
 
 
             f.write(f"\tdc.w\t7,{width},{height},{y_pos},{wheels_height}   ; nb planes (with mask), width in bytes (real width = {real_width}), height, ypos, wheel height\n")
-
-
+            f.write("\tdc.l\t")
+            if extra_raw:
+                f.write("extra_pic-main_table")
+            else:
+                f.write("0")
+            f.write("\n")
 
             f.write(f"; bpldata (plane size = {plane_size})\n")
             offset = 0
@@ -101,6 +105,32 @@ def doit(global_palette,name,y_start,level_1_bar,exhaust_height,width,height,whe
                     raise Exception("zero plane!")
                 offset += plane_size
 
+            if extra_raw:
+                f.write("extra_pic:\n")
+                real_width,height = extra_pic.size
+                # width in even bytes, plus 16 bit shift
+                width = real_width//8 + 2
+                if width % 2:
+                    width += 1
+                plane_size = len(extra_raw)//nb_planes # mask included
+                f.write(f"\tdc.w\t{width},{height}   ; width in bytes (real width = {real_width}), height\n")
+
+                offset = 0
+                f.write("extra_table:\n")
+                # make it suitable for 6 plane display
+                for j in range(nb_planes-1):
+                    f.write(f"\tdc.l    extra_plane_{j}-extra_table\n")
+                for j in range(7-nb_planes):
+                    f.write("\tdc.l\t0\n")
+                f.write(f"\tdc.l    extra_plane_{nb_planes-1}-extra_table\n")
+                for j in range(nb_planes):
+                    f.write(f"extra_plane_{j}:\n")
+                    block = extra_raw[offset:offset+plane_size]
+                    if any(block) or empty_plane_workaround:
+                        bitplanelib.dump_asm_bytes(block,f)
+                    else:
+                        raise Exception("zero plane!")
+                    offset += plane_size
 
         asm2bin(asm_out,dudes_bin)
         reduced_palette.remove(transparent)
@@ -122,15 +152,14 @@ def rework_train(train_pic):
     train_top_pic.save(dump_dir/f"train_top.png")
     # remove top
     train_pic = train_pic.crop((0,16,train_pic.size[0],train_pic.size[1]))
+    train_pic.save(dump_dir/f"train.png")
+
     return train_pic,train_top_pic
 
 def doit_train(global_palette,nb_planes):
 
     truck1_img = Image.open(whole_pics_dir / "train.png")
 
-    truck1_img=truck1_img.crop((240,96,320,80+32))
-
-    truck1_img.save(dump_dir/f"train_top.png")
 
     return doit(global_palette,name="train",level_1_bar=False,forced_nb_planes=nb_planes,
     y_start=96,height=64+48+16,exhaust_height=0,width=1920+256,wheels_height=16,
