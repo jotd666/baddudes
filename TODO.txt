@@ -1,5 +1,7 @@
 - level 5: third leg for boss... erase issue again with grouping??
 - level 5: on low secondary x position (<0x140), specific erase, specific draw of top of last wagon (to save useless blitting of top of wagons)
+  use cheat keys to test!
+
 => publish video when all of the above is fixed!
 
 - still not restored black color ex: tile 4ae/02 (sword level 5)
@@ -10,8 +12,6 @@
 - level 2 lots of background trashing - related to truck?
   level 2 when jumping at start, seems that background restore is partial
 - level 6 regenerate sprites (player killed not displayed??)
-- new clipping limit (to fix clipped porsche on left) seems to have
-  side effects (incorrect left clip for ninjas...)
 - karnov killed missing body (try with karnov_dead mockup!)
 - easy: second screen sequence sprites (president+bad dudes)
 - end sequence should use scrolling sprites for credits: allocate huge 2x high sprite buffers

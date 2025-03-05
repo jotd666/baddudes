@@ -3156,7 +3156,9 @@ draw_bob_loop:
 
 	FIX_COORD	d0
 	FIX_COORD	d1
-	
+
+	tst		d0
+	jmi		0f
 	* another kludge: if X > 0x200-64 it should be negative
 	cmp.w	#0x200-CLIPPED_WIDTH_MARGIN,d0
 	jcs		0f
