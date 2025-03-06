@@ -61,6 +61,7 @@ def convert():
     "KARNOV_TUNE_SND"                :{"index":0x26,"pattern":0,"volume":24,'loops':True},
     "BOSS_TUNE_SND"                :{"index":0x21,"pattern":4,"volume":24,'loops':True},
     "WIN_TUNE_SND"                   :{"index":0x22,"pattern":0,"volume":24,'loops':False,"ticks":180},
+    "END_TUNE_SND"                   :{"index":0x25,"pattern":0,"volume":24,'loops':True},
 
 
     }
@@ -76,7 +77,8 @@ def convert():
             else:
                 f.write("\t.byte    0\t| {:02x}\n".format(i))
 
-    max_mod_size = max(os.path.getsize(x) for x in glob.glob(os.path.join(sound_dir,"*.mod")))
+    # ending is bigger, we don't count it
+    max_mod_size = max(os.path.getsize(x) for x in glob.glob(os.path.join(sound_dir,"*.mod")) if "ending" not in x)
 
     with open(os.path.join(src_dir,"..","sounds.inc"),"w") as f:
         for k,v in sorted(sound_dict.items(),key = lambda x:x[1]["index"]):

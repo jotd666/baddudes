@@ -1,9 +1,7 @@
-- too much memory:
-  => optional sounds load per level (level 5: none)
+- end music has issues with ptplayer
 - level 5: third leg for boss... erase issue again with grouping??
 - train erase: remove bottom erase, extend gap to full train height, add erase on the right of the front wheel: saves blitter
-- highscore screen crashes
-- find ending sequence sound code
+  
 - levels 1 and 2: use restore_gap for gaps too, calibrate properly with same techniques as
   in level 5
 - level 1: truck destroys scenery and has blitter bugs when arriving, also maybe make it 16 colors
@@ -20,7 +18,6 @@
   (boss 2 => boss 3 in level 7)
   
 - key to kill player: no lives, 1 energy, to test game over
-- l 
 
 - crash at the end of level 1 => level 2 (other levels switch OK!): front object conflict
 
@@ -55,7 +52,8 @@
 - autoframeskip not tuned properly
 - level 2: no lamps if objects 2 loaded. Ok if objects 1 loaded
 - drop 2 player mode, use rightmost OSD sprite for real parallax in levels 4 and 6
-  see if we can blit the score afterwards if 2P mode is reinstated
+  see if we can blit the score afterwards if 2P mode is reinstated, anyway 2P mode is probably
+  not possible given the short memory we have
 - level 2 front object (lamp) not displaying (used to work with level 1 objects)
 - save/load highscores
   
@@ -83,12 +81,15 @@
 - log & rip missing sounds: breakpoint on sound not found so able to go to mame and rip it
 
 
+- leave demo running: level 3 but with status bar trashed, 2P mode with player 2 invisible
+  and when inserting coin, no graphics switch (probably missing set context to go to intro)
 
 
 
 
 low priority:
 
+- if too much memory: optional sounds load per level (boss 3,4 sounds, dogs...)
 - still not restored black color ex: tile 4ae/02 (sword level 5)
 - bosses 2 and 5: rework sheets to change white by some other color that doesn't
   conflict with main character (0xEEE => ????) so dynamic color change works fully

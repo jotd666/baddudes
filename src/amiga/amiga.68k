@@ -911,7 +911,9 @@ _vblank:
 	jeq		25f
 	jbsr	level_7_load_second_part
 25:
-	jbsr		really_update_sprites
+	tst.l	sprite_table_base
+	jeq		1f			| no sprites? don't update
+	jbsr	really_update_sprites
 1:
 	* don't blit, but update hw sprites as it doesn't cost a lot
 	cmp.w	#CTX_GAME,global_context
@@ -4349,13 +4351,7 @@ load_win_music_module:
 	lea		stage_completed_music_file,a0
 	jbsr	load_and_decrunch_file
 	rts
-	
-load_end_music_module:
-	move.l	current_tune,A1
-	lea		ending_music_file,a0
-	jbsr	load_and_decrunch_file
-	rts
-	
+		
 
 * we're allocating a fixed amount of memory
 * so we're able to fit the boss module in the same
@@ -5184,6 +5180,7 @@ osd_set_context:
 	st		clear_target_sprites_flag
 	* remove pointer on truck planes, this will disable any remaining truck
 	* draw, and also front objects
+	clr.l	sprite_table_base
 	clr.l	big_machine_planes
 	clr.l	big_machine_extra_planes
 	clr.l	heli_planes
@@ -5404,6 +5401,20 @@ allocate_background_buffer:
 ************************
 
 set_ending_1_context:
+	* ending music is much bigger than the others
+	* but we have a lot of memory free in the ending sequence
+	* so we can use a normal allocation
+	*
+	* another hack: we load the tune at start so when the context
+	* changes to ending_2, we can avoid overwrite
+	
+
+	lea		ending_music_file,a0
+	jbsr	allocate_and_load_chip_mem_file
+	move.l	a1,current_tune
+	move.l	chip_memory_current_ptr,ending_1_chipmem_start
+	
+	* now allocate the rest
 	lea		tiles_ending_1_24a000_file,a0
 	jbsr	load_tiles_file_24a000
 	lea		tiles_title_244000_file,a0
@@ -5415,9 +5426,13 @@ set_ending_1_context:
 	* re-apply letter colors 56-63 (the sprites in that context only use 24 colors
 	* so we're good!)
 	jbsr	load_tiles_palette_244000
+	
 	rts
 	
 set_ending_2_context:
+	* "allocate" chunk of memory so playing tune isn't overwritten
+	move.l	ending_1_chipmem_start,chip_memory_current_ptr
+	
 	lea		tiles_ending_2_24d000_file,a0
 	jbsr	load_tiles_file_24d000
 	lea		tiles_title_244000_file,a0
@@ -6447,10 +6462,6 @@ handle_tune_switch:
 	jne		112f
 	jbsr	load_win_music_module
 	
-112:
-	cmp.w	#END_TUNE_SND*8,d0
-	jne		112f
-	jbsr	load_end_music_module
 	
 112:
 	rts
@@ -6934,7 +6945,9 @@ chip_memory_current_ptr:
 	.long	0
 chip_memory_before_sprites_ptr:
 	.long	0
-
+ending_1_chipmem_start:
+	.long	0
+	
 	* format of the file is first palette (32 bytes)
 	* then main tile table that points to tile cluts, .. and
 	* so on. It is readable in the tiles_0.68k file which is

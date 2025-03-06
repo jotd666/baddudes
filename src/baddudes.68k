@@ -125,20 +125,17 @@ afterrte:
 	move.w	d0,-(a7)
 	move.w	previous_sr(pc),d0
 	move.w	d0,sr
-	move.w	(a7)+,d0		| original program must run in supervisor else crash!!
+	move.w	(a7)+,d0		| original program must run in supervisor else crash !!
 	rts
 	
 
 * emulate short JMP from TRAP: this is just tricky	
 trap_1_jmp:
-	jbsr	osd_break
-	nop
-	nop
-	nop
 	movem.l	d0/a0,-(a7)
 	move.l	(10,a7),a0	| return address
 	moveq	#0,d0
 	move.w	(a0),d0		| destination
+	add.l	rom_base,d0	| relocated!
 	move.l	d0,(10,a7)	| replace return address
 	movem.l	(a7)+,d0/a0
 	rte
