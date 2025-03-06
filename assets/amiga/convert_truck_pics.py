@@ -22,8 +22,6 @@ def doit(global_palette,name,y_start,level_1_bar,exhaust_height,width,height,whe
         if forced_nb_planes>4:
             # could work with 32 colors but would take too much memory and blitter bandwidth
             raise Exception("max number of planes for trucks/train is 4")
-        if empty_plane_workaround:
-            forced_nb_planes = 4
 
         if level_1_bar:
             # remove some rows to show the upper iron bar (lame trick)
@@ -99,7 +97,7 @@ def doit(global_palette,name,y_start,level_1_bar,exhaust_height,width,height,whe
             for j in range(nb_planes):
                 f.write(f"truck_plane_{j}:\n")
                 block = raw[offset:offset+plane_size]
-                if any(block) or empty_plane_workaround:
+                if any(block):
                     bitplanelib.dump_asm_bytes(block,f)
                 else:
                     raise Exception("zero plane!")

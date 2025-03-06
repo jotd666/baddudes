@@ -1,10 +1,9 @@
+- too much memory:
+  => optional sounds load per level (level 5: none)
 - level 5: third leg for boss... erase issue again with grouping??
-- level 5: on low secondary x position (<0x140), specific erase, specific draw of top of last wagon (to save useless blitting of top of wagons)
-  use cheat keys to test!
-
-=> publish video when all of the above is fixed!
-
-- still not restored black color ex: tile 4ae/02 (sword level 5)
+- train erase: remove bottom erase, extend gap to full train height, add erase on the right of the front wheel: saves blitter
+- highscore screen crashes
+- find ending sequence sound code
 - levels 1 and 2: use restore_gap for gaps too, calibrate properly with same techniques as
   in level 5
 - level 1: truck destroys scenery and has blitter bugs when arriving, also maybe make it 16 colors
@@ -20,8 +19,8 @@
 - boss rush: a lot of bosses have wrong colors: reset colors before replacing palette
   (boss 2 => boss 3 in level 7)
   
-  
-- cars in level 2 still parts not displayed at times...
+- key to kill player: no lives, 1 energy, to test game over
+- l 
 
 - crash at the end of level 1 => level 2 (other levels switch OK!): front object conflict
 
@@ -78,14 +77,11 @@
 - boss 6 color change
 - boss 7 color change
 
-- rip train pic if possible (to avoid special treatment)
 - level complete messages should use front object sprites (sprites 4-7, unload backgrounds first
   in levels 4 and 6)
 - left osd mssing 1 char ("G"AME OVER/"P"USH BUTTON), middle lower OSD also missing 1 char
 - log & rip missing sounds: breakpoint on sound not found so able to go to mame and rip it
-- need to optimize truck/train erase: depending on the level, compute the parts that need
-  background refresh. Truck: bottom (wheels) + part between front & tow & exhaust pipe. 
-  Rest: not needed. same for big truck & train, with inter-tow: in progress
+
 
 
 
@@ -93,9 +89,9 @@
 
 low priority:
 
+- still not restored black color ex: tile 4ae/02 (sword level 5)
 - bosses 2 and 5: rework sheets to change white by some other color that doesn't
   conflict with main character (0xEEE => ????) so dynamic color change works fully
-- reinstate erase grouping when karnov & devil pole feet erase issues are fixed
 - restore buffer memory size optimize:
 RESTORE_SCREEN_PLANE_SIZE = NB_BYTES_PER_SCREEN_ROW*3*NB_PLAYFIELD_LINES*2
 could be
