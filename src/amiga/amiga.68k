@@ -5061,8 +5061,12 @@ handle_keyboard:
 	cmp.b	#0x57,d0	| F8 key: lose all lives
 	bne.b	0f
 	move.w	#0x0FF,_custom+color
+	move.l	a6,-(A7)
 	* last life, if killed, direct game over
-	
+	GET_RAM_START_IN_A6 
+	clr.b	(0x239A,A6)	| 0 lives
+	move.b	#1,(0x2380,A6)	| 1 energy
+	move.l	(a7)+,a6
 0:
 	cmp.b	#0x58,d0	| F9 key crashes game (restarts whdload)
 	bne.b	0f

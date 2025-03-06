@@ -1,3 +1,5 @@
+- level 2 lots of background trashing - related to truck?
+  level 2 when jumping at start, seems that background restore is partial
 - end music has issues with ptplayer
 - level 5: third leg for boss... erase issue again with grouping??
 - train erase: remove bottom erase, extend gap to full train height, add erase on the right of the front wheel: saves blitter
@@ -6,8 +8,6 @@
   in level 5
 - level 1: truck destroys scenery and has blitter bugs when arriving, also maybe make it 16 colors
 - level 1 repair front objects (status bar showing but destroyed, debug this)
-- level 2 lots of background trashing - related to truck?
-  level 2 when jumping at start, seems that background restore is partial
 - level 6 regenerate sprites (player killed not displayed??)
 - karnov killed missing body (try with karnov_dead mockup!)
 - easy: second screen sequence sprites (president+bad dudes)
@@ -16,8 +16,6 @@
 
 - boss rush: a lot of bosses have wrong colors: reset colors before replacing palette
   (boss 2 => boss 3 in level 7)
-  
-- key to kill player: no lives, 1 energy, to test game over
 
 - crash at the end of level 1 => level 2 (other levels switch OK!): front object conflict
 
