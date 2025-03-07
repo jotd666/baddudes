@@ -716,7 +716,7 @@ def dump_tiles(file_radix,palette,tile_table,tile_plane_cache,add_dimension_info
             f.write(f"tile_plane_{v:02d}:\n")
             dump_asm_bytes(k,f)
     # now convert the asm file to full binary
-    tiles_1_bin = os.path.join(data_dir,os.path.basename(os.path.splitext(tiles_1_src)[0])+".bin")
+    tiles_1_bin = data_dir / (tiles_1_src.stem+".bin")
     asm2bin(tiles_1_src,tiles_1_bin)
 
 def process_tile_context(context_name,tile_sheet_dict,nb_colors,is_bob=False,shift_palette_count=0,first_pass=False,

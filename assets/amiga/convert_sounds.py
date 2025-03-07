@@ -1,7 +1,8 @@
-import subprocess,os,struct,glob,tempfile
+import subprocess,os,struct,glob,tempfile,collections
 import shutil
 
-this_dir = os.path.dirname(__file__)
+from shared import *
+
 gamename = "baddudes"
 sox = "sox"
 
@@ -13,15 +14,16 @@ def convert():
     #wav_files = glob.glob("sounds/*.wav")
 
 
-    sound_dir = os.path.join(this_dir,"..","sounds")
+    sound_dir = this_dir / ".." / "sounds"
 
 
-    src_dir = os.path.join(this_dir,"../../src/amiga")
-    outfile = os.path.join(src_dir,"sounds.68k")
-    sndfile = os.path.join(src_dir,"sound_entries.68k")
+    src_dir = this_dir / "../../src/amiga"
+    outfile = src_dir / "sounds.68k"
+    sndfile = src_dir / "sound_entries.68k"
 
 
     hq_sample_rate = 12000  #{"aga":18004,"ecs":12000,"ocs":11025}[mode]
+    vhq_sample_rate = 22050  # if we can afford it! (in optional packs!)
     lq_sample_rate = hq_sample_rate//2 # if aga_mode else 8000
 
 
@@ -31,8 +33,8 @@ def convert():
     sound_dict = {
 
     "CREDIT_SND"               :{"index":5,"channel":3,"sample_rate":hq_sample_rate,"priority":40},
-    "SIREN_SND"               :{"index":0x1D,"channel":3,"sample_rate":hq_sample_rate,"priority":40},
-    "TYPEWRITER_SND"               :{"index":0x3D,"channel":3,"sample_rate":hq_sample_rate,"priority":40},
+    "SIREN_SND"               :{"index":0x1D,"channel":3,"sample_rate":vhq_sample_rate,"priority":40,"optional_pack":"intro"},
+    "TYPEWRITER_SND"               :{"index":0x3D,"channel":3,"sample_rate":vhq_sample_rate,"priority":40,"optional_pack":"intro"},
     "PLAYER_HIT_SND"               :{"index":0x2A,"channel":3,"sample_rate":hq_sample_rate,"priority":40},
     "IN_FIRE_SND"               :{"index":0x2D,"channel":3,"sample_rate":hq_sample_rate,"priority":40},
     "FIRE_PUNCH_SND"               :{"index":0x37,"channel":3,"sample_rate":hq_sample_rate,"priority":40},
@@ -47,14 +49,15 @@ def convert():
     #"PLAYER_LAND_SND"               :{"index":0x11,"channel":3,"sample_rate":hq_sample_rate,"priority":30},
     "GOT_IT_SND"               :{"index":0x35,"channel":3,"sample_rate":hq_sample_rate,"priority":40},
     "PLAYER_DEAD_SND"               :{"index":0x2B,"channel":3,"sample_rate":hq_sample_rate,"priority":50},
-    "DOG_ATTACK_SND"               :{"index":0x33,"channel":3,"sample_rate":hq_sample_rate,"priority":30},
-    "DOG_KILLED_SND"               :{"index":0x34,"channel":3,"sample_rate":hq_sample_rate,"priority":40},
     "STAR_THROWN_SND"               :{"index":0x9,"channel":3,"sample_rate":hq_sample_rate,"priority":30},
     "MAN_SCREAM_SND"               :{"index":0x2C,"channel":2,"sample_rate":hq_sample_rate,"priority":30},
     "IM_BAD_SND"               :{"index":0x36,"channel":3,"sample_rate":hq_sample_rate,"priority":30},
-    "NINJA_ATTACK_SCREAM_SND"     :{"index":0x3B,"channel":3,"sample_rate":hq_sample_rate,"priority":30},
-    "ROBO_BOSS_SCREAM_SND"     :{"index":0x2E,"channel":3,"sample_rate":hq_sample_rate,"priority":30},
-    "NINJA_CLONE_SND"     :{"index":0x1B,"channel":3,"sample_rate":hq_sample_rate,"priority":40},
+
+    "DOG_ATTACK_SND"               :{"index":0x33,"channel":3,"sample_rate":vhq_sample_rate,"priority":30,"optional_pack":"dog"},
+    "DOG_KILLED_SND"               :{"index":0x34,"channel":3,"sample_rate":vhq_sample_rate,"priority":40,"optional_pack":"dog"},
+    "NINJA_ATTACK_SCREAM_SND"     :{"index":0x3B,"channel":3,"sample_rate":vhq_sample_rate,"priority":30,"optional_pack":"clone_boss"},
+    "NINJA_CLONE_SND"     :{"index":0x1B,"channel":3,"sample_rate":vhq_sample_rate,"priority":40,"optional_pack":"clone_boss"},
+    "ROBO_BOSS_SCREAM_SND"     :{"index":0x2E,"channel":3,"sample_rate":vhq_sample_rate,"priority":30,"optional_pack":"animal"},
 
     "LEVEL_1_TUNE_SND"                :{"index":0x1F,"pattern":0,"volume":20,'loops':True},
     "LEVEL_2_TUNE_SND"                :{"index":0x20,"pattern":0,"volume":20,'loops':True},
@@ -70,7 +73,7 @@ def convert():
 
     for k,v in sound_dict.items():
         valid_sounds[v["index"]] = k
-    with open(os.path.join(this_dir,"valid_sound_table.68k"),"w") as f:
+    with open(this_dir / "valid_sound_table.68k","w") as f:
         for i,v in enumerate(valid_sounds):
             if v:
                 f.write("\t.byte    1\t| {:02x}: {}\n".format(i,v))
@@ -78,47 +81,49 @@ def convert():
                 f.write("\t.byte    0\t| {:02x}\n".format(i))
 
     # ending is bigger, we don't count it
-    max_mod_size = max(os.path.getsize(x) for x in glob.glob(os.path.join(sound_dir,"*.mod")) if "ending" not in x)
+    max_mod_size = max(os.path.getsize(x) for x in sound_dir.glob("*.mod") if "ending" not in str(x))
 
-    with open(os.path.join(src_dir,"..","sounds.inc"),"w") as f:
+    with open(src_dir / ".." / "sounds.inc","w") as f:
         for k,v in sorted(sound_dict.items(),key = lambda x:x[1]["index"]):
             f.write(f"\t.equ\t{k},  0x{v['index']:x}\n")
         f.write(f"\nMAX_MODULE_SIZE = {max_mod_size}\n")
 
     max_sound = 0x80  # max(x["index"] for x in sound_dict.values())+1
     sound_table = [""]*max_sound
+    sound_struct_list = ["0"]*max_sound
     sound_table_set_1 = ["\t.long\t0,0"]*max_sound
 
 
 
 
     snd_header = rf"""
-    # sound tables
-    #
-    # the "sound_table" table has 8 bytes per entry
-    # first word: 0: no entry, 1: sample, 2: pattern from music module
-    # second word: 0 except for music module: pattern number
-    # longword: sample data pointer if sample, 0 if no entry and
-    # 2 words: 0/1 noloop/loop followed by duration in ticks
-    #
-    FXFREQBASE = 3579564
+# sound tables
+#
+# the "sound_table" table has 8 bytes per entry
+# first word: 0: no entry, 1: sample, 2: pattern from music module
+# second word: 0 except for music module: pattern number
+# longword: sample data pointer if sample, 0 if no entry and
+# 2 words: 0/1 noloop/loop followed by duration in ticks
+#
+FXFREQBASE = 3579564
 
-        .macro    SOUND_ENTRY    sound_name,size,channel,soundfreq,volume,priority
-    \sound_name\()_sound:
-        .long    \sound_name\()_raw
-        .word   \size
-        .word   FXFREQBASE/\soundfreq,\volume
-        .byte    \channel
-        .byte    \priority
-        .endm
-
-    """
+optional_sounds:
+"""
+    def write_vasm(contents,fw):
+        n=0
+        for c in contents:
+            if n%16 == 0:
+                fw.write("\n\tdc.b\t${:02x}".format(c))
+            else:
+                fw.write(",${:x}".format(c))
+            n += 1
+        fw.write("\n")
 
     def write_asm(contents,fw):
         n=0
         for c in contents:
             if n%16 == 0:
-                fw.write("\n\t.byte\t0x{:x}".format(c))
+                fw.write("\n\t.byte\t0x{:02x}".format(c))
             else:
                 fw.write(",0x{:x}".format(c))
             n += 1
@@ -133,10 +138,13 @@ def convert():
         fw.write("\t.section\t.datachip\n")
         fw.write("\t.global\t{}\n".format(music_module_label))
 
+        optional_pack_dict = collections.defaultdict(list)
+
         for wav_file,details in sound_dict.items():
             wav_name = os.path.basename(wav_file).lower()[:-4]
-            if details.get("channel") is not None:
+            if details.get("channel") is not None and not details.get("optional_pack"):
                 fw.write("\t.global\t{}_raw\n".format(wav_name))
+
 
 
         for wav_entry,details in sound_dict.items():
@@ -149,7 +157,7 @@ def convert():
                 sound_table_set_1[sound_index] = "\t.word\t{},{},{}\n\t.byte\t{},{}".format(2,details["pattern"],details.get("ticks",0),details["volume"],int(details["loops"]))
             else:
                 wav_name = os.path.basename(wav_entry).lower()[:-4]
-                wav_file = os.path.join(sound_dir,wav_name+".wav")
+                wav_file = sound_dir/ (wav_name+".wav")
 
                 def get_sox_cmd(sr,output):
                     return [sox,"--volume","0.8",wav_file,"--channels","1","-D","--bits","8","-r",str(sr),"--encoding","signed-integer",output]
@@ -180,7 +188,28 @@ def convert():
                 if amp_ratio > 1:
                     print(f"{wav}: volume peaked {amp_ratio}")
                     amp_ratio = 1
-                sound_table[sound_index] = "    SOUND_ENTRY {},{},{},{},{},{}\n".format(wav,len(signed_data)//2,channel,used_sampling_rate,int(64*amp_ratio),used_priority)
+                size = len(signed_data)//2
+                volume = int(64*amp_ratio)
+
+                sound_struct_list[sound_index] = f"{wav}_sound"
+
+                optional_pack = details.get("optional_pack")
+                if optional_pack:
+                    sound_ptr = f"0   | loaded in {optional_pack} pack"
+                    fst.write(f"\t.word\t{wav_entry}\n")
+                    optional_pack_dict[optional_pack].append(details)
+                else:
+                    # built-in sound
+                    sound_ptr = f"{wav}_raw"
+
+                sound_table[sound_index] = f"""{wav}_sound:
+    .long   {sound_ptr}
+    .word   {size}
+    .word   FXFREQBASE/{used_sampling_rate},{volume}
+    .byte   {channel}
+    .byte   {used_priority}
+"""
+
                 sound_table_set_1[sound_index] = f"\t.word\t1,{int(details.get('loops',0))}\n\t.long\t{wav}_sound"
 
 ##                if amp_ratio > 0:
@@ -205,24 +234,53 @@ def convert():
                     # add zeroes
                     contents = b'\x00\x00' + contents
 
-                fw.write("{}_raw:   | {} bytes".format(wav,len(contents)))
 
                 if len(contents)>65530:
                     raise Exception(f"Sound {wav_entry} is too long")
-                write_asm(contents,fw)
+                if optional_pack:
+                    # dispatch sound somewhere else
+                    last_optional = optional_pack_dict[optional_pack][-1]
+                    last_optional["data"] = contents
+                else:
+                    fw.write("{}_raw:   | {} bytes".format(wav,len(contents)))
+                    # write built-in sound data
+                    write_asm(contents,fw)
 
 
         # make sure next section will be aligned
         fw.write("\t.align\t8\n")
 
 
+        fst.write("\t.word\t-1   | end of optional sound list\n\n")
+        fst.write("sound_structs:\n")
+        for s in sound_struct_list:
+            fst.write(f"\t.long\t{s}\n")
+
+        fst.write("\n")
         fst.writelines(sound_table)
+
         fst.write("\n\t.global\t{0}\n\n{0}:\n".format("sound_table"))
         for i,st in enumerate(sound_table_set_1):
             fst.write(st)
             fst.write(" | {}\n".format(i))
 
 
+    # now dump optional files
+    for pack_name,sounds in optional_pack_dict.items():
+        asm = generated_src_dir / f"{pack_name}_sounds.68k"
+        with open(asm,"w") as f:
+            f.write("start:\n")
+            for sound in sounds:
+                index = sound["index"]
+                # all relative pointers to be relocatable
+                f.write(f"\tdc.l\t{index}\n\tdc.l\tsound_{index}-start\n")
+            f.write("\tdc.l\t-1\n")
+
+            for sound in sounds:
+                index = sound["index"]
+                f.write(f"sound_{index}:\n")
+                write_vasm(sound["data"],f)
+        asm2bin(asm,data_dir / (asm.stem+".bin"))
 convert()
 
 

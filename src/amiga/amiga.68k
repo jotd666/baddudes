@@ -35,7 +35,8 @@ AFB_68020 = 1
 	.endif
 	
 TOTAL_PUBLIC_MEMORY_SIZE = 350000
-TOTAL_CHIP_MEMORY_SIZE = 1360000		| cannot go further!
+* this is the minimum memory required for level 5 (because of train)
+TOTAL_CHIP_MEMORY_SIZE = 1340000		
 
 PREVIOUS_SPRITE_SIZE = 8
 BORDERBLANK = 1
@@ -57,7 +58,6 @@ SCROLL_UP = 16
 * level 5 top part of lead wagon
 MIN_TRAIN_X_TOP_DRAW = 0x140
 
-OPT_DEBUG_GAP_ERASE = 1
 
 * 3 & 3: most performant
 BITPLANE_FMODE = 3			| works with 1, albeit slower
@@ -89,6 +89,7 @@ SCREEN_ADDRESS = 0x244000
 OPT_NO_SCROLLING_X = 0
 OPT_NO_SCROLLING_Y = 0
 OPT_NO_BOTTOM_SCROLL = 0
+OPT_DEBUG_GAP_ERASE = 1
 
 * load fixed sprites, mostly bosses as they're long to reach & test
 OPT_BOSS_SPRITES_MOCKUP = 0
@@ -120,7 +121,7 @@ ONE_TICK = 1
 * note: double buffering eats a lot of memory, it cannot run in debug mode
 * either simple or reloc. Only in "none" (program running in fastmem, data
 * located in low chipmem)
-OPT_ENABLE_DOUBLE_BUFFERING = 0
+OPT_ENABLE_DOUBLE_BUFFERING = 1
 
 _custom = 0xDFF000
 
@@ -305,14 +306,15 @@ _user:
 	lea	(_tag,pc),a0
 	jsr	(resload_Control,a2)
 	
+	
 	.ifndef	RELEASE
 	* install quit handler 
 	move.l	#quit_to_os,0x4	
 	.endif
 
 	
-	
-   bra		.no_forbid
+
+   jra		.no_forbid
 .standard:
 	
     * open dos library, graphics library
@@ -328,7 +330,7 @@ _user:
 	lsr.l	#2,d0		| number of longs
 	
 
-	bsr	get_args_BCPL
+	jbsr	get_args_BCPL
 
 0:	
 	lea		program_args,a0
@@ -356,12 +358,12 @@ _user:
 
 	move.l	(A0)+,D0	| STARTLEVEL/K/N
 	beq.b	2f
-	bsr		bcpl_string_to_int
+	jbsr		bcpl_string_to_int
 	move.l	d0,dip_switch_start_level
 2:
 	move.l	(A0)+,D0	| STARTLIVES/S
 	beq.b	2f
-	bsr		bcpl_string_to_int
+	jbsr		bcpl_string_to_int
 	subq.b	#1,d0
 	bmi.b	2f
 	move.l	d0,dip_switch_start_lives
@@ -420,23 +422,22 @@ _user:
 .no_forbid:
 
 	* init tables for sprites with some used heights
-	bsr		init_sprite_y_table_table
-
+	jbsr		init_sprite_y_table_table
+	
 	* align bitplanes
 	lea		fg_screen_buffer_1,a0
-	bsr		align_for_fmode
+	jbsr		align_for_fmode
 	move.l	a0,fg_screen_data_1
 	move.l	a0,fg_drawed_screen_ptr
 	move.l	a0,fg_displayed_screen_ptr
 	
 	
 	lea		fg_screen_buffer_2,a0
-	bsr		align_for_fmode
+	jbsr		align_for_fmode
 	move.l	a0,fg_screen_data_2
 	
 	lea		_custom,a5
 	
-    *move.w #0x6200+BORDERBLANK,bplcon0(a5) | 6 bitplanes, borderblank
 	
 	
 	move.l	frameskip_flag,d0
@@ -556,13 +557,13 @@ bcpl_arg_string_copy:
 bcpl_string_to_int:
     movem.l A0/A1,-(a7)
     lea temp_filename_buffer,a1
-    bsr bcpl_arg_string_copy
+    jbsr bcpl_arg_string_copy
     * convert to integer
     move.l  a1,a0
     * < A0: pointer on C string
     * > D0: value
     * > D1: -1 if ok, position of the string if error
-    bsr parse_integer
+    jbsr parse_integer
     movem.l  (a7)+,a0/a1
 	rts
 	
@@ -624,7 +625,7 @@ get_args_BCPL:
 	move.l a1,d2
 	lsr.l #2,d2
 	moveq #0,d4
-	bsr.s call_bcpl
+	jbsr call_bcpl
 	movem.l (sp)+,d2/d3/d4
 	rts
 
@@ -691,7 +692,7 @@ demo_game:
 	
 	move		#0x4000,_custom+intena						| disable interrupts
 	move		#0x7FFF,_custom+intreq						| ack all interrupts
-	bsr			platform_init					| amiga-specific init
+	jbsr			platform_init					| amiga-specific init
 		
 0:	
 
@@ -744,7 +745,7 @@ _vblank:
 	beq.b	0f
 	btst	#JPB_BTN_PLAY,d1
 	bne.b	0f
-	bsr		toggle_pause
+	jbsr		toggle_pause
 0:
 	* here music doesn't loop. We have to stop it when it ends
 	move.w	music_tick,d1
@@ -3303,7 +3304,7 @@ draw_bob_loop:
 	move.l	d3,d5			| Y-offset in bytes (often 0 but supports Y clip!)
 	moveq	#0,d6			| X-offset
 	moveq	#NB_PLAYFIELD_PLANES,d3
-	bsr		blit_planes_any_internal_cookie_cut
+	jbsr		blit_planes_any_internal_cookie_cut
 29:
 	move.l	(a7)+,a0
 30:
@@ -3732,7 +3733,7 @@ blit_planes_any_internal_cookie_cut:
 	subq	#1,d3
 6:
 	move.l a3,bltapt(a5)	|source graphic top left corner (mask)
-	bsr.b	start_process_1_plane
+	jbsr	start_process_1_plane
 	
 	move.l	a1,bltcpt(a5)	|pristine background top (bottom) left corner
 	move.l	a1,bltdpt(a5)	|destination top (bottom) left corner
@@ -3742,7 +3743,7 @@ blit_planes_any_internal_cookie_cut:
 	dbf		d3,6b
 7:
 	move.l a3,bltapt(a5)	|source graphic top left corner (mask)
-	bsr.b	start_process_1_plane
+	jbsr	start_process_1_plane
 	move.l	a1,bltcpt(a5)	|pristine background top (bottom) left corner
 	move.l	a1,bltdpt(a5)	|destination top (bottom) left corner
 	move.w  d4,bltsize(a5)	|rectangle size, starts blit
@@ -4031,7 +4032,7 @@ blit_planes_any_internal_no_cookie_cut:
 	beq.b	7f
 	subq	#1,d3
 6:
-	bsr.b	start_process_1_plane_nocc
+	jbsr	start_process_1_plane_nocc
 	
 	move.l	a1,bltdpt(a5)	|destination top (bottom) left corner
 	move.w  d4,bltsize(a5)	|rectangle size, starts blit
@@ -4039,7 +4040,7 @@ blit_planes_any_internal_no_cookie_cut:
 	WAIT_BLIT
 	dbf		d3,6b
 7:
-	bsr.b	start_process_1_plane_nocc
+	jbsr	start_process_1_plane_nocc
 	move.l	a1,bltdpt(a5)	|destination top (bottom) left corner
 	move.w  d4,bltsize(a5)	|rectangle size, starts blit
     
@@ -4194,7 +4195,7 @@ restore_system:
 quit_to_os:
 	tst.l	_resload
 	bne.b	0f
-	bsr		restore_system
+	jbsr		restore_system
 	* set SR to 0 from here, so we return to OS with SR=0
 	* (else it kills the system pretty quickly)
 	* it works as quit_to_os is called from an interrupt
@@ -4214,7 +4215,7 @@ quit_to_os:
 
 	
 platform_init:
-	bsr		store_system
+	jbsr		store_system
 	
 
 	lea		_custom,a5
@@ -4261,11 +4262,11 @@ platform_init:
 
 	* wait 300 lines
 	move.w	#100,d0
-	bsr	beamdelay
+	jbsr	beamdelay
 	move.w	#100,d0
-	bsr	beamdelay
+	jbsr	beamdelay
 	move.w	#100,d0
-	bsr	beamdelay
+	jbsr	beamdelay
 	
     * init sprite, bitplane, whatever dma
 
@@ -4296,8 +4297,8 @@ platform_init:
 	lea		0x180000,a0
 	move.l	#0x20000,d0
 	lea		0x100,a1
-	bsr		init_fixed_address
-	bsr		install_profiler_vbl_hook
+	jbsr		init_fixed_address
+	jbsr		install_profiler_vbl_hook
 	.endif
 
 	
@@ -4435,7 +4436,7 @@ out_of_memory:
 
 
 	
-* < D0: 0 any, 1 chip	
+
 free_all_memory:
 	lea		public_memory_block,a0
 	move.l	a0,public_memory_current_ptr
@@ -4816,7 +4817,7 @@ read_system_inputs:
 	bclr	#BIT_START_2P,d0
 0:	
 
-	bsr		is_game_playing
+	jbsr		is_game_playing
 	bne.b	2f
 
 	* if game not playing, or within "continue" loop
@@ -4940,7 +4941,7 @@ osd_read_dsw3:
 	
 
 level2_interrupt:
-	bsr		handle_keyboard
+	jbsr		handle_keyboard
 	move.w	#8,_custom+intreq
 	rte
 	
@@ -4964,7 +4965,7 @@ handle_keyboard:
     cmp.b   #0x19,d0	| "P" key
     bne.b   0f
 
-    bsr	toggle_pause
+    jbsr	toggle_pause
 0:
 
 	btst	#4,cheat_flags+3
@@ -5078,13 +5079,13 @@ handle_keyboard:
 	bne.b	2f
 	BSET	#0x06,0x1E01(A5)
 	moveq	#2,d0
-	bsr	beamdelay
+	jbsr	beamdelay
 	BCLR	#0x06,0x1E01(A5)	| acknowledge key
 	bra		quit_to_os
 2:
 	BSET	#0x06,0x1E01(A5)
 	moveq	#2,d0
-	bsr	beamdelay
+	jbsr	beamdelay
 	BCLR	#0x06,0x1E01(A5)	| acknowledge key
 
 1:
@@ -5167,6 +5168,19 @@ wait_vbl:
 	btst	#5,d1
 	beq.b	0b
 	rts	
+	
+remove_optional_sounds:
+	lea	optional_sounds,a0
+	lea	sound_structs,a1
+0:
+	move.w	(a0)+,d0
+	jmi		1f
+	* zero previously loaded optional sound
+	clr.l	([a1,d0.w*4])
+	jra		0b
+1:
+	rts
+	
 	
 osd_set_context:
 	movem.l	d0-a6,-(a7)
@@ -5256,14 +5270,17 @@ osd_set_context:
 	clr.l	(a1)+
 	dbf	d0,0b
 	
+	* remove all front objects
+	jbsr	clear_all_hardware_sprites
+	* remove optional sounds
+	jbsr	remove_optional_sounds
+	move.l	fg_drawed_screen_ptr,fg_displayed_screen_ptr
 	
 	move	(a7)+,d0		| restore state
 	
 	* by default, no double buffering on non-game parts
-	move.l	fg_drawed_screen_ptr,fg_displayed_screen_ptr
 	move.w	d0,global_context
-	* remove all front objects
-	jbsr	clear_all_hardware_sprites
+	
 	* remove everything dynamically loaded
 	jbsr	free_all_memory
 	* clean slate for logs, each context has a new log
@@ -5461,6 +5478,9 @@ set_ending_2_context:
 set_game_intro_context:
 	jbsr	remove_dudes
 
+	lea		intro_sound_file,a0
+	jbsr	load_extra_sound_file
+	
 	lea		tiles_game_intro_244000_file,a0
 	jbsr	load_tiles_file_244000
 
@@ -5481,6 +5501,23 @@ set_game_intro_context:
 	* re-apply letter colors 56-63 (the sprites in that context only use 24 colors
 	* so we're good!)
 	jbsr	load_tiles_palette_244000
+	rts
+	
+load_extra_sound_file:
+	jbsr	allocate_and_load_chip_mem_file
+	move.l	d0,a0
+
+	lea		sound_structs,a2
+	* now read the table, and relocate, to the shared sound table
+0:
+	move.l	(a0)+,d1
+	jmi		1f
+	move.l	(a0)+,a1
+	add.l	d0,a1		| absolute sound data pointer
+	* now put that in the sound table at the proper location
+	move.l	a1,([a2,d1.w*4])
+	jra		0b
+1:	
 	rts
 	
 load_level_sprite_file:
@@ -5640,7 +5677,7 @@ set_intro_context:
 	lea		_custom,a5
 	* set them even if reset by game afterwards
 	* avoiding ugly stripe bitplane effect at startup
-	bsr		set_playfield_bitplanes
+	jbsr		set_playfield_bitplanes
 
 	jbsr	load_intro_palette
 	
@@ -5858,6 +5895,9 @@ load_greased_lightning:
 
 	
 level_1_load:
+	lea		dogs_sound_file,a0
+	jbsr	load_extra_sound_file
+	
 	jbsr	load_fist_of_fury
 	lea		tiles_level_1_24a000_file,a0
 	jbsr	load_level_tiles_and_bobs
@@ -5880,6 +5920,7 @@ level_1_load:
 	*jbsr	display_front_object
 	
 	rts	
+	
 level_2_load:
 	jbsr	load_greased_lightning
 	lea		tiles_level_2_24a000_file,a0
@@ -5900,6 +5941,9 @@ level_2_load:
 	rts
 	
 level_3_load:	
+	lea		clone_boss_sound_file,a0
+	jbsr	load_extra_sound_file
+
 	jbsr	load_fist_of_fury
 
 	lea		tiles_level_3_24d000_file,a0
@@ -5936,6 +5980,11 @@ level_3_load:
 	
 * forest level
 level_4_load:
+	lea		dogs_sound_file,a0
+	jbsr	load_extra_sound_file
+	lea		animal_sound_file,a0
+	jbsr	load_extra_sound_file
+
 	jbsr	load_fist_of_fury
 
 	lea		tiles_level_4_24a000_file,a0
@@ -5967,6 +6016,9 @@ level_5_load:
 	rts
 	
 level_6_load:
+	lea		dogs_sound_file,a0
+	jbsr	load_extra_sound_file
+
 	jbsr	load_fist_of_fury
 	lea		tiles_level_6_24a000_file,a0
 	jbsr	load_level_tiles_and_bobs
@@ -5977,6 +6029,9 @@ level_6_load:
 	rts
 	
 level_7_load:
+	lea		animal_sound_file,a0
+	jbsr	load_extra_sound_file
+
 	jbsr	load_fist_of_fury
 	lea		tiles_level_7_24a000_file,a0
 	jbsr	load_level_tiles_and_bobs
@@ -5989,6 +6044,7 @@ level_7_load:
 	rts
 	
 level_7_load_second_part:
+
 	.ifne	OPT_ENABLE_LOGGING
 	* clear sprite log from stuff that won't repeat in the upper
 	* part of the level, saving a lot of sprite memory
@@ -6002,6 +6058,11 @@ level_7_load_second_part:
 	* reset memory pointer just before sprites were loaded
 	move.l	chip_memory_before_sprites_ptr,chip_memory_current_ptr
 	jbsr 	load_level_sprite_file
+
+	lea		dogs_sound_file,a0
+	jbsr	load_extra_sound_file
+	lea		clone_boss_sound_file,a0
+	jbsr	load_extra_sound_file
 		
 	clr.b	level_7_load_second_part_flag
 	move.b	#1,level_7_load_second_part_loaded
@@ -6353,6 +6414,9 @@ osd_sound_start:
 	bne.b	4f		| music module
 	move.w	(2,a0,d0.w),d1
 	move.l	(4,a0,d0.w),a0
+	tst.l	(a0)
+	jeq		10f			| sound not loaded
+
 	lea		_custom,a6
 	tst.w	d1
 	beq.b	3f
@@ -6388,7 +6452,7 @@ osd_sound_start:
 	*beq.b	10b		| same track, skip
 
     movem.l d0-a6,-(a7)
-	bsr		force_sound_stop
+	jbsr		force_sound_stop
 	tst.l	current_tune
 	jeq		5f
  	movem.l	d0/a0,-(a7)
@@ -6782,6 +6846,14 @@ debug_truck_message:
 debug_scroll_message:
 	.asciz	"SCRO 000000"
 	.endif
+intro_sound_file:
+	.asciz	"intro_sounds.bin"
+clone_boss_sound_file:
+	.asciz	"clone_boss_sounds.bin"
+animal_sound_file:
+	.asciz	"animal_sounds.bin"
+dogs_sound_file:
+	.asciz	"dog_sounds.bin"
 boss_fight_music_file:
 	.asciz	"bd-bossfight.mod"
 ending_music_file:
@@ -6859,9 +6931,8 @@ graphicsname:
 floppy_file:
 	.asciz	"floppy"
 temp_filename_buffer:
-	ds.b	255
-_end_of_ng_code:
-		
+	.skip	255
+	
   
 
 	.align 2
@@ -6936,6 +7007,7 @@ HW_SpriteYTable_\height:
 	
 init_sprite_y_table_table:
 	lea	sprite_y_table_table,a0
+	
 	STORE_SPRITE_Y_ENTRY	8
 	STORE_SPRITE_Y_ENTRY	16
 	STORE_SPRITE_Y_ENTRY	32
@@ -7317,6 +7389,8 @@ fg_screen_buffer_1:
 	.skip	ONE_FULL_16_BIT_ROW
 	.endr
 	.skip	SCREEN_SIZE
+
+
 
 	.skip	8
 	
