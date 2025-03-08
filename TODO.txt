@@ -1,9 +1,6 @@
-- level 5 crashes at start!!!
+- level 5 crashes at start!!! original code jump table bug.... 02a02
 - level 2 lots of background is black - related to truck?
 - level 2 restore: seems to miss 1 vertical line periodically
-- level 2 background restore is trashed on top of screen ??? (below Y=40, scroll = 0=>0x100)
-  seems that tile write works but misses background buffer... or background buffer gets
-  trashed quickly: road tiles probably overshoot! limit Y ???
 - level 2: climbers on the right "blink" (frame/grouping? wrong clipping?)
 - end music has issues with ptplayer, also start the tune with one of the last pattern (loop!)
 - level 5: third leg for boss... erase issue again with grouping??

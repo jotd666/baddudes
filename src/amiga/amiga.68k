@@ -130,7 +130,6 @@ _custom = 0xDFF000
 * foreground is static and contains bobs
 
 NB_PLAYFIELD_PLANES = 6
-*TOTAL_NB_COLORS = 1<<NB_PLAYFIELD_PLANES
 NB_BYTES_PER_SCREEN_ROW = 32
 NB_BYTES_PER_ROW = (NB_BYTES_PER_SCREEN_ROW*3)+8   | add 64 extra pixels to clip properly
 
@@ -144,7 +143,7 @@ NB_PLAYFIELD_LINES = 256
 * the screen plane size is pretty huge, so the offset can go beyond 0x8000 and
 * the word add on address registers won't work
 SCREEN_PLANE_SIZE = NB_BYTES_PER_ROW*NB_PLAYFIELD_LINES*2
-RESTORE_SCREEN_PLANE_SIZE = NB_BYTES_PER_SCREEN_ROW*3*NB_PLAYFIELD_LINES*2
+RESTORE_SCREEN_PLANE_SIZE = NB_BYTES_PER_ROW*NB_PLAYFIELD_LINES*2
 SCREEN_SIZE =  SCREEN_PLANE_SIZE*NB_PLAYFIELD_PLANES
 
 
@@ -2389,6 +2388,13 @@ preprocess_16x16_tile:
 	moveq	#0,d5
 	move.w	(a2,d4.w*2),d5
 	add.l	d3,d5
+	.ifndef	RELEASE
+	* check if not already too high
+	cmp.w	#RESTORE_SCREEN_PLANE_SIZE-(16*NB_BYTES_PER_SCREEN_ROW*3),d5
+	jcs		27f
+	BREAKPOINT	"restore buffer out of bounds, D4=Y"
+27:
+	.endif
 	add.l	d5,a4			| screen dest address on restore playfield
 	
 	* now make up for shifted Y scroll (levels 6 and 7) on screen
@@ -2959,27 +2965,7 @@ really_update_sprites:
 	dbf		d7,0b
 12:
 	.endif
-	
-	* TEMP testing restore FUCK
-	move.w	x_background_scroll_value,d0
-	
-	move.w	#0,d1
-	moveq 	#4,d2
-	move.w	#64,d4
-	
-	move.l		background_restore_buffer,a0
-	move.l	fg_drawed_screen_ptr,a1
-	jbsr	restore_background
-	move.w	x_background_scroll_value,d0
-	add.w	#0xC0,d0
-	move.w	#16,d1
-	moveq 	#4,d2
-	move.w	#64,d4
-	
-	move.l		background_restore_buffer,a0
-	move.l	fg_drawed_screen_ptr,a1
-	jbsr	restore_background
-	* ------------------------------------
+
 	
 	lea		_custom,a5
 	* clear previous positions
@@ -5267,6 +5253,10 @@ osd_set_context:
 	* clear this to avoid swap when warping 6 -> 7
 	clr.w	y_background_scroll_value
 	clr.w	y_extra_offset
+	* full Y range per default
+	move.w	#0x200,y_max
+	move.w	#0x0,y_min
+	
 	move.w	#SCROLL_NONE,y_scroll_command
 	
 	* free music
@@ -6647,7 +6637,9 @@ music_tick:
 
 music_duration:
 	.word	0	
+	
 	MUL_TABLE	NB_BYTES_PER_ROW,512
+	*MUL_TABLE	NB_BYTES_PER_SCREEN_ROW,512
 
 	.align	4		| leave this long word alignment
 program_args:	ds.l	64,0
@@ -6705,6 +6697,10 @@ x_background_scroll_value:
 y_background_scroll_value:
 	.word	0
 y_extra_offset:
+	.word	0
+y_max:
+	.word	0
+y_min:
 	.word	0
 contents_of_x_scroll_246010:
 	.word	0
