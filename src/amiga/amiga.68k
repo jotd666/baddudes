@@ -89,7 +89,7 @@ SCREEN_ADDRESS = 0x244000
 OPT_NO_SCROLLING_X = 0
 OPT_NO_SCROLLING_Y = 0
 OPT_NO_BOTTOM_SCROLL = 0
-OPT_DEBUG_GAP_ERASE = 1
+OPT_DEBUG_GAP_ERASE = 0
 
 * load fixed sprites, mostly bosses as they're long to reach & test
 OPT_BOSS_SPRITES_MOCKUP = 0
@@ -1163,26 +1163,30 @@ specific_level_2_truck_erase:
 	
 	* level 2: 2 gaps to restore
 	lea		prev_truck_params,a1
-	move.w	(a1)+,d0	| absolute secondary scroll pos
+	move.w	(a1),d0	| absolute secondary scroll pos
 	* this is the X coord of start of truck
-	TMPWRITE
-	add.w	#0xF0,d0
+
+	add.w	#0xE0,d0
 	* we must restore the tow/truck gap
 
 	move.w	d0,-(a7)
 
-	moveq	#4,d2
+	moveq	#6,d2
 	jbsr	restore_gap
 
 
 	move.w	(a7)+,d0
 	
 19:
-*	cmp.w	#0x100,d0
-*	jcc		20f
-*	jbsr	restore_gap
-*
-*	moveq	#4,d2
+	lea		prev_truck_params,a1
+	move.w	(a1),d0	| absolute secondary scroll pos
+	
+	add.w	#0x100-0x40,d0
+	jpl		20f
+	moveq	#6,d2		| takes care of the exhaust
+	add.w	#0xF8,d0
+	jbsr	restore_gap
+
 
 20:
 	rts
@@ -1638,7 +1642,8 @@ level_2_boss_color_change:
 	.word	0x500,0x306 | purple #3, slightly conflicts with bad dudes but doesn't matter
 	.word	0x700,0x408 | purple #2: careful!! hit color
 	.word	0xd00,0x62b	| purple #1
-
+	.word	0x400,0x204
+	
 *	.word	0x600,0x306 | purple #3, slightly conflicts with bad dudes but doesn't matter
 *	.word	0x800,0x408 | purple #2
 *	.word	0xb00,0x62b	| purple #1
@@ -1647,7 +1652,7 @@ level_2_boss_color_change:
 	*.word	0x953,0x853
 	*.word	0x444,0x555
 	*.word	0x731,0x631
-	*.word	0x400,0x204
+	*
 	*.word	0xd86,0xd97
 	.long	-1		| end
 	
@@ -5827,6 +5832,8 @@ display_front_object:
 	* before overwriting the cw, save it: it is the control word
 	* for lower OSD sprites
 	* we have to pick the proper OSD lower sprite slot
+	
+	* BUG: this writes to 0 ...
 	move.l	(4,a3),a1
 	move.w	(8,a0),(8,a1)
 	move.w	d0,(8,a0)
