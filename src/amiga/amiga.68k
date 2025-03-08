@@ -36,7 +36,7 @@ AFB_68020 = 1
 	
 TOTAL_PUBLIC_MEMORY_SIZE = 350000
 * this is the minimum memory required for level 5 (because of train)
-TOTAL_CHIP_MEMORY_SIZE = 1340000		
+TOTAL_CHIP_MEMORY_SIZE = 1350000		
 
 PREVIOUS_SPRITE_SIZE = 8
 BORDERBLANK = 1
@@ -468,7 +468,7 @@ _user:
 	move.l	debug_options,d1
 	.endif
 
-	* load game ROM in 0 (this is temporary)
+	* load game ROM
 	lea		rom_file,a0
 
 	cmp		#1,d1
@@ -1078,7 +1078,9 @@ update_front_objects:
 * truck_erase erase_truck
 * complete nightmare to do properly given
 * that we're trying to avoid erasing the parts
-* that don't need erasing (huge tow rectangles)
+* that don't need erasing (huge trailer rectangles)
+* and also it scrolls...
+
 erase_big_machine:
 	tst.b	truck_previously_drawn
 	jeq		0f
@@ -1088,37 +1090,9 @@ erase_big_machine:
 
 	* we cannot just restore the whole truck background, it's
 	* inefficient and makes the game crawl. Just restore parts
-	* that won't be immediately overwritten by the truck itself
+	* that won't be immediately overwritten by the truck/train itself
 	* again (which is pretty rectangular and moves only to the right)
 	
-	lea		prev_truck_params+2,a1
-	move.w	truck_wheels_height,d3		| bottom part which needs restoring
-	move.w	(a1)+,d0	| X
-	move.w	truck_y_pos,d1	| Y
-	move.w	(a1),d2		| real object size
-	move.l	fg_drawed_screen_ptr,a1
-	move.w  big_machine_height,d4
-	* clip to bottom of truck (wheels)
-	sub.w	d3,d4
-	add.w	d4,d1
-	move.w	d3,d4
-	move.l	background_restore_buffer,a0
-	jbsr	restore_background
-
-	* rear should be erased only when X > 0
-	lea		prev_truck_params+2,a1
-	move.w	(a1)+,d0	| X
-	subq.w	#8,d0
-	move.w	truck_y_pos,d1	| Y
-	moveq	#4,d2		| just the first bytes
-	move.l	fg_drawed_screen_ptr,a1
-	move.w  big_machine_height,d4
-	* clip to bottom of truck (wheels) doesn't work,
-	* as the back of the truck leaves a trail
-	*sub.w	truck_wheels_height,d4
-	
-	move.l	background_restore_buffer,a0
-	jbsr	restore_background
 
 	lea		specific_big_machine_restore,a0
 	jbsr	get_current_level
@@ -1140,6 +1114,25 @@ specific_big_machine_restore:
 	.long	nope
 		
 specific_level_1_truck_erase:
+	jbsr	erase_truck_bottom_part
+	
+	* rear should be erased only when X > 0
+	lea		prev_truck_params+2,a1
+	move.w	(a1)+,d0	| X
+	subq.w	#8,d0
+	move.w	truck_y_pos,d1	| Y
+	moveq	#4,d2		| just the first bytes
+	move.l	fg_drawed_screen_ptr,a1
+	move.w  big_machine_height,d4
+	* clip to bottom of truck (wheels) doesn't work,
+	* as the back of the truck leaves a trail
+	*sub.w	truck_wheels_height,d4
+	
+	move.l	background_restore_buffer,a0
+	jbsr	restore_background
+
+
+
 	* restore blank between truck front & tow
 	* broken... to re-test
 	lea		prev_truck_params,a1
@@ -1160,37 +1153,65 @@ specific_level_1_truck_erase:
 	rts
 	
 specific_level_2_truck_erase:
+	jbsr	erase_truck_bottom_part
+	* level 2: 2 gaps to restore, plus back of truck
+
+	move.w	prev_truck_params,d0	| absolute secondary scroll pos
+	moveq	#4,d2
+	moveq	#0,d1		| full height
+	jbsr	restore_gap
 	
-	* level 2: 2 gaps to restore
-	lea		prev_truck_params,a1
-	move.w	(a1),d0	| absolute secondary scroll pos
+	
+	* inter-trailer gap
+	move.w	prev_truck_params,d0	| absolute secondary scroll pos
 	* this is the X coord of start of truck
 
-	add.w	#0xE0,d0
-	* we must restore the tow/truck gap
+	add.w	#0xF0,d0
+	* we must restore the trailer/truck gap
 
-	move.w	d0,-(a7)
 
-	moveq	#6,d2
+	moveq	#1,d1
+	moveq	#4,d2
 	jbsr	restore_gap
 
-
-	move.w	(a7)+,d0
 	
+	* between trailer & truck
 19:
-	lea		prev_truck_params,a1
-	move.w	(a1),d0	| absolute secondary scroll pos
+	move.w	prev_truck_params,d0	| absolute secondary scroll pos
 	
 	add.w	#0x100-0x40,d0
 	jpl		20f
-	moveq	#6,d2		| takes care of the exhaust
+	moveq	#6,d2
+	moveq	#1,d1
 	add.w	#0xF8,d0
 	jbsr	restore_gap
 
+	* extra restore no matter what as I don't know what the f*ck
+	* is going on (not displayed trailer stays on screen and wraps
+	* probably)
+	move.w	#0xE0,d0
+	moveq	#4,d2
+	moveq	#0,d1
+	jbsr	restore_gap
 
 20:
 	rts
 	
+erase_truck_bottom_part:
+	lea		prev_truck_params+2,a1
+	move.w	truck_wheels_height,d3		| bottom part which needs restoring
+	move.w	(a1)+,d0	| X
+	move.w	truck_y_pos,d1	| Y
+	move.w	(a1),d2		| real object size
+	move.l	fg_drawed_screen_ptr,a1
+	move.w  big_machine_height,d4
+	* clip to bottom of truck (wheels)
+	sub.w	d3,d4
+	add.w	d4,d1
+	move.w	d3,d4
+	move.l	background_restore_buffer,a0
+	jbra	restore_background
+
 specific_level_5_train_erase:
 	* there are 2 wagon gaps that need restoring
 	lea		prev_truck_params,a1
@@ -1207,6 +1228,7 @@ specific_level_5_train_erase:
 	and.w	#0xFF,d0	| modulus
 	sub.w	#0x8,d0		| adjust for round corners
 	* wagon gap
+	moveq	#1,d1
 	moveq	#4,d2	| no need to restore a lot
 	jbsr	restore_gap
 	
@@ -1239,12 +1261,14 @@ specific_level_5_train_erase:
 	* gap for tail wagon
 	move.w	#0x100-48,d0
 	move.w	#8,d2
+	moveq	#1,d1
 	jbsr	restore_gap
 
 	rts
 	
-* < D2: width in bytes
+* < D1: 0: full height, 1: not lower part
 * < D0: X (without scroll)
+* < D2: width in bytes
 restore_gap:
 	* don't restore if not in visible screen
 	tst.w	d0
@@ -1257,14 +1281,18 @@ restore_gap:
 	jcc		2f
 3:	
 	add.w	x_background_scroll_value,d0
-	move.w	truck_y_pos,d1	| displayY
 	move.w  big_machine_height,d4
+	tst		d1
+	jeq		4f
 	sub.w	truck_wheels_height,d4
+4:
+	move.w	truck_y_pos,d1	| displayY
 	move.l	background_restore_buffer,a0
 	move.l	fg_drawed_screen_ptr,a1
 
 	.ifne	OPT_DEBUG_GAP_ERASE
-	sub.w	#10,d1	| temp, that was to see where areas were restored
+	sub.w	#10,d1	| slightly up that was to see where areas are restored
+	add.w	#10,d4
 	move.w	nb_tile_planes_24da,D3
 	jbsr	clear_fg_planes_any_blitter_internal
 	.else
@@ -1314,6 +1342,7 @@ truck_clipped_left:
 	jeq		11f
 	add.w	#16,d6		| increase length
 	sub.w	#0x10,d0
+	move.l	#0xFFFF0000,bltamask_long_value	| testing
 11:
 	
 	* we have to consider X shift
@@ -2930,6 +2959,27 @@ really_update_sprites:
 	dbf		d7,0b
 12:
 	.endif
+	
+	* TEMP testing restore FUCK
+	move.w	x_background_scroll_value,d0
+	
+	move.w	#0,d1
+	moveq 	#4,d2
+	move.w	#64,d4
+	
+	move.l		background_restore_buffer,a0
+	move.l	fg_drawed_screen_ptr,a1
+	jbsr	restore_background
+	move.w	x_background_scroll_value,d0
+	add.w	#0xC0,d0
+	move.w	#16,d1
+	moveq 	#4,d2
+	move.w	#64,d4
+	
+	move.l		background_restore_buffer,a0
+	move.l	fg_drawed_screen_ptr,a1
+	jbsr	restore_background
+	* ------------------------------------
 	
 	lea		_custom,a5
 	* clear previous positions
@@ -5417,6 +5467,7 @@ allocate_background_buffer:
 	move.l	#RESTORE_SCREEN_PLANE_SIZE,d1
 	mulu.w	d0,d1
 	exg		d0,d1
+	
 	moveq	#1,d1
 	jbsr	allocate_memory		| chip
 	move.l	d0,background_restore_buffer

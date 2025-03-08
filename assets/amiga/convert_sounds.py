@@ -50,7 +50,8 @@ def convert():
     "GOT_IT_SND"               :{"index":0x35,"channel":3,"sample_rate":hq_sample_rate,"priority":40},
     "PLAYER_DEAD_SND"               :{"index":0x2B,"channel":3,"sample_rate":hq_sample_rate,"priority":50},
     "STAR_THROWN_SND"               :{"index":0x9,"channel":3,"sample_rate":hq_sample_rate,"priority":30},
-    "MAN_SCREAM_SND"               :{"index":0x2C,"channel":2,"sample_rate":hq_sample_rate,"priority":30},
+    # man scream only played alongside with blow: merge samples, save 1 music channel (blow also played but priority higher here!)
+    "BLOW_AND_MAN_SCREAM_SND"               :{"index":0x2C,"channel":3,"sample_rate":hq_sample_rate,"priority":35},
     "IM_BAD_SND"               :{"index":0x36,"channel":3,"sample_rate":hq_sample_rate,"priority":30},
 
     "DOG_ATTACK_SND"               :{"index":0x33,"channel":3,"sample_rate":vhq_sample_rate,"priority":30,"optional_pack":"dog"},
