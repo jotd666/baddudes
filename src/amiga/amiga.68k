@@ -2294,7 +2294,7 @@ addr_24Axxx_tile_layer_op:
 	move.w	d7,(a0)	| set value in memory first
 
 	jbsr	preprocess_16x16_tile
-
+	jeq		100f
 	move.w	d7,d5			| save code
 	move.w	d7,d6			| tile code
 	and.w	#0x7FF,d6
@@ -2378,6 +2378,10 @@ preprocess_16x16_tile:
 	bset	#8,d4	| add 256 to Y
 20:
 
+	cmp.w	y_min,d4
+	jcs		30f
+	cmp.w	y_max,d4
+	jcc		30f
 
 	move.l	fg_drawed_screen_ptr,a1
 	.ifne	OPT_ENABLE_DOUBLE_BUFFERING
@@ -2406,7 +2410,11 @@ preprocess_16x16_tile:
 	.ifne	OPT_ENABLE_DOUBLE_BUFFERING
 	add.l	d5,a5
 	.endif
-	
+	moveq	#1,d5
+	rts
+30:
+	* out of bounds for restore buffer: ignore tile write
+	moveq	#0,d5
 	rts
 	
 * internal write tile routine, shared between 2 16x16 tile layers
@@ -2510,6 +2518,7 @@ addr_24Axxx_tile_layer_op_level_3:
 
 
 	jbsr	preprocess_16x16_tile
+	jeq		100f
 
 	cmp.w	#Y_WATER_MIN,d4
 	jcs		100f			| don't write anything above that point!
@@ -2593,6 +2602,7 @@ addr_24Dxxx_tile_layer_op_level_3:
 	move.w	d7,(a0)	| set value in memory first
 
 	jbsr	preprocess_16x16_tile
+	jeq		100f
 
 	cmp.w	#Y_WATER_MIN,d4
 	jcc		100f
@@ -5254,7 +5264,7 @@ osd_set_context:
 	clr.w	y_background_scroll_value
 	clr.w	y_extra_offset
 	* full Y range per default
-	move.w	#0x200,y_max
+	move.w	#NB_PLAYFIELD_LINES*2,y_max
 	move.w	#0x0,y_min
 	
 	move.w	#SCROLL_NONE,y_scroll_command
@@ -5454,7 +5464,11 @@ load_tiles_palette_244000:
 * < D0: nb of background planes to save	
 allocate_background_buffer:
 	* max 5 planes, can be 4 too ATM 6 for convenience (8x8 fonts)
-	move.l	#RESTORE_SCREEN_PLANE_SIZE,d1
+	move.l	#NB_BYTES_PER_ROW,d1
+	mulu.w	d0,d1
+	* depends on y min/max (allows to save memory ex train level)
+	move.w	y_max,d0
+	sub.w	y_min,d0
 	mulu.w	d0,d1
 	exg		d0,d1
 	
@@ -5985,6 +5999,8 @@ level_2_load:
 	move.b	#0xB,road_y_pos
 	jbsr	enable_bottom_scroll
 	
+	* limit restore buffer allocation
+	move.w	#0x100,y_max
 	
 	rts
 	
@@ -6045,6 +6061,7 @@ level_4_load:
 	jbsr	set_forest_background_colors
 
 	rts
+	
 level_5_load:
 	jbsr	load_greased_lightning
 
@@ -6060,6 +6077,15 @@ level_5_load:
 	
 	move.b	#0xB,road_y_pos
 	jbsr	enable_bottom_scroll
+
+	* limit restore buffer allocation, fortunately
+	* we only need half the screen size to restore tiles
+	* which allows to load the train in one go
+	* 
+	* I know the memory model of this game isn't optimal
+	* but the programming is complex enough without having to
+	* code multi-part blits, 8 way scrolling tricks and all...
+	move.w	#0x100,y_max
 
 	rts
 	
