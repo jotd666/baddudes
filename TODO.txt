@@ -2,10 +2,11 @@
 - level 2 lots of background is black - related to truck?
 - level 2 restore: seems to miss 1 vertical line periodically
 - level 2: climbers on the right "blink" (frame/grouping? wrong clipping?)
-- end music has issues with ptplayer, also start the tune with one of the last pattern (loop!)
+- end music has issues with ptplayer, also tune start is wrong
 - level 5: third leg for boss... erase issue again with grouping??
 - train erase: remove bottom erase, extend gap to full train height, add erase on the right of the front wheel: saves blitter
 - animal lower part (boots) shifted at times  
+- ending sequence trashed/flashes... double buffering vs simple buffering?
 - level 1 use restore_gap for gaps
 - level 1: truck destroys scenery and has blitter bugs when arriving, also maybe make it 16 colors
 - level 1 repair front objects (status bar showing but destroyed, debug this)

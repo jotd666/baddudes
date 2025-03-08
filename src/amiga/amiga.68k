@@ -36,7 +36,7 @@ AFB_68020 = 1
 	
 TOTAL_PUBLIC_MEMORY_SIZE = 350000
 * this is the minimum memory required for level 5 (because of train)
-TOTAL_CHIP_MEMORY_SIZE = 1350000		
+TOTAL_CHIP_MEMORY_SIZE = 1250000		
 
 PREVIOUS_SPRITE_SIZE = 8
 BORDERBLANK = 1
@@ -121,7 +121,7 @@ ONE_TICK = 1
 * note: double buffering eats a lot of memory, it cannot run in debug mode
 * either simple or reloc. Only in "none" (program running in fastmem, data
 * located in low chipmem)
-OPT_ENABLE_DOUBLE_BUFFERING = 1
+OPT_ENABLE_DOUBLE_BUFFERING = 0
 
 _custom = 0xDFF000
 
