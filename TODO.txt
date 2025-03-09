@@ -1,3 +1,4 @@
+- karnov killed missing 1 tile on body (try with karnov_dead mockup!)
 - boss 6 color change: to test
 - invincibility: still hit when falling on road (level 2): 
   game must not change p1_state_flags_00ffa386 must remain to 0x10
@@ -11,15 +12,18 @@
 - animal lower part (boots) shifted at times  
 - ending sequence trashed/flashes... double buffering vs simple buffering?
 - level 1 use restore_gap for gaps
-- level 1: truck destroys scenery and has blitter bugs when arriving, also maybe make it 16 colors
+- level 1: truck leaves trashed parts of trailer, probably workaround is possible
+- middle lower OSD missing 1 char "ONTINUE"
+
 - level 1 repair front objects (status bar showing but destroyed, debug this)
-- karnov killed missing body (try with karnov_dead mockup!)
+  => control word for multiplexed after lamp is not working but other sprites are also destroyed!
+  
 - easy: second screen sequence sprites (president+bad dudes)
 - end sequence should use scrolling sprites for credits: allocate huge 2x high sprite buffers
   first find a way to reach sequence faster
 
 - boss rush: a lot of bosses have wrong colors: reset colors before replacing palette
-  (boss 2 => boss 3 in level 7)
+  (boss 2 => boss 3 in level 7): done: to test
 
 - crash at the end of level 1 => level 2 (other levels switch OK!): front object conflict
 
@@ -51,7 +55,6 @@
 - level 7 display helicopter!
 
 - 2nd button doesn't seem to work
-- autoframeskip not tuned properly
 - level 2: no lamps if objects 2 loaded. Ok if objects 1 loaded
 - drop 2 player mode, use rightmost OSD sprite for real parallax in levels 4 and 6
   see if we can blit the score afterwards if 2P mode is reinstated, anyway 2P mode is probably
@@ -77,18 +80,20 @@
 
 - level complete messages should use front object sprites (sprites 4-7, unload backgrounds first
   in levels 4 and 6)
-- left osd mssing 1 char ("G"AME OVER/"P"USH BUTTON), middle lower OSD also missing 1 char
 - log & rip missing sounds: breakpoint on sound not found so able to go to mame and rip it
 
 
 - leave demo running: level 3 but with status bar trashed, 2P mode with player 2 invisible
   and when inserting coin, no graphics switch (probably missing set context to go to intro)
 
+- knife sound has blow+man scream (hack not working there... maybe we could see if player
+  has weapon... not working in 2P mode though)
 
 
 
 low priority:
 
+- level 3 demo: game uses 2 players
 - if TOTAL_CHIP_MEMORY_SIZE = 1250000, train level loads but background is trashed
   and memory manager doesn't detect any issue...
 - still not restored black color ex: tile 4ae/02 (sword level 5)

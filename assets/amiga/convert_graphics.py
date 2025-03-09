@@ -868,8 +868,8 @@ generate_for_levels = [False]*9
 
 
 ##generate_for_levels[0] = True
-##generate_for_levels[1] = True
-generate_for_levels[2] = True
+generate_for_levels[1] = True
+#generate_for_levels[2] = True
 ##generate_for_levels[3] = True
 ##generate_for_levels[4] = True
 #generate_for_levels[5] = True
@@ -890,7 +890,7 @@ if generate_for_levels[0]:  # title/intro & game fonts
     process_tile_context("highs_24a000",title_tile_24a000_sheet_dict,16)
 
 if generate_for_levels[1]:
-    truck_nb_planes = 3
+    truck_nb_planes = 4
     process_tile_context("level_1_24a000",level_1_tile_24a000_sheet_dict,32,first_pass=True)
     truck_used_colors = convert_truck_pics.doit_truck_1(palette_dict["level_1_24a000"]["palette"],truck_nb_planes)
     process_tile_context("level_1_24a000",level_1_tile_24a000_sheet_dict,32,first_pass=False,first_colors=truck_used_colors)

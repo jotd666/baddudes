@@ -2066,10 +2066,10 @@ erase_tile_on_sprite:
 pick_osd_sprite:	
 	cmp.w	#17,d2
 	jcc		not_upper_osd
-	cmp.w	#8+2,d3
+	cmp.w	#8+1,d3
 	jcc		0f
 	* "1UP" + player score
-	lea		osd_left_sprite+16-2,A3
+	lea		osd_left_sprite+16-1,A3
 	add.w	d3,a3		| add X offset
 	.ifndef	RELEASE
 	* ability to display debug messages
@@ -2080,10 +2080,10 @@ pick_osd_sprite:
 	moveq	#1,d2		| success
 	rts
 0:
-	cmp.w	#16+2,d3
+	cmp.w	#16+1,d3
 	jcc		0f
 	* end of player score + high
-	lea		osd_left_center_sprite+16-10,A3
+	lea		osd_left_center_sprite+16-9,A3
 	add.w	d3,a3		| add X offset
 	cmp.w	#8,d2
 	jeq		1f
@@ -2092,10 +2092,10 @@ pick_osd_sprite:
 	moveq	#1,d2		| success
 	rts
 0:	
-	cmp.w	#24+2,d3
+	cmp.w	#24+1,d3
 	jcc		0f
 	* end of player score + high
-	lea		osd_right_center_sprite+16-18,A3
+	lea		osd_right_center_sprite+16-17,A3
 	add.w	d3,a3		| add X offset
 	cmp.w	#8,d2
 	jeq		1f
@@ -2104,10 +2104,10 @@ pick_osd_sprite:
 	moveq	#1,d2		| success
 	rts
 0:
-	cmp.w	#32+2,d3
+	cmp.w	#32+1,d3
 	jcc		0f
 	* player 2 score / push button
-	lea		osd_right_sprite+16-26,A3
+	lea		osd_right_sprite+16-25,A3
 	add.w	d3,a3		| add X offset
 	.ifndef	RELEASE
 	* ability to display debug messages
@@ -6294,24 +6294,24 @@ install_osd_hardware_sprites:
 	lea		osd_upper_sprites,a0
 	lea		osd_left_sprite,a2
 	move.l	a2,a3
-	move.w	#48+HW_SPRITE_SHIFT,d0
+	move.w	#40+HW_SPRITE_SHIFT,d0
 	move.w	#32,d1
 	move.w	#sprpt,d2
 	jbsr	install_osd_sprite
 	lea		osd_left_center_sprite,a2
 	move.l	a2,a3
-	move.w	#48+64+HW_SPRITE_SHIFT,d0
+	move.w	#40+64+HW_SPRITE_SHIFT,d0
 	move.w	#32,d1
 	jbsr	install_osd_sprite
 	lea		osd_right_center_sprite,a2
 	move.l	a2,a3
-	move.w	#48+64*2+HW_SPRITE_SHIFT,d0
+	move.w	#40+64*2+HW_SPRITE_SHIFT,d0
 	move.w	#32,d1
 	jbsr	install_osd_sprite
 	
 	lea		osd_right_sprite,a2
 	move.l	a2,a3
-	move.w	#48+64*3+HW_SPRITE_SHIFT,d0
+	move.w	#40+64*3+HW_SPRITE_SHIFT,d0
 	move.w	#32,d1
 	jbsr	install_osd_sprite
 	
@@ -7377,7 +7377,8 @@ base_palette_end:
 
 	* yellow color for time seconds
 	DECL_COLOR_BANK	2
-	.word	color+2*3+32,0xDD0
+	.word	color+2*3+32,0xDD0      | time seconds 10ths
+	.word	color+2*3+8,0xDD0		| time seconds unit
 	
 	* wait 16 lines to declare multiplexed/attached sprites
 	* (front objects) in levels 1 and 2
