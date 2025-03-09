@@ -36,7 +36,9 @@ AFB_68020 = 1
 	
 TOTAL_PUBLIC_MEMORY_SIZE = 350000
 * this is the minimum memory required for level 5 (because of train)
-TOTAL_CHIP_MEMORY_SIZE = 1250000		
+* if memory is lower than that, it loads, no memory issues detected but
+* the background is trashed...
+TOTAL_CHIP_MEMORY_SIZE = 1350000	
 
 PREVIOUS_SPRITE_SIZE = 8
 BORDERBLANK = 1
@@ -121,7 +123,7 @@ ONE_TICK = 1
 * note: double buffering eats a lot of memory, it cannot run in debug mode
 * either simple or reloc. Only in "none" (program running in fastmem, data
 * located in low chipmem)
-OPT_ENABLE_DOUBLE_BUFFERING = 0
+OPT_ENABLE_DOUBLE_BUFFERING = 1
 
 _custom = 0xDFF000
 
@@ -1542,6 +1544,14 @@ palette_and_sprites_ram_op:
 	jbsr	change_palette
 	jra		10f
 0:
+	move.l	rom_base,a0
+	add.w	#0x1258+4+2,a0		| a1 is post-incremented
+	cmp.l	a0,a1
+	jne		0f
+	lea		level_6_boss_color_change(pc),a0
+	jbsr	change_palette
+	jra		10f
+0:
 	nop
 
 10:
@@ -1689,6 +1699,13 @@ level_3_boss_color_change:
 	.word	0x700,0x242  | 0x700,0xE00,0x900 used for hit sprite
 	.word	0x400,0x020
 	.word	0x500,0x131
+	.long	-1		| end
+level_6_boss_color_change:
+	.word	0xC00,0x440
+	.word	0x700,0x330
+	.word	0x400,0X110
+	.word	0x500,0x220
+	.word	0x332,0x444
 	.long	-1		| end
 
 level_5_boss_color_change:   | TEMP not the proper colors probably
@@ -5981,6 +5998,7 @@ level_1_load:
 	*move	#1,d3
 	*jbsr	display_front_object
 	
+	*move.w	#0x100,y_min
 	rts	
 	
 level_2_load:
@@ -6727,6 +6745,8 @@ y_extra_offset:
 y_max:
 	.word	0
 y_min:
+	.word	0
+nb_bob_skipped_colors:
 	.word	0
 contents_of_x_scroll_246010:
 	.word	0

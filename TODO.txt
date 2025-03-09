@@ -1,16 +1,17 @@
-- level 5 crashes at start!!! original code jump table bug.... 02a02
-- level 2 lots of background is black - related to truck?
+- boss 6 color change: to test
+- tune autoframeskip: force 2 skips for train/truck levels all the time
+  remain auto 0-2 for other levels
 - level 2 restore: seems to miss 1 vertical line periodically
 - level 2: climbers on the right "blink" (frame/grouping? wrong clipping?)
 - end music has issues with ptplayer, also tune start is wrong
 - level 5: third leg for boss... erase issue again with grouping??
-- train erase: remove bottom erase, extend gap to full train height, add erase on the right of the front wheel: saves blitter
+- train erase: extend gap to full train height, add erase on the right of the front wheel: saves blitter
+  still wagon not deleted properly at times
 - animal lower part (boots) shifted at times  
 - ending sequence trashed/flashes... double buffering vs simple buffering?
 - level 1 use restore_gap for gaps
 - level 1: truck destroys scenery and has blitter bugs when arriving, also maybe make it 16 colors
 - level 1 repair front objects (status bar showing but destroyed, debug this)
-- level 6 regenerate sprites (player killed not displayed??)
 - karnov killed missing body (try with karnov_dead mockup!)
 - easy: second screen sequence sprites (president+bad dudes)
 - end sequence should use scrolling sprites for credits: allocate huge 2x high sprite buffers
@@ -72,7 +73,6 @@
 - optim: group erase on 16 (working) or 32 bit wide blocks
 
 
-- boss 6 color change
 - boss 7 color change
 
 - level complete messages should use front object sprites (sprites 4-7, unload backgrounds first
@@ -89,7 +89,8 @@
 
 low priority:
 
-- if too much memory: optional sounds load per level (boss 3,4 sounds, dogs...)
+- if TOTAL_CHIP_MEMORY_SIZE = 1250000, train level loads but background is trashed
+  and memory manager doesn't detect any issue...
 - still not restored black color ex: tile 4ae/02 (sword level 5)
 - bosses 2 and 5: rework sheets to change white by some other color that doesn't
   conflict with main character (0xEEE => ????) so dynamic color change works fully
