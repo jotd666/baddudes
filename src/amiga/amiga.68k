@@ -1708,7 +1708,7 @@ level_3_boss_color_change:
 	.word	0x500,0x131
 	.long	-1		| end
 level_6_boss_color_change:
-	.word	0xC00,0x440
+	.word	0xB00,0x440
 	.word	0x700,0x330
 	.word	0x400,0X110
 	.word	0x500,0x220
@@ -1991,6 +1991,74 @@ erase_tile_8:
 eight_zeroes:
 	.skip	8
 	
+install_center_sprites:
+	movem.l	d0-d7/a0-a6,-(a7)
+	* disable attach sprite property
+	move.w	#0x1FE,attached_sprites_bplcon4
+	lea		osd_center_sprites,a0
+	move.l	A0,0x104
+	move.w	#sprpt,d0
+	* install 2 sprites, they are multiplexed (reusing slots
+	* from upper osd ones)
+	move.l	#osd_center_left_sprite+16,d1		| skip control word
+	swap	d1
+	move.w	d0,(a0)+
+	move.w	d1,(a0)+
+	swap	d1
+	addq	#2,d0
+	move.w	d0,(a0)+
+	move.w	d1,(a0)+
+	addq	#2,d0
+	move.l	#osd_center_right_sprite+16,d1
+	swap	d1
+	move.w	d0,(a0)+
+	move.w	d1,(a0)+
+	swap	d1
+	addq	#2,d0
+	move.w	d0,(a0)+
+	move.w	d1,(a0)
+	
+	* now we have to insert the sprites in the multiplexed chain, which is
+	* always a pleasure to do...
+	* save next control word from upper osd for lower osd display
+	lea		osd_top_left_next_cw,a0
+	move.w	(a0),d6
+	swap	d6
+	move.w	(8,a0),d6
+	lea		osd_top_left_center_next_cw,a0
+	move.w	(a0),d7
+	swap	d7
+	move.w	(8,a0),d7
+	
+	* install the proper control word
+	move.w	#80,d0
+	move.w	#120,d1
+	move.w	#sprpt,d2
+	lea		osd_center_left_sprite+16,a2
+	lea		osd_top_left_next_cw,a3
+	jbsr	install_osd_sprite
+	move.w	#80+64,d0
+	move.w	#120,d1
+	move.w	#sprpt+4,d2
+	lea		osd_center_right_sprite+16,a2
+	lea		osd_top_right_next_cw,a3
+	jbsr	install_osd_sprite
+	
+	* connect the bottom osd sprites FUCK
+	
+	TMPBREAK
+	lea		osd_center_left_next_cw,a0
+	move.w	d6,(8,a0)
+	swap	d6
+	move.w	d6,(a0)
+	lea		osd_center_right_next_cw,a0
+	move.w	d7,(8,a0)
+	swap	d7
+	move.w	d7,(a0)
+	
+	movem.l	(a7)+,d0-d7/a0-a6
+	rts
+	
 * assuming word write ATM
 * < D3: X (in bytes displacement vs screen)
 * < D2: Y (in number of rows aka real coords not tile coords!)
@@ -2001,8 +2069,19 @@ write_osd_layer:
 
 	move.w	d7,d6			| tile code+clut
 
-
-
+	cmp.w	#0x78,d2
+	jne		666f
+	cmp.w	#0x0A,d3
+	jne		666f
+	cmp.b	#83,d6
+	jne	666f
+	* "S" from "STAGE X CLEAR"
+	* we need to display it. We could use sprites 4-5 but that would
+	* trash the background for levels 4 and 6, so better do it properly
+	* and multiplex
+	* we can use the multiplex copperlist entries from stage 1 & 2 front object
+	jbsr	install_center_sprites
+666:
 	jbsr	pick_osd_sprite
 	jeq		write_osd_layer_out
 	
@@ -2069,7 +2148,7 @@ pick_osd_sprite:
 	cmp.w	#8+1,d3
 	jcc		0f
 	* "1UP" + player score
-	lea		osd_left_sprite+16-1,A3
+	lea		osd_top_left_sprite+16-1,A3
 	add.w	d3,a3		| add X offset
 	.ifndef	RELEASE
 	* ability to display debug messages
@@ -2083,7 +2162,7 @@ pick_osd_sprite:
 	cmp.w	#16+1,d3
 	jcc		0f
 	* end of player score + high
-	lea		osd_left_center_sprite+16-9,A3
+	lea		osd_top_left_center_sprite+16-9,A3
 	add.w	d3,a3		| add X offset
 	cmp.w	#8,d2
 	jeq		1f
@@ -2095,7 +2174,7 @@ pick_osd_sprite:
 	cmp.w	#24+1,d3
 	jcc		0f
 	* end of player score + high
-	lea		osd_right_center_sprite+16-17,A3
+	lea		osd_top_right_center_sprite+16-17,A3
 	add.w	d3,a3		| add X offset
 	cmp.w	#8,d2
 	jeq		1f
@@ -2107,7 +2186,7 @@ pick_osd_sprite:
 	cmp.w	#32+1,d3
 	jcc		0f
 	* player 2 score / push button
-	lea		osd_right_sprite+16-25,A3
+	lea		osd_top_right_sprite+16-25,A3
 	add.w	d3,a3		| add X offset
 	.ifndef	RELEASE
 	* ability to display debug messages
@@ -5175,6 +5254,16 @@ toggle_pause:
 0:
 	rts
 
+clear_center_sprites:
+	lea	osd_center_sprites,a0
+	moveq	#3,d0
+	move.l	#0x1FE0000,d0	| nop copper
+0:
+	move.l	d0,(a0)+
+	dbf		d0,0b
+	
+	rts
+	
 clear_forest_background_colors:
 	movem.l	a0/a1/d0,-(a7)
 	lea	forest_colors,a0
@@ -5303,6 +5392,7 @@ osd_set_context:
 	
 	* no forest background colors
 	jbsr	clear_forest_background_colors
+	jbsr	clear_center_sprites
 	
 	* default for operation on 24Axxx => normal
 	move.l	#addr_24Axxx_tile_layer_op,addr_24Axxx_tile_layer_op_address
@@ -6292,24 +6382,24 @@ install_osd_hardware_sprites:
 	
 	* now put them on screen
 	lea		osd_upper_sprites,a0
-	lea		osd_left_sprite,a2
+	lea		osd_top_left_sprite,a2
 	move.l	a2,a3
 	move.w	#40+HW_SPRITE_SHIFT,d0
 	move.w	#32,d1
 	move.w	#sprpt,d2
 	jbsr	install_osd_sprite
-	lea		osd_left_center_sprite,a2
+	lea		osd_top_left_center_sprite,a2
 	move.l	a2,a3
 	move.w	#40+64+HW_SPRITE_SHIFT,d0
 	move.w	#32,d1
 	jbsr	install_osd_sprite
-	lea		osd_right_center_sprite,a2
+	lea		osd_top_right_center_sprite,a2
 	move.l	a2,a3
 	move.w	#40+64*2+HW_SPRITE_SHIFT,d0
 	move.w	#32,d1
 	jbsr	install_osd_sprite
 	
-	lea		osd_right_sprite,a2
+	lea		osd_top_right_sprite,a2
 	move.l	a2,a3
 	move.w	#40+64*3+HW_SPRITE_SHIFT,d0
 	move.w	#32,d1
@@ -6938,7 +7028,13 @@ mockup_boss_palette_load:
 	.ifeq		OPT_BOSS_SPRITES_MOCKUP-5
 	lea		level_5_boss_color_change(pc),a0
 	.endif
+	.ifeq		OPT_BOSS_SPRITES_MOCKUP-6
+	lea		level_6_boss_color_change(pc),a0
+	.endif
 	.ifeq		OPT_BOSS_SPRITES_MOCKUP-4
+	jra		0f		| no color change
+	.endif
+	.ifeq		OPT_BOSS_SPRITES_MOCKUP-1
 	jra		0f		| no color change
 	.endif
 	jbsr	change_palette
@@ -6947,6 +7043,9 @@ mockup_boss_palette_load:
 	rts
 	
 sprite_ram_mockup:
+	.ifeq		OPT_BOSS_SPRITES_MOCKUP-1
+	.include	"mockup/boss_1.68k"
+	.endif
 	.ifeq		OPT_BOSS_SPRITES_MOCKUP-2
 	.include	"mockup/boss_2.68k"
 	.endif
@@ -7296,10 +7395,10 @@ tile_log_table_end:
 
 
 upper_osd_next_cw_table:
-	.long	osd_left_next_cw
-	.long	osd_left_center_next_cw
-	.long	osd_right_center_next_cw
-	.long	osd_right_next_cw
+	.long	osd_top_left_next_cw
+	.long	osd_top_left_center_next_cw
+	.long	osd_top_right_center_next_cw
+	.long	osd_top_right_next_cw
 
 *lower_osd_cw_table:
 *	.long	osd_bottom_left_sprite
@@ -7381,6 +7480,9 @@ base_palette_end:
 	.word	color+2*3+8,0xDD0		| time seconds unit
 	
 	* wait 16 lines to declare multiplexed/attached sprites
+osd_center_sprites:
+	DECL_SPRITES	2
+
 	* (front objects) in levels 1 and 2
 	.word	0x2C01+0x2700,0xFFFE
 	* change bplcon4 to point on another palette range
@@ -7487,14 +7589,16 @@ osd_\name\()_next_cw:
 	.skip	16	
 	.endm
 
-	RESERVE_SPRITE	left
-	RESERVE_SPRITE	right
-	RESERVE_SPRITE	left_center
-	RESERVE_SPRITE	right_center
+	RESERVE_SPRITE	top_left
+	RESERVE_SPRITE	top_right
+	RESERVE_SPRITE	top_left_center
+	RESERVE_SPRITE	top_right_center
 	RESERVE_SPRITE	bottom_left
 	RESERVE_SPRITE	bottom_right
 	RESERVE_SPRITE	bottom_left_center
 	RESERVE_SPRITE	bottom_right_center
+	RESERVE_SPRITE	center_left
+	RESERVE_SPRITE	center_right
 	
 
 

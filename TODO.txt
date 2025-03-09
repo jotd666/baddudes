@@ -1,7 +1,5 @@
-- karnov killed missing 1 tile on body (try with karnov_dead mockup!)
-- boss 6 color change: to test
-- invincibility: still hit when falling on road (level 2): 
-  game must not change p1_state_flags_00ffa386 must remain to 0x10
+- stage x clear trying to make it work properly => fails ATM
+- plus destroys "TIME xx" at next stage...
 - tune autoframeskip: force 2 skips for train/truck levels all the time
   remain auto 0-2 for other levels
 - level 2 restore: seems to miss 1 vertical line periodically
@@ -92,6 +90,9 @@
 
 
 low priority:
+
+- invincibility: still hit when falling on road (level 2): 
+  game must not change p1_state_flags_00ffa386 must remain to 0x10
 
 - middle lower OSD missing timeout char on "CONTINUE"
 - level 3 demo: game uses 2 players
