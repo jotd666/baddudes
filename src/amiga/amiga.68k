@@ -2130,7 +2130,7 @@ not_upper_osd:
 	cmp.w #0xD8,d2
 	jcc		lower_osd
 	jra		10b		| center parts TODO
-lower_osd:	
+lower_osd:
 	cmp.w	#11,d3
 	jcc		2f		| TEMP center low
 	* "1-LIFE" + status
@@ -2162,13 +2162,13 @@ lower_osd:
 	moveq	#1,d2		| success
 	rts
 0:
-	* boss energy on 2 sprites
+	* boss energy on 2 sprites (also "continue" message)
 	
-	cmp.w	#0xC,d3
+	cmp.w	#0xB,d3
 	jcs		10b			| ignore before
-	cmp.w	#0x14,d3	
+	cmp.w	#0x13,d3	
 	jcc		0f
-	lea		osd_bottom_left_center_sprite+16-12,a3
+	lea		osd_bottom_left_center_sprite+16-11,a3
 	add.w	d3,a3
 	cmp.w	#0xD8,d2
 	jeq		1f
@@ -2180,7 +2180,7 @@ lower_osd:
 	
 0:
 	* boss second sprite
-	lea		osd_bottom_right_center_sprite+16-20,a3
+	lea		osd_bottom_right_center_sprite+16-19,a3
 	add.w	d3,a3
 	cmp.w	#0xD8,d2
 	jeq		1f

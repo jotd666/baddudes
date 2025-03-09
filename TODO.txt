@@ -13,8 +13,8 @@
 - ending sequence trashed/flashes... double buffering vs simple buffering?
 - level 1 use restore_gap for gaps
 - level 1: truck leaves trashed parts of trailer, probably workaround is possible
-- middle lower OSD missing 1 char "ONTINUE"
 
+- capture "game over" music: for that we need a high score!
 - level 1 repair front objects (status bar showing but destroyed, debug this)
   => control word for multiplexed after lamp is not working but other sprites are also destroyed!
   
@@ -93,6 +93,7 @@
 
 low priority:
 
+- middle lower OSD missing timeout char on "CONTINUE"
 - level 3 demo: game uses 2 players
 - if TOTAL_CHIP_MEMORY_SIZE = 1250000, train level loads but background is trashed
   and memory manager doesn't detect any issue...
