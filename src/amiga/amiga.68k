@@ -91,7 +91,7 @@ SCREEN_ADDRESS = 0x244000
 OPT_NO_SCROLLING_X = 0
 OPT_NO_SCROLLING_Y = 0
 OPT_NO_BOTTOM_SCROLL = 0
-OPT_DEBUG_GAP_ERASE = 0
+OPT_DEBUG_GAP_ERASE = 1
 
 * load fixed sprites, mostly bosses as they're long to reach & test
 OPT_BOSS_SPRITES_MOCKUP = 0
@@ -1187,15 +1187,22 @@ specific_level_2_truck_erase:
 	add.w	#0xF8,d0
 	jbsr	restore_gap
 
-	* extra restore no matter what as I don't know what the f*ck
-	* is going on (not displayed trailer stays on screen and wraps
-	* probably)
-	move.w	#0xE0,d0
+
+20:
+	* okay I don't know what the f*ck is going on 
+	* (not displayed trailer stays on screen and wraps
+	* probably, leaving some crap trailer parts everywhere)
+	* easy way on that level: extra restore right part no matter what 
+	* (don't do it when reaching the boss fight, useless, wastes blitter)
+	
+	move.w	x_secondary_scroll_value,d0
+	cmp.w	#0x390,d0
+	bcc		21f
+	move.w	#0xF0,d0
 	moveq	#4,d2
 	moveq	#0,d1
 	jbsr	restore_gap
-
-20:
+21:
 	rts
 	
 erase_truck_bottom_part:
@@ -5597,30 +5604,43 @@ load_extra_sound_file:
 1:	
 	rts
 	
+
+* can be called separately
+load_bobs_palette:
+	movem.l	d0-d1/a0-a1,-(a7)
+	move.l	sprites_memory,a0
+	move.w	nb_bob_skipped_colors,d0
+	move.l	a0,a1
+	lea	(a0,d0.w*2),a0	| skip first colors
+	add.w	#0x80,a1	| skip palette colors
+	move.l	a1,sprite_table_base
+	
+	lea	base_palette,a1
+	lea		(a1,d0.w*4),a1	| skip first colors
+	sub.w	#64,d0
+	neg.w	d0		| 32 or 48
+	jbsr	load_palette
+	movem.l	(a7)+,d0-d1/a0-a1
+	rts
+	
 load_level_sprite_file:
 	jbsr	get_current_level
 	add.b	#48,d0
 	add.b	level_7_load_second_part_flag,d0
 	move.b	d0,file_level_index
 	lea		sprites_game_level_file,a0
-	
+	* continues!!
 load_sprite_file:
 	jbsr	allocate_and_load_chip_mem_file
-	move.l	d0,sprites_memory
 	move.l	d0,a0
 	move.w	(a0)+,d0	| nb planes (6) ignore
 	moveq	#0,d0
 	move.w	(a0)+,d0	| first (skipped) colors
 	
-	move.l	a0,a1
-	lea	(a0,d0.w*2),a0	| skip first colors
-	add.w	#0x80,a1	| skip palette colors
-	move.l	a1,sprite_table_base
-	lea	base_palette,a1
-	lea		(a1,d0.w*4),a1	| skip first colors
-	sub.w	#64,d0
-	neg.w	d0		| 32 or 48
-	jbsr	load_palette
+	move.w	d0,nb_bob_skipped_colors
+	move.l	a0,sprites_memory
+	
+	jbsr	load_bobs_palette
 	
 	* relocate tile tables so they're no longer relative (generic blit routines
 	* work like that, no need to rewrite them)
@@ -6175,6 +6195,10 @@ load_level_tiles_and_bobs:
 * in the copperlist and change it by another
 * < A0: palette change list (ends by -1.L)
 change_palette:
+	* first, reset palette as it was at start of the level
+	* (not useful, except for last level boss rush)
+	jbsr	load_bobs_palette
+
 	movem.l	d0-d2/a1,-(a7)
 0:
 	move.l	(a0)+,d2

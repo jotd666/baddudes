@@ -1,9 +1,10 @@
 - boss 6 color change: to test
+- invincibility: still hit when falling on road (level 2): 
+  game must not change p1_state_flags_00ffa386 must remain to 0x10
 - tune autoframeskip: force 2 skips for train/truck levels all the time
   remain auto 0-2 for other levels
 - level 2 restore: seems to miss 1 vertical line periodically
 - level 2: climbers on the right "blink" (frame/grouping? wrong clipping?)
-- end music has issues with ptplayer, also tune start is wrong
 - level 5: third leg for boss... erase issue again with grouping??
 - train erase: extend gap to full train height, add erase on the right of the front wheel: saves blitter
   still wagon not deleted properly at times
@@ -58,16 +59,15 @@
 - level 2 front object (lamp) not displaying (used to work with level 1 objects)
 - save/load highscores
   
-  
+ - end music has issues with ptplayer, also tune start is wrong
+ 
 
 
-- remove BB9 BB8 BBA BBB (glasses) from log (old artifact)
-- truck blit erase issue (front of truck)
+- level 1 truck blit erase issue (front of truck)
  
 - karnov feet erase issue, doesn't seem to be erased (also true for jumping ninjas) probably
-  group erase not working. Same for level 6 devil pole
+  group erase not working. Same for level 6 devil pole, 5 akaikage
 - multiplex sprites 4 to 7 to do (lower hud): ATM only one object is displayed at a time
-- invincibility: still hit when falling on road (level 2)
 
 
 - optim: group erase on 16 (working) or 32 bit wide blocks
