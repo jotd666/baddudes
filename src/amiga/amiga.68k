@@ -94,7 +94,7 @@ OPT_NO_BOTTOM_SCROLL = 0
 OPT_DEBUG_GAP_ERASE = 1
 
 * load fixed sprites, mostly bosses as they're long to reach & test
-OPT_BOSS_SPRITES_MOCKUP = 0
+OPT_BOSS_SPRITES_MOCKUP = 1
 
 * if the alloc_sprite & update_sprite routines
 * are reused, changing those offsets can make
@@ -3042,11 +3042,7 @@ really_update_sprites:
 	jsr		([a0,d0.w])
 
 0:
-	move.l	bob_previous_drawed_sprites,a4
-	move.w	(a4),d2		| init prev X with first val
-	add.w	#16,d2			| previous += 16
-	move.w	(2,a4),d3	| init prev Y with first val
-
+	
 	.ifdef		RELEASE
 	tst.b	stop_updating_bobs
 	jeq		10f
@@ -3055,6 +3051,10 @@ really_update_sprites:
 	.endif
 	
 	.ifdef		GROUP_BACKGROUND_RESTORE
+	move.l	bob_previous_drawed_sprites,a4
+	move.w	(a4),d2		| init prev X with first val
+	add.w	#16,d2			| previous += 16
+	move.w	(2,a4),d3	| init prev Y with first val
 	* erase optimization pre-processing
 	* scan previous positions to group the consecutive ones
 	*
@@ -3134,6 +3134,7 @@ really_update_sprites:
 2:
 	and.w	#0x3F0,d0		| align on 16 lower bound (there are potentially 3 screens!)
 	* clear area where the sprite was
+	TMPWRITE
 	move.l	fg_drawed_screen_ptr,a1
 	move.w	(4,a4),d2			| width in bytes (16 pixels: 4 bytes)
 	jeq		111f	|  zero width: skip this entry
