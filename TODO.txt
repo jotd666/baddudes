@@ -1,5 +1,4 @@
-- stage x clear trying to make it work properly => fails ATM
-- plus destroys "TIME xx" at next stage...
+
 - tune autoframeskip: force 2 skips for train/truck levels all the time
   remain auto 0-2 for other levels
 - level 2 restore: seems to miss 1 vertical line periodically
@@ -22,6 +21,10 @@
 
 - boss rush: a lot of bosses have wrong colors: reset colors before replacing palette
   (boss 2 => boss 3 in level 7): done: to test
+  
+- separate copperlist for ending screen: much simpler, and with 24 bit copper sky
+  maybe use that copperlist for intro screen too (gray copper sky). When loading tiles & sprite
+  palettes, load into both copperlists
 
 - crash at the end of level 1 => level 2 (other levels switch OK!): front object conflict
 

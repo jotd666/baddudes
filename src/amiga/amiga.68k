@@ -1995,8 +1995,10 @@ install_center_sprites:
 	movem.l	d0-d7/a0-a6,-(a7)
 	* disable attach sprite property
 	move.w	#0x1FE,attached_sprites_bplcon4
+	* restore font color to white
+	move.w	#color+2*3+32,center_sprites_white
+
 	lea		osd_center_sprites,a0
-	move.l	A0,0x104
 	move.w	#sprpt,d0
 	* install 2 sprites, they are multiplexed (reusing slots
 	* from upper osd ones)
@@ -2031,22 +2033,21 @@ install_center_sprites:
 	move.w	(8,a0),d7
 	
 	* install the proper control word
-	move.w	#80,d0
-	move.w	#120,d1
+	move.w	#140,d0
+	move.w	#144,d1
 	move.w	#sprpt,d2
 	lea		osd_center_left_sprite+16,a2
 	lea		osd_top_left_next_cw,a3
 	jbsr	install_osd_sprite
-	move.w	#80+64,d0
-	move.w	#120,d1
 	move.w	#sprpt+4,d2
+	move.w	#140+64,d0
+	move.w	#144,d1
 	lea		osd_center_right_sprite+16,a2
-	lea		osd_top_right_next_cw,a3
+	lea		osd_top_left_center_next_cw,a3
 	jbsr	install_osd_sprite
 	
 	* connect the bottom osd sprites FUCK
 	
-	TMPBREAK
 	lea		osd_center_left_next_cw,a0
 	move.w	d6,(8,a0)
 	swap	d6
@@ -2142,7 +2143,10 @@ erase_tile_on_sprite:
 
 * given D3/D2 as X/Y select location to start writing to sprite
 
-pick_osd_sprite:	
+pick_osd_sprite:
+	cmp.w	#0x78,d2
+	jeq		central_osd
+	
 	cmp.w	#17,d2
 	jcc		not_upper_osd
 	cmp.w	#8+1,d3
@@ -2267,10 +2271,28 @@ lower_osd:
 	add.w	#NB_BYTES_PER_SPRITE_ROW*2*8,a3
 	jra		1b		| success
 1:
-
 	moveq	#0,d2
 	rts
-
+	
+central_osd:
+	* probably central osd if central sprites are installed
+	* (means that "S" from STAGE X CLEAR has been written)
+	* checking that attach sprite is disabled makes sure that
+	* we're not trashing the front objects
+	cmp.w	#0x1FE,attached_sprites_bplcon4
+	jne		1b		| front objects active (level 1, 2): bail out
+	cmp.w	#17,d3
+	jcc		central_right
+	lea		osd_center_left_sprite+16-9,a3
+	jra		0f
+central_right:
+	cmp.w	#25,d3
+	jcc		1b		| too far right
+	lea		osd_center_right_sprite+16-17,a3
+0:
+	add.w	d3,a3
+	moveq	#1,d2
+	rts
 	
 blank_area:
 	.skip	8
@@ -5261,7 +5283,7 @@ clear_center_sprites:
 0:
 	move.l	d0,(a0)+
 	dbf		d0,0b
-	
+	move.w	#0x1FE,center_sprites_white	
 	rts
 	
 clear_forest_background_colors:
@@ -5869,7 +5891,7 @@ set_intro_context:
 	jbsr	load_intro_palette
 	
 	
-	lea		intro_copperlist,a0
+	lea		default_copperlist,a0
 	move.l	a0,cop1lc(a5)
 
 	rts
@@ -7429,8 +7451,8 @@ debug_color:
 
 
 	
-	* intro copperlist
-intro_copperlist:
+	* copperlist used for most screens
+default_copperlist:
 	.word	bplcon0,0x6200+BORDERBLANK | 6 bitplanes, borderblank
 
 	* all sprites have the same palette no need to specify odd or even
@@ -7479,12 +7501,15 @@ base_palette_end:
 	.word	color+2*3+32,0xDD0      | time seconds 10ths
 	.word	color+2*3+8,0xDD0		| time seconds unit
 	
-	* wait 16 lines to declare multiplexed/attached sprites
-osd_center_sprites:
-	DECL_SPRITES	2
 
 	* (front objects) in levels 1 and 2
 	.word	0x2C01+0x2700,0xFFFE
+	* wait 16 lines to declare multiplexed/attached sprites
+center_sprites_white:
+	.word	0x1FE,0xEEE
+
+osd_center_sprites:
+	DECL_SPRITES	2
 	* change bplcon4 to point on another palette range
 	* for 16-color attached sprites: bank 3
 attached_sprites_bplcon4:
