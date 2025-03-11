@@ -5,16 +5,16 @@
 - level 2: climbers on the right "blink" (frame/grouping? wrong clipping?)
 - level 5: third leg for boss... erase issue again with grouping??
 - karnov feet erase issue, doesn't seem to be erased. Same for level 6 devil pole, 5 akaikage
-address=ffc000, x=86, y=112, code=466, attrs=a800, name=karnov
-address=ffc008, x=86, y=80, code=404, attrs=a800, name=karnov
-address=ffc010, x=70, y=112, code=462, attrs=a800, name=karnov
-address=ffc018, x=70, y=80, code=408, attrs=a800, name=karnov
-address=ffc020, x=102, y=112, code=464, attrs=a800, name=karnov
-address=ffc028, x=102, y=80, code=400, attrs=a800, name=karnov
-address=ffc030, x=186, y=112, code=8, attrs=b000, name=player
-address=ffc038, x=170, y=112, code=c, attrs=b000, name=player
-=> caused by wrong vertical grouping (wrong) + added feet
 
+=> caused by wrong vertical grouping (wrong) + added feet: logging is maybe wrong
+   (bosses have too long bobs): 400, 404, 408 are all too high
+   0x38 = 0x10 | 0x8: so 4x AND 2x not 8x
+   
+=> TO FIX: "simple" can be "multi" when 2x and 4x dual (convert_graphics.py)
+=> TO FIX: if tile code is in "double dual" special case table, then we know
+   there is no single size, add 0x1000 only if 4x
+   read multi_dual_sprite_tiles_file and generate table to include
+   
 - train erase: extend gap to full train height, add erase on the right of the front wheel: saves blitter
   still wagon not deleted properly at times
 - animal lower part (boots) shifted at times  

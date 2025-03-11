@@ -49,6 +49,8 @@ def doit():
     }
 
 
+    special_2x_4x_dual = set()
+
     # glasses & guy face, ripped manually from code, not a lot of sprites
     used_dict[game_intro] = {x:{"cluts":[0xD if x==0xBBD else 0xE],"attributes":0} for x in range(0xBB8,0xBC0)}
     for k,d in used_dict.items():
@@ -57,18 +59,34 @@ def doit():
             new_d = {}
             for k,v in d.items():
                 ik = int(k)
-                if ik in extra_single_size or (v["attributes"] & 0x40 and v["attributes"] & 0x18):
-                    # used as Y-flipped and multi as well we should also declare single tile, as
-                    # if multi, Y-flipped version won't match (tile order doesn't change) so they
+                vattr = v["attributes"]
+                if ik in extra_single_size or (vattr & 0x40 and vattr & 0x18) or (vattr & 0x18 == 0x18):
+                    # dual tile if:
+                    # 1) manual declaration of single tile (mask is 0 in that case so logged or not... not seen)
+                    # 2) used as Y-flipped and multi as well as if multi, Y-flipped version won't match (tile order doesn't change) so they
                     # have to use the single tiles instead. If we only generate the multi-tile, then
                     # the flipped/single version will be missing
+                    # 3) if attributes are fake 8x, actually 4x ORed with 2x (0x18), we have dual multi-tiled sprites usage
+                    # (rare case, but happens with lots of bosses: karnov, akaikage, devil pole, giving them 4 feet or a 3rd leg - yuck
+                    # if we display the highest tile all the time). 2x: body, 4x: body+feet position 1. So when displaying feet position 2
+                    # the 4x body+feet position 1 is displayed and ... 3RD LEG!!
                     vc = v.copy()
-                    vc["attributes"] = 0  # simple 16x16
+                    if vattr & 0x18 == 0x18:
+                        vc["attributes"] = 8
+                        v["attributes"] = 0x10
+                        special_2x_4x_dual.add(ik)
+                    else:
+                        vc["attributes"] = 0  # 16x16 manual declare or Y flip multi
+
                     new_d[k] = vc
-                    k += 0x1000    # offset for non-16x16 tile
+                    k += 0x1000    # offset for dual tile
                 new_d[k] = v
 
             d.update(new_d)
+
+    with open(multi_dual_sprite_tiles_file,"w") as f:
+        # special special tiles (boss parts, mainly)
+        json.dump(sorted(special_2x_4x_dual),f,indent=2)
 
     with open(this_dir / "shared_sprite_cluts.json") as f:
         # this file has been extracted from a complete list of player moves

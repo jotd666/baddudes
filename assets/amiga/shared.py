@@ -13,6 +13,7 @@ dump_dir = this_dir / "dumps"
 used_sprite_cluts_file = this_dir / "used_sprite_cluts.json"
 used_tile_cluts_file = this_dir / "used_tile_cluts.json"
 used_graphics_dir = this_dir / "used_graphics"
+multi_dual_sprite_tiles_file = this_dir / "multi_tual_sprite_tiles.json"
 
 transparent = (255,0,255)
 impossible_color = (0x10,0x20,0x30)
