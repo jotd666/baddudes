@@ -3,17 +3,11 @@
   remain auto 0-2 for other levels
 - level 2 restore: seems to miss 1 vertical line periodically
 - level 2: climbers on the right "blink" (frame/grouping? wrong clipping?)
-- level 5: third leg for boss... erase issue again with grouping??
-- karnov feet erase issue, doesn't seem to be erased. Same for level 6 devil pole, 5 akaikage
-
-=> caused by wrong vertical grouping (wrong) + added feet: logging is maybe wrong
-   (bosses have too long bobs): 400, 404, 408 are all too high
-   0x38 = 0x10 | 0x8: so 4x AND 2x not 8x
+- level 5: third leg for boss...
+- karnov feet erase issue, doesn't seem to be erased. 
+  karnov: wrong tile height (x2 instead of x4): wpset FFC028,4,W,wpdata==0x90800400 never happens
+- test feet for level 6 devil pole, 5 akaikage, maybe fixed???
    
-=> TO FIX: "simple" can be "multi" when 2x and 4x dual (convert_graphics.py)
-=> TO FIX: if tile code is in "double dual" special case table, then we know
-   there is no single size, add 0x1000 only if 4x
-   read multi_dual_sprite_tiles_file and generate table to include
    
 - train erase: extend gap to full train height, add erase on the right of the front wheel: saves blitter
   still wagon not deleted properly at times
@@ -66,7 +60,6 @@
 - boss 6 & 7 wrong grouping / missing tiles  
 - level 7 display helicopter!
 
-- 2nd button doesn't seem to work
 - level 2: no lamps if objects 2 loaded. Ok if objects 1 loaded
 - drop 2 player mode, use rightmost OSD sprite for real parallax in levels 4 and 6
   see if we can blit the score afterwards if 2P mode is reinstated, anyway 2P mode is probably
@@ -76,22 +69,16 @@
   
  - end music has issues with ptplayer, also tune start is wrong
  
- 
-- multiplex sprites 4 to 7 to do (lower hud): ATM only one object is displayed at a time
 
 
 - optim: group erase on 16 (working) or 32 bit wide blocks
 
-
 - boss 7 color change
 
-- level complete messages should use front object sprites (sprites 4-7, unload backgrounds first
-  in levels 4 and 6)
 - log & rip missing sounds: breakpoint on sound not found so able to go to mame and rip it
 
-
-- leave demo running: level 3 but with status bar trashed, 2P mode with player 2 invisible
-  and when inserting coin, no graphics switch (probably missing set context to go to intro)
+- leave demo running: level 3 but with status bar trashed (because of 2P life), 2P mode with player 2 invisible
+- demo running: when inserting coin, suddenly needs 2 coins for 1 credit...
 
 - knife sound has blow+man scream (hack not working there... maybe we could see if player
   has weapon... not working in 2P mode though)

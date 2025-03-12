@@ -851,6 +851,11 @@ lb_1b352:
 	BNE.S	lb_1b352
 	RTS
 	
+intro_context_01a24:
+	move.w	#CTX_INTRO,d0
+	jbsr 	osd_set_context
+	ROM_JUMP	0x1cd8	| clear_pretty_much_all_video
+
 before_end_sequence_01bac:
 	move.w	#CTX_END_SEQUENCE_1,d0
 	jbsr 	osd_set_context

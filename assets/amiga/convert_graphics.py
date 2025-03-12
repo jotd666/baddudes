@@ -24,6 +24,9 @@ pre_mirrored_sprites = {k:{2} for k in range(0x200,0x348)}
 
 side_grouped_dict,vert_grouped_dict = load_grouped_dicts()
 
+with open(multi_dual_sprite_tiles_file) as f:
+    special_2x_4x_dual = set(json.load(f))
+
 def reformat_subdict(d):
     rval = {"cluts":set(d["cluts"])}
     attribs = d.get("attributes")
@@ -291,9 +294,13 @@ def load_tileset(image_name,palette_index,side,tileset_name,cluts,name_dict=None
                     # simple tile, not a bob, we don't want grouping!!
                     tileset_1[tile_number] = process_sprite(tile_number,full_tileset,side,side)
             if dual:
-                # repeat for simple (only for bobs)
-                tileset_1[tile_number] = process_single_tiled_sprite(tile_number,full_tileset,side,side)
-
+                # repeat for simple (only for bobs), except that simple can be double (boss tiles)
+                # this is a fuckin' mess till the end...
+                if tile_number in special_2x_4x_dual:
+                    img = process_multi_tiled_sprite(tile_number,full_tileset,2,w,side*2,width)
+                else:
+                    img = process_single_tiled_sprite(tile_number,full_tileset,side,side)
+                tileset_1[tile_number] = img
 
             if dump_it:
                 source = tileset_1[tile_number+0x1000 if multi else tile_number]
@@ -864,16 +871,24 @@ def postprocess_game_osd_tiles(tileset,palette_index):
             for life_tile in [0x6D,0x6F,0x72]:
                 bitplanelib.replace_color_from_dict(tileset[life_tile],color_rep)
 
+
+special_2x_4x_dual_table = [0]*0x1000
+for i in special_2x_4x_dual:
+    special_2x_4x_dual_table[i] = 0xFF
+
+with open(src_dir / "special_2x_4x_dual_table.68k","w") as f:
+    bitplanelib.dump_asm_bytes(special_2x_4x_dual_table,f,mit_format=True)
+
 generate_for_levels = [False]*9
 
 
 ##generate_for_levels[0] = True
-generate_for_levels[1] = True
+#generate_for_levels[1] = True
 #generate_for_levels[2] = True
 ##generate_for_levels[3] = True
 ##generate_for_levels[4] = True
 #generate_for_levels[5] = True
-#generate_for_levels[6] = True
+generate_for_levels[6] = True
 ##generate_for_levels[7] = True
 #generate_for_levels[8] = True
 

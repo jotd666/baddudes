@@ -94,7 +94,7 @@ OPT_NO_BOTTOM_SCROLL = 0
 OPT_DEBUG_GAP_ERASE = 1
 
 * load fixed sprites, mostly bosses as they're long to reach & test
-OPT_BOSS_SPRITES_MOCKUP = 1
+OPT_BOSS_SPRITES_MOCKUP = 0
 
 * if the alloc_sprite & update_sprite routines
 * are reused, changing those offsets can make
@@ -3331,7 +3331,6 @@ draw_bob_loop:
 	add.w	#0x1000,d2		| high fake sprite "page"
 555:
 
-
 	move.l	(a4,d2.w*4),d4	| test pointer
 	jeq		30f			| zero: skipped
 
@@ -5404,6 +5403,9 @@ osd_set_context:
 	move.w	#NB_BYTES_PER_SCREEN_ROW*16,big_machine_x_offset
 	* no bottom scrolling
 	jbsr	disable_road_scroll
+	* x/y scroll off
+	clr.w	x_background_scroll_value
+	clr.w	y_background_scroll_value
 
 	* clear scroll swap shit
 	clr.b	nb_scroll_swaps
@@ -7015,6 +7017,8 @@ fg_drawed_screen_ptr:
 fg_displayed_screen_ptr:
 	.long	0
 
+multi_dual_sprite_tiles_table:
+	.include	"special_2x_4x_dual_table.68k"
 
 	.include	"sound_entries.68k"
 
