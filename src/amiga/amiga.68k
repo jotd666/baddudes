@@ -1039,7 +1039,7 @@ update_front_objects:
 	jra		3f
 4:
 	cmp.w	#0x522F,d1
-	jne		4f
+	jne		5f
 	* fire hydrant
 	moveq	#0,d2
 	jra		3f
@@ -1117,40 +1117,29 @@ specific_big_machine_restore:
 specific_level_1_truck_erase:
 	jbsr	erase_truck_bottom_part
 	
-	* rear should be erased only when X > 0
-	lea		prev_truck_params+2,a1
-	move.w	(a1)+,d0	| X
-	subq.w	#8,d0
-	move.w	truck_y_pos,d1	| Y
-	moveq	#4,d2		| just the first bytes
-	move.l	fg_drawed_screen_ptr,a1
-	move.w  big_machine_height,d4
-	* clip to bottom of truck (wheels) doesn't work,
-	* as the back of the truck leaves a trail
-	*sub.w	truck_wheels_height,d4
+	TMPWRITE
+	moveq	#0,d0
+	moveq	#4,d2
+	moveq	#0,d1		| full height
+	jbsr	restore_gap
 	
-	move.l	background_restore_buffer,a0
-	jbsr	restore_background
+	move.w	prev_truck_params,d0	| absolute secondary scroll pos
+	sub.w	#8,d0
+	moveq	#4,d2
+	moveq	#0,d1		| full height
+	jbsr	restore_gap
 
 
+	move.w	prev_truck_params,d0	| absolute secondary scroll pos
+	add.w	#0xC0,d0
+	* we must restore the trailer/truck gap
+	sub.w	#8,d0
 
-	* restore blank between truck front & tow
-	* broken... to re-test
-	lea		prev_truck_params,a1
-	move.w	(a1),d0		| displayX
-	sub.w	(6,a1),d0	| truck pos
-	add.w	#0x320,d0	| correct X
-	jmi		1f
-	move.l	fg_drawed_screen_ptr,a1
-	move.w	truck_y_pos,d1
-	move.w  big_machine_height,d4
-	sub.w	truck_wheels_height,d4
-	move.w	#4,d2
-	move.l	background_restore_buffer,a0  | TEMP TEMP
-	sub.w	#30,d1				| TEMP TEMP
-	*jbsr	restore_background
-	moveq	#4,D3
-	jbsr	clear_fg_planes_any_blitter_internal
+
+	moveq	#1,d1
+	moveq	#4,d2
+	jbsr	restore_gap
+
 	rts
 	
 specific_level_2_truck_erase:
@@ -1158,6 +1147,7 @@ specific_level_2_truck_erase:
 	* level 2: 2 gaps to restore, plus back of truck
 
 	move.w	prev_truck_params,d0	| absolute secondary scroll pos
+	sub.w	#8,d0
 	moveq	#4,d2
 	moveq	#0,d1		| full height
 	jbsr	restore_gap
@@ -1169,6 +1159,7 @@ specific_level_2_truck_erase:
 
 	add.w	#0xF0,d0
 	* we must restore the trailer/truck gap
+	sub.w	#8,d0
 
 
 	moveq	#1,d1
@@ -1298,13 +1289,13 @@ restore_gap:
 	move.l	background_restore_buffer,a0
 	move.l	fg_drawed_screen_ptr,a1
 
+	move.w	#4,D3		| train/truck/etc. has only 4 planes, no need to restore more
 	.ifne	OPT_DEBUG_GAP_ERASE
 	sub.w	#10,d1	| slightly up that was to see where areas are restored
 	add.w	#10,d4
-	move.w	nb_tile_planes_24da,D3
 	jbsr	clear_fg_planes_any_blitter_internal
 	.else
-	jbsr	restore_background
+	jbsr	restore_background_less_planes
 	.endif
 2:
 	rts
@@ -3638,13 +3629,13 @@ clear_fg_plane_any_blitter_internal:
 clear_fg_planes_any_blitter_internal:
     * pre-compute the maximum of shit here
 	move.w	d1,d6
-    beq.b   1f    | optim
-	* check if y start + height > Y_MAX
+    beq.b   2f    | optim
+	* check if y start + height > Y_MAX (with 2 playfields : 0x200!)
 	* (ignores case where y = 0, no risk)
 	add.w	d4,d6
-	sub.w	#Y_MAX,d6
+	sub.w	#0x200,d6
 	bmi.b	0f
-	* y start + height > Y_MAX: clip height
+	* y start + height > Y_MAX: clip height (assuming that A1 is start of buffer)
 	sub.w	d6,d4
 	beq.b	10f
 	bpl.b	0f
@@ -3660,13 +3651,13 @@ clear_fg_planes_any_blitter_internal:
     move.w  (a2,d1.w*2),d1
 	.endif
 1:
-	moveq	#1,d5
-	ror.l	#8,d5     | AKA move.l  #0x01000000,d5   | minterm useD & rect clear (0xA) 
 	tst		d1
-	jpl		0f
+	jpl		2f
 	moveq	#0,d1
-0:
-    asr.w   #4,d0			| X displacement in bytes
+2:
+ 	moveq	#1,d5
+	ror.l	#8,d5     | AKA move.l  #0x01000000,d5   | minterm useD & rect clear (0xA) 
+	asr.w   #4,d0			| X displacement in bytes
 	jpl		22f
 	moveq	#0,d0				| was negative: clip to 0 (erase don't need shifting)
 22:
@@ -3980,8 +3971,6 @@ start_process_1_plane:
 * 2 words: first shift (as bplcon value), then
 * offset in bytes
 
-
-
 * what: blits data on bg plane, no horizontal shifting (erase)
 * args:
 * < A0: pristine background
@@ -3990,13 +3979,22 @@ start_process_1_plane:
 * < D1: Y
 * < D2: width in bytes
 * < D4: height
-
 * > A1: last clear position address
 * trashes: D0-D1
 
 restore_background:
-	movem.l	d2-d6/a0/a2-a5,-(a7)
+	move.w	d3,-(a7)
+	move.w	nb_tile_planes_24da,d3
+	jbsr	restore_background_less_planes
+	move.w	(a7)+,d3
+	rts
+	
+restore_background_less_planes:
+* < D3: number of planes (usually nb_tile_planes_24da but may be less)
+
+	movem.l	d2/d3-d6/a0/a2-a5,-(a7)
 	lea		_custom,a5
+	
 	* adjust offset X: X//8 even rounded
 	tst		d0
 	jpl		0f
@@ -4017,37 +4015,37 @@ restore_background:
 	cmp.w	#NB_BYTES_PER_ROW,d0
 	jcc		1f	| too far: do nothing
 
-	move.w	d0,d3
-	add.w	d2,d3
-	sub.w	#NB_BYTES_PER_ROW,d3
+	move.w	d0,d6
+	add.w	d2,d6
+	sub.w	#NB_BYTES_PER_ROW,d6
 	jcs		24f		| okay!
 	* width too big: clip height
-	sub.w	d3,d2
+	sub.w	d6,d2
 24:
 	
 	lea		mulNB_BYTES_PER_ROW_table,a4
-	moveq	#0,d3
+	moveq	#0,d6
 	.ifdef	NO68020
 	add.w	d1,d1
 	* add Y offset: Y*NB_BYTES_PER_ROW
-	move.w	(a4,d1.w),d3
+	move.w	(a4,d1.w),d6
 	.else
-	move.w	(a4,d1.w*2),d3
+	move.w	(a4,d1.w*2),d6
 	.endif
 	
 	* !!long adds, we have a big buffer > 0x8000!!
 	* same offset for source and destination
 	* except if X coord > 0x200 (because background restore buffer
 	* doesn't duplicate like the background which needs 3 screens)
-	add.l	d3,a1
-	add.l	d3,a0
+	add.l	d6,a1
+	add.l	d6,a0
 	
 	* here we need to clip to 0x300 (NB_BYTES_PER_ROW*8) FUCK
 	add.w	d0,a1	| real coord (can be > 0x2xx)
 	and.w	#0x3F,d0  | THIS IS WRONG SINCE THE START!!!!
 	add.w	d0,a0	| wrap source
 
-    move.l  #0x09f00000,d3    | A->D copy, ascending mode	
+    move.l  #0x09f00000,d6    | A->D copy, ascending mode	
 	move.w	#NB_BYTES_PER_ROW,d1		| blit modulo
 
     sub.w   d2,d1       | blit modulo
@@ -4067,7 +4065,7 @@ restore_background:
     
     * blitter registers set
 
-	move.l d3,bltcon0(a5)	| sets con0 and con1
+	move.l d6,bltcon0(a5)	| sets con0 and con1
 
     move.w  d1,bltamod(a5)	|A modulo
     move.w  d1,bltdmod(a5)	|D modulo
@@ -4076,8 +4074,7 @@ restore_background:
 	move.l a1,bltdpt(a5)	|destination top (bottom) left corner
 	move.w  d4,bltsize(a5)	|rectangle size, starts blit
 	
-	move.w	nb_tile_planes_24da,d0
-	subq	#2,d0
+	subq	#2,d3
 
 
 2:
@@ -4099,14 +4096,14 @@ restore_background:
 	* next plane
 	move.l	a3,a1
 	move.l	a2,a0
-	dbf		D0,2b	
+	dbf		D3,2b	
 	jra		1f
 0:
 	WAIT_BLIT
 	move.l a0,bltapt(a5)	|source graphic top left corner
 	move.l a1,bltdpt(a5)	|destination top (bottom) left corner
 	move.w  d4,bltsize(a5)	|rectangle size, starts blit
-	dbf		D0,2b
+	dbf		D3,2b
 1:
 	
 	movem.l	(a7)+,d2-d6/a0/a2-a5
@@ -5989,6 +5986,8 @@ load_background_file:
 * sprite slots 0 and 1 don't multiplex to the lower sprites
 * sprite slots 2 and 3 need to yield control to the lower osd sprites (TODO)
 display_front_object:
+	rts
+	
 	movem.l	d0-a6,-(a7)
 	sub.l	a6,a6
 	tst		d2
