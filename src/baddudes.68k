@@ -631,6 +631,7 @@ test_input_bit_7:
     jbsr    osd_break
     rts
 
+* happens on game over!
 test_input_bit_d1:
     * btst D1,system_inputs_0030c003
     jbsr    osd_break
@@ -850,6 +851,20 @@ lb_1b352:
 	CMPA.L	#0x0024d800,A6
 	BNE.S	lb_1b352
 	RTS
+	
+* happens on game over
+write_244xxx_layer_0819c:
+	STORE_REGS
+	exg		a6,a3
+	move	d1,d7
+	WRITE_WORD_AND_PLUS
+	MOVE.B	3(A1),D7
+	ANDI.W	#0x000f,D7		
+	ADDI.W	#0x0030,D7
+	jbsr	osd_write_word	
+	exg		a6,a3
+	RESTORE_REGS
+	rts
 	
 intro_context_01a24:
 	move.w	#CTX_INTRO,d0

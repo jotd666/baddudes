@@ -1,19 +1,23 @@
+- animal yell sound: not played
+- on game over, tests test_input_bit_d1, then goes back to menu but intro screen trashed
+- level 5: red girls missing frames?
+- level 4: punching enemies while kneeled: missing frame?
+- level 1 repair front objects (status bar showing but destroyed, debug this)
+  => control word for multiplexed after lamp is not working but other sprites are also destroyed!
+- boss energy bar missing right half
+- level 2 queue trailer erase inefficient when reaching extreme left
+- 2nd level complete in a row "STAGE X CLEAR" "G" remains from previous "go to next stage"
 - tune autoframeskip: force 2 skips for train/truck levels all the time
   remain auto 0-2 for other levels
 - level 2: climbers on the right "blink" (frame/grouping? wrong clipping?)
-- karnov: feet disappear
 - test feet for level 6 devil pole, 5 akaikage, maybe fixed???
 - easy: track boss 7 color change
 - train erase: extend gap to full train height, add erase on the right of the front wheel: saves blitter
   still wagon not deleted properly at times
-- animal lower part (boots) shifted at times  
 - ending sequence trashed/flashes... double buffering vs simple buffering?
 - level 1 use restore_gap for gaps: seems that clear_fg_planes_any_blitter_internal doesn't work!!
-
-- level 1: truck leaves trashed parts of trailer, probably workaround is possible
-- capture "game over" music: for that we need a high score!
-- level 1 repair front objects (status bar showing but destroyed, debug this)
-  => control word for multiplexed after lamp is not working but other sprites are also destroyed!
+- 'S' debug mode should display varying data on sprite debug locations
+  => number of enemies/blits, last unknown played sound?- capture "game over" music: for that we need a high score!
 - easy: second screen sequence sprites (president+bad dudes)
 - end sequence should use scrolling sprites for credits: allocate huge 2x high sprite buffers
   first find a way to reach sequence faster
@@ -22,7 +26,6 @@
 - separate copperlist for ending screen: much simpler, and with 24 bit copper sky
   maybe use that copperlist for intro screen too (gray copper sky). When loading tiles & sprite
   palettes, load into both copperlists
-- crash at the end of level 1 => level 2 (other levels switch OK!): front object conflict
 - level 7 vertical scrolling "trick": if y scroll gets > 0x100, then
   * blit restore buffer from y=0x100 to 0x200 in 0
   * set y_extra_scroll_offset at -0x100

@@ -882,15 +882,15 @@ with open(src_dir / "special_2x_4x_dual_table.68k","w") as f:
 generate_for_levels = [False]*9
 
 
-##generate_for_levels[0] = True
-#generate_for_levels[1] = True
-#generate_for_levels[2] = True
-##generate_for_levels[3] = True
-##generate_for_levels[4] = True
-#generate_for_levels[5] = True
+generate_for_levels[0] = True
+generate_for_levels[1] = True
+generate_for_levels[2] = True
+generate_for_levels[3] = True
+generate_for_levels[4] = True
+generate_for_levels[5] = True
 generate_for_levels[6] = True
-##generate_for_levels[7] = True
-#generate_for_levels[8] = True
+generate_for_levels[7] = True
+generate_for_levels[8] = True
 
 
 # set to "False" for faster operation when working on game sprite/tiles
