@@ -1,9 +1,7 @@
-- amiga copy because too fuckin' slow (level 2) probably issue!!
 - tune autoframeskip: force 2 skips for train/truck levels all the time
   remain auto 0-2 for other levels
 - level 2: climbers on the right "blink" (frame/grouping? wrong clipping?)
-- karnov feet erase issue, doesn't seem to be erased. 
-  karnov: wrong tile height (x2 instead of x4): wpset FFC028,4,W,wpdata==0x90800400 never happens
+- karnov: feet disappear
 - test feet for level 6 devil pole, 5 akaikage, maybe fixed???
 - easy: track boss 7 color change
 - train erase: extend gap to full train height, add erase on the right of the front wheel: saves blitter

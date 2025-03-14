@@ -3643,6 +3643,11 @@ clear_fg_planes_any_blitter_internal:
 	* null or negative height after clipping: out
 	rts
 0:
+	tst		d1
+	jpl		1f
+	moveq	#0,d1
+	jra		2f
+1:
     lea mulNB_BYTES_PER_ROW_table,a2
 	.ifdef	NO68020
     add.w   d1,d1
@@ -3650,10 +3655,10 @@ clear_fg_planes_any_blitter_internal:
 	.else
     move.w  (a2,d1.w*2),d1
 	.endif
-1:
-	tst		d1
-	jpl		2f
-	moveq	#0,d1
+	swap 	d1
+	clr.w	d1
+	swap	d1
+
 2:
  	moveq	#1,d5
 	ror.l	#8,d5     | AKA move.l  #0x01000000,d5   | minterm useD & rect clear (0xA) 
@@ -3675,10 +3680,10 @@ clear_fg_planes_any_blitter_internal:
 	* width too big: clip height
 	sub.w	d6,d2
 24:
-    add.w   d0,d1
+    add.l   d0,d1
 	bclr	#0,d1
 2:   
-    add.w   d1,a1       | plane position (always even)
+    add.l   d1,a1       | plane position (always even)
 
 	move.w #NB_BYTES_PER_ROW,d0
 	bclr	#0,d2		| make sure D2 is even (else strange things occur!)
@@ -3983,8 +3988,6 @@ start_process_1_plane:
 * trashes: D0-D1
 
 restore_background:
-	
-
 	movem.l	d2-d6/a0/a2-a5,-(a7)
 	lea		_custom,a5
 	
