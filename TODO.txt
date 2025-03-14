@@ -1,4 +1,5 @@
-- animal yell sound: not played
+- animal yell sound: not played (anymore)
+- boss killed sound: not played
 - on game over, tests test_input_bit_d1, then goes back to menu but intro screen trashed
 - level 5: red girls missing frames?
 - level 4: punching enemies while kneeled: missing frame?
@@ -15,10 +16,7 @@
 - train erase: extend gap to full train height, add erase on the right of the front wheel: saves blitter
   still wagon not deleted properly at times
 - ending sequence trashed/flashes... double buffering vs simple buffering?
-- level 1 use restore_gap for gaps: seems that clear_fg_planes_any_blitter_internal doesn't work!!
-- 'S' debug mode should display varying data on sprite debug locations
-  => number of enemies/blits, last unknown played sound?- capture "game over" music: for that we need a high score!
-- easy: second screen sequence sprites (president+bad dudes)
+- easy: missing second screen sequence sprites (president+bad dudes)
 - end sequence should use scrolling sprites for credits: allocate huge 2x high sprite buffers
   first find a way to reach sequence faster
 - boss rush: a lot of bosses have wrong colors: reset colors before replacing palette
@@ -48,12 +46,7 @@
 - difficulty level what does it do? maybe using "easy" would reduce number of enemies
   and make game smoother?? boss energy is lower on low difficulty (which the port gets
   by default!)
-- boss 6 & 7 wrong grouping / missing tiles  
 - level 7 display helicopter!
-- level 2: no lamps if objects 2 loaded. Ok if objects 1 loaded
-- drop 2 player mode, use rightmost OSD sprite for real parallax in levels 4 and 6
-  see if we can blit the score afterwards if 2P mode is reinstated, anyway 2P mode is probably
-  not possible given the short memory we have
 - level 2 front object (lamp) not displaying (used to work with level 1 objects)
 - save/load highscores
 - end music has issues with ptplayer, also tune start is wrong
@@ -64,6 +57,12 @@
 - knife sound has blow+man scream (hack not working there... maybe we could see if player
   has weapon... not working in 2P mode though)
 
+- boss 6 & 7 wrong grouping / missing tiles  
+- drop 2 player mode, use rightmost OSD sprite for real parallax in levels 4 and 6
+  see if we can blit the score afterwards if 2P mode is reinstated, anyway 2P mode is probably
+  not possible given the short memory we have
+- 'S' debug mode should display varying data on sprite debug locations
+  => number of enemies/blits, last unknown played sound?- capture "game over" music: for that we need a high score!
 
 
 low priority:
