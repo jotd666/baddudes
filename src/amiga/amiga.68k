@@ -1289,13 +1289,13 @@ restore_gap:
 	move.l	background_restore_buffer,a0
 	move.l	fg_drawed_screen_ptr,a1
 
-	move.w	#4,D3		| train/truck/etc. has only 4 planes, no need to restore more
 	.ifne	OPT_DEBUG_GAP_ERASE
 	sub.w	#10,d1	| slightly up that was to see where areas are restored
 	add.w	#10,d4
+	move.w	nb_tile_planes_24da,D3
 	jbsr	clear_fg_planes_any_blitter_internal
 	.else
-	jbsr	restore_background_less_planes
+	jbsr	restore_background
 	.endif
 2:
 	rts
@@ -3983,16 +3983,9 @@ start_process_1_plane:
 * trashes: D0-D1
 
 restore_background:
-	move.w	d3,-(a7)
-	move.w	nb_tile_planes_24da,d3
-	jbsr	restore_background_less_planes
-	move.w	(a7)+,d3
-	rts
 	
-restore_background_less_planes:
-* < D3: number of planes (usually nb_tile_planes_24da but may be less)
 
-	movem.l	d2/d3-d6/a0/a2-a5,-(a7)
+	movem.l	d2-d6/a0/a2-a5,-(a7)
 	lea		_custom,a5
 	
 	* adjust offset X: X//8 even rounded
@@ -4015,37 +4008,37 @@ restore_background_less_planes:
 	cmp.w	#NB_BYTES_PER_ROW,d0
 	jcc		1f	| too far: do nothing
 
-	move.w	d0,d6
-	add.w	d2,d6
-	sub.w	#NB_BYTES_PER_ROW,d6
+	move.w	d0,d3
+	add.w	d2,d3
+	sub.w	#NB_BYTES_PER_ROW,d3
 	jcs		24f		| okay!
 	* width too big: clip height
-	sub.w	d6,d2
+	sub.w	d3,d2
 24:
 	
 	lea		mulNB_BYTES_PER_ROW_table,a4
-	moveq	#0,d6
+	moveq	#0,d3
 	.ifdef	NO68020
 	add.w	d1,d1
 	* add Y offset: Y*NB_BYTES_PER_ROW
-	move.w	(a4,d1.w),d6
+	move.w	(a4,d1.w),d3
 	.else
-	move.w	(a4,d1.w*2),d6
+	move.w	(a4,d1.w*2),d3
 	.endif
 	
 	* !!long adds, we have a big buffer > 0x8000!!
 	* same offset for source and destination
 	* except if X coord > 0x200 (because background restore buffer
 	* doesn't duplicate like the background which needs 3 screens)
-	add.l	d6,a1
-	add.l	d6,a0
+	add.l	d3,a1
+	add.l	d3,a0
 	
 	* here we need to clip to 0x300 (NB_BYTES_PER_ROW*8) FUCK
 	add.w	d0,a1	| real coord (can be > 0x2xx)
 	and.w	#0x3F,d0  | THIS IS WRONG SINCE THE START!!!!
 	add.w	d0,a0	| wrap source
 
-    move.l  #0x09f00000,d6    | A->D copy, ascending mode	
+    move.l  #0x09f00000,d3    | A->D copy, ascending mode	
 	move.w	#NB_BYTES_PER_ROW,d1		| blit modulo
 
     sub.w   d2,d1       | blit modulo
@@ -4065,7 +4058,7 @@ restore_background_less_planes:
     
     * blitter registers set
 
-	move.l d6,bltcon0(a5)	| sets con0 and con1
+	move.l d3,bltcon0(a5)	| sets con0 and con1
 
     move.w  d1,bltamod(a5)	|A modulo
     move.w  d1,bltdmod(a5)	|D modulo
@@ -4074,7 +4067,8 @@ restore_background_less_planes:
 	move.l a1,bltdpt(a5)	|destination top (bottom) left corner
 	move.w  d4,bltsize(a5)	|rectangle size, starts blit
 	
-	subq	#2,d3
+	move.w	nb_tile_planes_24da,d0
+	subq	#2,d0
 
 
 2:
@@ -4096,14 +4090,14 @@ restore_background_less_planes:
 	* next plane
 	move.l	a3,a1
 	move.l	a2,a0
-	dbf		D3,2b	
+	dbf		D0,2b	
 	jra		1f
 0:
 	WAIT_BLIT
 	move.l a0,bltapt(a5)	|source graphic top left corner
 	move.l a1,bltdpt(a5)	|destination top (bottom) left corner
 	move.w  d4,bltsize(a5)	|rectangle size, starts blit
-	dbf		D3,2b
+	dbf		D0,2b
 1:
 	
 	movem.l	(a7)+,d2-d6/a0/a2-a5
