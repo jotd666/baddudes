@@ -42,7 +42,7 @@ def convert():
     "JUMP_KICK_SND"               :{"index":0x29,"channel":3,"sample_rate":hq_sample_rate,"priority":40},
     #"HELI_KICK_SND"               :{"index":0x1C,"channel":3,"sample_rate":hq_sample_rate,"priority":40},
     "FIRE_SPIT_SND"               :{"index":0xD,"channel":3,"sample_rate":hq_sample_rate,"priority":40},
-    #"BOSS_DEAD"               :{"index":0x2F,"channel":2,"sample_rate":hq_sample_rate,"priority":30},
+    "BOSS_DEAD_SND"               :{"index":0x2F,"channel":3,"sample_rate":hq_sample_rate,"priority":100},
     "BOSS_HIT_SND"               :{"index":0x3A,"channel":2,"sample_rate":hq_sample_rate,"priority":30},
     "BLOW_SND"               :{"index":0x27,"channel":3,"sample_rate":hq_sample_rate,"priority":30},
     #"SABRE_SND"               :{"index":0xB,"channel":3,"sample_rate":hq_sample_rate,"priority":30},
@@ -58,7 +58,7 @@ def convert():
     "DOG_KILLED_SND"               :{"index":0x34,"channel":3,"sample_rate":vhq_sample_rate,"priority":40,"optional_pack":"dog"},
     "NINJA_ATTACK_SCREAM_SND"     :{"index":0x3B,"channel":3,"sample_rate":vhq_sample_rate,"priority":30,"optional_pack":"clone_boss"},
     "NINJA_CLONE_SND"     :{"index":0x1B,"channel":3,"sample_rate":vhq_sample_rate,"priority":40,"optional_pack":"clone_boss"},
-    "ROBO_BOSS_SCREAM_SND"     :{"index":0x2E,"channel":3,"sample_rate":vhq_sample_rate,"priority":30,"optional_pack":"animal"},
+    "ROBO_BOSS_SCREAM_SND"     :{"index":0x2E,"channel":3,"sample_rate":vhq_sample_rate,"priority":50,"optional_pack":"animal"},
 
     "LEVEL_1_TUNE_SND"                :{"index":0x1F,"pattern":0,"volume":20,'loops':True},
     "LEVEL_2_TUNE_SND"                :{"index":0x20,"pattern":0,"volume":20,'loops':True},

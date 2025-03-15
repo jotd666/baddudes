@@ -4887,7 +4887,7 @@ set_playfield_bitplanes:
 	add.w	(2,a2,d2.w*4),d0
 
     add.l	fg_displayed_screen_ptr,d0
-    lea	bitplanes_intro+2,a0
+    move.l	bitplanes_copperlist_ptr,a0
 	jbsr	set_bitplanes
 	
 	.ifeq	OPT_NO_BOTTOM_SCROLL
@@ -4919,6 +4919,7 @@ set_playfield_bitplanes:
 	rts
 
 set_bitplanes:
+	addq	#2,a0
     moveq #NB_PLAYFIELD_PLANES,d1
 set_any_bitplanes:
 	subq	#1,d1
@@ -5441,6 +5442,8 @@ osd_set_context:
 	* then we can safely load the new context
 	jbsr	save_interrupt_state
 	jbsr	osd_disable_interrupts
+	
+	move.l	#bitplanes_default,bitplanes_copperlist_ptr
 	
 	* we need to make sure that the sprite update interrupt is updating the
 	* sprites while we're changing the sprite set, or it can cause issues
@@ -7068,7 +7071,8 @@ fg_screen_data_1:
 fg_screen_data_2:
 	.long	0
 	
-
+bitplanes_copperlist_ptr:
+	.long	0
 fg_drawed_screen_ptr:
 	.long	0
 fg_displayed_screen_ptr:
@@ -7526,10 +7530,49 @@ debug_color:
 	dc.w	0
 	dc.l	-2
 	
+* copperlist used for static screens, where a sky copper effect
+* can be performed
+simple_screen_copperlist:
+	.word	bplcon0,0x6200+BORDERBLANK | 6 bitplanes, borderblank
+	DECL_COLOR_BANK	2
+*sprites_palette_even:
+	DECL_COLORS	0,16
+*sprites_palette_odd:
+	DECL_COLORS	16,16
+	.word	bplcon4
+	.word	BASE_BPLCON4_VALUE
+	.word	bplcon2
+	.word	BASE_BPLCON2_VALUE
 
+bitplanes_simple_screen:
+	DECL_BITPLANES	0,NB_PLAYFIELD_PLANES
+
+	DECL_COLOR_BANK 0
+base_palette_simple_screen:
+	DECL_COLORS	0,32
+	* now set color bank 1
+	DECL_COLOR_BANK	1	
+	DECL_COLORS	0,32
+	
+	* mid-line wait & extra interrupt
+	.word	0x8001,0xFFFE
+	* now wait some lines until we're sure bitmap only contains
+	* non-black: we can set color 0 to light blue now
+	.word	 intreq,0x8014  | call copper interrupt in the middle of a frame, also flag so copper interrupt knows that we're going to call copper int
+
+	* pal limit
+    .word  0xFFDF,0xFFFE       | PAL wait
 
 	
-	* copperlist used for most screens
+    .long    -2
+	.ifndef	RELEASE
+	.ascii	"ENDCPLST"
+	.endif
+	
+	
+************************************	
+* copperlist used for most screens *
+************************************
 default_copperlist:
 	.word	bplcon0,0x6200+BORDERBLANK | 6 bitplanes, borderblank
 
@@ -7542,7 +7585,7 @@ sprites_palette_even:
 sprites_palette_odd:
 	DECL_COLORS	16,16
 
-bitplanes_intro:
+bitplanes_default:
 	DECL_BITPLANES	0,NB_PLAYFIELD_PLANES
 
 	.word	bplcon1
@@ -7607,7 +7650,6 @@ forest_colors_end:
 	
 	* mid-line wait & extra interrupt
 	.word	0x8001,0xFFFE
-intro_intreq_block:
 	* now wait some lines until we're sure bitmap only contains
 	* non-black: we can set color 0 to light blue now
 	.word	 intreq,0x8014  | call copper interrupt in the middle of a frame, also flag so copper interrupt knows that we're going to call copper int

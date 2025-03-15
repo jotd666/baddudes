@@ -1,7 +1,6 @@
 - animal yell sound: not played (anymore)
-- boss killed sound: not played
 - still rythm issue in boss fight tune
-- on game over, tests test_input_bit_d1, then goes back to menu but intro screen trashed
+- on game over, tests test_input_bit_d1 (0x0174c,0x0175c,0x07e66), then goes back to menu but intro screen trashed
 - level 5: red girls missing frames?
 - level 4: punching enemies while kneeled: missing frame? happens on other levels?
 - level 1 repair front objects (status bar showing but destroyed, debug this)
@@ -14,8 +13,7 @@
 - level 2: climbers on the right "blink" (frame/grouping? wrong clipping?)
 - test feet for level 6 devil pole, 5 akaikage, maybe fixed???
 - easy: track boss 7 color change
-- train erase: extend gap to full train height, add erase on the right of the front wheel: saves blitter
-  still wagon not deleted properly at times
+- train erase: still wagon not deleted properly at times
 - ending sequence trashed/flashes... double buffering vs simple buffering?
 - easy: missing second screen sequence sprites (president+bad dudes)
 - end sequence should use scrolling sprites for credits: allocate huge 2x high sprite buffers
@@ -99,5 +97,6 @@ RESTORE_SCREEN_PLANE_SIZE = NB_BYTES_PER_SCREEN_ROW*2*NB_PLAYFIELD_LINES*2
 
 howto:
 - skip music: bpset 0df2a,D0==$1F || D0==$22  || D0==$21 || D0==$20 || D0==$27 || D0 == $2C || D0 == $26,{CURPC=$13DA;g}
+- skip all but one sound: bpset 0df2a,D0!=$2F,{CURPC=$13DA;g}
 - log sounds: bpset 0df2a,,{printf "%x",D0;g}
 
