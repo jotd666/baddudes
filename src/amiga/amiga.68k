@@ -91,7 +91,9 @@ SCREEN_ADDRESS = 0x244000
 OPT_NO_SCROLLING_X = 0
 OPT_NO_SCROLLING_Y = 0
 OPT_NO_BOTTOM_SCROLL = 0
-OPT_DEBUG_GAP_ERASE = 0
+* black rectangles instead of background restore allow to see where the
+* background restore happens
+OPT_DEBUG_GAP_ERASE = 1
 
 * load fixed sprites, mostly bosses as they're long to reach & test
 OPT_BOSS_SPRITES_MOCKUP = 0
@@ -1223,11 +1225,16 @@ specific_level_5_train_erase:
 
 	add.w	#0x80,d0
 	and.w	#0xFF,d0	| modulus
+	move.w	d0,-(a7)
 	sub.w	#0x8,d0		| adjust for round corners
 	* wagon gap
-	moveq	#1,d1
+	moveq	#0,d1
 	moveq	#4,d2	| no need to restore a lot
 	jbsr	restore_gap
+	move.w	(a7)+,d0
+	add.w	#100,d0
+	and.w	#0xFF,d0	| modulus
+	jbsr	restore_wheel_background
 	
 	move.w	d7,d0
 	cmp.w	#0xB0,d0
@@ -1261,6 +1268,40 @@ specific_level_5_train_erase:
 	moveq	#1,d1
 	jbsr	restore_gap
 
+	rts
+	
+* < D1: 0: full height, 1: not lower part
+* < D0: X (without scroll)
+
+restore_wheel_background:
+	* don't restore if not in visible screen
+	tst.w	d0
+	jpl		1f
+	cmp.w	#0xFFE0,d0
+	jcs		2f
+	jra		3f
+1:
+	cmp.w	#0x100,d0
+	jcc		2f
+3:	
+	add.w	x_background_scroll_value,d0
+	moveq	#4,d2
+	move.w	truck_wheels_height,d4
+	move.w	truck_y_pos,d1	| displayY
+	add.w	big_machine_height,d1
+	sub.w	#16,d1
+	move.l	background_restore_buffer,a0
+	move.l	fg_drawed_screen_ptr,a1
+
+	.ifne	OPT_DEBUG_GAP_ERASE
+	sub.w	#10,d1	| slightly up that was to see where areas are restored
+	add.w	#10,d4
+	move.w	nb_tile_planes_24da,D3
+	jbsr	clear_fg_planes_any_blitter_internal
+	.else
+	jbsr	restore_background
+	.endif
+2:
 	rts
 	
 * < D1: 0: full height, 1: not lower part

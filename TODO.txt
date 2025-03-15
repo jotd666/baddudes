@@ -1,8 +1,9 @@
 - animal yell sound: not played (anymore)
 - boss killed sound: not played
+- still rythm issue in boss fight tune
 - on game over, tests test_input_bit_d1, then goes back to menu but intro screen trashed
 - level 5: red girls missing frames?
-- level 4: punching enemies while kneeled: missing frame?
+- level 4: punching enemies while kneeled: missing frame? happens on other levels?
 - level 1 repair front objects (status bar showing but destroyed, debug this)
   => control word for multiplexed after lamp is not working but other sprites are also destroyed!
 - boss energy bar missing right half

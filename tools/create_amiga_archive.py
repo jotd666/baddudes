@@ -24,14 +24,14 @@ for file in ["readme.md",f"{gamename}.slave"]:  #f"{gamename}.slave",
     shutil.copy(os.path.join(progdir,file),outdir)
 
 datadir = os.path.join(progdir,"data")
-#shutil.copy(os.path.join(progdir,"assets","amiga","MoonPatrolGlowIcon.info"),outdir)
+shutil.copy(os.path.join(progdir,"assets","amiga","BadDudesAGA.info"),outdir)
 dataout = os.path.join(outdir,"data")
 shutil.copytree(datadir,dataout)
 
 # cleanup of log files in data dir that whdload creates
 for x in glob.glob(os.path.join(dataout,"game_level_?")):
     os.remove(x)
-for x in glob.glob(os.path.join(dataout,"level_2_24*")):
+for x in glob.glob(os.path.join(dataout,"level_?_24*")):
     os.remove(x)
 for x in glob.glob(os.path.join(dataout,"sprite_ram*")):
     os.remove(x)
