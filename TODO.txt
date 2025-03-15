@@ -1,17 +1,23 @@
+- clear rectangle on the right level 1 TMPWRITE (as triggers for nothing!!)
+- analyze mockup: lots_of_enemies: see if grouping can be improved
+  no grouping: FB70, grouping: F168 blits! also check blitsize, all in immediate blitter mode
+  (else cpu erase can occur)
+- truck blit 2 just after level 1 completed, locks up the game!
+- easy: do not delay bad dudes title blit
 - animal yell sound: not played (anymore)
 - still rythm issue in boss fight tune
 - on game over, tests test_input_bit_d1 (0x0174c,0x0175c,0x07e66), then goes back to menu but intro screen trashed
 - level 5: red girls missing frames?
-- level 4: punching enemies while kneeled: missing frame? happens on other levels?
+- level 4: punching enemies while kneeled: missing frame? happens on other levels too
 - level 1 repair front objects (status bar showing but destroyed, debug this)
   => control word for multiplexed after lamp is not working but other sprites are also destroyed!
 - boss energy bar missing right half
-- level 2 queue trailer erase inefficient when reaching extreme left
+- level 2 queue trailer erase inefficient when reaching extreme left TBC
 - 2nd level complete in a row "STAGE X CLEAR" "G" remains from previous "go to next stage"
 - tune autoframeskip: force 2 skips for train/truck levels all the time
   remain auto 0-2 for other levels
 - level 2: climbers on the right "blink" (frame/grouping? wrong clipping?)
-- test feet for level 6 devil pole, 5 akaikage, maybe fixed???
+- easy: boss 6 color change doesn't work in real game (ok on mockup!!)
 - easy: track boss 7 color change
 - train erase: still wagon not deleted properly at times
 - ending sequence trashed/flashes... double buffering vs simple buffering?

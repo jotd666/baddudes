@@ -173,22 +173,29 @@ NB_BYTES_PER_SPRITE_ROW = 8   | fmode=3: 64 pixels wide sprites!
 	.endif
 	.endm
 	
-.macro	WAIT_BLIT
+	.macro	WAIT_BLIT
 	move.w	#0x8400,(dmacon,a5)		| blitter high priority
 wait\@:
 	BTST	#6,(dmaconr,a5)
 	BNE.S	wait\@
 	move.w	#0x0400,(dmacon,a5)		| blitter normal priority
-.endm
+	.endm
 
-.macro MUL_TABLE value,len
+	.macro	DO_BLIT
+	move.w  d4,bltsize(a5)
+	.ifndef	RELEASE
+	jbsr	log_blit
+	.endif
+	.endm
+
+	.macro MUL_TABLE value,len
 mul\value\()_table:
 	.set    mulv,0
 	.rept	\len
 	dc.w	mulv
 	.set	mulv,mulv+\value
 	.endr
-.endm
+	.endm
 
 .macro	DECL_BITPLANES	bpoff_start,nb_planes
 	.set	bpoff,\bpoff_start
@@ -209,6 +216,10 @@ mul\value\()_table:
 	dc.w	color+(colidx*2),0
 	.set	colidx,colidx+1
 	.endr
+	.endm
+
+	.macro	COPPER_WAIT		value
+	.word	\value,0xFFFE
 	.endm
 
 .macro	DECL_SPRITES	nb_sprites
@@ -261,11 +272,27 @@ w\@:
 	.endm
 	
 
+* this must be the first entry of the source file
 start:
 	move.l	a7,old_stack
 	bra	_user
     
+	.ifndef	RELEASE
+* < D4: bltsize value just written in blitter register
+log_blit:
+	movem.l	d0-d1/a0-a1,-(a7)
+	moveq	#0,d0
+	move.w	d4,d0
+	move.w	d4,d1
+	lsr.w	#6,d0		| height
+	and.w	#0x3F,d1	| width
+	mulu	d1,d0		| width * height in words
+	add.l	d0,nb_blitted_words_per_second
+	addq.l	#1,nb_blits_per_second
+	movem.l	(a7)+,d0-d1/a0-a1
+	rts
 	
+	.endif	
 
 * exports
 
@@ -744,6 +771,21 @@ _vblank:
 	jsr	_read_joystick
 	move.l	d0,_joypad_state
 	
+	.ifndef	RELEASE
+	move.b	ticks_count,d0
+	add.b	#1,d0
+	cmp.b	#50,d0
+	jne		0f
+	clr.b	ticks_count
+	move.l	nb_blitted_words_per_second,last_nb_blitted_words_per_second
+	move.l	nb_blits_per_second,last_nb_blits_per_second
+	clr.l	nb_blits_per_second
+	clr.l	nb_blitted_words_per_second
+	clr.b	d0
+0:
+	move.b	d0,ticks_count
+	.endif
+
 	* CD32 "play" is disabled but it's free to read
 	* 3rd button on a Sega 3-button so 3rd button is pause
 	btst	#JPB_BTN_PLAY,d0
@@ -783,12 +825,25 @@ _vblank:
 	GET_RAM_START_IN_A6
 	btst	#2,d0
 	beq.b	2f
+
+
+	tst.b	pause_flag
+	.ifdef	RELEASE
+	* release: pause pauses blitting
+	jne	23f
+	.else
+	* debug: pause just skips irq
+	jne	2f
+	.endif
+
 	* mid-screen copper interrupt, must occur once every 5 times
 	* to simulate ~60 Hz on 50 Hz display
 	move.b	mid_screen_interrupt_count,d0
 	addq.b	#1,d0
 	cmp.b	#5,d0
 	bne.b	1f
+	
+
 	* declare that we're in interrupt mode so osd_disable_interrupts/osd_enable_interrupts
 	* also set SR accordingly
 	st.b	interrupt_mode
@@ -803,17 +858,21 @@ _vblank:
 	
 
 	
-	tst.b	pause_flag
-	jne	23f
-
 	subq.w	#1,delay_timer
 		
 	* declare that we're in interrupt mode so osd_disable_interrupts/osd_enable_interrupts
 	* also set SR accordingly
+
+	.ifndef	RELEASE
+	* debug: pause just skips irq
+	tst.b	pause_flag
+	jne	0f
+	.endif
+
 	st.b	interrupt_mode
 	jbsr		baddudes_irq
 	clr.b	interrupt_mode
-
+0:
 	move.w	display_dudes,d0
 	jeq		1100f
 	
@@ -947,8 +1006,10 @@ _vblank:
 	addq	#2,a6
 	jra	0b
 1:
-	tst.b	debug_scroll_display
-	jeq		2f
+	tst.b	debug_values_display
+	jeq		20f
+	cmp.b	#1,debug_values_display
+	jne		2f
 	* copy truck scroll value
 	move.w	x_secondary_scroll_value,d0
 	lea		debug_truck_message(pc),a0
@@ -962,7 +1023,23 @@ _vblank:
 	lea		debug_scroll_message(pc),a0
 	jbsr	encode_debug_message
 	jbsr	osd_write_left_debug_message
+	jra		20f
 2:
+	move.l	last_nb_blitted_words_per_second,d0
+	lea		debug_blit_size_message(pc),a0
+	jbsr	encode_debug_message
+	jbsr	osd_write_right_debug_message
+	
+	move.l	last_nb_blits_per_second,d0
+	lea		debug_blit_count_message(pc),a0
+	jbsr	encode_debug_message
+	jbsr	osd_write_left_debug_message
+
+20:
+
+
+	
+
 	.endif
 
 3:
@@ -1358,7 +1435,7 @@ draw_truck_level_1:
 	move.w	#0xE0,d0	| absolute secondary scroll pos
 	moveq	#8,d2
 	moveq	#0,d1		| full height
-	jbsr	restore_gap
+	*jbsr	restore_gap
 	rts
 	
 draw_big_machine:
@@ -3091,7 +3168,11 @@ really_update_sprites:
 10:
 	.endif
 	
-	.ifdef		GROUP_BACKGROUND_RESTORE
+	.ifndef		RELEASE
+	tst.b	group_erase
+	jeq		12f
+	.endif
+	
 	move.l	bob_previous_drawed_sprites,a4
 	move.w	(a4),d2		| init prev X with first val
 	add.w	#16,d2			| previous += 16
@@ -3140,7 +3221,7 @@ really_update_sprites:
 	add.w	#16,d2			| previous += 16
 	dbf		d7,0b
 12:
-	.endif
+
 
 	
 	lea		_custom,a5
@@ -3760,7 +3841,7 @@ clear_fg_planes_any_blitter_internal:
 	jne		5f
 4:
 	move.l a1,bltdpt(a5)	|destination top left corner
-	move.w  d4,bltsize(a5)	|rectangle size, starts blit
+	DO_BLIT					|rectangle size, starts blit
 	lea		(SCREEN_PLANE_SIZE,a1),a1
 	dbf		d3,3b	
     rts
@@ -3972,7 +4053,7 @@ blit_planes_any_internal_cookie_cut:
 	
 	move.l	a1,bltcpt(a5)	|pristine background top (bottom) left corner
 	move.l	a1,bltdpt(a5)	|destination top (bottom) left corner
-	move.w  d4,bltsize(a5)	|rectangle size, starts blit
+	DO_BLIT	|rectangle size, starts blit
 	lea		(SCREEN_PLANE_SIZE,a1),a1
 	WAIT_BLIT
 	dbf		d3,6b
@@ -3981,7 +4062,7 @@ blit_planes_any_internal_cookie_cut:
 	jbsr	start_process_1_plane
 	move.l	a1,bltcpt(a5)	|pristine background top (bottom) left corner
 	move.l	a1,bltdpt(a5)	|destination top (bottom) left corner
-	move.w  d4,bltsize(a5)	|rectangle size, starts blit
+	DO_BLIT	|rectangle size, starts blit
 10:
     movem.l (a7)+,d0-d7/a4
     rts
@@ -4126,7 +4207,7 @@ restore_background:
 							
 	move.l a0,bltapt(a5)	|source graphic top left corner
 	move.l a1,bltdpt(a5)	|destination top (bottom) left corner
-	move.w  d4,bltsize(a5)	|rectangle size, starts blit
+	DO_BLIT	|rectangle size, starts blit
 	
 	move.w	nb_tile_planes_24da,d0
 	subq	#2,d0
@@ -4157,7 +4238,7 @@ restore_background:
 	WAIT_BLIT
 	move.l a0,bltapt(a5)	|source graphic top left corner
 	move.l a1,bltdpt(a5)	|destination top (bottom) left corner
-	move.w  d4,bltsize(a5)	|rectangle size, starts blit
+	DO_BLIT	|rectangle size, starts blit
 	dbf		D0,2b
 1:
 	
@@ -4275,14 +4356,14 @@ blit_planes_any_internal_no_cookie_cut:
 	jbsr	start_process_1_plane_nocc
 	
 	move.l	a1,bltdpt(a5)	|destination top (bottom) left corner
-	move.w  d4,bltsize(a5)	|rectangle size, starts blit
+	DO_BLIT	|rectangle size, starts blit
 	lea		(SCREEN_PLANE_SIZE,a1),a1
 	WAIT_BLIT
 	dbf		d3,6b
 7:
 	jbsr	start_process_1_plane_nocc
 	move.l	a1,bltdpt(a5)	|destination top (bottom) left corner
-	move.w  d4,bltsize(a5)	|rectangle size, starts blit
+	DO_BLIT	|rectangle size, starts blit
     
     movem.l (a7)+,d0-d7/a4
     rts
@@ -4887,7 +4968,7 @@ set_playfield_bitplanes:
 	add.w	(2,a2,d2.w*4),d0
 
     add.l	fg_displayed_screen_ptr,d0
-    move.l	bitplanes_copperlist_ptr,a0
+    lea	bitplanes_intro+2,a0
 	jbsr	set_bitplanes
 	
 	.ifeq	OPT_NO_BOTTOM_SCROLL
@@ -4919,7 +5000,6 @@ set_playfield_bitplanes:
 	rts
 
 set_bitplanes:
-	addq	#2,a0
     moveq #NB_PLAYFIELD_PLANES,d1
 set_any_bitplanes:
 	subq	#1,d1
@@ -5259,13 +5339,16 @@ handle_keyboard:
 	.ifndef	RELEASE
 	cmp.b	#34,d0
 	bne		0f
-	* 'D': debug scrolling display on/off
-	eor.b	#1,debug_scroll_display
+	* 'D': debug display modes, 0: none, 1: scroll/truck, 2: blitter count
+	addq.b	#1,debug_values_display
+	cmp.b	#3,debug_values_display
+	jne		0f
+	clr.b	debug_values_display
 0:
 	.ifne	OPT_ENABLE_LOGGING
-	cmp.b	#17,d0
+	cmp.b	#34,d0
 	bne		0f
-	* 'W' (from QWER..): dump all logging buffers to data dir
+	* 'D': dump all logging buffers to data dir
 	jbsr	dump_logs
 0:
 	.endif
@@ -5273,7 +5356,7 @@ handle_keyboard:
 	bne		0f
 	* 'T': toggle truck manual control on/off
 	eor.b	#1,debug_truck_control
-	move.b	debug_truck_control,debug_scroll_display
+	move.b	debug_truck_control,debug_values_display
 0:
 	cmp.b	#37,d0
 	bne		0f
@@ -5299,6 +5382,11 @@ handle_keyboard:
 	bne		0f
 	* 'W': move truck by 10 pixels right
 	move	#0x10,debug_truck_move
+0:
+	cmp.b	#36,d0
+	bne		0f
+	* 'G': toggle group erase
+	eor.b 	#1,group_erase
 0:
 	cmp.b	#0x57,d0	| F8 key: lose all lives
 	bne.b	0f
@@ -5442,8 +5530,6 @@ osd_set_context:
 	* then we can safely load the new context
 	jbsr	save_interrupt_state
 	jbsr	osd_disable_interrupts
-	
-	move.l	#bitplanes_default,bitplanes_copperlist_ptr
 	
 	* we need to make sure that the sprite update interrupt is updating the
 	* sprites while we're changing the sprite set, or it can cause issues
@@ -7071,8 +7157,7 @@ fg_screen_data_1:
 fg_screen_data_2:
 	.long	0
 	
-bitplanes_copperlist_ptr:
-	.long	0
+
 fg_drawed_screen_ptr:
 	.long	0
 fg_displayed_screen_ptr:
@@ -7099,11 +7184,23 @@ debug_truck_control:
 	.byte	0
 stop_updating_bobs:
 	.byte	0
-debug_scroll_display:
+debug_values_display:
+	.byte	0
+ticks_count:
+	.byte	0
+group_erase:
 	.byte	0
 	.align	2
 debug_truck_move:
 	.word	0
+last_nb_blitted_words_per_second:
+	.long	0
+nb_blitted_words_per_second:
+	.long	0
+last_nb_blits_per_second:
+	.long	0
+nb_blits_per_second:
+	.long	0
 * in 244758
 
 boss_life:
@@ -7168,6 +7265,10 @@ debug_truck_message:
 	.asciz	"TPOS 000000"
 debug_scroll_message:
 	.asciz	"SCRO 000000"
+debug_blit_size_message:
+	.asciz	"BLSZ 000000"
+debug_blit_count_message:
+	.asciz	"BLNB 000000"
 	.endif
 intro_sound_file:
 	.asciz	"intro_sounds.bin"
@@ -7327,6 +7428,7 @@ HW_SpriteYTable_\height:
 	lea	HW_SpriteYTable_\offset,a1
 	move.l	a1,(\offset*4,a0)
 	.endm
+	
 	
 init_sprite_y_table_table:
 	lea	sprite_y_table_table,a0
@@ -7530,49 +7632,10 @@ debug_color:
 	dc.w	0
 	dc.l	-2
 	
-* copperlist used for static screens, where a sky copper effect
-* can be performed
-simple_screen_copperlist:
-	.word	bplcon0,0x6200+BORDERBLANK | 6 bitplanes, borderblank
-	DECL_COLOR_BANK	2
-*sprites_palette_even:
-	DECL_COLORS	0,16
-*sprites_palette_odd:
-	DECL_COLORS	16,16
-	.word	bplcon4
-	.word	BASE_BPLCON4_VALUE
-	.word	bplcon2
-	.word	BASE_BPLCON2_VALUE
 
-bitplanes_simple_screen:
-	DECL_BITPLANES	0,NB_PLAYFIELD_PLANES
-
-	DECL_COLOR_BANK 0
-base_palette_simple_screen:
-	DECL_COLORS	0,32
-	* now set color bank 1
-	DECL_COLOR_BANK	1	
-	DECL_COLORS	0,32
-	
-	* mid-line wait & extra interrupt
-	.word	0x8001,0xFFFE
-	* now wait some lines until we're sure bitmap only contains
-	* non-black: we can set color 0 to light blue now
-	.word	 intreq,0x8014  | call copper interrupt in the middle of a frame, also flag so copper interrupt knows that we're going to call copper int
-
-	* pal limit
-    .word  0xFFDF,0xFFFE       | PAL wait
 
 	
-    .long    -2
-	.ifndef	RELEASE
-	.ascii	"ENDCPLST"
-	.endif
-	
-	
-************************************	
-* copperlist used for most screens *
-************************************
+	* copperlist used for most screens
 default_copperlist:
 	.word	bplcon0,0x6200+BORDERBLANK | 6 bitplanes, borderblank
 
@@ -7585,7 +7648,7 @@ sprites_palette_even:
 sprites_palette_odd:
 	DECL_COLORS	16,16
 
-bitplanes_default:
+bitplanes_intro:
 	DECL_BITPLANES	0,NB_PLAYFIELD_PLANES
 
 	.word	bplcon1
@@ -7615,7 +7678,7 @@ letters_palette:
 	DECL_COLORS	24,8
 base_palette_end:
 
-	.word	0x2C01+0x1800,0xFFFE
+	COPPER_WAIT	0x2C01+0x1800
 
 	* yellow color for time seconds
 	DECL_COLOR_BANK	2
@@ -7624,7 +7687,7 @@ base_palette_end:
 	
 
 	* (front objects) in levels 1 and 2
-	.word	0x2C01+0x2700,0xFFFE
+	COPPER_WAIT	0x2C01+0x2700
 	* wait 16 lines to declare multiplexed/attached sprites
 center_sprites_white:
 	.word	0x1FE,0xEEE
@@ -7649,17 +7712,18 @@ forest_colors:
 forest_colors_end:
 	
 	* mid-line wait & extra interrupt
-	.word	0x8001,0xFFFE
+	COPPER_WAIT	0x8001
+intro_intreq_block:
 	* now wait some lines until we're sure bitmap only contains
 	* non-black: we can set color 0 to light blue now
 	.word	 intreq,0x8014  | call copper interrupt in the middle of a frame, also flag so copper interrupt knows that we're going to call copper int
 
 	* pal limit
-    .word  0xFFDF,0xFFFE       | PAL wait
+    COPPER_WAIT  0xFFDF       | PAL wait
 
 	* set road scroll
 road_y_pos:
-	.word	0x0401,0xFFFE
+	COPPER_WAIT	0x0401
 bitplanes_road:
 	DECL_BITPLANES	0,NB_PLAYFIELD_PLANES
 	.word	0x1FE		| room for bplcon1
@@ -7677,7 +7741,7 @@ osd_lower_sprites:
 	DECL_SPRITES	4
 	
 	* change palette for lower OSD sprites (lives & energy)
-	.word	0x0C01,0xFFFE
+	COPPER_WAIT	0x0C01
 	* re-set palette for non-attached sprites
 	.word	bplcon4,BASE_BPLCON4_VALUE
 	.word	 intreq,0x8010	| no bobs from now on
@@ -7691,7 +7755,7 @@ osd_lower_sprites:
 	
 	.word	color+2*2,0xEBB		| flesh pink
 	.word	color+2*3,0xE9A		| flesh pink #2
-	.word	0x1401,0xFFFE
+	COPPER_WAIT	0x1401
 	.word	color+2*3,0xEEE		| back to white for "LIFE" letters
 	.word	color+2*2,0xB29		| magenta for dots
 	.word	color+2*6,0xB29		| magenta for dots (right part of "enemy" dots)
