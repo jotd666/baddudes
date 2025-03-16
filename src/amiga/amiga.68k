@@ -985,7 +985,12 @@ fn_debug_memory:
 	jbsr	osd_write_left_debug_message
 	rts
 
-	
+
+debug_display_table:
+	.long	nope
+	.long	fn_debug_scroll
+	.long	fn_debug_blit
+	.long	fn_debug_memory	
 
 	.endif
 
@@ -993,11 +998,6 @@ fn_debug_memory:
     movem.l (a7)+,d0-d7/a0-a6
     rte
 
-debug_display_table:
-	.long	nope
-	.long	fn_debug_scroll
-	.long	fn_debug_blit
-	.long	fn_debug_memory
 	
 encode_debug_message:
 	move.l	a0,-(a7)
@@ -7288,6 +7288,9 @@ sprite_ram_mockup:
 	.endif
 	.ifeq		OPT_BOSS_SPRITES_MOCKUP-6
 	.include	"mockup/boss_6.68k"
+	.endif
+	.ifeq		OPT_BOSS_SPRITES_MOCKUP-11
+	.include	"mockup/lots_of_enemies.68k"
 	.endif
 	.endif
 

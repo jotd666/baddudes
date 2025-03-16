@@ -33,4 +33,4 @@ def doit(filename):
     with open(filename+".68k","w") as f:
         bitplanelib.dump_asm_bytes(sprite_ram,f,mit_format=True)
 
-doit("sprite_ram")
+doit("lots_of_enemies")

@@ -1,11 +1,10 @@
-- clear rectangle on the right level 1 TMPWRITE (as triggers for nothing!!)
+- still missing sprites on level 2, possibly others...
 - mutant karnov black color issue
 - should do a per-level symmetry on spidermen, red ninjas, green ninjas, dogs...
-- debug: show memory left
+  to continue for higher levels
 - boss 5: locomotive wheel erase wrong
+- optim: group erase on 16 (working) or 32 bit wide blocks
 - level 5: remainer of wagons showing when gap erasing not effective on edges
-- fix gap erase again (truck level 1) and re-release !!!
-
 - analyze mockup: lots_of_enemies: see if grouping can be improved
   no grouping: FB70, grouping: F168 blits! also check blitsize, all in immediate blitter mode
   (else cpu erase can occur)
@@ -24,16 +23,12 @@
   remain auto 0-2 for other levels
 - level 2: climbers on the right "blink" (frame/grouping? wrong clipping?)
 - easy: track boss 7 color change
-- train erase: still wagon not deleted properly at times
 - ending sequence trashed/flashes... double buffering vs simple buffering?
 - easy: missing second screen sequence sprites (president+bad dudes)
 - end sequence should use scrolling sprites for credits: allocate huge 2x high sprite buffers
   first find a way to reach sequence faster
 - boss rush: a lot of bosses have wrong colors: reset colors before replacing palette
   (boss 2 => boss 3 in level 7): done: to test
-- separate copperlist for ending screen: much simpler, and with 24 bit copper sky
-  maybe use that copperlist for intro screen too (gray copper sky). When loading tiles & sprite
-  palettes, load into both copperlists
 - level 7 vertical scrolling "trick": if y scroll gets > 0x100, then
   * blit restore buffer from y=0x100 to 0x200 in 0
   * set y_extra_scroll_offset at -0x100
@@ -60,7 +55,6 @@
 - level 2 front object (lamp) not displaying (used to work with level 1 objects)
 - save/load highscores
 - end music has issues with ptplayer, also tune start is wrong
-- optim: group erase on 16 (working) or 32 bit wide blocks
 - log & rip missing sounds: breakpoint on sound not found so able to go to mame and rip it
 - leave demo running: level 3 but with status bar trashed (because of 2P life), 2P mode with player 2 invisible
 - demo running: when inserting coin, suddenly needs 2 coins for 1 credit...
