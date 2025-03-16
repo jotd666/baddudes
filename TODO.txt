@@ -23,7 +23,6 @@
 - tune autoframeskip: force 2 skips for train/truck levels all the time
   remain auto 0-2 for other levels
 - level 2: climbers on the right "blink" (frame/grouping? wrong clipping?)
-- easy: boss 6 color change doesn't work in real game (ok on mockup!!)
 - easy: track boss 7 color change
 - train erase: still wagon not deleted properly at times
 - ending sequence trashed/flashes... double buffering vs simple buffering?
@@ -70,10 +69,9 @@
 
 - boss 6 & 7 wrong grouping / missing tiles  
 - drop 2 player mode, use rightmost OSD sprite for real parallax in levels 4 and 6
-  see if we can blit the score afterwards if 2P mode is reinstated, anyway 2P mode is probably
-  not possible given the short memory we have
-- 'S' debug mode should display varying data on sprite debug locations
-  => number of enemies/blits, last unknown played sound?- capture "game over" music: for that we need a high score!
+  see if we can blit the score afterwards if 2P mode is reinstated, anyway 2P mode is
+  a problem as it uses 4 more colors and it degrades sprite palette even further.
+
 
 
 low priority:

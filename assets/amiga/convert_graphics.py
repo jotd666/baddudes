@@ -17,10 +17,33 @@ convert_dudes_pics.doit()
 sprite_names = dict()
 palette_dict = dict()
 
+ninja_range = range(0x200,0x348)
+dog_range = range(0xAc0,0xAF5)
+spidey_range = range(0x840,0x86B)
 
-# blue ninja tiles are pre-mirrored as there are a lot of them
-# at the same time. We can afford the memory, and this will speed display a lot!
-pre_mirrored_sprites = {k:{2} for k in range(0x200,0x348)}
+pre_mirrored_sprites_dict = {
+# level 1: add gray/red ninja, dogs
+"game_level_1":[{k:{3,4} for k in ninja_range},{k:{8} for k in dog_range}],
+# level 2: add gray/red ninja, blue spideys, climbers
+"game_level_2":[{k:{3,4} for k in ninja_range},{k:{2} for k in spidey_range},{k:{2} for k in range(0x724,0x735)}],
+"game_level_3":[{k:{0xf,4} for k in ninja_range}]
+
+}
+
+def load_pre_mirrored_sprites(context):
+    # in all levels, blue ninja tiles are pre-mirrored as there are a lot of them
+    # at the same time. We can afford the memory, and this will speed display a lot!
+    rval = {k:{2} for k in ninja_range}
+    extras = pre_mirrored_sprites_dict.get(context)
+    if extras:
+        for extra in extras:
+            # merge values
+            for k,v in extra.items():
+                vv = rval.get(k) or set()
+                vv.update(v)
+                rval[k] = vv
+
+    return rval
 
 side_grouped_dict,vert_grouped_dict = load_grouped_dicts()
 
@@ -560,10 +583,11 @@ def get_nb_planes(palette):
     nb_planes = int(math.log2(len(palette)))
     return nb_planes
 
-def read_tileset(img_set_list,palette,cache,is_bob,generate_mask):
+def read_tileset(context,img_set_list,palette,cache,is_bob,generate_mask):
     next_cache_id = 1
     tile_table = []
     plane_orientation_flags = [True,is_bob]
+    pre_mirrored_sprites = load_pre_mirrored_sprites(context)
 
     nb_planes = get_nb_planes(palette)
     for n,img_set in enumerate(img_set_list):
@@ -776,7 +800,7 @@ def process_tile_context(context_name,tile_sheet_dict,nb_colors,is_bob=False,shi
         # pass only done to extract palette, no need to generate a file
         pass
     else:
-        tile_24a000_table = read_tileset(tile_24a000_set_list,bg_palette,cache=tile_24a000_cache, is_bob=is_bob, generate_mask=is_bob)
+        tile_24a000_table = read_tileset(context_name,tile_24a000_set_list,bg_palette,cache=tile_24a000_cache, is_bob=is_bob, generate_mask=is_bob)
         prefix = "sprites_" if is_bob else "tiles_"
 
         dump_tiles(prefix+context_name,bg_palette,tile_24a000_table,tile_24a000_cache,add_dimension_info=is_bob,palette_shift=shift_palette_count)
@@ -829,7 +853,7 @@ def process_8x8_tile_layer(context,max_colors,colors_last,postload_callback=None
         # pad so colors are last (not very useful for sprites, though)
         fg_palette = [impossible_color]*(64-max_colors) + fg_palette
 
-    tile_244000_table = read_tileset(tile_244000_set_list,fg_palette,
+    tile_244000_table = read_tileset(context,tile_244000_set_list,fg_palette,
     cache=tile_244000_cache,
     generate_mask = True,
     is_bob=False)
@@ -885,12 +909,12 @@ generate_for_levels = [False]*9
 generate_for_levels[0] = True
 generate_for_levels[1] = True
 generate_for_levels[2] = True
-generate_for_levels[3] = True
-generate_for_levels[4] = True
-generate_for_levels[5] = True
-generate_for_levels[6] = True
-generate_for_levels[7] = True
-generate_for_levels[8] = True
+##generate_for_levels[3] = True
+##generate_for_levels[4] = True
+##generate_for_levels[5] = True
+##generate_for_levels[6] = True
+##generate_for_levels[7] = True
+##generate_for_levels[8] = True
 
 
 # set to "False" for faster operation when working on game sprite/tiles

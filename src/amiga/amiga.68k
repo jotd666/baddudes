@@ -34,7 +34,7 @@ AFB_68020 = 1
 	.endm
 	.endif
 	
-TOTAL_PUBLIC_MEMORY_SIZE = 350000
+TOTAL_PUBLIC_MEMORY_SIZE = 150000
 * this is the minimum memory required for level 5 (because of train)
 * if memory is lower than that, it loads, no memory issues detected but
 * the background is trashed...
@@ -93,7 +93,7 @@ OPT_NO_SCROLLING_Y = 0
 OPT_NO_BOTTOM_SCROLL = 0
 * black rectangles instead of background restore allow to see where the
 * background restore happens
-OPT_DEBUG_GAP_ERASE = 1
+OPT_DEBUG_GAP_ERASE = 0
 
 * load fixed sprites, mostly bosses as they're long to reach & test
 OPT_BOSS_SPRITES_MOCKUP = 0
@@ -933,10 +933,13 @@ _vblank:
 	addq	#2,a6
 	jra	0b
 1:
-	tst.b	debug_values_display
-	jeq		20f
-	cmp.b	#1,debug_values_display
-	jne		2f
+	moveq	#0,d0
+	move.b	debug_values_display,d0
+	lea		debug_display_table(pc),a0
+	jsr		([a0,d0.w*4])
+	jra		3f
+	
+fn_debug_scroll:
 	* copy truck scroll value
 	move.w	x_secondary_scroll_value,d0
 	lea		debug_truck_message(pc),a0
@@ -950,8 +953,9 @@ _vblank:
 	lea		debug_scroll_message(pc),a0
 	jbsr	encode_debug_message
 	jbsr	osd_write_left_debug_message
-	jra		20f
-2:
+	rts
+
+fn_debug_blit:
 	move.l	last_nb_blitted_words_per_second,d0
 	lea		debug_blit_size_message(pc),a0
 	jbsr	encode_debug_message
@@ -961,9 +965,25 @@ _vblank:
 	lea		debug_blit_count_message(pc),a0
 	jbsr	encode_debug_message
 	jbsr	osd_write_left_debug_message
+	rts
+	
+fn_debug_memory:
+	move.l	#TOTAL_CHIP_MEMORY_SIZE,d0
+	add.l	#chip_memory_block,d0
+	sub.l	chip_memory_current_ptr,d0
+	
+	lea		debug_chip_left_message(pc),a0
+	jbsr	encode_debug_message
+	jbsr	osd_write_right_debug_message
 
-20:
-
+	move.l	#TOTAL_PUBLIC_MEMORY_SIZE,d0
+	add.l	#public_memory_block,d0
+	sub.l	public_memory_current_ptr,d0
+	
+	lea		debug_fast_left_message(pc),a0
+	jbsr	encode_debug_message
+	jbsr	osd_write_left_debug_message
+	rts
 
 	
 
@@ -973,6 +993,12 @@ _vblank:
     movem.l (a7)+,d0-d7/a0-a6
     rte
 
+debug_display_table:
+	.long	nope
+	.long	fn_debug_scroll
+	.long	fn_debug_blit
+	.long	fn_debug_memory
+	
 encode_debug_message:
 	move.l	a0,-(a7)
 	add.w	#11,a0
@@ -1433,7 +1459,7 @@ draw_truck_level_1:
 	move.w	#0xE0,d0	| absolute secondary scroll pos
 	moveq	#8,d2
 	moveq	#0,d1		| full height
-	*jbsr	restore_gap
+	jbsr	restore_gap
 	rts
 	
 draw_big_machine:
@@ -5135,10 +5161,10 @@ read_system_inputs:
 	beq.b	0f
 	bclr	#BIT_START_1P,d0
 0:
-	tst.b	(2,a0)		| "2" key like in MAME
-	beq.b	0f
-	bclr	#BIT_START_2P,d0
-0:	
+*	tst.b	(2,a0)		| "2" key like in MAME
+*	beq.b	0f
+*	bclr	#BIT_START_2P,d0
+*0:	
 
 	jbsr		is_game_playing
 	bne.b	2f
@@ -5155,12 +5181,12 @@ read_system_inputs:
 	beq.b	0f
 	bclr	#BIT_START_1P,d0
 0:
-	* game not in play, accept start 2P game with "down"
-	* temp: disabled ATM, 2P mode is buggy!
-	btst	#JPB_BTN_DOWN,d1
-	beq.b	0f
-	bclr	#BIT_START_2P,d0
-0:
+*	* game not in play, accept start 2P game with "down"
+*	* temp: disabled ATM, 2P mode is buggy!
+*	btst	#JPB_BTN_DOWN,d1
+*	beq.b	0f
+*	bclr	#BIT_START_2P,d0
+*0:
 	btst	#JPB_BTN_RED,d1
 	beq.b	1f
 	* game not in play, accept insert coin with fire
@@ -5339,11 +5365,12 @@ handle_keyboard:
 *
 10:
 	.ifndef	RELEASE
-	cmp.b	#34,d0
+	cmp.b	#24,d0
 	bne		0f
-	* 'D': debug display modes, 0: none, 1: scroll/truck, 2: blitter count
+	* 'O': debug display modes,
+	* 0: none, 1: scroll/truck, 2: blitter count, 3: memory usage
 	addq.b	#1,debug_values_display
-	cmp.b	#3,debug_values_display
+	cmp.b	#4,debug_values_display
 	jne		0f
 	clr.b	debug_values_display
 0:
@@ -5982,7 +6009,7 @@ set_high_score_context:
 
 set_game_context:
 	* stop sound as game intro sound could continue to play
-	jbsr	osd_sound_stop
+	jbsr	force_sound_stop
 	
 	lea		tiles_game_244000_file,a0
 	jbsr	load_tiles_file_as_sprites_244000
@@ -7273,6 +7300,10 @@ debug_blit_size_message:
 	.asciz	"BLSZ 000000"
 debug_blit_count_message:
 	.asciz	"BLNB 000000"
+debug_chip_left_message:
+	.asciz	"CHIP 000000"
+debug_fast_left_message:
+	.asciz	"FAST 000000"
 	.endif
 intro_sound_file:
 	.asciz	"intro_sounds.bin"

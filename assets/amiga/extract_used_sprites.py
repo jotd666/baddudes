@@ -92,6 +92,12 @@ def doit():
         # this file has been extracted from a complete list of player moves
         # bonuses/weapons as well
         player_moves = json.load(f)
+        # to do the second player, duplicate entries with clut 1
+        # not activated, as it uses too many palette entries
+##        for k,v in player_moves.items():
+##            if (0 <= int(k) < 0x200) or (0x800 < int(k) < 0x825):
+##                v["cluts"].append(1)
+
     for k,v in used_dict.items():
         if k.startswith("game_level_"):
             v.update(player_moves)
