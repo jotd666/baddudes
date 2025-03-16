@@ -1,12 +1,17 @@
 - clear rectangle on the right level 1 TMPWRITE (as triggers for nothing!!)
+- mutant karnov black color issue
+- should do a per-level symmetry on spidermen, red ninjas, green ninjas, dogs...
+- debug: show memory left
+- boss 5: locomotive wheel erase wrong
+- level 5: remainer of wagons showing when gap erasing not effective on edges
+- fix gap erase again (truck level 1) and re-release !!!
+
 - analyze mockup: lots_of_enemies: see if grouping can be improved
   no grouping: FB70, grouping: F168 blits! also check blitsize, all in immediate blitter mode
   (else cpu erase can occur)
-- truck blit 2 just after level 1 completed, locks up the game!
 - easy: remove yellow from tiles (title), gray from end (sky white house) to be able to
   branch to copper change sky on those screens
   copjmp2 contains copper color change + load copjmp1 return + copjmp1
-- animal yell sound: not played (anymore)
 - still rythm issue in boss fight tune
 - on game over, tests test_input_bit_d1 (0x0174c,0x0175c,0x07e66), then goes back to menu but intro screen trashed
 - level 5: red girls missing frames?
@@ -14,7 +19,6 @@
 - level 1 repair front objects (status bar showing but destroyed, debug this)
   => control word for multiplexed after lamp is not working but other sprites are also destroyed!
 - boss energy bar missing right half
-- level 2 queue trailer erase inefficient when reaching extreme left TBC
 - 2nd level complete in a row "STAGE X CLEAR" "G" remains from previous "go to next stage"
 - tune autoframeskip: force 2 skips for train/truck levels all the time
   remain auto 0-2 for other levels

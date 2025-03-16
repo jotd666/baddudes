@@ -1015,6 +1015,8 @@ hex_table:
 	.byte	0x46
 	
 update_front_objects:
+	rts
+	
 	* level 1/2: scan for front objects
 	move.w 	front_objects_x_scroll,d5		| X start
 	lea		video_ram_244000,a0	| bottom of object Y at scroll = 0
@@ -5979,6 +5981,9 @@ set_high_score_context:
 ****************
 
 set_game_context:
+	* stop sound as game intro sound could continue to play
+	jbsr	osd_sound_stop
+	
 	lea		tiles_game_244000_file,a0
 	jbsr	load_tiles_file_as_sprites_244000
 	clr.l	background_sprite_table
