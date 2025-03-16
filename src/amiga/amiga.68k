@@ -873,80 +873,7 @@ _vblank:
 	jbsr		baddudes_irq
 	clr.b	interrupt_mode
 0:
-	move.w	display_dudes,d0
-	jeq		1100f
-	
-	cmp.w	#1,display_dudes
-	jeq		1101f
-	move.w	D0,-(a7)
-	* restore background
-* what: blits data on bg plane, no horizontal shifting (erase)
-* args:
-* < A0: pristine background
-* < A1: dest buffer
-* < D0: X (rounded to smaller 8-multiple)
-* < D1: Y
-* < D2: width in bytes
-* < D4: height
 
-	move.l	dude_pics,a2
-	move.l	(a2),a2		| first dude struct data
-
-	move.l	fg_drawed_screen_ptr,a1
-	move.l	background_restore_buffer,a0
-	move.w	(a2)+,d0			| X
-	move.w	(a2)+,d1			| Y
-	move.w	(a2)+,d2			| width
-	lsr.w	#3,d2				| divide by 8 to get len in bytes
-	move.w	(a2)+,d4			| height
-	jbsr	restore_background
-	lea	(SCREEN_PLANE_SIZE,a1),a1
-	* remaining planes need to be simply cleared
-	* when exiting from restore_background, A1 points
-	* to the exact next erase position so D0=0, D1=0 here
-	move.w	nb_tile_planes_24da,d3
-	neg.w	d3
-	addq.w	#NB_PLAYFIELD_PLANES,d3
-	moveq	#0,d0
-	moveq	#0,d1
-	lea		_custom,a5
-	jbsr	clear_fg_planes_any_blitter_internal
-	move.w	(a7)+,d0
-1101:
-	
-	* set dudes palette
-	move.l	dude_pics,a2
-	move.l	(-4,a2,d0.w*4),a2		| requested dude struct
-	lea		(8,a2),a0			    | palette (maybe different for both pics)
-	lea		dudes_palette,a1
-	move.w	#24,d0
-	jbsr	load_palette
-
-	move.l	fg_drawed_screen_ptr,a1
-	move.w	(a2)+,d0			| X
-	move.w	(a2)+,d1			| Y
-	move.w	(a2)+,d2			| width
-	lsr.w	#3,d2				| divide by 8 to get len in bytes
-	move.w	#4,d3				| 4 bitplanes in cookie cut mode
-	move.w	(a2)+,d4			| height
-	moveq	#0,d5				| no clipping
-	lea		(0x40,a2),a0		| pic planes
-	move.l	(6*4,a0),a3			| mask plane
-	movem.l	D0-D5/A1/A2,-(a7)
-	moveq	#0,d6
-	jbsr	blit_planes_any_internal_cookie_cut
-	movem.l	(a7)+,D0-D5/A1/A2
-	lea		(0x50,a2),a0			| pic remaining planes
-	move.w	#2,d3				| 4 bitplanes in non cookie cut mode
-	lea		(SCREEN_PLANE_SIZE*4,a1),a1
-	jbsr	blit_planes_any_internal_no_cookie_cut
-	
-	clr.w	display_dudes
-	* we have to wait for blitter, as 8x8 font engine uses cpu only
-	lea		_custom,a5
-	WAIT_BLIT
-	
-1100:
 
 	subq.b	#1,graphics_update_counter
 	jne		23f
@@ -1416,6 +1343,75 @@ restore_gap:
 2:
 	rts
 	
+display_title_dudes:
+	cmp.w	current_dudes_pic,d0
+	jeq		0f
+	movem.l	d0-a6,-(a7)
+	move.w	d0,current_dudes_pic
+	cmp.w	#1,d0
+	jeq		1101f
+	move.w	D0,-(a7)
+	* dudes 2nd pic: restore background first
+
+	move.l	dude_pics,a2
+	move.l	(a2),a2		| first dude struct data
+
+	move.l	fg_drawed_screen_ptr,a1
+	move.l	background_restore_buffer,a0
+	move.w	(a2)+,d0			| X
+	move.w	(a2)+,d1			| Y
+	move.w	(a2)+,d2			| width
+	lsr.w	#3,d2				| divide by 8 to get len in bytes
+	move.w	(a2)+,d4			| height
+	jbsr	restore_background
+	lea	(SCREEN_PLANE_SIZE,a1),a1
+	* remaining planes need to be simply cleared
+	* when exiting from restore_background, A1 points
+	* to the exact next erase position so D0=0, D1=0 here
+	move.w	nb_tile_planes_24da,d3
+	neg.w	d3
+	addq.w	#NB_PLAYFIELD_PLANES,d3
+	moveq	#0,d0
+	moveq	#0,d1
+	lea		_custom,a5
+	jbsr	clear_fg_planes_any_blitter_internal
+	move.w	(a7)+,d0
+1101:
+	* set dudes palette
+	move.l	dude_pics,a2
+	move.l	(-4,a2,d0.w*4),a2		| requested dude struct
+	lea		(8,a2),a0			    | palette (maybe different for both pics)
+	lea		dudes_palette,a1
+	move.w	#24,d0
+	jbsr	load_palette
+
+	move.l	fg_drawed_screen_ptr,a1
+	move.w	(a2)+,d0			| X
+	move.w	(a2)+,d1			| Y
+	move.w	(a2)+,d2			| width
+	lsr.w	#3,d2				| divide by 8 to get len in bytes
+	move.w	#4,d3				| 4 bitplanes in cookie cut mode
+	move.w	(a2)+,d4			| height
+	moveq	#0,d5				| no clipping
+	lea		(0x40,a2),a0		| pic planes
+	move.l	(6*4,a0),a3			| mask plane
+	movem.l	D0-D5/A1/A2,-(a7)
+	moveq	#0,d6
+	jbsr	blit_planes_any_internal_cookie_cut
+	movem.l	(a7)+,D0-D5/A1/A2
+	lea		(0x50,a2),a0			| pic remaining planes
+	move.w	#2,d3				| 4 bitplanes in non cookie cut mode
+	lea		(SCREEN_PLANE_SIZE*4,a1),a1
+	jbsr	blit_planes_any_internal_no_cookie_cut
+	
+	* we have to wait for blitter, as 8x8 font engine uses cpu only
+	lea		_custom,a5
+	WAIT_BLIT
+
+	movem.l	(a7)+,d0-a6
+0:
+	rts
+	
 * truck_draw draw_truck for level 1
 draw_truck_level_1:
 	move.w	x_secondary_scroll_value,d0
@@ -1669,7 +1665,7 @@ palette_and_sprites_ram_op:
 	jra		10f
 0:
 	move.l	rom_base,a0
-	add.w	#0x1258+4+2,a0		| a1 is post-incremented
+	add.w	#0x123c+2,a0		| a1 is post-incremented
 	cmp.l	a0,a1
 	jne		0f
 	lea		level_6_boss_color_change(pc),a0
@@ -1921,14 +1917,18 @@ addr_244xxx_tile_layer_op:
 	* blit the whole pic (big dudes in intro)
 	cmp.w	#CTX_INTRO,global_context
 	jne		16f
+	cmp.w	#0X398,d2
+	jne		16f
 	cmp.w	#0x5526,d7	| written at 244398
 	jne		15f
-	move.w	#1,display_dudes
+	move.w	#1,d0
+	jbsr	display_title_dudes
 	jra		100f
 15:
 	cmp.w	#0x541E,d7
 	jne		16f
-	move.w	#2,display_dudes
+	move.w	#2,d0
+	jbsr	display_title_dudes
 	jra		100f
 16:
 	* then draw the 8x8 tile
@@ -5537,6 +5537,7 @@ osd_set_context:
 	st		clear_target_sprites_flag
 	* remove pointer on truck planes, this will disable any remaining truck
 	* draw, and also front objects
+	clr.w	current_dudes_pic
 	clr.l	sprite_table_base
 	clr.l	big_machine_planes
 	clr.l	big_machine_extra_planes
@@ -7027,8 +7028,6 @@ current_tune:
 	.long	0
 global_context:
 	.word	0
-display_dudes:
-	.word	0
 bltamask_long_value:
 	.long	-1
 front_objects_x_scroll:
@@ -7474,7 +7473,8 @@ tile_data_244000:
 	.long	0
 nb_tile_planes_24da:
 	.word	0
-
+current_dudes_pic:
+	.word	0
 background_restore_buffer:
 	.long	0
 nb_tile_colors_24a000:

@@ -3,7 +3,9 @@
   no grouping: FB70, grouping: F168 blits! also check blitsize, all in immediate blitter mode
   (else cpu erase can occur)
 - truck blit 2 just after level 1 completed, locks up the game!
-- easy: do not delay bad dudes title blit
+- easy: remove yellow from tiles (title), gray from end (sky white house) to be able to
+  branch to copper change sky on those screens
+  copjmp2 contains copper color change + load copjmp1 return + copjmp1
 - animal yell sound: not played (anymore)
 - still rythm issue in boss fight tune
 - on game over, tests test_input_bit_d1 (0x0174c,0x0175c,0x07e66), then goes back to menu but intro screen trashed
