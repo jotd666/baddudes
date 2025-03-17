@@ -64,6 +64,11 @@ baddudes_reset:
 	jbsr	apply_patchlist
 	* jump to rom start
 
+	* specific amiga patchlist (to optimize things more easily)
+	.ifdef	__amiga__
+	
+	.endif
+	
 	* this is an empty patchlist in release
 	.ifndef	RELEASE
 	lea		debug_patchlist,a0
@@ -85,7 +90,21 @@ baddudes_reset:
 	ROM_JUMP		0x13dc
 	
 	
-
+	.ifdef	__amiga__
+display_object_hook_028c6:
+	* original code
+	MOVEQ	#0,D4
+	MOVE.W	6(A0),D4	| composite sprite type * 4
+	* now decode A0 sprite structure to tell the amiga part that
+	* the displayed sprite is at coords X,Y with width and height,
+	* so erasing the sprite is way easier and also much faster
+	* (well not for all objects, as small objects like ninja stars and
+	* nails or also flat horizontal objects don't need 16x16 erase)
+	* the ideal code would have 2 modes: if small object (height < 16)
+	* then use normal erase, else use block erase
+	rts	
+	.endif
+	
 * emulate JSR from trap. Tricky, specially with reentrancy constraint
 * (if code below is interrupted by another part which performs the same
 * emu jsr, then it would be catastrophic as "jsr_address" would be overwritten)
@@ -395,6 +414,12 @@ do_plear:
 ***** manual patches *****
 **************************
 
+	.ifdef	__amiga__
+	PL_START
+	PL_PS	0x28C6,display_object_hook_028c6
+	PL_END
+	.endif
+	
 	.ifndef	RELEASE
 debug_patchlist:
 	PL_START

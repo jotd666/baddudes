@@ -2675,7 +2675,7 @@ preprocess_16x16_tile:
 	* now make up for shifted Y scroll (levels 6 and 7) on screen
 	tst.w	y_extra_offset
 	jeq		25f
-	add.w	#SCREEN_PLANE_SIZE/2,d5
+	add.l	#SCREEN_PLANE_SIZE/2,d5
 25:
 	add.l	d5,a1			| screen dest address on playfield
 	.ifne	OPT_ENABLE_DOUBLE_BUFFERING
@@ -2690,6 +2690,7 @@ preprocess_16x16_tile:
 	
 * internal write tile routine, shared between 2 16x16 tile layers
 * < A0: tile clut array
+* < A1: screen address
 * < D2: number of planes
 * < D5: clut index
 * < D6: tile code
@@ -3145,25 +3146,30 @@ do_scroll_up:
 	* scroll up: we went down too much and overtook y scroll 0x100
 	* we need to copy all tiles from restore buffer upper part
 	* to display buffer lower part and the other way round and offset
-	* scroll value by 0x100 to simulate a wrap
+	* scroll value by 0x100 to simulate a wrap (else would require too
+	* much chip buffer memory)
 	*
-	* this is a very blitter expensive operation!
+	* this is a very blitter expensive operation! fortunately it's only
+	* done twice (because of double buffering)
+
+	*move.b	#1,stop_updating_bobs  | TEMP FUCK
 
 	move.l	fg_drawed_screen_ptr,a1	| destination: first half of screen
 	sub.l	#SCREEN_PLANE_SIZE/2,a1		| make up for 0x100 Y offset
 	move.l	background_restore_buffer,a0
 	move.w	#0x100,d1
-	
 	jbsr	copy_background
+	
 	move.l	fg_drawed_screen_ptr,a1	| destination: first half of screen
 	add.l	#SCREEN_PLANE_SIZE/2,a1		| add 0x100 Y offset
 	move.l	background_restore_buffer,a0
 	moveq	#0,d1
 	jbsr	copy_background
+	*jbsr	osd_blitz  FUCK
 
 	* we still have to erase the remaining bitplanes on visible screens
 	* (non-background backuped ones)
-	move.l	#draw_sprites,(a7)		| skip erase
+	**move.l	#draw_sprites,(a7)		| skip erase
 	rts
 
 * < A0: source
@@ -3174,6 +3180,9 @@ copy_background:
 	move.w	#NB_BYTES_PER_ROW,D2
 	move.w	#256,D4		| height
 	jbsr	restore_background
+	*lea		_custom,a5
+	*moveq	#4,d3
+	*jbsr	clear_fg_planes_any_blitter_internal
 	rts
 	
 	
@@ -4986,7 +4995,7 @@ set_playfield_bitplanes:
 	moveq	#0,d0
 	move.w	y_background_scroll_value,d0
 	add.w	y_extra_offset,d0
-	
+
 	lea		mulNB_BYTES_PER_ROW_table,a2
 	move.w	(a2,d0.w*2),d0		| compute Y offset
 	move.w	x_background_scroll_value,d2	

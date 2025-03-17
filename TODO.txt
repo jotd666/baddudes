@@ -1,19 +1,21 @@
+- group erase: not good enough: make a table to macro objects (by patching the original game)
+  and their size. Only issue: re-figure out the X/Y display coords. Major advantage:
+  group erase works horizontally/vertically without any other computation
+  
 - still missing sprites on level 2, possibly others...
-- mutant karnov black color issue
+- easy: mutant karnov black color issue
 - should do a per-level symmetry on spidermen, red ninjas, green ninjas, dogs...
-  to continue for higher levels
+  to continue for higher levels 3,4,5,6,7
 - boss 5: locomotive wheel erase wrong
-- optim: group erase on 16 (working) or 32 bit wide blocks
 - level 5: remainer of wagons showing when gap erasing not effective on edges
-- analyze mockup: lots_of_enemies: see if grouping can be improved
-  no grouping: FB70, grouping: F168 blits! also check blitsize, all in immediate blitter mode
-  (else cpu erase can occur)
+
 - easy: remove yellow from tiles (title), gray from end (sky white house) to be able to
   branch to copper change sky on those screens
   copjmp2 contains copper color change + load copjmp1 return + copjmp1
 - still rythm issue in boss fight tune
 - on game over, tests test_input_bit_d1 (0x0174c,0x0175c,0x07e66), then goes back to menu but intro screen trashed
 - level 5: red girls missing frames?
+- truck 2: sprites & truck shifted in the end???
 - level 4: punching enemies while kneeled: missing frame? happens on other levels too
 - level 1 repair front objects (status bar showing but destroyed, debug this)
   => control word for multiplexed after lamp is not working but other sprites are also destroyed!
@@ -60,12 +62,15 @@
 - demo running: when inserting coin, suddenly needs 2 coins for 1 credit...
 - knife sound has blow+man scream (hack not working there... maybe we could see if player
   has weapon... not working in 2P mode though)
-
-- boss 6 & 7 wrong grouping / missing tiles  
+ 
 - drop 2 player mode, use rightmost OSD sprite for real parallax in levels 4 and 6
   see if we can blit the score afterwards if 2P mode is reinstated, anyway 2P mode is
   a problem as it uses 4 more colors and it degrades sprite palette even further.
 
+- general sprite position / scroll problem
+  - level 2 wheels shifted
+  - level 1 when ninjas arrive on truck, truck & ninjas on it drift
+  - when swapping half screens (level 6 and 7), can be shifted too
 
 
 low priority:
