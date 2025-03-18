@@ -1,18 +1,22 @@
+- y scroll level 6 first Y scroll doesn't scroll up to 0x60, stops at 5C/5D: debug on real machine??
 - group erase: not good enough: make a table to macro objects (by patching the original game)
   and their size. Only issue: re-figure out the X/Y display coords. Major advantage:
   group erase works horizontally/vertically without any other computation
   
 - still missing sprites on level 2, possibly others...
 - easy: mutant karnov black color issue
+- color change doesn't work on level 7 boss rush (because color downscaling ends up with
+  different colors than the one in previous levels)
 - should do a per-level symmetry on spidermen, red ninjas, green ninjas, dogs...
   to continue for higher levels 3,4,5,6,7
 - boss 5: locomotive wheel erase wrong
 - level 5: remainer of wagons showing when gap erasing not effective on edges
 
+- do a OPT_TWO_PLAYER_MODE option, ideally it would rule to have 2 versions of the game
 - easy: remove yellow from tiles (title), gray from end (sky white house) to be able to
   branch to copper change sky on those screens
   copjmp2 contains copper color change + load copjmp1 return + copjmp1
-- still rythm issue in boss fight tune
+- still rythm issue in boss fight tune => no9 knows
 - on game over, tests test_input_bit_d1 (0x0174c,0x0175c,0x07e66), then goes back to menu but intro screen trashed
 - level 5: red girls missing frames?
 - truck 2: sprites & truck shifted in the end???
@@ -35,20 +39,13 @@
   * blit restore buffer from y=0x100 to 0x200 in 0
   * set y_extra_scroll_offset at -0x100
   then if y scroll gets <= 0x100 do the same thing in reverse
-  (optim: clear all "to delete" objects when doing the full restore)
   
-  * works for "scroll up" (1st time) but restore background fails on lower Y (planes destroyed)
-    besides off-screen tiles seem wrong
   * fails for "scroll down" completely
-  * try just clearing the buffers to see what is restored properly
-  * don't blit 3x horizontally, use 2x width then 1x width, optimally around the
+  * optim: don't blit 3x horizontally, use 2x width then 1x width, optimally around the
     displayed screen (as the game will draw the tiles furter than that)
   could probably be optimized to only restore the buffers partially, not the whole width
-  
-  * temporary: just clear the playfield, see what the game does around with tiles draw
-    and restore
+ 
 	
-- level 6 vertical y wrap completely off (screen copy is wrong, screen restore is OK)
 - background restore: complete wrapping (line 2760)  
 - difficulty level what does it do? maybe using "easy" would reduce number of enemies
   and make game smoother?? boss energy is lower on low difficulty (which the port gets
