@@ -9,6 +9,7 @@
   and their size. Only issue: re-figure out the X/Y display coords. Major advantage:
   group erase works horizontally/vertically without any other computation
   
+- distro: use labru rn packer
 - still missing sprites on level 2, possibly others...
 - easy: mutant karnov black color issue
 - stalactite wrong colors (used to be OK)
@@ -23,7 +24,6 @@
 - easy: remove yellow from tiles (title), gray from end (sky white house) to be able to
   branch to copper change sky on those screens
   copjmp2 contains copper color change + load copjmp1 return + copjmp1
-- still rythm issue in boss fight tune => no9 knows
 - on game over, tests test_input_bit_d1 (0x0174c,0x0175c,0x07e66), then goes back to menu but intro screen trashed
 - level 5: red girls missing frames?
 - truck 2: sprites & truck shifted in the end???
