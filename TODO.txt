@@ -2,6 +2,7 @@
   - level 2 wheels shifted
   - level 1 when ninjas arrive on truck, truck & ninjas on it drift
   - when swapping half screens (level 6 and 7), can be shifted too
+  - this is still not 100% reproducible
 - same as above: y scroll level 6 first Y scroll doesn't scroll up to 0x60, stops at 5C/5D: debug on real machine??
   possibly mid-screen interrupt issue?? (happens when scolling horiz. If not moving character
   it's OK!!)
@@ -9,7 +10,6 @@
   and their size. Only issue: re-figure out the X/Y display coords. Major advantage:
   group erase works horizontally/vertically without any other computation
   
-- distro: use labru rn packer
 - still missing sprites on level 2, possibly others...
 - easy: mutant karnov black color issue
 - stalactite wrong colors (used to be OK)
