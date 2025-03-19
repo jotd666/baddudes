@@ -484,6 +484,7 @@ tile_0_sheet_dict = {i:sheets_path / "tiles_244000" / f"pal_{i:02x}.png" for i i
 sprite_sheet_dict = {i:sheets_path / "sprites" / f"pal_{i:02x}.png" for i in range(16)}
 ending_tile_24a000_sheet_dict = {i:sheets_path / "tiles_24a000" / "ending" / f"pal_{i:02x}.png" for i in range(0,10)}
 ending_tile_24d000_sheet_dict = {i:sheets_path / "tiles_24d000" / "ending" / f"pal_{i:02x}.png" for i in range(0,6)}
+ending_sprite_sheet_dict = {i:sheets_path / "misc" / f"ending_sprites_{i:02x}.png" for i in range(0,3)}
 
 def load_contexted_tileset(tile_sheet_dict,context,nb_colors,is_bob,postload_callback=None,forced_palette=set()):
     tile_palette = set()
@@ -909,12 +910,12 @@ generate_for_levels = [False]*9
 #generate_for_levels[0] = True
 #generate_for_levels[1] = True
 #generate_for_levels[2] = True
-generate_for_levels[3] = True
+#generate_for_levels[3] = True
 ##generate_for_levels[4] = True
 ##generate_for_levels[5] = True
 ##generate_for_levels[6] = True
 ##generate_for_levels[7] = True
-##generate_for_levels[8] = True
+generate_for_levels[8] = True
 
 
 # set to "False" for faster operation when working on game sprite/tiles
@@ -985,5 +986,6 @@ if generate_for_levels[8]:
     # game ending
     process_tile_context("ending_1_24a000",ending_tile_24a000_sheet_dict,64,first_pass=False)
     process_tile_context("ending_2_24d000",ending_tile_24d000_sheet_dict,32,first_pass=False)
+    process_tile_context("game_ending",ending_sprite_sheet_dict,32,is_bob=True,shift_palette_count=32)
 
 

@@ -3154,7 +3154,10 @@ do_scroll_done:
 	
 
 do_scroll_down:
-	*TMPBREAK
+	jbsr	do_scroll_up
+	jbsr	osd_blitz
+	rts
+	
 do_scroll_up:
 	* scroll up: we went down too much and overtook y scroll 0x100
 	* we need to copy all tiles from restore buffer upper part
@@ -3188,15 +3191,9 @@ do_scroll_up:
 copy_background:
 	moveq	#0,d0
 	move.w	#NB_BYTES_PER_ROW,D2
-	move.w	#256,D4		| height
+	move.w	#0x100,D4		| height
 	jbsr	restore_background
 
-*	lea		_custom,a5
-*	moveq	#0,d0
-*	move.w	#40,d2
-*	move.w	#4,d3
-*	move.w	#200,D4		| height
-*	jbsr	clear_fg_planes_any_blitter_internal
 	rts
 	
 	
@@ -3342,13 +3339,25 @@ really_update_sprites:
 	jbsr	restore_background
 	movem.w	(a7)+,d0-d1/d4
 
+	movem.w	d0/d5/d6,-(a7)
+	lea		(SCREEN_PLANE_SIZE,a1),a1
+	moveq	#0,d0
+	moveq	#0,d1
+	move.w	d5,d3
+	
+	jbsr	clear_fg_planes_any_blitter_internal
+	movem.w	(a7)+,d0/d5/d6
+
+	
+	move.l	fg_drawed_screen_ptr,a1
 	* now the second restore blit, wrapped around
 	move.l	background_restore_buffer,a0
-	*move.w	#0x100,d1
-	*sub.w	d1,d6
-	*move.w	d6,d4
+	move.w	#0x100,d1
+	sub.w	d1,d6
+	move.w	d6,d4
 	*jbsr	restore_background
-	jra		26f
+	*jra		26f
+	jra		111f
 25:	
 	jbsr	restore_background
 26:
@@ -5734,8 +5743,8 @@ game_context_table:
 	.long	set_high_score_context		| CTX_HIGH_SCORE
 	.long	set_game_intro_context	    | CTX_GAME_INTRO
 	.long	set_game_context		    | CTX_GAME
-	.long	set_ending_1_context	    | CTX_ENDING_1
-	.long	set_ending_2_context	    | CTX_ENDING_2
+	.long	set_ending_1_context	    | CTX_END_SEQUENCE_1
+	.long	set_ending_2_context	    | CTX_END_SEQUENCE_2
 	
 load_tiles_file_244000:
 	jbsr	allocate_and_load_public_mem_file
@@ -5869,6 +5878,9 @@ set_ending_2_context:
 	
 	move.l	tiles_palette_24d000,a0		| palette
 	jbsr	load_tiles_palette
+
+	lea		sprites_game_ending_file,a0
+	jbsr 	load_sprite_file
 
 	* re-apply letter colors 56-63 (the sprites in that context only use 24 colors
 	* so we're good!)
@@ -7378,6 +7390,8 @@ tiles_ending_2_24d000_file:
 	.asciz	"tiles_ending_2_24d000.bin"
 sprites_game_intro_file:
 	.asciz	"sprites_game_intro.bin"
+sprites_game_ending_file:
+	.asciz	"sprites_game_ending.bin"
 tiles_title_244000_file:
 	.asciz	"tiles_title_244000.bin"
 tiles_game_intro_244000_file:

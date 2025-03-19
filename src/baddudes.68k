@@ -428,6 +428,9 @@ debug_patchlist:
 	PL_NOP	0x082be,4
 	PL_NOP	0x08354,4
 	.endif
+	.ifne	OPT_SKIP_RONNIE_THANKS
+	PL_B	0x1b3e8,0x60
+	.endif
 	PL_END
 	.endif
 

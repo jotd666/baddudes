@@ -1,3 +1,8 @@
+- level 7 vertical scrolling "trick": fails for "scroll down" completely
+  * optim: don't blit 3x horizontally, use 2x width then 1x width, optimally around the
+    displayed screen (as the game will draw the tiles furter than that)
+  could probably be optimized to only restore the buffers partially, not the whole width
+- background restore: complete wrapping (line 332 "now the second restore blit, wrapped around")  
 - general sprite position / scroll problem
   - level 2 wheels shifted
   - level 1 when ninjas arrive on truck, truck & ninjas on it drift
@@ -6,9 +11,13 @@
 - same as above: y scroll level 6 first Y scroll doesn't scroll up to 0x60, stops at 5C/5D: debug on real machine??
   possibly mid-screen interrupt issue?? (happens when scolling horiz. If not moving character
   it's OK!!)
+- easy: branch to copper change sky on those screens
+  copjmp2 contains copper color change + load copjmp1 return + copjmp1
+  blue: 123, 159, 195 => 79C, 79D to merge to 1 color
 - group erase: not good enough: make a table to macro objects (by patching the original game)
   and their size. Only issue: re-figure out the X/Y display coords. Major advantage:
   group erase works horizontally/vertically without any other computation
+- easy: boss energy bar missing right half
   
 - still missing sprites on level 2, possibly others...
 - easy: mutant karnov black color issue
@@ -21,17 +30,12 @@
 - level 5: remainer of wagons showing when gap erasing not effective on edges
 
 - do a OPT_TWO_PLAYER_MODE option, ideally it would rule to have 2 versions of the game
-- easy: remove yellow from tiles (title), gray from end (sky white house) to be able to
-  branch to copper change sky on those screens
-  copjmp2 contains copper color change + load copjmp1 return + copjmp1
 - on game over, tests test_input_bit_d1 (0x0174c,0x0175c,0x07e66), then goes back to menu but intro screen trashed
 - level 5: red girls missing frames?
 - truck 2: sprites & truck shifted in the end???
 - level 4: punching enemies while kneeled: missing frame? happens on other levels too
 - level 1 repair front objects (status bar showing but destroyed, debug this)
   => control word for multiplexed after lamp is not working but other sprites are also destroyed!
-- boss energy bar missing right half
-- 2nd level complete in a row "STAGE X CLEAR" "G" remains from previous "go to next stage"
 - tune autoframeskip: force 2 skips for train/truck levels all the time
   remain auto 0-2 for other levels
 - level 2: climbers on the right "blink" (frame/grouping? wrong clipping?)
@@ -42,13 +46,9 @@
   first find a way to reach sequence faster
 - boss rush: a lot of bosses have wrong colors: reset colors before replacing palette
   (boss 2 => boss 3 in level 7): done: to test
-- level 7 vertical scrolling "trick": fails for "scroll down" completely
-  * optim: don't blit 3x horizontally, use 2x width then 1x width, optimally around the
-    displayed screen (as the game will draw the tiles furter than that)
-  could probably be optimized to only restore the buffers partially, not the whole width
  
 	
-- background restore: complete wrapping (line 2760)  
+- 2nd level complete in a row "STAGE X CLEAR" "G" remains from previous "go to next stage"
 - difficulty level what does it do? maybe using "easy" would reduce number of enemies
   and make game smoother?? boss energy is lower on low difficulty (which the port gets
   by default!)
