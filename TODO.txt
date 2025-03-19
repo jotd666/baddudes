@@ -1,3 +1,6 @@
+- ending sequence trashed/flashes... double buffering vs simple buffering
+- easy: missing second screen sequence sprites (president+bad dudes): okay but missing
+  transparent magenta: pinkify them! (104 71 0 pal 04 for black) 
 - level 7 vertical scrolling "trick": fails for "scroll down" completely
   * optim: don't blit 3x horizontally, use 2x width then 1x width, optimally around the
     displayed screen (as the game will draw the tiles furter than that)
@@ -40,8 +43,6 @@
   remain auto 0-2 for other levels
 - level 2: climbers on the right "blink" (frame/grouping? wrong clipping?)
 - easy: track boss 7 color change
-- ending sequence trashed/flashes... double buffering vs simple buffering?
-- easy: missing second screen sequence sprites (president+bad dudes)
 - end sequence should use scrolling sprites for credits: allocate huge 2x high sprite buffers
   first find a way to reach sequence faster
 - boss rush: a lot of bosses have wrong colors: reset colors before replacing palette
