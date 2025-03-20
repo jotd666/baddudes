@@ -5920,7 +5920,7 @@ set_ending_2_context:
 	move.w	#ENDING_SKY_HEIGHT-1,d0
 	lea		sky_gradient,a0
 3:
-	move.w	sky_1_color,(4,a0)
+*	move.w	sky_1_color,(4,a0)
 	addq	#8,a0
 	dbf		d0,3b
 	
@@ -7793,14 +7793,32 @@ copper_resume_low:
 	.word	cop2lc+2,0
 
 	* now the color changes, using 24 bit gradient here
-	DECL_LO_COLOR_BANK	0
+	* this is harder than I thought it would but ends up nice
+	* we have to change 2 colors else the clouds of the original image
+	* hurt the gradient.
+	* apparently you cannot just set low part of the color without setting
+	* the high part first... wtf, never mind
 sky_gradient:
 	.set	sky_wait,0
-	.rept	ENDING_SKY_HEIGHT
+	.set	high_blue,0x79f
+	.rept	6
+	.set	low_blue,0xfff
+
+	.rept	16
 	COPPER_WAIT	0x2C01+sky_wait*0x100
-	.word	0X1FE,0XFFF-(0xFFF*sky_wait)/ENDING_SKY_HEIGHT
+	DECL_COLOR_BANK	0
+	.word	color+38,high_blue
+	.word	color+36,high_blue
+	DECL_LO_COLOR_BANK	0
+	.word	color+38,low_blue
+	.word	color+36,low_blue
 	.set	sky_wait,sky_wait+1
+	.set	low_blue,low_blue-1
 	.endr
+	
+	.set	high_blue,high_blue-1
+	.endr
+sky_gradient_end:
 	.word	copjmp2
 	
 	* copperlist used for most screens
