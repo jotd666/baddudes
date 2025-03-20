@@ -47,6 +47,7 @@ BORDERBLANK = 1
 * some bobs are grouped up to 64 pixels wide, we
 * don't want them clipped on the left
 CLIPPED_WIDTH_MARGIN = 64
+ENDING_SKY_HEIGHT = 80
 
 SPRITE_X_CORRECTION = 0
 SPRITE_Y_CORRECTION = 0
@@ -214,6 +215,10 @@ mul\value\()_table:
 
 .macro	DECL_COLOR_BANK	bankno
 	.word	bplcon3,BASE_BPLCON3_VALUE+(\bankno<<13)
+	.endm
+	
+.macro	DECL_LO_COLOR_BANK	bankno
+	.word	bplcon3,BASE_BPLCON3_VALUE+(\bankno<<13)+0x200
 	.endm
 	
 .macro	DECL_COLORS	offset,nb_colors
@@ -5613,6 +5618,7 @@ osd_set_context:
 	clr.l	big_machine_planes
 	clr.l	big_machine_extra_planes
 	clr.l	heli_planes
+	move.w	#0x1FE,copper_jump_2
 	move.w	#NB_BYTES_PER_SCREEN_ROW*16,big_machine_x_offset
 	* no bottom scrolling
 	jbsr	disable_road_scroll
@@ -5873,6 +5879,7 @@ set_ending_1_context:
 	* so we're good!)
 	jbsr	load_tiles_palette_244000
 	
+	
 	jbsr	activate_double_buffering
 	rts
 	
@@ -5887,7 +5894,36 @@ set_ending_2_context:
 	
 	move.l	tiles_palette_24d000,a0		| palette
 	jbsr	load_tiles_palette
+	
+	* identify sky colors
+	moveq	#0,d0
+	move.w	#0x1F,d1
+	move.l	tiles_palette_24d000,a0		| palette
+0:
+	move.w	(a0)+,d2
+	cmp.w	#0x079c,d2
+	jne		1f
+	move.w	d0,d2
+	add.w	#color,d2
+	move.w	d2,sky_2_color
+	jra		2f
+1:
+	cmp.w	#0x079d,d2
+	jne		2f
+	move.w	d0,d2
+	add.w	#color,d2
+	move.w	d2,sky_1_color
+2:
+	addq	#2,d0
+	dbf		D1,0b
 
+	move.w	#ENDING_SKY_HEIGHT-1,d0
+	lea		sky_gradient,a0
+3:
+	move.w	sky_1_color,(4,a0)
+	addq	#8,a0
+	dbf		d0,3b
+	
 	lea		sprites_game_ending_file,a0
 	jbsr 	load_sprite_file
 
@@ -5898,6 +5934,8 @@ set_ending_2_context:
 	move.l	#nope,addr_24Axxx_tile_layer_op_address
 	* white house last tile screen is contained on second set of tiles
 	move.l	#addr_24Dxxx_tile_layer_op_level_3,addr_24Dxxx_tile_layer_op_address
+
+	move.w	#copjmp2,copper_jump_2
 
 	jbsr	activate_double_buffering
 	rts
@@ -6134,7 +6172,23 @@ set_intro_context:
 	
 	lea		default_copperlist,a0
 	move.l	a0,cop1lc(a5)
-
+	
+	* set start & resume for copper pointer #2
+	lea		ending_sky_copperlist,a0
+	move.l	a0,d0
+	lea		copper_jump_low,a0
+	move.w	d0,(2,a0)
+	swap 	d0
+	lea		copper_jump_high,a0
+	move.w	d0,(2,a0)
+	
+	lea		default_copperlist_resume,a0
+	move.l	a0,d0
+	lea		copper_resume_low,a0
+	move.w	d0,(2,a0)
+	swap 	d0
+	lea		copper_resume_high,a0
+	move.w	d0,(2,a0)
 	rts
 
 specific_level_load_table:
@@ -7246,6 +7300,11 @@ fg_drawed_screen_ptr:
 fg_displayed_screen_ptr:
 	.long	0
 
+sky_1_color:
+	.word	0
+sky_2_color:
+	.word	0
+
 multi_dual_sprite_tiles_table:
 	.include	"special_2x_4x_dual_table.68k"
 
@@ -7726,12 +7785,27 @@ debug_color:
 	dc.l	-2
 	
 
+ending_sky_copperlist:
+	* write cop2lc to point on next part of copperlist
+copper_resume_high:
+	.word	cop2lc,0
+copper_resume_low:
+	.word	cop2lc+2,0
 
+	* now the color changes, using 24 bit gradient here
+	DECL_LO_COLOR_BANK	0
+sky_gradient:
+	.set	sky_wait,0
+	.rept	ENDING_SKY_HEIGHT
+	COPPER_WAIT	0x2C01+sky_wait*0x100
+	.word	0X1FE,0XFFF-(0xFFF*sky_wait)/ENDING_SKY_HEIGHT
+	.set	sky_wait,sky_wait+1
+	.endr
+	.word	copjmp2
 	
 	* copperlist used for most screens
 default_copperlist:
 	.word	bplcon0,0x6200+BORDERBLANK | 6 bitplanes, borderblank
-
 	* all sprites have the same palette no need to specify odd or even
 	* on color bank 2 (64-)
 	
@@ -7770,7 +7844,12 @@ dudes_palette:
 letters_palette:
 	DECL_COLORS	24,8
 base_palette_end:
-
+copper_jump_high:
+	.word	cop2lc,0
+copper_jump_low:
+	.word	cop2lc+2,0
+copper_jump_2:
+	.word	0x1FE,0
 	COPPER_WAIT	0x2C01+0x1800
 
 	* yellow color for time seconds
@@ -7803,6 +7882,8 @@ front_object_sprites:
 forest_colors:
 	.skip	forest_object_colors_block_end-forest_object_colors_block
 forest_colors_end:
+
+default_copperlist_resume:
 	
 	* mid-line wait & extra interrupt
 	COPPER_WAIT	0x8001

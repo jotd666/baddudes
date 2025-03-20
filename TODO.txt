@@ -1,10 +1,6 @@
-- easy: missing second screen sequence sprites (president+bad dudes): okay but missing
-  transparent magenta: pinkify them! (104 71 0 pal 04 for black) 
 - level 7 vertical scrolling "trick": fails for "scroll down" completely
-  * optim: don't blit 3x horizontally, use 2x width then 1x width, optimally around the
-    displayed screen (as the game will draw the tiles furter than that)
-  could probably be optimized to only restore the buffers partially, not the whole width
 - background restore: complete wrapping (line 332 "now the second restore blit, wrapped around")  
+  but last planes erase must be done in one go (wrap is only on restore buffer source)
 - general sprite position / scroll problem
   - level 2 wheels shifted
   - level 1 when ninjas arrive on truck, truck & ninjas on it drift
@@ -18,7 +14,8 @@
   blue: 123, 159, 195 => 79C, 79D to merge to 1 color
 - group erase: not good enough: make a table to macro objects (by patching the original game)
   and their size. Only issue: re-figure out the X/Y display coords. Major advantage:
-  group erase works horizontally/vertically without any other computation
+  group erase works horizontally/vertically without any other computation:
+  test on level 1 first with just the player at start...
 - easy: boss energy bar missing right half
   
 - still missing sprites on level 2, possibly others...
@@ -65,6 +62,10 @@
 - drop 2 player mode, use rightmost OSD sprite for real parallax in levels 4 and 6
   see if we can blit the score afterwards if 2P mode is reinstated, anyway 2P mode is
   a problem as it uses 4 more colors and it degrades sprite palette even further.
+
+- level 6/7 Y scroll swap optim: don't blit 3x horizontally, use 2x width then 1x width, optimally around the
+    displayed screen (as the game will draw the tiles furter than that)
+  could probably be optimized to only restore the buffers partially, not the whole width
 
 
 
