@@ -2660,6 +2660,7 @@ preprocess_16x16_tile:
 	cmp.w	y_max,d4
 	jcc		30f
 
+
 	move.l	fg_drawed_screen_ptr,a1
 	.ifne	OPT_ENABLE_DOUBLE_BUFFERING
 	move.l	fg_displayed_screen_ptr,a5
@@ -2681,7 +2682,7 @@ preprocess_16x16_tile:
 	* now make up for shifted Y scroll (levels 6 and 7) on screen
 	tst.w	y_extra_offset
 	jeq		25f
-	add.l	#SCREEN_PLANE_SIZE/2,d5		| FUCK TO OPTIMIZE
+	add.l	#SCREEN_PLANE_SIZE/2,d5
 	cmp.w	#0x100,d4
 	jcs		25f
 	* Y > 0x100: wrap D5 offset
@@ -2889,8 +2890,14 @@ addr_24Dxxx_tile_layer_op_level_3:
 	jbsr	preprocess_16x16_tile
 	jeq		100f
 
+	
 	cmp.w	#Y_WATER_MIN,d4
-	jcc		100f
+	jcs		0f
+	* low part: check if level 3 or end sequence
+	jbsr	get_current_level
+	cmp.b	#3,d0
+	jeq		100f
+0:
 	move.w	d7,d5			| save code
 	move.w	d7,d6			| tile code
 	and.w	#0x7FF,d6
@@ -5686,6 +5693,7 @@ osd_set_context:
 	jbsr	clear_all_hardware_sprites
 	* remove optional sounds
 	jbsr	remove_optional_sounds
+	* double buffering disabled
 	move.l	fg_drawed_screen_ptr,fg_displayed_screen_ptr
 	
 	move	(a7)+,d0		| restore state
@@ -5865,6 +5873,7 @@ set_ending_1_context:
 	* so we're good!)
 	jbsr	load_tiles_palette_244000
 	
+	jbsr	activate_double_buffering
 	rts
 	
 set_ending_2_context:
@@ -5887,8 +5896,10 @@ set_ending_2_context:
 	jbsr	load_tiles_palette_244000
 	
 	move.l	#nope,addr_24Axxx_tile_layer_op_address
+	* white house last tile screen is contained on second set of tiles
 	move.l	#addr_24Dxxx_tile_layer_op_level_3,addr_24Dxxx_tile_layer_op_address
 
+	jbsr	activate_double_buffering
 	rts
 	
 **********************
@@ -6061,12 +6072,15 @@ set_game_context:
 	move.w	nb_tile_planes_24da,d0
 	jbsr	allocate_background_buffer	
 
-	move.l	fg_screen_data_1,fg_drawed_screen_ptr
-	move.l	fg_screen_data_2,fg_displayed_screen_ptr
+	jbsr	activate_double_buffering
 
 	jbsr	install_osd_hardware_sprites
 	rts
 
+activate_double_buffering:
+	move.l	fg_screen_data_1,fg_drawed_screen_ptr
+	move.l	fg_screen_data_2,fg_displayed_screen_ptr
+	rts
 	
 set_intro_context:
 
