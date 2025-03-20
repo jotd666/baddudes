@@ -1,4 +1,3 @@
-- ending sequence trashed/flashes... double buffering vs simple buffering
 - easy: missing second screen sequence sprites (president+bad dudes): okay but missing
   transparent magenta: pinkify them! (104 71 0 pal 04 for black) 
 - level 7 vertical scrolling "trick": fails for "scroll down" completely
