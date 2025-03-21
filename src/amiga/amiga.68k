@@ -47,7 +47,7 @@ BORDERBLANK = 1
 * some bobs are grouped up to 64 pixels wide, we
 * don't want them clipped on the left
 CLIPPED_WIDTH_MARGIN = 64
-ENDING_SKY_HEIGHT = 80
+
 
 SPRITE_X_CORRECTION = 0
 SPRITE_Y_CORRECTION = 0
@@ -5896,6 +5896,26 @@ set_ending_2_context:
 	jbsr	load_tiles_palette
 	
 	* identify sky colors
+	jbsr	identify_and_set_sky_colors
+	
+	lea		sprites_game_ending_file,a0
+	jbsr 	load_sprite_file
+
+	* re-apply letter colors 56-63 (the sprites in that context only use 24 colors
+	* so we're good!)
+	jbsr	load_tiles_palette_244000
+	
+	move.l	#nope,addr_24Axxx_tile_layer_op_address
+	* white house last tile screen is contained on second set of tiles
+	move.l	#addr_24Dxxx_tile_layer_op_level_3,addr_24Dxxx_tile_layer_op_address
+
+	move.w	#copjmp2,copper_jump_2
+
+	jbsr	activate_double_buffering
+	rts
+	
+
+identify_and_set_sky_colors:
 	moveq	#0,d0
 	move.w	#0x1F,d1
 	move.l	tiles_palette_24d000,a0		| palette
@@ -5917,27 +5937,23 @@ set_ending_2_context:
 	addq	#2,d0
 	dbf		D1,0b
 
-	move.w	#ENDING_SKY_HEIGHT-1,d0
-	lea		sky_gradient,a0
+	lea		sky_gradient_end_screen,a0
+	lea		sky_gradient_end_screen_end,a2
+	lea		sky_gradient,a1
 3:
-*	move.w	sky_1_color,(4,a0)
-	addq	#8,a0
-	dbf		d0,3b
-	
-	lea		sprites_game_ending_file,a0
-	jbsr 	load_sprite_file
-
-	* re-apply letter colors 56-63 (the sprites in that context only use 24 colors
-	* so we're good!)
-	jbsr	load_tiles_palette_244000
-	
-	move.l	#nope,addr_24Axxx_tile_layer_op_address
-	* white house last tile screen is contained on second set of tiles
-	move.l	#addr_24Dxxx_tile_layer_op_level_3,addr_24Dxxx_tile_layer_op_address
-
-	move.w	#copjmp2,copper_jump_2
-
-	jbsr	activate_double_buffering
+	move.w	(a0)+,d0
+	cmp.w	#0xDEAD,d0
+	jne		4f
+	move.w	sky_1_color,d0
+	jra		5f
+4:
+	cmp.w	#0xBEEF,d0
+	jne		5f
+	move.w	sky_2_color,d0
+5:
+	move.w	d0,(a1)+
+	cmp.l	a0,a2
+	jne		3b
 	rts
 	
 **********************
@@ -7718,6 +7734,35 @@ scroll_table:
 	.include	"scroll_table_32.68k"	
 	.endif
 
+	.macro	DEF_SKY_GRADIENT	brightest_rgb
+	.set	sky_wait,0
+	.set	high_blue,\brightest_rgb
+	.rept	6
+	.set	low_blue,0xfff
+
+	.rept	16
+	COPPER_WAIT	0x2C01+sky_wait*0x100
+	DECL_COLOR_BANK	0
+	.word	0xDEAD,high_blue
+	.word	0xBEEF,high_blue
+	DECL_LO_COLOR_BANK	0
+	.word	0xDEAD,low_blue
+	.word	0xBEEF,low_blue
+	.set	sky_wait,sky_wait+1
+	.set	low_blue,low_blue-1
+	.endr
+	
+	.set	high_blue,high_blue-1
+	.endr
+	.endm
+
+sky_gradient_end_screen:
+	DEF_SKY_GRADIENT	0x79F
+sky_gradient_end_screen_end:
+
+sky_gradient_intro_screen:
+	DEF_SKY_GRADIENT	0xCCF
+sky_gradient_intro_screen_end:
 
 upper_osd_next_cw_table:
 	.long	osd_top_left_next_cw
@@ -7763,7 +7808,7 @@ tile_log_table_end:
 
 
 
-
+	
 	.section	.datachip
 
 
@@ -7799,26 +7844,7 @@ copper_resume_low:
 	* apparently you cannot just set low part of the color without setting
 	* the high part first... wtf, never mind
 sky_gradient:
-	.set	sky_wait,0
-	.set	high_blue,0x79f
-	.rept	6
-	.set	low_blue,0xfff
-
-	.rept	16
-	COPPER_WAIT	0x2C01+sky_wait*0x100
-	DECL_COLOR_BANK	0
-	.word	color+38,high_blue
-	.word	color+36,high_blue
-	DECL_LO_COLOR_BANK	0
-	.word	color+38,low_blue
-	.word	color+36,low_blue
-	.set	sky_wait,sky_wait+1
-	.set	low_blue,low_blue-1
-	.endr
-	
-	.set	high_blue,high_blue-1
-	.endr
-sky_gradient_end:
+	.skip	sky_gradient_end_screen_end-sky_gradient_end_screen
 	.word	copjmp2
 	
 	* copperlist used for most screens
