@@ -9,9 +9,6 @@
 - same as above: y scroll level 6 first Y scroll doesn't scroll up to 0x60, stops at 5C/5D: debug on real machine??
   possibly mid-screen interrupt issue?? (happens when scolling horiz. If not moving character
   it's OK!!)
-- easy: branch to copper change sky on those screens
-  copjmp2 contains copper color change + load copjmp1 return + copjmp1
-  blue: 123, 159, 195 => 79C, 79D to merge to 1 color
 - group erase: not good enough: make a table to macro objects (by patching the original game)
   and their size. Only issue: re-figure out the X/Y display coords. Major advantage:
   group erase works horizontally/vertically without any other computation:
