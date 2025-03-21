@@ -1,32 +1,31 @@
-- level 7 vertical scrolling "trick": fails for "scroll down" completely
+- easy: boss energy bar missing right half
+- level 7 display helicopter!
+  24C010=D3, 24C012=172 heli rotor almost visible, heli very high
+  24C010=125, 24C012=172 heli very high and to the left
+  24C010=187, 24C012=131 heli just above player and to the hard left
+- level 7 vertical scrolling "trick": fails for "scroll down"
 - background restore: complete wrapping (line 332 "now the second restore blit, wrapped around")  
   but last planes erase must be done in one go (wrap is only on restore buffer source)
-- general sprite position / scroll problem
-  - level 2 wheels shifted
-  - level 1 when ninjas arrive on truck, truck & ninjas on it drift
-  - when swapping half screens (level 6 and 7), can be shifted too
-  - this is still not 100% reproducible
-- same as above: y scroll level 6 first Y scroll doesn't scroll up to 0x60, stops at 5C/5D: debug on real machine??
-  possibly mid-screen interrupt issue?? (happens when scolling horiz. If not moving character
-  it's OK!!)
-- group erase: not good enough: make a table to macro objects (by patching the original game)
-  and their size. Only issue: re-figure out the X/Y display coords. Major advantage:
-  group erase works horizontally/vertically without any other computation:
-  test on level 1 first with just the player at start...
-- easy: boss energy bar missing right half
   
-- still missing sprites on level 2, possibly others...
+- level 7-2: gray ninja & sabreman can happen between devil pole & dragonninja
 - easy: mutant karnov black color issue
-- stalactite wrong colors (used to be OK)
+- boss 5: locomotive wheel erase wrong
+- level 5: remainder of wagons showing when gap erasing not effective on edges
 - color change doesn't work on level 7 boss rush (because color downscaling ends up with
   different colors than the one in previous levels)
+- end music has issues with ptplayer, also tune start is wrong: to test
+
+
+- level 7: missing elevator engine (loop, should stop when elev door plays) (when going up)
+  also missing heli sound but ...
+- still missing sprites on level 2, possibly others...
+- stalactite wrong colors (used to be OK)
 - should do a per-level symmetry on spidermen, red ninjas, green ninjas, dogs...
   to continue for higher levels 3,4,5,6,7
-- boss 5: locomotive wheel erase wrong
-- level 5: remainer of wagons showing when gap erasing not effective on edges
 
 - do a OPT_TWO_PLAYER_MODE option, ideally it would rule to have 2 versions of the game
 - on game over, tests test_input_bit_d1 (0x0174c,0x0175c,0x07e66), then goes back to menu but intro screen trashed
+- level 2 front object (lamp) not displaying (used to work with level 1 objects)
 - level 5: red girls missing frames?
 - truck 2: sprites & truck shifted in the end???
 - level 4: punching enemies while kneeled: missing frame? happens on other levels too
@@ -35,21 +34,14 @@
 - tune autoframeskip: force 2 skips for train/truck levels all the time
   remain auto 0-2 for other levels
 - level 2: climbers on the right "blink" (frame/grouping? wrong clipping?)
-- easy: track boss 7 color change
 - end sequence should use scrolling sprites for credits: allocate huge 2x high sprite buffers
-  first find a way to reach sequence faster
-- boss rush: a lot of bosses have wrong colors: reset colors before replacing palette
-  (boss 2 => boss 3 in level 7): done: to test
  
 	
 - 2nd level complete in a row "STAGE X CLEAR" "G" remains from previous "go to next stage"
 - difficulty level what does it do? maybe using "easy" would reduce number of enemies
   and make game smoother?? boss energy is lower on low difficulty (which the port gets
   by default!)
-- level 7 display helicopter!
-- level 2 front object (lamp) not displaying (used to work with level 1 objects)
 - save/load highscores
-- end music has issues with ptplayer, also tune start is wrong
 - log & rip missing sounds: breakpoint on sound not found so able to go to mame and rip it
 - leave demo running: level 3 but with status bar trashed (because of 2P life), 2P mode with player 2 invisible
 - demo running: when inserting coin, suddenly needs 2 coins for 1 credit...
@@ -64,6 +56,18 @@
     displayed screen (as the game will draw the tiles furter than that)
   could probably be optimized to only restore the buffers partially, not the whole width
 
+- general sprite position / scroll problem
+  - level 2 wheels shifted
+  - level 1 when ninjas arrive on truck, truck & ninjas on it drift
+  - when swapping half screens (level 6 and 7), can be shifted too
+  - this is still not 100% reproducible
+- same as above: y scroll level 6 first Y scroll doesn't scroll up to 0x60, stops at 5C/5D: debug on real machine??
+  possibly mid-screen interrupt issue?? (happens when scolling horiz. If not moving character
+  it's OK!!)
+- group erase: not good enough: make a table to macro objects (by patching the original game)
+  and their size. Only issue: re-figure out the X/Y display coords. Major advantage:
+  group erase works horizontally/vertically without any other computation:
+  test on level 1 first with just the player at start...
 
 
 low priority:
@@ -76,21 +80,18 @@ low priority:
 - if TOTAL_CHIP_MEMORY_SIZE = 1250000, train level loads but background is trashed
   and memory manager doesn't detect any issue...
 - still not restored black color ex: tile 4ae/02 (sword level 5)
-- bosses 2 and 5: rework sheets to change white by some other color that doesn't
+- bosses 2, 5, 6: rework sheets to change white by some other color that doesn't
   conflict with main character (0xEEE => ????) so dynamic color change works fully
 - restore buffer memory size optimize:
 RESTORE_SCREEN_PLANE_SIZE = NB_BYTES_PER_SCREEN_ROW*3*NB_PLAYFIELD_LINES*2
 could be
 RESTORE_SCREEN_PLANE_SIZE = NB_BYTES_PER_SCREEN_ROW*2*NB_PLAYFIELD_LINES*2
 
-- restore clip on max scroll (around 0x300) too strict (no restore!), probably same for clear, debug TMPWRITE
-
 - level 3: put water scroll in some other buffer (allocate one?) so changing plans automatically
   clips the sprites without any other side effect
-- "CREDIT" not written when coin inserted
 - level 4: maybe remove foreground trees if possible
-- level 5: map tiles & fix the buggy inverted tiles
 - level 6: same
+- level 5: map tiles & fix the buggy inverted tiles
 - restore buffer uses 3 horizontal playfields, they should use only 2 plus a few tiles
   to restore bobs that "wrap"
   alternative: if bob X + width wrap, clip it and perform 2 restores (but 2x as blits!)

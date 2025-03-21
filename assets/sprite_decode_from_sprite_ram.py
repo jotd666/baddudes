@@ -1,7 +1,9 @@
-import os,json,pathlib,struct
+import os,json,pathlib,struct,collections
 import bitplanelib
 
 this_dir = pathlib.Path(__file__).absolute().parent
+
+d = collections.defaultdict(set)
 
 def doit(filename):
     print(">>>>>>>> ",filename)
@@ -28,9 +30,14 @@ def doit(filename):
             x_flip = attrs & 0x2000
 
             name = sprite_name_code.get(code,"unknown")
+            d[code].add(attrs)
+
             print(f"address={i+0xFFC000:06x}, x={x}, y={y}, code={code:x}, attrs={attrs:x}, name={name}")
 
     with open(filename+".68k","w") as f:
         bitplanelib.dump_asm_bytes(sprite_ram,f,mit_format=True)
 
-doit("lots_of_enemies")
+    for code,attrs in d.items():
+        if len(attrs)>1:
+            print(f"multi: {code:x}, attrs={attrs}")
+doit("elevator_door")

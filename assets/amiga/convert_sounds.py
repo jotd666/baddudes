@@ -59,6 +59,8 @@ def convert():
     "NINJA_ATTACK_SCREAM_SND"     :{"index":0x3B,"channel":3,"sample_rate":vhq_sample_rate,"priority":30,"optional_pack":"clone_boss"},
     "NINJA_CLONE_SND"     :{"index":0x1B,"channel":3,"sample_rate":vhq_sample_rate,"priority":40,"optional_pack":"clone_boss"},
     "ROBO_BOSS_SCREAM_SND"     :{"index":0x2E,"channel":3,"sample_rate":vhq_sample_rate,"priority":50,"optional_pack":"animal"},
+    #"ELEVATOR_ENGINE_SND"     :{"index":0x16,"channel":3,"sample_rate":vhq_sample_rate,"priority":50,"loops":True,"optional_pack":"animal"},
+    "ELEVATOR_DOOR_SND"     :{"index":0x15,"channel":3,"sample_rate":vhq_sample_rate,"priority":50,"optional_pack":"animal"},
 
     "LEVEL_1_TUNE_SND"                :{"index":0x1F,"pattern":0,"volume":20,'loops':True},
     "LEVEL_2_TUNE_SND"                :{"index":0x20,"pattern":0,"volume":20,'loops':True},

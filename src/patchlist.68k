@@ -170,7 +170,7 @@ ram_relocs:
 	.long	0x001f4a+4	| ext_00ffa8ee
 	.long	0x001f52+6	| ext_00ffa8fa
 	.long	0x001f5c+4	| ext_00ff80fc
-	.long	0x001f68+2	| ext_00ffa7c4
+	.long	0x001f68+2	| ending_state_00ffa7c4
 	.long	0x002038+2	| ext_00ff801e
 	.long	0x00203e+2	| ext_00ff8128
 	.long	0x002048+2	| ext_00ff812c
@@ -325,7 +325,7 @@ ram_relocs:
 	.long	0x0031a0+4	| ext_00ffa8ee
 	.long	0x0031b0+2	| ext_00ffa856
 	.long	0x0031c0+2	| ext_00ff95a4
-	.long	0x0031e0+2	| ext_00ffa7c4
+	.long	0x0031e0+2	| ending_state_00ffa7c4
 	.long	0x0031ee+4	| copy_of_dsw_msb_00ff810a
 	.long	0x003224+6	| ext_00ff823a
 	.long	0x003238+2	| ext_00ffa8e0
@@ -1576,7 +1576,7 @@ ram_relocs:
 	.long	0x014f38+4	| current_stage_00ff821d
 	.long	0x014f94+4	| stage_control_flags_00ff8216
 	.long	0x014fba+2	| ext_00ffa882
-	.long	0x014fc4+4	| ext_00ffa7c4
+	.long	0x014fc4+4	| ending_state_00ffa7c4
 	.long	0x014fd2+2	| ext_00ffa886
 	.long	0x0150c6+4	| ext_00ffa364
 	.long	0x0150e4+4	| ext_00ffa224
@@ -1584,10 +1584,10 @@ ram_relocs:
 	.long	0x0151da+4	| ext_00ffa364
 	.long	0x0151ec+4	| ext_00ffa224
 	.long	0x01529e+2	| ext_00ff8212
-	.long	0x015368+4	| ext_00ffa7c4
+	.long	0x015368+4	| ending_state_00ffa7c4
 	.long	0x015370+4	| ext_00ffa842
 	.long	0x01537a+2	| ext_00ff8212
-	.long	0x015400+4	| ext_00ffa7c4
+	.long	0x015400+4	| ending_state_00ffa7c4
 	.long	0x01540a+4	| ext_00ff80fd
 	.long	0x01541c+2	| ext_00ff8212
 	.long	0x015456+2	| ext_00ff8f64
@@ -1596,7 +1596,7 @@ ram_relocs:
 	.long	0x0154fa+2	| ext_00ff8f64
 	.long	0x015536+2	| ext_00ff8f64
 	.long	0x01599a+2	| ext_00ff812c
-	.long	0x015a22+2	| ext_00ffa7c4
+	.long	0x015a22+2	| ending_state_00ffa7c4
 	.long	0x015aa0+4	| ext_00ffa882
 	.long	0x015aa8+4	| ext_00ffa886
 	.long	0x015aea+2	| ext_00ffa882
@@ -1610,16 +1610,16 @@ ram_relocs:
 	.long	0x015b54+4	| layer_24dxxx_scroll_values_ff813c
 	.long	0x015b60+6	| ext_00ffa886
 	.long	0x015b6c+6	| ext_00ffa886
-	.long	0x015c8a+4	| ext_00ffa7c4
+	.long	0x015c8a+4	| ending_state_00ffa7c4
 	.long	0x015cc8+2	| ext_00ffa882
 	.long	0x015cd2+2	| ext_00ffa886
-	.long	0x015d5e+4	| ext_00ffa7c4
+	.long	0x015d5e+4	| ending_state_00ffa7c4
 	.long	0x015d9c+2	| ext_00ffa882
 	.long	0x015da6+2	| ext_00ffa886
-	.long	0x015e32+4	| ext_00ffa7c4
+	.long	0x015e32+4	| ending_state_00ffa7c4
 	.long	0x015e70+2	| ext_00ffa882
 	.long	0x015e7a+2	| ext_00ffa886
-	.long	0x015f06+4	| ext_00ffa7c4
+	.long	0x015f06+4	| ending_state_00ffa7c4
 	.long	0x015f44+2	| ext_00ffa882
 	.long	0x015f4e+2	| ext_00ffa886
 	.long	0x015f9c+4	| ext_00ffa844
@@ -1902,9 +1902,9 @@ ram_relocs:
 	.long	0x01b172+4	| stage_control_flags_00ff8216
 	.long	0x01b19e+4	| ext_00ffa845
 	.long	0x01b1ae+4	| current_stage_00ff821d
-	.long	0x01b1e2+4	| ext_00ffa7c4
-	.long	0x01b1f2+4	| ext_00ffa7c4
-	.long	0x01b1fa+2	| ext_00ffa7c4
+	.long	0x01b1e2+4	| ending_state_00ffa7c4
+	.long	0x01b1f2+4	| ending_state_00ffa7c4
+	.long	0x01b1fa+2	| ending_state_00ffa7c4
 	.long	0x01b23a+2	| is_actual_game_played_00ff8215
 	.long	0x01b23a+6	| ext_00ffa7d4
 	.long	0x01b244+4	| is_actual_game_played_00ff8215
@@ -1923,7 +1923,7 @@ ram_relocs:
 	.long	0x01b380+4	| ext_00ffa7c5
 	.long	0x01b388+2	| ext_00ffa7c8
 	.long	0x01b390+4	| ext_00ffa7c5
-	.long	0x01b398+4	| ext_00ffa7c4
+	.long	0x01b398+4	| ending_state_00ffa7c4
 	.long	0x01b3a0+6	| ext_00ffa4a4
 	.long	0x01b3aa+6	| ext_00ffa4ac
 	.long	0x01b3b4+6	| ext_00ffa4b4
@@ -1931,10 +1931,10 @@ ram_relocs:
 	.long	0x01b3c8+4	| ext_00ffa7c5
 	.long	0x01b3d2+2	| ext_00ffa7d0
 	.long	0x01b3d8+4	| ext_00ffa7c5
-	.long	0x01b3e0+4	| ext_00ffa7c4
+	.long	0x01b3e0+4	| ending_state_00ffa7c4
 	.long	0x01b3ec+2	| ext_00ffa7c8
 	.long	0x01b3fc+2	| ext_00ffa7d0
-	.long	0x01b410+4	| ext_00ffa7c4
+	.long	0x01b410+4	| ending_state_00ffa7c4
 	.long	0x01b418+4	| ext_00ffa7c8
 	.long	0x01b420+4	| ext_00ffa7c5
 	.long	0x01b430+2	| ext_00ffa7d0
@@ -1945,8 +1945,8 @@ ram_relocs:
 	.long	0x01b460+4	| ext_00ffa7c5
 	.long	0x01b468+4	| ext_00ffa7c8
 	.long	0x01b472+2	| ext_00ffa7c8
-	.long	0x01b47a+4	| ext_00ffa7c4
-	.long	0x01b482+4	| ext_00ffa7c4
+	.long	0x01b47a+4	| ending_state_00ffa7c4
+	.long	0x01b482+4	| ending_state_00ffa7c4
 	.long	0x01b48a+4	| ext_00ffa7c5
 	.long	0x01b494+4	| ext_00ffa7c5
 	.long	0x01b49e+6	| ext_00ffa4a4
@@ -1961,7 +1961,7 @@ ram_relocs:
 	.long	0x01b508+2	| ext_00ffa7d4
 	.long	0x01b51a+2	| ext_00ffa7d6
 	.long	0x01b524+4	| ext_00ffa7c5
-	.long	0x01b52c+4	| ext_00ffa7c4
+	.long	0x01b52c+4	| ending_state_00ffa7c4
 	.long	0x01b538+4	| ext_00ffa7c5
 	.long	0x01b548+6	| ext_00ffa7cc
 	.long	0x01b552+2	| ext_00ffa7cc
@@ -1970,11 +1970,11 @@ ram_relocs:
 	.long	0x01b576+4	| ext_00ffa7d2
 	.long	0x01b580+4	| ext_00ffa7d2
 	.long	0x01b59a+2	| ext_00ffa7d2
-	.long	0x01b5a2+4	| ext_00ffa7c4
-	.long	0x01b5ba+4	| ext_00ffa7c4
+	.long	0x01b5a2+4	| ending_state_00ffa7c4
+	.long	0x01b5ba+4	| ending_state_00ffa7c4
 	.long	0x01b5c4+4	| ext_00ffa7c5
-	.long	0x01b5cc+4	| ext_00ffa7c4
-	.long	0x01b5d4+4	| ext_00ffa7c4
+	.long	0x01b5cc+4	| ending_state_00ffa7c4
+	.long	0x01b5d4+4	| ending_state_00ffa7c4
 	.long	0x01b5e2+2	| ext_00ffa7d4
 	.long	0x01b606+6	| ext_00ffa4f4
 	.long	0x01b610+6	| ext_00ffa4fc
@@ -2038,22 +2038,22 @@ ram_relocs:
 	.long	0x01d242+4	| ext_00ffa846
 	.long	0x01db9a+2	| current_stage_00ff821d
 	.long	0x01dbe8+2	| ext_00ff80f2
-	.long	0x01dc28+2	| ext_00ffa7c4
+	.long	0x01dc28+2	| ending_state_00ffa7c4
 	.long	0x01dc3c+2	| ext_00ffa364
 	.long	0x01dc4e+2	| ext_00ffa224
 	.long	0x01dc64+2	| ext_00ffa364
 	.long	0x01dc76+2	| ext_00ffa224
 	.long	0x01dd4c+2	| ext_00ffa7ce
 	.long	0x01e554+2	| ext_00ff8212
-	.long	0x01e5b6+2	| ext_00ffa7c4
+	.long	0x01e5b6+2	| ending_state_00ffa7c4
 	.long	0x01e5d2+2	| ext_00ff8212
-	.long	0x01e620+2	| ext_00ffa7c4
+	.long	0x01e620+2	| ending_state_00ffa7c4
 	.long	0x01e63c+2	| ext_00ff8212
 	.long	0x01ed2a+2	| ext_00ffa7ce
 	.long	0x01ed30+4	| ext_00ffa7ce
 	.long	0x01ed62+2	| ext_00ffa7ce
 	.long	0x01ee48+2	| ext_00ff8212
-	.long	0x01ee5e+4	| ext_00ffa7c4
+	.long	0x01ee5e+4	| ending_state_00ffa7c4
 	.long	0x01efec+2	| current_stage_00ff821d
 	.long	0x01f016+2	| current_stage_00ff821d
 	.long	0x01f022+4	| ext_00ffa845
@@ -2880,6 +2880,7 @@ patchlist:
 	PL_L	0x01b58a,0x48E7FFFE	| fix movem.w
 	PL_L	0x01b596,0x4CDF7FFF	| fix movem.w
 	PL_PSS	0x01b5b0,copy_to_8x8_tiles_1b5b0,4
+	PL_PSS	0x01b722,reset_vertical_scroll_1b722,4
 	PL_PSS	0x01bb2e,write_word_imm_0000_to_0030c010,2
 	PL_PSS	0x01bb3e,switch_to_ending_2_1bb3e,2
 	PL_PS	0x01bb8e,write_to_tile_1bb8e

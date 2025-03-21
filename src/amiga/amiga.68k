@@ -1711,6 +1711,14 @@ palette_and_sprites_ram_op:
 	jbsr	change_palette
 	jra		10f
 0:
+	move.l	rom_base,a0
+	add.l	#0x51bc0+2,a0		| a1 is post-incremented
+	cmp.l	a0,a1
+	jne		0f
+	lea		level_7_boss_color_change(pc),a0
+	jbsr	change_palette
+	jra		10f
+0:
 	nop
 
 10:
@@ -1840,17 +1848,6 @@ level_2_boss_color_change:
 	.word	0x700,0x408 | purple #2: careful!! hit color
 	.word	0xd00,0x62b	| purple #1
 	.word	0x400,0x204
-	
-*	.word	0x600,0x306 | purple #3, slightly conflicts with bad dudes but doesn't matter
-*	.word	0x800,0x408 | purple #2
-*	.word	0xb00,0x62b	| purple #1
-	*.word	0xeee,0x707   | conflicts with bad dudes trousers after quantizing, leaving white...
-	*.word	0xc62,0xb75	 | those diffs seem not to have any effect, drop them
-	*.word	0x953,0x853
-	*.word	0x444,0x555
-	*.word	0x731,0x631
-	*
-	*.word	0xd86,0xd97
 	.long	-1		| end
 	
 level_3_boss_color_change:
@@ -1859,13 +1856,6 @@ level_3_boss_color_change:
 	.word	0x400,0x020
 	.word	0x500,0x131
 	.long	-1		| end
-level_6_boss_color_change:
-	.word	0xB00,0x440
-	.word	0x700,0x330
-	.word	0x400,0X110
-	.word	0x500,0x220
-	.word	0x332,0x444
-	.long	-1		| end
 
 level_5_boss_color_change:   | TEMP not the proper colors probably
 	.word	0xB00,0x464
@@ -1873,7 +1863,17 @@ level_5_boss_color_change:   | TEMP not the proper colors probably
 	.word	0x500,0x232
 	.word	0x700,0x343
 	.long	-1		| end
+level_6_boss_color_change:
+	.word	0xB00,0x440
+	.word	0x700,0x330
+	.word	0x400,0X110
+	.word	0x500,0x220
+	.word	0x332,0x444
+	.long	-1		| end
+	
 
+level_7_boss_color_change:
+	.long	-1		| end
 	
 * 8x8 tile layer, for osd (not scrolled) but also row scrolled
 * for front objects (lamps...)
@@ -7431,6 +7431,9 @@ sprite_ram_mockup:
 	.endif
 	.ifeq		OPT_BOSS_SPRITES_MOCKUP-6
 	.include	"mockup/boss_6.68k"
+	.endif
+	.ifeq		OPT_BOSS_SPRITES_MOCKUP-7
+	.include	"mockup/boss_7.68k"
 	.endif
 	.ifeq		OPT_BOSS_SPRITES_MOCKUP-11
 	.include	"mockup/lots_of_enemies.68k"

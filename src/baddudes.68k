@@ -14,6 +14,8 @@
 	rts
 	.endm
 	
+	
+	
 baddudes_reset:
 	move.l	rom_base,a0
 	move.l	ram_base,a1
@@ -947,6 +949,19 @@ videoram_write_0891c:
 	exg		d1,d7
 	RESTORE_REGS
 	RTS						| 081ac: 4e75
+	
+
+reset_vertical_scroll_1b722:
+	STORE_REGS
+	exg		A6,A1
+	move	d0,d7
+0:
+	WRITE_WORD_AND_PLUS
+	CMPA.L	#0x00242040,A6
+	BNE.S	0b
+	exg		A6,A1
+	RESTORE_REGS
+	rts
 	
 videoram_write_06dea:
 videoram_write_06da6:

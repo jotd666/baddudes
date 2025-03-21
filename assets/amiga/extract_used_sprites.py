@@ -46,6 +46,7 @@ def doit():
     0x470,      # karnov head
     0x64C,0x64E,0x650,  # boss 2 parts
      0x980,  # animal head
+     0xAAE,0xAAC,0xAB0,0xab6,  # elevator door parts
     }
 
 
