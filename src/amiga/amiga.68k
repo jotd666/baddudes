@@ -5896,6 +5896,10 @@ set_ending_2_context:
 	jbsr	load_tiles_palette
 	
 	* identify sky colors
+	move.w	#0x079d,d3
+	move.w	#0x079c,d4
+	lea		sky_gradient_end_screen,a1
+	move.l	tiles_palette_24d000,a0		| palette
 	jbsr	identify_and_set_sky_colors
 	
 	lea		sprites_game_ending_file,a0
@@ -5909,51 +5913,55 @@ set_ending_2_context:
 	* white house last tile screen is contained on second set of tiles
 	move.l	#addr_24Dxxx_tile_layer_op_level_3,addr_24Dxxx_tile_layer_op_address
 
-	move.w	#copjmp2,copper_jump_2
 
 	jbsr	activate_double_buffering
 	rts
 	
-
+* < d3: brightest color
+* < d4: dimmest color
+* < A0: tiles palette
+* < A1: sky gradient start
 identify_and_set_sky_colors:
 	moveq	#0,d0
 	move.w	#0x1F,d1
-	move.l	tiles_palette_24d000,a0		| palette
 0:
 	move.w	(a0)+,d2
-	cmp.w	#0x079c,d2
+	cmp.w	d4,d2
 	jne		1f
 	move.w	d0,d2
 	add.w	#color,d2
-	move.w	d2,sky_2_color
+	move.w	d2,d6		| note color register #1
 	jra		2f
 1:
-	cmp.w	#0x079d,d2
+	cmp.w	d3,d2
 	jne		2f
 	move.w	d0,d2
 	add.w	#color,d2
-	move.w	d2,sky_1_color
+	move.w	d2,d5		| note color register #2
 2:
 	addq	#2,d0
 	dbf		D1,0b
 
-	lea		sky_gradient_end_screen,a0
-	lea		sky_gradient_end_screen_end,a2
+	move.l	a1,a0
+	lea		(sky_gradient_end_screen_end-sky_gradient_end_screen,a0),a2
 	lea		sky_gradient,a1
 3:
 	move.w	(a0)+,d0
 	cmp.w	#0xDEAD,d0
 	jne		4f
-	move.w	sky_1_color,d0
+	move.w	d6,d0
 	jra		5f
 4:
 	cmp.w	#0xBEEF,d0
 	jne		5f
-	move.w	sky_2_color,d0
+	move.w	d5,d0
 5:
 	move.w	d0,(a1)+
 	cmp.l	a0,a2
 	jne		3b
+
+	move.w	#copjmp2,copper_jump_2
+
 	rts
 	
 **********************
@@ -6183,8 +6191,16 @@ set_intro_context:
 	* avoiding ugly stripe bitplane effect at startup
 	jbsr		set_playfield_bitplanes
 
+
 	jbsr	load_intro_palette
-	
+
+	* identify sky colors
+	move.l	tiles_palette_24a000,a0		| palette
+	lea		sky_gradient_intro_screen,a1
+	move.w	#0xccd,d3
+	move.w	#0xccc,d4
+	jbsr	identify_and_set_sky_colors
+
 	
 	lea		default_copperlist,a0
 	move.l	a0,cop1lc(a5)
