@@ -1474,35 +1474,6 @@ display_title_dudes:
 0:
 	rts
 	
-draw_helicopter_old:
-	tst.w	x_background_scroll_value
-	* do not draw before game starts updating scroll registers
-	jeq		554f		
-	move.w	x_secondary_scroll_value,d0
-	cmp.w	#0x400,d0
-	jeq		554f		| invisible
-	move	#30,d0
-	move	#30,d1
-	add.w	y_background_scroll_value,d1
-	add.w	x_background_scroll_value,d0
-	move.l	big_machine_planes,a0
-	move.w	big_machine_width,d2
-	move.w	big_machine_height,d4
-	move.w	#NB_PLAYFIELD_PLANES,d3
-	moveq	#0,d5
-	moveq	#0,d6
-	move.l	(4*6,a0),a3
-	lea		prev_machine_params,a1
-	move.w	d0,(a1)+
-	move.w	d1,(a1)+
-	
-	move.l 	fg_drawed_screen_ptr,a1
-	lea		_custom,a5
-	jbsr	blit_planes_any_internal_cookie_cut
-
-	st.b	machine_previously_drawn
-554:
-	rts
 
 draw_helicopter:
 	move.w	x_secondary_scroll_value,d0
@@ -6664,6 +6635,8 @@ level_6_load:
 level_7_load:
 	lea		animal_sound_file,a0
 	jbsr	load_extra_sound_file
+	lea		elevator_sound_file,a0
+	jbsr	load_extra_sound_file
 
 	jbsr	load_fist_of_fury
 	lea		tiles_level_7_24a000_file,a0
@@ -7538,6 +7511,8 @@ clone_boss_sound_file:
 	.asciz	"clone_boss_sounds.bin"
 animal_sound_file:
 	.asciz	"animal_sounds.bin"
+elevator_sound_file:
+	.asciz	"elevator_sounds.bin"
 dogs_sound_file:
 	.asciz	"dog_sounds.bin"
 boss_fight_music_file:
