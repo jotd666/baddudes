@@ -1715,6 +1715,7 @@ palette_and_sprites_ram_op:
 	add.l	#0x51bc0+2,a0		| a1 is post-incremented
 	cmp.l	a0,a1
 	jne		0f
+	TMPBREAK
 	lea		level_7_boss_color_change(pc),a0
 	jbsr	change_palette
 	jra		10f
@@ -1851,19 +1852,23 @@ level_2_boss_color_change:
 	.long	-1		| end
 	
 level_3_boss_color_change:
+	.word	0xD00,0x363   | level 7
 	.word	0xC00,0x363
 	.word	0x700,0x242  | 0x700,0xE00,0x900 used for hit sprite
 	.word	0x400,0x020
 	.word	0x500,0x131
 	.long	-1		| end
 
-level_5_boss_color_change:   | TEMP not the proper colors probably
+level_5_boss_color_change:
+	.word	0xD00,0x464   | level 7
 	.word	0xB00,0x464
 	.word	0x400,0x121
 	.word	0x500,0x232
 	.word	0x700,0x343
 	.long	-1		| end
 level_6_boss_color_change:
+	.word	0xD00,0x440   | level 7
+	.word	0xB00,0x440
 	.word	0xB00,0x440
 	.word	0x700,0x330
 	.word	0x400,0X110
@@ -1873,6 +1878,10 @@ level_6_boss_color_change:
 	
 
 level_7_boss_color_change:
+	.word 	0x731,0x640
+	.word 	0xC86,0xF80
+	.word 	0x444,0x112
+	.word 	0x334,0x777
 	.long	-1		| end
 	
 * 8x8 tile layer, for osd (not scrolled) but also row scrolled
@@ -3166,12 +3175,14 @@ do_scroll_done:
 	
 
 do_scroll_down:
-	* this part is enough to make out of elevator display OK!
+	* just refresh the screen fully
 	move.l	fg_drawed_screen_ptr,a1	| destination: first half of screen
 	move.l	background_restore_buffer,a0
-	move	#0x100,d1
-	jbsr	copy_background
-	* do we need to do something else?
+	move	#0,d1
+	moveq	#0,d0
+	move.w	#NB_BYTES_PER_ROW,D2
+	move.w	#0x200,D4		| height
+	jbsr	restore_background
 	rts
 	
 do_scroll_up:

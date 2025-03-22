@@ -10,7 +10,7 @@ def doit(filename):
     with open(filename,"rb") as f:
         sprite_ram = f.read()
 
-    with open(os.path.join(this_dir,"sprite_code_names.json"),"r") as f:
+    with open(this_dir / "sprite_code_names.json","r") as f:
         sprite_name_code = {int(k,16):v for k,v in json.load(f)["codes_names"].items()}
 
     for i in range(0,len(sprite_ram),8):
@@ -30,7 +30,7 @@ def doit(filename):
             x_flip = attrs & 0x2000
 
             name = sprite_name_code.get(code,"unknown")
-            d[code].add(attrs)
+            d[code].add(attrs & 0x1FFF)
 
             print(f"address={i+0xFFC000:06x}, x={x}, y={y}, code={code:x}, attrs={attrs:x}, name={name}")
 
@@ -39,5 +39,5 @@ def doit(filename):
 
     for code,attrs in d.items():
         if len(attrs)>1:
-            print(f"multi: {code:x}, attrs={attrs}")
-doit("elevator_door")
+            print("multi: {:x}, attrs={}".format(code,[hex(x) for x in attrs]))
+doit("sprite_ram")

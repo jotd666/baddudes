@@ -6,6 +6,13 @@ from shared import *
 gamename = "baddudes"
 sox = "sox"
 
+sound_dir = this_dir / ".." / "sounds"
+
+
+src_dir = this_dir / "../../src/amiga"
+outfile = src_dir / "sounds.68k"
+sndfile = src_dir / "sound_entries.68k"
+
 def convert():
     if not shutil.which("sox"):
         raise Exception("sox command not in path, please install it")
@@ -14,12 +21,6 @@ def convert():
     #wav_files = glob.glob("sounds/*.wav")
 
 
-    sound_dir = this_dir / ".." / "sounds"
-
-
-    src_dir = this_dir / "../../src/amiga"
-    outfile = src_dir / "sounds.68k"
-    sndfile = src_dir / "sound_entries.68k"
 
 
     hq_sample_rate = 12000  #{"aga":18004,"ecs":12000,"ocs":11025}[mode]
@@ -284,6 +285,9 @@ optional_sounds:
                 f.write(f"sound_{index}:\n")
                 write_vasm(sound["data"],f)
         asm2bin(asm,data_dir / (asm.stem+".bin"))
-convert()
 
+convert()
+# also copy .mod files into data dir
+for s in sound_dir.glob("*.mod"):
+    shutil.copy(s,data_dir)
 

@@ -1,7 +1,9 @@
 - when restoring, seems only extra planes are missing!! would be easy
   to extend and not clip 
+- boss 7: color change not happening
+- boss 7: rip laugh
 - easy: boss energy bar missing right half
-- level 7 display helicopter!
+- level 7 display helicopter! if 24C010 != 400 display it!
   24C010=D3, 24C012=172 heli rotor almost visible, heli very high
   24C010=125, 24C012=172 heli very high and to the left
   24C010=187, 24C012=131 heli just above player and to the hard left
@@ -76,7 +78,7 @@ low priority:
 
 - invincibility: still hit when falling on road (level 2): 
   game must not change p1_state_flags_00ffa386 must remain to 0x10
-
+- compare US & japan ROMS see what are the differences: there are A LOT!
 - middle lower OSD missing timeout char on "CONTINUE"
 - level 3 demo: game uses 2 players
 - if TOTAL_CHIP_MEMORY_SIZE = 1250000, train level loads but background is trashed
