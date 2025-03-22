@@ -1,27 +1,20 @@
-- when restoring, seems only extra planes are missing!! would be easy
-  to extend and not clip 
 - boss 7: color change not happening
-- boss 7: rip laugh
+- easy: identify devil pole spin sound id
+- optional_pack: multiple (boss 3 scream, boss 6)
+- devil pole palette change trashes scenery colors???
 - easy: boss energy bar missing right half
 - level 7 display helicopter! if 24C010 != 400 display it!
   24C010=D3, 24C012=172 heli rotor almost visible, heli very high
   24C010=125, 24C012=172 heli very high and to the left
   24C010=187, 24C012=131 heli just above player and to the hard left
-- background restore: complete wrapping (line 332 "now the second restore blit, wrapped around")  
-  but last planes erase must be done in one go (wrap is only on restore buffer source)
   
-- level 7-2: gray ninja & sabreman can happen between devil pole & dragonninja:
+- level 7-2: sabreman can happen between devil pole & dragonninja:
   play without invincibility and wait for blows...
 - easy: mutant karnov black color issue
 - boss 5: locomotive wheel erase wrong
 - level 5: remainder of wagons showing when gap erasing not effective on edges
-- color change doesn't work on level 7 boss rush (because color downscaling ends up with
-  different colors than the one in previous levels)
-- end music has issues with ptplayer, also tune start is wrong: to test
-
 
 - level 7: missing elevator engine (loop, should stop when elev door plays) (when going up)
-  also missing heli sound but ...
 - still missing sprites on level 2, possibly others...
 - stalactite wrong colors (used to be OK)
 - should do a per-level symmetry on spidermen, red ninjas, green ninjas, dogs...
@@ -76,6 +69,7 @@
 
 low priority:
 
+- level 7: missing heli sound but would steal 1 music channel...
 - invincibility: still hit when falling on road (level 2): 
   game must not change p1_state_flags_00ffa386 must remain to 0x10
 - compare US & japan ROMS see what are the differences: there are A LOT!

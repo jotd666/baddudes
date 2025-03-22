@@ -3344,46 +3344,57 @@ really_update_sprites:
 	move.l	background_restore_buffer,a0
 	tst.w	y_extra_offset
 	jeq		25f
-	* handle wrapping, but in some case we have to
-	* restore the buffer in 2 operations if absolute Y+height > 0x100
+	**********************************************************
+	* handle restore wrapping on low Y (only on level 7-1)
+	* this is annoying as hell to code/finetune....
+	* in some case we have to restore the buffer in 2
+	* operations if absolute Y+height > 0x100
+	**********************************************************
 	cmp.w	#0x100,d1
 	jcs		24f 
-	| completely wrapped, 1 restore blit only
+	* start of restore is above 0X100: needs 1 restore blit only
+	* just adding an offset to restore buffer
 	sub.w	#SCREEN_PLANE_SIZE/2,a0
 	jra		25f
 24:
+	* the problematic part is here
+	* first add the offset for restore buffer source
 	add.w	#SCREEN_PLANE_SIZE/2,a0
 	move.w	d1,d6
-	add.w	d4,d6		| y max
+	add.w	d4,d6		| what would y max be?
 	cmp.w	#0x100,d6
-	jcs		25f			| no wrap!
-	* wrap!!!
+	jcs		25f			| below 0x100: OK no wrap!
+	* restore_background source would read outside buffer
+	* so when restoring, we have to use 2 different sources
 	* reduce height for the first restore
 	movem.w	d0-d1/d4,-(a7)
 	move.w	#0x100,d4
-	sub.w	d1,d4		| clipped height
-	
+	sub.w	d1,d4		| clipped height to avoid source overshoot
 	jbsr	restore_background
 	movem.w	(a7)+,d0-d1/d4
 
-	movem.w	d0/d5/d6,-(a7)
+	* now erase remaining bitplanes using full restore height
+	movem.w	d0-d2/d4-d6,-(a7)
 	lea		(SCREEN_PLANE_SIZE,a1),a1
 	moveq	#0,d0
 	moveq	#0,d1
 	move.w	d5,d3
 	
 	jbsr	clear_fg_planes_any_blitter_internal
-	movem.w	(a7)+,d0/d5/d6
+	movem.w	(a7)+,d0-d2/d4-d6
 
-	
-	move.l	fg_drawed_screen_ptr,a1
 	* now the second restore blit, wrapped around
 	move.l	background_restore_buffer,a0
+	* reduce height
+	neg.w	d1
+	add.w	#0x100,d1
+	sub.w	d1,d4
+	jeq		111f		| sometimes exact 0!
+	move.l	fg_drawed_screen_ptr,a1
+	sub.w	#SCREEN_PLANE_SIZE/2,a0
+	TMPWRITE
 	move.w	#0x100,d1
-	sub.w	d1,d6
-	move.w	d6,d4
-	*jbsr	restore_background
-	*jra		26f
+	jbsr	restore_background
 	jra		111f
 25:	
 	jbsr	restore_background
