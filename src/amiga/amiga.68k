@@ -3166,8 +3166,12 @@ do_scroll_done:
 	
 
 do_scroll_down:
-	jbsr	do_scroll_up
-	jbsr	osd_blitz
+	* this part is enough to make out of elevator display OK!
+	move.l	fg_drawed_screen_ptr,a1	| destination: first half of screen
+	move.l	background_restore_buffer,a0
+	move	#0x100,d1
+	jbsr	copy_background
+	* do we need to do something else?
 	rts
 	
 do_scroll_up:
@@ -4941,6 +4945,7 @@ set_scroll_y_24a000_layer:
 	jcc		2f		| same half: do nothing
 	* we just crossed the 0x100 Y scroll value boundary
 	* we have to translate everything upwards
+	* and swap screen halves horizontally
 	move.w	#-0x100,y_extra_offset
 	move.w	#SCROLL_UP,y_scroll_command
 
