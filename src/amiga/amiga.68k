@@ -1123,14 +1123,14 @@ update_front_objects:
 1:	
 	rts
 	
-* truck_erase erase_truck
+* erase_truck erase_truck
 * complete nightmare to do properly given
 * that we're trying to avoid erasing the parts
 * that don't need erasing (huge trailer rectangles)
 * and also it scrolls...
 
 erase_big_machine:
-	tst.b	truck_previously_drawn
+	tst.b	machine_previously_drawn
 	jeq		0f
 
 	* truck: amounts to roughly 12 objects ?
@@ -1147,31 +1147,54 @@ erase_big_machine:
 	jsr		([a0,d0.w*4])
 
 1:
-	clr.b	truck_previously_drawn
+	clr.b	machine_previously_drawn
 0:
 	rts
 	
 specific_big_machine_restore:
 	.long	nope
-	.long	specific_level_1_truck_erase
-	.long	specific_level_2_truck_erase
+	.long	level_1_erase_truck
+	.long	level_2_erase_truck
 	.long	nope
 	.long	nope
-	.long	specific_level_5_train_erase
+	.long	level_5_erase_train
 	.long	nope
+	.long	level_7_erase_helicopter
 	.long	nope
 		
-specific_level_1_truck_erase:
+level_7_erase_helicopter:
+	* most brutal erase!
+	move.w	big_machine_width,d2
+	move.w	big_machine_height,d4
+	lea		prev_machine_params,a1
+	move.w	(a1)+,d0
+	move.w	(a1),d1
+	move.l	fg_drawed_screen_ptr,a1
+	move.l		background_restore_buffer,a0
+	jbsr	restore_background
+	* now restore extra planes too
+	moveq	#1,d3
+	lea		(SCREEN_PLANE_SIZE,a1),a1
+	moveq	#0,d0
+	moveq	#0,d1
+	move.w	big_machine_width,d2
+	move.w	big_machine_height,d4
+	lea		_custom,a5
+	jbsr	clear_fg_planes_any_blitter_internal
+	rts
+	
+	
+level_1_erase_truck:
 	jbsr	erase_truck_bottom_part
 	
 	
-	move.w	prev_truck_params,d0	| absolute secondary scroll pos
+	move.w	prev_machine_params,d0	| absolute secondary scroll pos
 	sub.w	#8,d0
 	moveq	#4,d2
 	moveq	#0,d1		| full height
 	jbsr	restore_gap
 
-	move.w	prev_truck_params,d0	| absolute secondary scroll pos
+	move.w	prev_machine_params,d0	| absolute secondary scroll pos
 	add.w	#0x130,d0
 	* we must restore the trailer/truck gap
 	sub.w	#8,d0
@@ -1183,11 +1206,11 @@ specific_level_1_truck_erase:
 
 	rts
 	
-specific_level_2_truck_erase:
+level_2_erase_truck:
 	jbsr	erase_truck_bottom_part
 	* level 2: 2 gaps to restore, plus back of truck
 
-	move.w	prev_truck_params,d0	| absolute secondary scroll pos
+	move.w	prev_machine_params,d0	| absolute secondary scroll pos
 	sub.w	#8,d0
 	moveq	#4,d2
 	moveq	#0,d1		| full height
@@ -1195,7 +1218,7 @@ specific_level_2_truck_erase:
 	
 	
 	* inter-trailer gap
-	move.w	prev_truck_params,d0	| absolute secondary scroll pos
+	move.w	prev_machine_params,d0	| absolute secondary scroll pos
 	* this is the X coord of start of truck
 
 	add.w	#0xF0,d0
@@ -1210,7 +1233,7 @@ specific_level_2_truck_erase:
 	
 	* between trailer & truck
 19:
-	move.w	prev_truck_params,d0	| absolute secondary scroll pos
+	move.w	prev_machine_params,d0	| absolute secondary scroll pos
 	
 	add.w	#0x100-0x40,d0
 	jpl		20f
@@ -1239,8 +1262,8 @@ specific_level_2_truck_erase:
 	
 erase_truck_bottom_part:
 	move.w	truck_wheels_height,d3		| bottom part which needs restoring
-	move.w	truck_y_pos,d1	| Y
-	lea		prev_truck_params+2,a1
+	move.w	machine_y_pos,d1	| Y
+	lea		prev_machine_params+2,a1
 	move.w	(a1)+,d0	| X
 	move.w	(a1)+,d2	| real width
 
@@ -1254,9 +1277,9 @@ erase_truck_bottom_part:
 	move.l	background_restore_buffer,a0
 	jbra	restore_background
 
-specific_level_5_train_erase:
+level_5_erase_train:
 	* there are 2 wagon gaps that need restoring
-	lea		prev_truck_params,a1
+	lea		prev_machine_params,a1
 	move.w	(a1)+,d0	| absolute secondary scroll pos
 	add.w	#0x800,d0
 	* this is the X coord of start of truck	
@@ -1292,7 +1315,7 @@ specific_level_5_train_erase:
 	neg		d0
 	add.w	#MIN_TRAIN_X_TOP_DRAW-8,d0
 	
-	move.w	truck_y_pos,d1		| Y-pos: fixed
+	move.w	machine_y_pos,d1		| Y-pos: fixed
 	move.w	big_machine_extra_pic_height,d4
 	sub.w	d4,d1
 	add.w	x_background_scroll_value,d0
@@ -1330,7 +1353,7 @@ restore_wheel_background:
 	add.w	x_background_scroll_value,d0
 	moveq	#4,d2
 	move.w	truck_wheels_height,d4
-	move.w	truck_y_pos,d1	| displayY
+	move.w	machine_y_pos,d1	| displayY
 	add.w	big_machine_height,d1
 	sub.w	#16,d1
 	move.l	background_restore_buffer,a0
@@ -1367,7 +1390,7 @@ restore_gap:
 	jeq		4f
 	sub.w	truck_wheels_height,d4
 4:
-	move.w	truck_y_pos,d1	| displayY
+	move.w	machine_y_pos,d1	| displayY
 	move.l	background_restore_buffer,a0
 	move.l	fg_drawed_screen_ptr,a1
 
@@ -1451,6 +1474,45 @@ display_title_dudes:
 0:
 	rts
 	
+draw_helicopter_old:
+	tst.w	x_background_scroll_value
+	* do not draw before game starts updating scroll registers
+	jeq		554f		
+	move.w	x_secondary_scroll_value,d0
+	cmp.w	#0x400,d0
+	jeq		554f		| invisible
+	move	#30,d0
+	move	#30,d1
+	add.w	y_background_scroll_value,d1
+	add.w	x_background_scroll_value,d0
+	move.l	big_machine_planes,a0
+	move.w	big_machine_width,d2
+	move.w	big_machine_height,d4
+	move.w	#NB_PLAYFIELD_PLANES,d3
+	moveq	#0,d5
+	moveq	#0,d6
+	move.l	(4*6,a0),a3
+	lea		prev_machine_params,a1
+	move.w	d0,(a1)+
+	move.w	d1,(a1)+
+	
+	move.l 	fg_drawed_screen_ptr,a1
+	lea		_custom,a5
+	jbsr	blit_planes_any_internal_cookie_cut
+
+	st.b	machine_previously_drawn
+554:
+	rts
+
+draw_helicopter:
+	move.w	x_secondary_scroll_value,d0
+	jeq		2f		| reached destination
+	cmp.w	#0x400,d0
+	jeq		2f		| not started: only on level 1
+	jbra	draw_big_machine
+2:
+	rts
+	
 * truck_draw draw_truck for level 1
 draw_truck_level_1:
 	move.w	x_secondary_scroll_value,d0
@@ -1482,7 +1544,7 @@ draw_big_machine:
 	* offset to skip start (and also adjust real width)
 	moveq	#0,d5			| XY-offset
 	neg	d0
-	lea		prev_truck_params,a1
+	lea		prev_machine_params,a1
 	add.w	big_machine_x_offset,d0	| now scroll value -0x200->0x200
 
 	move.w	d0,(a1)+		| absolute secondary scroll start position (no back scroll)
@@ -1539,13 +1601,13 @@ do_truck_draw:
 	jcc		1f
 	addq	#1,D6	| round to highest even
 1:
-	move.w	truck_y_pos,d1		| Y-pos: fixed
+	move.w	machine_y_pos,d1		| Y-pos: fixed for truck but can change for heli
 
 	* we have to take into account primary scroll value as we only have 1 layer
 	add.w	x_background_scroll_value,d0
 	* store the restore clip values for later
 	
-	st.b	truck_previously_drawn
+	st.b	machine_previously_drawn
 	move.w	d0,(a1)+	| X
 	move.w	d6,(a1)+	| real width
 	move.w	x_secondary_scroll_value,(a1)	| note truck position
@@ -1568,7 +1630,7 @@ do_truck_draw:
 
 	
 	move.l	d1,a0
-	move.w	truck_y_pos,d1		| Y-pos: fixed
+	move.w	machine_y_pos,d1		| Y-pos: fixed
 	move.w	big_machine_extra_pic_height,d4
 	sub.w	d4,d1
 	move.l	(4*NB_PLAYFIELD_PLANES,a0),a3	| mask
@@ -3392,7 +3454,6 @@ really_update_sprites:
 	jeq		111f		| sometimes exact 0!
 	move.l	fg_drawed_screen_ptr,a1
 	sub.w	#SCREEN_PLANE_SIZE/2,a0
-	TMPWRITE
 	move.w	#0x100,d1
 	jbsr	restore_background
 	jra		111f
@@ -3416,26 +3477,19 @@ really_update_sprites:
 	addq	#8,a4
 	dbf		d7,1b
 12:	
-*	tst.l	heli_planes
-*	jeq		554f
-*	move	#30,d0
-*	move	#30,d1
-*	add.w	y_background_scroll_value,d1
-*	add.w	x_background_scroll_value,d0
-*	move.l	heli_planes,a0
-*	move.l 	fg_drawed_screen_ptr,a1
-*	move.w	big_machine_width,d2
-*	move.w	big_machine_height,d4
-*	move.w	#NB_PLAYFIELD_PLANES,d3
-*	move.l	(4*6,a0),a3
-*	lea		_custom,a5
-*	jbsr	blit_planes_any_internal_cookie_cut
-*554:
+
 	tst.l big_machine_planes
 	jeq		555f
-	
 	jbsr	erase_big_machine
 	jbsr	get_current_level
+	cmp.b	#7,d0
+	jne	49f
+	* TEMP
+	move.w	#0,big_machine_x_offset
+	move.w 	#0x100,machine_y_pos
+	jbsr	draw_helicopter
+	jra		51f
+49:
 	cmp.b	#1,d0
 	jne		50f
 	jbsr	draw_truck_level_1
@@ -5644,7 +5698,6 @@ osd_set_context:
 	clr.l	sprite_table_base
 	clr.l	big_machine_planes
 	clr.l	big_machine_extra_planes
-	clr.l	heli_planes
 	move.w	#0x1FE,copper_jump_2
 	move.w	#NB_BYTES_PER_SCREEN_ROW*16,big_machine_x_offset
 	* no bottom scrolling
@@ -6267,7 +6320,7 @@ load_big_machine:
 	move.w	(a0)+,big_machine_nb_planes
 	move.w	(a0)+,big_machine_width
 	move.w	(a0)+,big_machine_height
-	move.w	(a0)+,truck_y_pos
+	move.w	(a0)+,machine_y_pos
 	move.w	(a0)+,truck_wheels_height
 	move.l	(a0)+,d0
 	move.l	d0,big_machine_extra_pic
@@ -6618,8 +6671,6 @@ level_7_load:
 	
 	lea		heli_pic_file,a0
 	jbsr	load_big_machine
-	move.l	big_machine_planes,heli_planes
-	clr.l	big_machine_planes
 	
 	rts
 	
@@ -7705,8 +7756,6 @@ big_machine_planes:
 	.long	0
 big_machine_extra_planes:
 	.long	0
-heli_planes:
-	.long	0
 truck_nb_planes:
 	.word	0
 background_sprites_palette:
@@ -7734,13 +7783,13 @@ big_machine_extra_pic_width:
 	.word	0
 big_machine_extra_pic_height:	
 	.word	0
-truck_y_pos:	
+machine_y_pos:	
 	.word	0
 truck_wheels_height:	
 	.word	0
-prev_truck_params:
+prev_machine_params:
 	.skip	8
-truck_previously_drawn:
+machine_previously_drawn:
 	.byte	0
 	.align	2
 	

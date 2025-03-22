@@ -161,7 +161,7 @@ def process_helicopter(global_palette):
     with open(asm_out,"w") as f:
 
         f.write(f"\tdc.w\t7,{width},{height},0,0   ; nb planes (with mask), width in bytes, height, padding\n")
-
+        f.write("\tdc.l\t0\t;no extra pic\n")
         empty_plane_workaround = True
 
         f.write(f"; bpldata (plane size = {plane_size})\n")
