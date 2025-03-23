@@ -114,7 +114,7 @@ if True:
     # chain 2 fixes from 2 different fake black sources, we have to remember which pixels
     # have been processed, else the second processing destroys the black pixels of the first one!
     processed_pixels = fix_tileset("sprites",0x9,0xD,(56,34,1))   # karnov 2
-    fix_tileset("sprites",0x9,0x7,(230,230,0),processed_pixels)   # truck tires
+    #fix_tileset("sprites",0x9,0x7,(230,230,0),processed_pixels)   # truck tires
     fix_tileset("sprites",0xA,0x7,(230,230,0))   # cars
     fix_tileset("sprites",0xC,0x7,(230,230,0))   # cars
     fix_tileset("sprites",0x5,0xD,(56,34,1))   # ninja nails

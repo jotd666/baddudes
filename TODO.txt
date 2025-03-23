@@ -1,6 +1,8 @@
+- crash on game over (bad jump table?)
 - boss 7: color change not happening (break OK!)
-- "go to next stage": sometimes locks up (no frameskip). original code to see wait code
-  ex: train level in "auto" frameskip: locks up before loading next level
+- level 6/7 Y scroll swap optim: don't blit 3x horizontally, use 2x width then 1x width, optimally around the
+    displayed screen (as the game will draw the tiles furter than that)
+  could probably be optimized to only restore the buffers partially, not the whole width
 - easy: identify devil pole spin sound id
 - level 7 heli: check writes to secondary scroll registers (helicopter moves)
 - devil pole palette change trashes scenery colors??? disable palette change & retry
@@ -14,21 +16,18 @@
   game doesn't seem to change secondary scroll???? wtf debug this with
   code in 0 (write to 24C012 in 62E2)
   
-- level 7-2: sabreman (actually any generic ninja) can happen between devil pole & dragonninja:
-  play without invincibility and wait for blows...
-- easy: mutant karnov black color issue
+- mutant karnov black color issue: conflict between truck tires and mutant karnov on palette 9
+  fixing karnov steals too many colors and now character trousers are not all white...
 - boss 5: locomotive wheels erase wrong
   
 - level 7: missing elevator engine (loop, should stop when elev door plays) (when going up)
 - level 6: stalactite wrong colors (used to be OK)
-- should do a per-level symmetry on spidermen, red ninjas, green ninjas, dogs...
-  to continue for higher levels 3,4,5,6,7
 
 - do a OPT_TWO_PLAYER_MODE option, ideally it would rule to have 2 versions of the game
 - on game over, tests test_input_bit_d1 (0x0174c,0x0175c,0x07e66), then goes back to menu but intro screen trashed
 - level 2 front object (lamp) not displaying (used to work with level 1 objects)
 - level 5: red girls missing frames
-- level 4: punching enemies while kneeled: missing frame? happens on other levels too
+- level 4: punching enemies while kneeling: missing frame? happens on other levels too
 - level 1 repair front objects (status bar showing but destroyed, debug this)
   => control word for multiplexed after lamp is not working but other sprites are also destroyed!
 - level 2: climbers on the right "blink" (frame/grouping? wrong clipping?)
@@ -50,9 +49,6 @@
   see if we can blit the score afterwards if 2P mode is reinstated, anyway 2P mode is
   a problem as it uses 4 more colors and it degrades sprite palette even further.
 
-- level 6/7 Y scroll swap optim: don't blit 3x horizontally, use 2x width then 1x width, optimally around the
-    displayed screen (as the game will draw the tiles furter than that)
-  could probably be optimized to only restore the buffers partially, not the whole width
 
 - general sprite position / scroll problem
   - truck 2: sprites & truck shifted in the end??? also happens on level 5 train, linked to general scroll shift issue
@@ -62,10 +58,13 @@
 - same as above: y scroll level 6 first Y scroll doesn't scroll up to 0x60, stops at 5C/5D: debug on real machine??
   possibly mid-screen interrupt issue?? (happens when scolling horiz. If not moving character
   it's OK!!)
-- group erase: not good enough: make a table to macro objects (by patching the original game)
+- group erase: not good enough: make a table to macro objects
   and their size. Only issue: re-figure out the X/Y display coords. Major advantage:
   group erase works horizontally/vertically without any other computation:
   test on level 1 first with just the player at start...
+- level 7-2: sabreman (actually any generic ninja) can happen between devil pole & dragonninja:
+  play without invincibility and wait for blows...
+- level 3 demo: game uses 2 players, patch to use only 1 player
 
 
 low priority:
@@ -75,7 +74,6 @@ low priority:
   game must not change p1_state_flags_00ffa386 must remain to 0x10
 - compare US & japan ROMS see what are the differences: there are A LOT!
 - middle lower OSD missing timeout char on "CONTINUE"
-- level 3 demo: game uses 2 players
 - if TOTAL_CHIP_MEMORY_SIZE = 1250000, train level loads but background is trashed
   and memory manager doesn't detect any issue...
 - still not restored black color ex: tile 4ae/02 (sword level 5)

@@ -5696,11 +5696,11 @@ osd_set_context:
 	movem.l	d0-a6,-(a7)
 	move.w	d0,-(a7)		| save in d7
 
+	jbsr	save_interrupt_state
+	jbsr	osd_disable_interrupts
 	jbsr	wait_vbl
 	jbsr	wait_vbl
 	* then we can safely load the new context
-	jbsr	save_interrupt_state
-	jbsr	osd_disable_interrupts
 	
 	* we need to make sure that the sprite update interrupt is updating the
 	* sprites while we're changing the sprite set, or it can cause issues

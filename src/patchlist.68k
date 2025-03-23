@@ -152,15 +152,15 @@ ram_relocs:
 	.long	0x001d34+2	| ext_00ff8114
 	.long	0x001d40+2	| ext_00ff8118
 	.long	0x001dc4+2	| spriteram_00ffc000
-	.long	0x001dde+2	| ext_00ff8128
-	.long	0x001dea+2	| ext_00ff812c
+	.long	0x001dde+2	| x_primary_scroll_value_00ff8128
+	.long	0x001dea+2	| y_primary_scroll_value_00ff812c
 	.long	0x001e30+2	| layer_24dxxx_scroll_values_ff813c
 	.long	0x001e3c+2	| ext_00ff8140
 	.long	0x001e84+2	| #spriteram_end_00ffc7f8
 	.long	0x001e98+6	| ext_00ff8114
 	.long	0x001ea8+6	| ext_00ff8118
-	.long	0x001eb8+6	| ext_00ff8128
-	.long	0x001ec8+6	| ext_00ff812c
+	.long	0x001eb8+6	| x_primary_scroll_value_00ff8128
+	.long	0x001ec8+6	| y_primary_scroll_value_00ff812c
 	.long	0x001ed8+6	| layer_24dxxx_scroll_values_ff813c
 	.long	0x001ee8+6	| ext_00ff8140
 	.long	0x001f12+2	| ext_00ff8244
@@ -172,8 +172,8 @@ ram_relocs:
 	.long	0x001f5c+4	| ext_00ff80fc
 	.long	0x001f68+2	| ending_state_00ffa7c4
 	.long	0x002038+2	| ext_00ff801e
-	.long	0x00203e+2	| ext_00ff8128
-	.long	0x002048+2	| ext_00ff812c
+	.long	0x00203e+2	| x_primary_scroll_value_00ff8128
+	.long	0x002048+2	| y_primary_scroll_value_00ff812c
 	.long	0x00204e+2	| ext_00ff801e
 	.long	0x002054+2	| ext_00ff802e
 	.long	0x002062+6	| ext_00ff8032
@@ -211,8 +211,8 @@ ram_relocs:
 	.long	0x0023e4+2	| ext_00ff8122
 	.long	0x0023f0+2	| ext_00ff8124
 	.long	0x0023fc+2	| ext_00ff8126
-	.long	0x002408+2	| ext_00ff8128
-	.long	0x002414+2	| ext_00ff812c
+	.long	0x002408+2	| x_primary_scroll_value_00ff8128
+	.long	0x002414+2	| y_primary_scroll_value_00ff812c
 	.long	0x002420+2	| ext_00ff8130
 	.long	0x00242c+2	| ext_00ff8132
 	.long	0x00244a+2	| ext_00ff8134
@@ -338,7 +338,7 @@ ram_relocs:
 	.long	0x0032c6+2	| ext_00ff8232
 	.long	0x0032d8+2	| layer_24dxxx_scroll_values_ff813c
 	.long	0x0032e8+2	| ext_00ff8884
-	.long	0x003308+2	| ext_00ff8128
+	.long	0x003308+2	| x_primary_scroll_value_00ff8128
 	.long	0x003316+6	| ext_00ff8232
 	.long	0x0033a6+6	| ext_00ff8222
 	.long	0x0033b0+6	| ext_00ff822a
@@ -518,22 +518,22 @@ ram_relocs:
 	.long	0x0061a4+2	| current_stage_00ff821d
 	.long	0x0061e4+2	| ext_00ff815c
 	.long	0x0061e4+6	| ext_00ff823e
-	.long	0x0061ee+2	| ext_00ff8160
+	.long	0x0061ee+2	| y_primary_delta_scroll_00ff8160
 	.long	0x0061ee+6	| ext_00ffa8f2
 	.long	0x0061f8+2	| ext_00ff815c
-	.long	0x0061fe+2	| ext_00ff8160
-	.long	0x006204+2	| ext_00ff8128
+	.long	0x0061fe+2	| y_primary_delta_scroll_00ff8160
+	.long	0x006204+2	| x_primary_scroll_value_00ff8128
 	.long	0x006214+6	| ext_00ff815c
-	.long	0x00621e+6	| ext_00ff8160
+	.long	0x00621e+6	| y_primary_delta_scroll_00ff8160
 	.long	0x006234+2	| ext_00ff8164
 	.long	0x006234+6	| ext_00ff8148
-	.long	0x00623e+2	| ext_00ff8168
+	.long	0x00623e+2	| y_secondary_delta_scroll_00ff8168
 	.long	0x00623e+6	| ext_00ffa8f6
 	.long	0x006248+2	| ext_00ff8164
-	.long	0x00624e+2	| ext_00ff8168
+	.long	0x00624e+2	| y_secondary_delta_scroll_00ff8168
 	.long	0x006254+2	| layer_24dxxx_scroll_values_ff813c
 	.long	0x006264+6	| ext_00ff8164
-	.long	0x00626e+6	| ext_00ff8168
+	.long	0x00626e+6	| y_secondary_delta_scroll_00ff8168
 	.long	0x0062a4+2	| ext_00ff81c6
 	.long	0x0062d8+2	| ext_00ff81c8
 	.long	0x00632c+2	| ext_00ff81c8
@@ -704,13 +704,13 @@ ram_relocs:
 	.long	0x006aac+2	| ext_00ff81a2
 	.long	0x006ab2+2	| ext_00ff81b2
 	.long	0x006ad2+2	| ext_00ff815c
-	.long	0x006ad8+2	| ext_00ff8160
-	.long	0x006ade+2	| ext_00ff8128
+	.long	0x006ad8+2	| y_primary_delta_scroll_00ff8160
+	.long	0x006ade+2	| x_primary_scroll_value_00ff8128
 	.long	0x006af8+2	| ext_00ff816c
 	.long	0x006afe+2	| ext_00ff814c
 	.long	0x006b04+2	| ext_00ff814c
 	.long	0x006b16+2	| front_layer_scroll_00ff8150
-	.long	0x006b1c+2	| ext_00ff8128
+	.long	0x006b1c+2	| x_primary_scroll_value_00ff8128
 	.long	0x006b22+2	| ext_00ff814c
 	.long	0x006b28+2	| front_layer_scroll_00ff8150
 	.long	0x006b2e+2	| front_layer_scroll_00ff8150
@@ -732,8 +732,8 @@ ram_relocs:
 	.long	0x006bf2+2	| ext_00ffa890
 	.long	0x006c16+2	| ext_00ffa890
 	.long	0x006c32+2	| ext_00ff815c
-	.long	0x006c38+2	| ext_00ff8160
-	.long	0x006c3e+2	| ext_00ff8128
+	.long	0x006c38+2	| y_primary_delta_scroll_00ff8160
+	.long	0x006c3e+2	| x_primary_scroll_value_00ff8128
 	.long	0x006c58+6	| ext_00ff815c
 	.long	0x006c66+6	| ext_00ff8164
 	.long	0x006c72+2	| ext_00ff81b6
@@ -745,13 +745,13 @@ ram_relocs:
 	.long	0x006cb6+2	| ext_00ffa890
 	.long	0x006cda+2	| ext_00ffa890
 	.long	0x006cfe+2	| ext_00ff815c
-	.long	0x006d04+2	| ext_00ff8160
-	.long	0x006d0a+2	| ext_00ff8128
+	.long	0x006d04+2	| y_primary_delta_scroll_00ff8160
+	.long	0x006d0a+2	| x_primary_scroll_value_00ff8128
 	.long	0x006d24+2	| ext_00ff816c
 	.long	0x006d2a+2	| ext_00ff814c
 	.long	0x006d30+2	| ext_00ff814c
 	.long	0x006d42+2	| front_layer_scroll_00ff8150
-	.long	0x006d48+2	| ext_00ff8128
+	.long	0x006d48+2	| x_primary_scroll_value_00ff8128
 	.long	0x006d4e+2	| ext_00ff814c
 	.long	0x006d54+2	| front_layer_scroll_00ff8150
 	.long	0x006d5a+2	| front_layer_scroll_00ff8150
@@ -775,8 +775,8 @@ ram_relocs:
 	.long	0x006e60+2	| current_stage_00ff821d
 	.long	0x006e9c+6	| ext_00ff8186
 	.long	0x006ea6+6	| ext_00ff81a6
-	.long	0x006ec2+2	| ext_00ff8128
-	.long	0x006ecc+2	| ext_00ff812c
+	.long	0x006ec2+2	| x_primary_scroll_value_00ff8128
+	.long	0x006ecc+2	| y_primary_scroll_value_00ff812c
 	.long	0x006ed6+2	| layer_24dxxx_scroll_values_ff813c
 	.long	0x006ee0+2	| ext_00ff8140
 	.long	0x006ef2+6	| ext_00ff8186
@@ -1162,8 +1162,8 @@ ram_relocs:
 	.long	0x00cd08+2	| ext_00ffa886
 	.long	0x00cd0e+2	| ext_00ffa88a
 	.long	0x00cd14+2	| ext_00ffa890
-	.long	0x00cd1a+2	| ext_00ff812c
-	.long	0x00cd20+2	| ext_00ff8128
+	.long	0x00cd1a+2	| y_primary_scroll_value_00ff812c
+	.long	0x00cd20+2	| x_primary_scroll_value_00ff8128
 	.long	0x00cd26+2	| ext_00ffa894
 	.long	0x00cd2c+2	| ext_00ff8140
 	.long	0x00cd32+2	| layer_24dxxx_scroll_values_ff813c
@@ -1197,26 +1197,26 @@ ram_relocs:
 	.long	0x00d11c+2	| ext_00ffa856
 	.long	0x00d122+2	| ext_00ffa85a
 	.long	0x00d128+2	| ext_00ffa85e
-	.long	0x00d148+2	| ext_00ff8160
+	.long	0x00d148+2	| y_primary_delta_scroll_00ff8160
 	.long	0x00d154+2	| ext_00ff815c
-	.long	0x00d16c+2	| ext_00ff8168
+	.long	0x00d16c+2	| y_secondary_delta_scroll_00ff8168
 	.long	0x00d178+2	| ext_00ff8164
-	.long	0x00d186+2	| ext_00ff8160
+	.long	0x00d186+2	| y_primary_delta_scroll_00ff8160
 	.long	0x00d18c+2	| ext_00ff8164
 	.long	0x00d1a4+2	| ext_00ff815c
-	.long	0x00d1b6+2	| ext_00ff8168
+	.long	0x00d1b6+2	| y_secondary_delta_scroll_00ff8168
 	.long	0x00d1bc+2	| ext_00ff815c
 	.long	0x00d1d4+2	| ext_00ff8164
 	.long	0x00d1e4+2	| ext_00ffa87a
-	.long	0x00d1ea+2	| ext_00ff8160
+	.long	0x00d1ea+2	| y_primary_delta_scroll_00ff8160
 	.long	0x00d1f2+2	| ext_00ffa87e
 	.long	0x00d1f8+2	| ext_00ff815c
 	.long	0x00d20c+2	| ext_00ffa882
-	.long	0x00d212+2	| ext_00ff8168
+	.long	0x00d212+2	| y_secondary_delta_scroll_00ff8168
 	.long	0x00d21a+2	| ext_00ffa886
 	.long	0x00d220+2	| ext_00ff8164
 	.long	0x00d22e+2	| ext_00ffa87a
-	.long	0x00d22e+6	| ext_00ff8160
+	.long	0x00d22e+6	| y_primary_delta_scroll_00ff8160
 	.long	0x00d238+2	| ext_00ffa87e
 	.long	0x00d238+6	| ext_00ff815c
 	.long	0x00d24a+2	| ext_00ffa87a
@@ -1226,7 +1226,7 @@ ram_relocs:
 	.long	0x00d264+2	| ext_00ffa87e
 	.long	0x00d26a+2	| ext_00ffa856
 	.long	0x00d278+2	| ext_00ffa882
-	.long	0x00d278+6	| ext_00ff8168
+	.long	0x00d278+6	| y_secondary_delta_scroll_00ff8168
 	.long	0x00d282+2	| ext_00ffa886
 	.long	0x00d282+6	| ext_00ff8164
 	.long	0x00d294+2	| ext_00ffa882
@@ -1234,7 +1234,7 @@ ram_relocs:
 	.long	0x00d2a0+2	| ext_00ffa886
 	.long	0x00d2a6+2	| ext_00ffa856
 	.long	0x00d2b4+2	| ext_00ffa87a
-	.long	0x00d2b4+6	| ext_00ff8160
+	.long	0x00d2b4+6	| y_primary_delta_scroll_00ff8160
 	.long	0x00d2be+2	| ext_00ffa87e
 	.long	0x00d2be+6	| ext_00ff815c
 	.long	0x00d2c8+2	| ext_00ffa88a
@@ -1244,7 +1244,7 @@ ram_relocs:
 	.long	0x00d2e6+2	| ext_00ffa87e
 	.long	0x00d2ec+2	| ext_00ffa856
 	.long	0x00d2fa+2	| ext_00ffa882
-	.long	0x00d2fa+6	| ext_00ff8168
+	.long	0x00d2fa+6	| y_secondary_delta_scroll_00ff8168
 	.long	0x00d304+2	| ext_00ffa886
 	.long	0x00d304+6	| ext_00ff8164
 	.long	0x00d30e+2	| ext_00ffa88a
@@ -1278,7 +1278,7 @@ ram_relocs:
 	.long	0x00d462+2	| ext_00ffa856
 	.long	0x00d462+6	| ext_00ffa86e
 	.long	0x00d474+2	| ext_00ffa856
-	.long	0x00d47a+2	| ext_00ff8128
+	.long	0x00d47a+2	| x_primary_scroll_value_00ff8128
 	.long	0x00d480+4	| ext_00ffa850
 	.long	0x00d4aa+6	| ext_00ffa856
 	.long	0x00d4b8+6	| ext_00ffa886
@@ -1312,13 +1312,13 @@ ram_relocs:
 	.long	0x00d68e+2	| ext_00ffa856
 	.long	0x00d68e+6	| ext_00ffa86e
 	.long	0x00d6a0+2	| ext_00ffa856
-	.long	0x00d6a6+2	| ext_00ff8128
+	.long	0x00d6a6+2	| x_primary_scroll_value_00ff8128
 	.long	0x00d6ac+4	| ext_00ffa850
 	.long	0x00d6d8+6	| ext_00ffa886
 	.long	0x00d784+2	| ext_00ffa856
 	.long	0x00d784+6	| ext_00ffa86e
 	.long	0x00d796+2	| ext_00ffa856
-	.long	0x00d79c+2	| ext_00ff8128
+	.long	0x00d79c+2	| x_primary_scroll_value_00ff8128
 	.long	0x00d7a2+4	| ext_00ffa850
 	.long	0x00d82c+6	| ext_00ffa8a6
 	.long	0x00d84e+2	| ext_00ffa84e
@@ -1330,7 +1330,7 @@ ram_relocs:
 	.long	0x00d8ba+2	| ext_00ffa856
 	.long	0x00d8ba+6	| ext_00ffa86e
 	.long	0x00d8d0+2	| ext_00ffa856
-	.long	0x00d8d6+2	| ext_00ff8128
+	.long	0x00d8d6+2	| x_primary_scroll_value_00ff8128
 	.long	0x00d8dc+4	| ext_00ffa850
 	.long	0x00d8e4+4	| ext_00ffa845
 	.long	0x00d8f0+4	| ext_00ffa843
@@ -1354,13 +1354,13 @@ ram_relocs:
 	.long	0x00d9a8+6	| ext_00ffa87a
 	.long	0x00d9b2+6	| ext_00ffa87a
 	.long	0x00d9be+2	| ext_00ffa8a0
-	.long	0x00d9c6+6	| ext_00ff812c
+	.long	0x00d9c6+6	| y_primary_scroll_value_00ff812c
 	.long	0x00d9d2+2	| ext_00ffa8a0
 	.long	0x00d9de+6	| ext_00ffa87a
 	.long	0x00d9ea+2	| ext_00ffa8a0
 	.long	0x00d9f6+4	| ext_00ffa843
 	.long	0x00da04+2	| ext_00ffa852
-	.long	0x00da0a+2	| ext_00ff812c
+	.long	0x00da0a+2	| y_primary_scroll_value_00ff812c
 	.long	0x00da14+2	| ext_00ffa8a0
 	.long	0x00da1c+4	| ext_00ffa843
 	.long	0x00da28+2	| ext_00ffa8a0
@@ -1595,7 +1595,7 @@ ram_relocs:
 	.long	0x0154c2+2	| ext_00ffa224
 	.long	0x0154fa+2	| ext_00ff8f64
 	.long	0x015536+2	| ext_00ff8f64
-	.long	0x01599a+2	| ext_00ff812c
+	.long	0x01599a+2	| y_primary_scroll_value_00ff812c
 	.long	0x015a22+2	| ending_state_00ffa7c4
 	.long	0x015aa0+4	| ext_00ffa882
 	.long	0x015aa8+4	| ext_00ffa886
@@ -1912,8 +1912,8 @@ ram_relocs:
 	.long	0x01b252+2	| ext_00ffa852
 	.long	0x01b258+4	| ext_00ff8170
 	.long	0x01b260+4	| ext_00ff8120
-	.long	0x01b268+4	| ext_00ff8128
-	.long	0x01b270+4	| ext_00ff812c
+	.long	0x01b268+4	| x_primary_scroll_value_00ff8128
+	.long	0x01b270+4	| y_primary_scroll_value_00ff812c
 	.long	0x01b278+4	| layer_24dxxx_scroll_values_ff813c
 	.long	0x01b280+4	| ext_00ff8140
 	.long	0x01b2a8+4	| ext_00ff8112
@@ -2212,7 +2212,7 @@ patchlist:
 	PL_W	0x001a86,20032
 	PL_W	0x001a8a,20032
 	PL_W	0x001abc,20032
-	PL_PSS	0x001ac6,set_game_context_1ac6,2
+	PL_PS	0x001ac6,set_game_context_1ac6
 	PL_PSR	0x001ad6,0x1cd8
 	PL_PSR	0x001ae2,0x6e5e
 	PL_PSR	0x001ae8,0x1bf4
@@ -2302,8 +2302,8 @@ patchlist:
 	PL_PSS	0x0023e4,write_word_ext_00ff8122_to_00246002,4
 	PL_PSS	0x0023f0,write_word_ext_00ff8124_to_00246004,4
 	PL_PSS	0x0023fc,write_word_ext_00ff8126_to_00246006,4
-	PL_PSS	0x002408,write_word_ext_00ff8128_to_00246010,4
-	PL_PSS	0x002414,write_word_ext_00ff812c_to_00246012,4
+	PL_PSS	0x002408,write_word_x_primary_scroll_value_00ff8128_to_00246010,4
+	PL_PSS	0x002414,write_word_y_primary_scroll_value_00ff812c_to_00246012,4
 	PL_PSS	0x002420,write_word_ext_00ff8130_to_00246014,4
 	PL_PSS	0x00242c,write_word_ext_00ff8132_to_00246016,4
 	PL_PSS	0x00244a,write_word_ext_00ff8134_to_0024c000,4
@@ -2635,8 +2635,8 @@ patchlist:
 	PL_PSR	0x006eb0,0x6f88
 	PL_PSR	0x006eb6,0x6f9c
 	PL_PSR	0x006ebc,0x6fb0
-	PL_PSS	0x006ec2,write_word_ext_00ff8128_to_00246010,4
-	PL_PSS	0x006ecc,write_word_ext_00ff812c_to_00246012,4
+	PL_PSS	0x006ec2,write_word_x_primary_scroll_value_00ff8128_to_00246010,4
+	PL_PSS	0x006ecc,write_word_y_primary_scroll_value_00ff812c_to_00246012,4
 	PL_PSS	0x006ed6,write_word_layer_24dxxx_scroll_values_ff813c_to_0024c010,4
 	PL_PSS	0x006ee0,write_word_ext_00ff8140_to_0024c012,4
 	PL_PSR	0x006eec,0x6fb0
@@ -3225,26 +3225,6 @@ write_word_ext_00ff8126_to_00246006:
 	RESTORE_REGS
 	rts
 
-write_word_ext_00ff8128_to_00246010:
-	STORE_REGS
-	lea	0x00ff8128,a6
-	jbsr	osd_real_ram_address
-	move.w	(a6),d7
-	lea	0x00246010,a6
-	jbsr	osd_write_word
-	RESTORE_REGS
-	rts
-
-write_word_ext_00ff812c_to_00246012:
-	STORE_REGS
-	lea	0x00ff812c,a6
-	jbsr	osd_real_ram_address
-	move.w	(a6),d7
-	lea	0x00246012,a6
-	jbsr	osd_write_word
-	RESTORE_REGS
-	rts
-
 write_word_ext_00ff8130_to_00246014:
 	STORE_REGS
 	lea	0x00ff8130,a6
@@ -3447,6 +3427,26 @@ write_word_layer_24dxxx_scroll_values_ff813c_to_0024c010:
 	jbsr	osd_real_ram_address
 	move.w	(a6),d7
 	lea	0x0024c010,a6
+	jbsr	osd_write_word
+	RESTORE_REGS
+	rts
+
+write_word_x_primary_scroll_value_00ff8128_to_00246010:
+	STORE_REGS
+	lea	0x00ff8128,a6
+	jbsr	osd_real_ram_address
+	move.w	(a6),d7
+	lea	0x00246010,a6
+	jbsr	osd_write_word
+	RESTORE_REGS
+	rts
+
+write_word_y_primary_scroll_value_00ff812c_to_00246012:
+	STORE_REGS
+	lea	0x00ff812c,a6
+	jbsr	osd_real_ram_address
+	move.w	(a6),d7
+	lea	0x00246012,a6
 	jbsr	osd_write_word
 	RESTORE_REGS
 	rts

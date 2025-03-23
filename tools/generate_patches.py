@@ -286,7 +286,7 @@ add_p("copy_highscore_tiles_loop_09592")
 add_p("display_scores_loop_07b9a")
 add_ps("before_end_sequence_01bac")
 #add_ps("set_game_context_1ab0")  # there are NOPs there
-add_pss("set_game_context_1ac6",fill=2)
+add_ps("set_game_context_1ac6",fill=2)
 
 
 add_p("clear_8x8_tile_layer_1b322")

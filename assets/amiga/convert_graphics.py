@@ -21,12 +21,20 @@ ninja_range = range(0x200,0x348)
 dog_range = range(0xAc0,0xAF5)
 spidey_range = range(0x840,0x86B)
 
+# those can be abused as long as there is enough memory. It tells the game to pre-mirror the sprites
+# in order to save in-game sprite mirroring. Can save a lot of CPU if there are several characters drawn
+# in opposite directions at the same time (not worth it for singletons like main player, bosses...)
 pre_mirrored_sprites_dict = {
 # level 1: add gray/red ninja, dogs
 "game_level_1":[{k:{3,4} for k in ninja_range},{k:{8} for k in dog_range}],
 # level 2: add gray/red ninja, blue spideys, climbers
 "game_level_2":[{k:{3,4} for k in ninja_range},{k:{2} for k in spidey_range},{k:{2} for k in range(0x724,0x735)}],
-"game_level_3":[{k:{0xf,4} for k in ninja_range}]
+# level 3: boss ninjas (green) and also red ninja
+"game_level_3":[{k:{0xf,4} for k in ninja_range}],
+# level 4: dogs, spideys
+"game_level_4":[{k:{8} for k in dog_range},{k:{2} for k in spidey_range}],
+# level 6: gray/red ninja, spideys
+"game_level_6":[{k:{3,4} for k in ninja_range},{k:{2} for k in spidey_range}],
 
 }
 
