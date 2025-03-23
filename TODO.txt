@@ -1,4 +1,5 @@
-- crash on game over (bad jump table?)
+- crash on game over (bad jump table?) not always! (from level 5 => OK)
+- game over: credits screen no context load probably
 - boss 7: color change not happening (break OK!)
 - level 6/7 Y scroll swap optim: don't blit 3x horizontally, use 2x width then 1x width, optimally around the
     displayed screen (as the game will draw the tiles furter than that)
@@ -15,7 +16,7 @@
   24C010=187, 24C012=131 heli just above player and to the hard left
   game doesn't seem to change secondary scroll???? wtf debug this with
   code in 0 (write to 24C012 in 62E2)
-  
+- cycle exact / auto frameskip: level 4 strange lockup  
 - mutant karnov black color issue: conflict between truck tires and mutant karnov on palette 9
   fixing karnov steals too many colors and now character trousers are not all white...
 - boss 5: locomotive wheels erase wrong
@@ -32,9 +33,7 @@
   => control word for multiplexed after lamp is not working but other sprites are also destroyed!
 - level 2: climbers on the right "blink" (frame/grouping? wrong clipping?)
 - end sequence should use scrolling sprites for credits: allocate huge 2x high sprite buffers
- 
-	
-- 2nd level complete in a row "STAGE X CLEAR" "G" remains from previous "go to next stage"
+
 - difficulty level what does it do? maybe using "easy" would reduce number of enemies
   and make game smoother?? boss energy is lower on low difficulty (which the port gets
   by default!)

@@ -2236,7 +2236,23 @@ install_center_sprites:
 	* restore font color to white
 	move.w	#color+2*3+32,center_sprites_white
 
+	* clear any remaining data from it
+	* else on level complete in a row "STAGE X CLEAR" "G" remains
+	* from previous "GO TO NEXT STAGE"
+	
+	lea		osd_center_left_sprite,a0
+0:
+	clr.l	(a0)+
+	cmp.l	#osd_center_left_next_cw,a0
+	jne		0b
+	lea		osd_center_right_sprite,a0
+0:
+	clr.l	(a0)+
+	cmp.l	#osd_center_right_next_cw,a0
+	jne		0b
+	
 	lea		osd_center_sprites,a0
+
 	move.w	#sprpt,d0
 	* install 2 sprites, they are multiplexed (reusing slots
 	* from upper osd ones)
@@ -6706,6 +6722,8 @@ level_7_load_second_part:
 	move.l	chip_memory_before_sprites_ptr,chip_memory_current_ptr
 	jbsr 	load_level_sprite_file
 
+	lea		dragonninja_sound_file,a0
+	jbsr	load_extra_sound_file
 	lea		dogs_sound_file,a0
 	jbsr	load_extra_sound_file
 	lea		clone_boss_sound_file,a0
@@ -7573,6 +7591,8 @@ elevator_sound_file:
 	.asciz	"elevator_sounds.bin"
 dogs_sound_file:
 	.asciz	"dog_sounds.bin"
+dragonninja_sound_file:
+	.asciz	"dragonninja_sounds.bin"
 boss_fight_music_file:
 	.asciz	"bd-bossfight.mod"
 ending_music_file:

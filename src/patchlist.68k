@@ -2212,7 +2212,7 @@ patchlist:
 	PL_W	0x001a86,20032
 	PL_W	0x001a8a,20032
 	PL_W	0x001abc,20032
-	PL_PS	0x001ac6,set_game_context_1ac6
+	PL_PSS	0x001ac6,set_game_context_1ac6,2
 	PL_PSR	0x001ad6,0x1cd8
 	PL_PSR	0x001ae2,0x6e5e
 	PL_PSR	0x001ae8,0x1bf4

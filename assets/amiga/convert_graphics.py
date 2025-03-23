@@ -31,9 +31,8 @@ pre_mirrored_sprites_dict = {
 "game_level_2":[{k:{3,4} for k in ninja_range},{k:{2} for k in spidey_range},{k:{2} for k in range(0x724,0x735)}],
 # level 3: boss ninjas (green) and also red ninja
 "game_level_3":[{k:{0xf,4} for k in ninja_range}],
-# level 4: dogs, spideys
-"game_level_4":[{k:{8} for k in dog_range},{k:{2} for k in spidey_range}],
-# level 6: gray/red ninja, spideys
+# level 4: too short in memory
+# level 5: too short in memory
 "game_level_6":[{k:{3,4} for k in ninja_range},{k:{2} for k in spidey_range}],
 
 }
@@ -919,10 +918,10 @@ generate_for_levels = [False]*9
 #generate_for_levels[1] = True
 #generate_for_levels[2] = True
 #generate_for_levels[3] = True
-##generate_for_levels[4] = True
+generate_for_levels[4] = True
 ##generate_for_levels[5] = True
 ##generate_for_levels[6] = True
-generate_for_levels[7] = True
+#generate_for_levels[7] = True
 #generate_for_levels[8] = True
 
 
