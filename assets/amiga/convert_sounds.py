@@ -61,9 +61,9 @@ def convert():
     "NINJA_CLONE_SND"     :{"index":0x1B,"channel":3,"sample_rate":vhq_sample_rate,"priority":40,"optional_pack":"clone_boss"},
     "ROBO_BOSS_SCREAM_SND"     :{"index":0x2E,"channel":3,"sample_rate":vhq_sample_rate,"priority":50,"optional_pack":"animal"},
     #"DEVIL_POLE_SPIN_SND"     :{"index":0x16,"channel":3,"sample_rate":vhq_sample_rate,"priority":50,"loops":True},
-    #"ELEVATOR_ENGINE_SND"     :{"index":0x16,"channel":3,"sample_rate":vhq_sample_rate,"priority":50,"loops":True,"optional_pack":"elevator"},
-    "ELEVATOR_DOOR_SND"     :{"index":0x15,"channel":3,"sample_rate":vhq_sample_rate,"priority":50,"optional_pack":"elevator"},
-    "LAUGH_SND"     :{"index":0x3C,"channel":2,"sample_rate":vhq_sample_rate,"priority":90,"optional_pack":"dog"},
+    "ELEVATOR_ENGINE_SND"     :{"index":0x16,"channel":3,"sample_rate":hq_sample_rate,"priority":50,"loops":True,"optional_pack":"elevator"},
+    "ELEVATOR_DOOR_SND"     :{"index":0x15,"channel":3,"sample_rate":hq_sample_rate,"priority":50,"optional_pack":"elevator"},
+    "LAUGH_SND"     :{"index":0x3C,"channel":2,"sample_rate":hq_sample_rate,"priority":90,"optional_pack":"dog"},
 
     "LEVEL_1_TUNE_SND"                :{"index":0x1F,"pattern":0,"volume":20,'loops':True},
     "LEVEL_2_TUNE_SND"                :{"index":0x20,"pattern":0,"volume":20,'loops':True},

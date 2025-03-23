@@ -1,37 +1,36 @@
 - boss 7: color change not happening (break OK!)
+- "go to next stage": sometimes locks up (no frameskip). original code to see wait code
+  ex: train level in "auto" frameskip: locks up before loading next level
 - easy: identify devil pole spin sound id
-- devil pole palette change trashes scenery colors???
+- level 7 heli: check writes to secondary scroll registers (helicopter moves)
+- devil pole palette change trashes scenery colors??? disable palette change & retry
 - easy: boss energy bar missing right half
-- helicopter erase doesn't work
 - helicopter color not even close to the original colors...
 - level 7 display helicopter! if 24C010 != 400 display it!
   main scroll = x 0x31, y 0x100
   24C010=D3, 24C012=172 heli rotor almost visible, heli very high
   24C010=125, 24C012=172 heli very high and to the left
   24C010=187, 24C012=131 heli just above player and to the hard left
+  game doesn't seem to change secondary scroll???? wtf debug this with
+  code in 0 (write to 24C012 in 62E2)
   
-- level 7-2: sabreman can happen between devil pole & dragonninja:
+- level 7-2: sabreman (actually any generic ninja) can happen between devil pole & dragonninja:
   play without invincibility and wait for blows...
 - easy: mutant karnov black color issue
-- boss 5: locomotive wheel erase wrong
-- level 5: remainder of wagons showing when gap erasing not effective on edges
-
+- boss 5: locomotive wheels erase wrong
+  
 - level 7: missing elevator engine (loop, should stop when elev door plays) (when going up)
-- still missing sprites on level 2, possibly others...
-- stalactite wrong colors (used to be OK)
+- level 6: stalactite wrong colors (used to be OK)
 - should do a per-level symmetry on spidermen, red ninjas, green ninjas, dogs...
   to continue for higher levels 3,4,5,6,7
 
 - do a OPT_TWO_PLAYER_MODE option, ideally it would rule to have 2 versions of the game
 - on game over, tests test_input_bit_d1 (0x0174c,0x0175c,0x07e66), then goes back to menu but intro screen trashed
 - level 2 front object (lamp) not displaying (used to work with level 1 objects)
-- level 5: red girls missing frames?
-- truck 2: sprites & truck shifted in the end???
+- level 5: red girls missing frames
 - level 4: punching enemies while kneeled: missing frame? happens on other levels too
 - level 1 repair front objects (status bar showing but destroyed, debug this)
   => control word for multiplexed after lamp is not working but other sprites are also destroyed!
-- tune autoframeskip: force 2 skips for train/truck levels all the time
-  remain auto 0-2 for other levels
 - level 2: climbers on the right "blink" (frame/grouping? wrong clipping?)
 - end sequence should use scrolling sprites for credits: allocate huge 2x high sprite buffers
  
@@ -56,9 +55,9 @@
   could probably be optimized to only restore the buffers partially, not the whole width
 
 - general sprite position / scroll problem
-  - level 2 wheels shifted
+  - truck 2: sprites & truck shifted in the end??? also happens on level 5 train, linked to general scroll shift issue
   - level 1 when ninjas arrive on truck, truck & ninjas on it drift
-  - when swapping half screens (level 6 and 7), can be shifted too
+  - when autoscrolling in Y (level 6 and 7), can be shifted too
   - this is still not 100% reproducible
 - same as above: y scroll level 6 first Y scroll doesn't scroll up to 0x60, stops at 5C/5D: debug on real machine??
   possibly mid-screen interrupt issue?? (happens when scolling horiz. If not moving character

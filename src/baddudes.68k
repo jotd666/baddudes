@@ -66,14 +66,17 @@ baddudes_reset:
 	jbsr	apply_patchlist
 	* jump to rom start
 
-	* specific amiga patchlist (to optimize things more easily)
-	.ifdef	__amiga__
 	
-	.endif
-	
-	* this is an empty patchlist in release
+	* this is an empty patchlist in release, allows to skip parts
+	* in original code to save time debugging further parts
 	.ifndef	RELEASE
 	lea		debug_patchlist,a0
+	move.l	rom_base,a1
+	jbsr	apply_patchlist
+	.endif
+	* this is to help our poor amiga to do faster operations
+	.ifdef	__amiga__
+	lea		amiga_specific_patchlist,a0
 	move.l	rom_base,a1
 	jbsr	apply_patchlist
 	.endif
@@ -104,7 +107,7 @@ display_object_hook_028c6:
 	* nails or also flat horizontal objects don't need 16x16 erase)
 	* the ideal code would have 2 modes: if small object (height < 16)
 	* then use normal erase, else use block erase
-	rts	
+	jbra	osd_object_displayed
 	.endif
 	
 * emulate JSR from trap. Tricky, specially with reentrancy constraint
@@ -417,6 +420,7 @@ do_plear:
 **************************
 
 	.ifdef	__amiga__
+amiga_specific_patchlist:
 	PL_START
 	PL_PS	0x28C6,display_object_hook_028c6
 	PL_END

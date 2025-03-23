@@ -314,6 +314,7 @@ log_blit:
 	.global		_dosbase
 	.global		cheat_used
 * osd layer		
+	.global		osd_object_displayed
 	.global		osd_flush_caches
 	.global		osd_install_trap
 	.global		osd_break
@@ -996,20 +997,41 @@ fn_debug_memory:
 	jbsr	osd_write_left_debug_message
 	rts
 
+fn_debug_nb_objects_frameskip:
+	
+	lea		debug_nb_objects_message(pc),a0
+	moveq	#0,d0
+	move.w	nb_displayed_objects,d0
+	jeq		0f		| don't display if 0
+	jbsr	encode_debug_message
+	jbsr	osd_write_right_debug_message
+0:
+	moveq	#0,d0
+	move.b 	graphics_update_counter_start,d0
+	lea		debug_frameskip_message(pc),a0
+	jbsr	encode_debug_message
+	jbsr	osd_write_left_debug_message
+	rts
+
 
 debug_display_table:
 	.long	nope
 	.long	fn_debug_scroll
 	.long	fn_debug_blit
 	.long	fn_debug_memory	
+	.long	fn_debug_nb_objects_frameskip
 
 	.endif
 
 3:
+ 	.ifndef	RELEASE
+	clr.w	nb_displayed_objects
+	.endif
     movem.l (a7)+,d0-d7/a0-a6
     rte
 
 	
+	.ifndef 	RELEASE
 encode_debug_message:
 	move.l	a0,-(a7)
 	add.w	#11,a0
@@ -1050,6 +1072,16 @@ hex_table:
 	.byte	0x44
 	.byte	0x45
 	.byte	0x46
+	.endif
+	
+* < A0: object structure
+*   +6.W: sprite code
+
+osd_object_displayed:
+	.ifndef	RELEASE
+	addq.w	#1,nb_displayed_objects
+	.endif
+	rts
 	
 update_front_objects:
 	rts
@@ -1278,6 +1310,14 @@ erase_truck_bottom_part:
 	jbra	restore_background
 
 level_5_erase_train:
+	* systematically erase to the hard left to avoid
+	* old wagon bitmap interfering before the next wagon gap
+	* erase kicks in (same as in level 2)
+	moveq	#0,d0
+	moveq	#0,d1
+	moveq	#2,d2	| no need to restore a lot
+	jbsr	restore_gap
+	
 	* there are 2 wagon gaps that need restoring
 	lea		prev_machine_params,a1
 	move.w	(a1)+,d0	| absolute secondary scroll pos
@@ -3258,7 +3298,7 @@ copy_background:
 	
 	
 really_update_sprites:
-
+	
 	* first, check y scroll commands
 	move.w	y_scroll_command,d0
 	jeq		0f
@@ -4301,9 +4341,8 @@ restore_background:
 	add.l	d3,a1
 	add.l	d3,a0
 	
-	* here we need to clip to 0x300 (NB_BYTES_PER_ROW*8) FUCK
+	* here we need to clip to 0x300 (NB_BYTES_PER_ROW*8)
 	add.w	d0,a1	| real coord (can be > 0x2xx)
-	*and.w	#0x3F,d0  | THIS IS WRONG SINCE THE START!!!!
 	add.w	d0,a0	| wrap source
 
     move.l  #0x09f00000,d3    | A->D copy, ascending mode	
@@ -5467,9 +5506,13 @@ handle_keyboard:
 	cmp.b	#24,d0
 	bne		0f
 	* 'O': debug display modes,
-	* 0: none, 1: scroll/truck, 2: blitter count, 3: memory usage
+	* - 0: none
+	* - 1: scroll of truck/train/heli
+	* - 2: blitter count/bytes copied
+	* - 3: memory usage
+	* - 4: number of 
 	addq.b	#1,debug_values_display
-	cmp.b	#4,debug_values_display
+	cmp.b	#5,debug_values_display
 	jne		0f
 	clr.b	debug_values_display
 0:
@@ -7006,10 +7049,18 @@ osd_sound_start:
 	jne		0f
 	* null sound: stop
 	jbsr	osd_music_stop
+	clr.b	looped_sound_enabled
 	jra		10f
 0:
 
-
+	cmp.w	#ELEVATOR_DOOR_SND,d0
+	jne		0f
+	* elevator door sound follows elevator engine loop: stop loop
+	moveq 	#3,d0		| sfx channel
+	jbsr	_mt_stopfx
+	clr.b	looped_sound_enabled
+	move.w	#ELEVATOR_DOOR_SND,d0
+0:
 
 	lsl.w	#3,d0
 	lea		sound_table,a0
@@ -7416,6 +7467,8 @@ ticks_count:
 group_erase:
 	.byte	0
 	.align	2
+nb_displayed_objects:
+	.word	0
 debug_truck_move:
 	.word	0
 last_nb_blitted_words_per_second:
@@ -7492,6 +7545,11 @@ sprite_ram_mockup:
 	.endif
 
 	.ifndef	RELEASE
+debug_nb_objects_message:
+	.asciz	"NBOB 000000"
+debug_frameskip_message:
+	.asciz	"FSKP 000000"
+	
 debug_truck_message:
 	.asciz	"TPOS 000000"
 debug_scroll_message:
