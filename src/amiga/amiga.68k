@@ -1780,6 +1780,14 @@ palette_and_sprites_ram_op:
 	add.w	#0x123c+2,a0		| a1 is post-incremented
 	cmp.l	a0,a1
 	jne		0f
+	* on boss rush stage, this is not useful and even
+	* counterproductive as for some reason it changes
+	* the background tiles palette too... skip it in that
+	* case, the colors are already ok from prev boss
+	jbsr 	get_current_level
+	cmp.b	#7,d0
+	jeq		10f
+	* we're on level 6, load palette
 	lea		level_6_boss_color_change(pc),a0
 	jbsr	change_palette
 	jra		10f
@@ -1788,7 +1796,6 @@ palette_and_sprites_ram_op:
 	add.l	#0x51bc0+2,a0		| a1 is post-incremented
 	cmp.l	a0,a1
 	jne		0f
-	TMPBREAK
 	lea		level_7_boss_color_change(pc),a0
 	jbsr	change_palette
 	jra		10f
@@ -2502,6 +2509,7 @@ lower_osd:
 0:
 	* boss energy on 2 sprites (also "continue" message)
 	
+	TMPWRITE
 	cmp.w	#0xB,d3
 	jcs		10b			| ignore before
 	cmp.w	#0x13,d3	
@@ -5098,7 +5106,7 @@ scroll_x_24d000_table:
 	.long	move_train
 	.long	nope
 	.long	nope
-	.long	nope
+	.long	move_helicopter
 
 	
 scroll_x_24a000_table:
@@ -5111,6 +5119,9 @@ scroll_x_24a000_table:
 	.long	scroll_background_x
 	.long	nope
 	
+move_helicopter:
+move_long_truck:
+move_train:
 move_ninjas_truck:
 	* in debug mode, when debug truck display is set, don't move truck
 	.ifndef		RELEASE
@@ -5119,14 +5130,6 @@ move_ninjas_truck:
 	rts
 	.endif
 0:
-	move.w	d0,x_secondary_scroll_value
-	rts
-	
-move_long_truck:
-	move.w	d0,x_secondary_scroll_value
-	rts
-	
-move_train:
 	move.w	d0,x_secondary_scroll_value
 	rts
 	

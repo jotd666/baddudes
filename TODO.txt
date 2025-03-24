@@ -1,12 +1,11 @@
 - crash on game over (bad jump table?) not always! (from level 5 => OK)
 - game over: credits screen no context load probably
-- boss 7: color change not happening (break OK!)
+- boss 7: color change not happening (break OK, colors found...!)
+- on game over, tests test_input_bit_d1 (0x0174c,0x0175c,0x07e66), then goes back to menu but intro screen trashed
 - level 6/7 Y scroll swap optim: don't blit 3x horizontally, use 2x width then 1x width, optimally around the
     displayed screen (as the game will draw the tiles furter than that)
   could probably be optimized to only restore the buffers partially, not the whole width
 - easy: identify devil pole spin sound id
-- level 7 heli: check writes to secondary scroll registers (helicopter moves)
-- devil pole palette change trashes scenery colors??? disable palette change & retry
 - easy: boss energy bar missing right half
 - helicopter color not even close to the original colors...
 - level 7 display helicopter! if 24C010 != 400 display it!
@@ -14,18 +13,14 @@
   24C010=D3, 24C012=172 heli rotor almost visible, heli very high
   24C010=125, 24C012=172 heli very high and to the left
   24C010=187, 24C012=131 heli just above player and to the hard left
-  game doesn't seem to change secondary scroll???? wtf debug this with
-  code in 0 (write to 24C012 in 62E2)
+
 - cycle exact / auto frameskip: level 4 strange lockup  
-- mutant karnov black color issue: conflict between truck tires and mutant karnov on palette 9
-  fixing karnov steals too many colors and now character trousers are not all white...
 - boss 5: locomotive wheels erase wrong
   
-- level 7: missing elevator engine (loop, should stop when elev door plays) (when going up)
+- level 7: missing elevator engine, but loop is active. Maybe louder???
 - level 6: stalactite wrong colors (used to be OK)
 
 - do a OPT_TWO_PLAYER_MODE option, ideally it would rule to have 2 versions of the game
-- on game over, tests test_input_bit_d1 (0x0174c,0x0175c,0x07e66), then goes back to menu but intro screen trashed
 - level 2 front object (lamp) not displaying (used to work with level 1 objects)
 - level 5: red girls missing frames
 - level 4: punching enemies while kneeling: missing frame? happens on other levels too
@@ -68,6 +63,8 @@
 
 low priority:
 
+- mutant karnov black color issue: conflict between truck tires and mutant karnov on palette 9
+  BUT fixing karnov steals too many colors and now character trousers are not all white...
 - level 7: missing heli sound but would steal 1 music channel...
 - invincibility: still hit when falling on road (level 2): 
   game must not change p1_state_flags_00ffa386 must remain to 0x10
