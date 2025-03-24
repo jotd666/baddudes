@@ -6,21 +6,16 @@
     displayed screen (as the game will draw the tiles furter than that)
   could probably be optimized to only restore the buffers partially, not the whole width
 - easy: identify devil pole spin sound id
-- easy: boss energy bar missing right half
 - helicopter color not even close to the original colors...
 - level 7 display helicopter! if 24C010 != 400 display it!
   main scroll = x 0x31, y 0x100
   24C010=D3, 24C012=172 heli rotor almost visible, heli very high
   24C010=125, 24C012=172 heli very high and to the left
   24C010=187, 24C012=131 heli just above player and to the hard left
-
 - cycle exact / auto frameskip: level 4 strange lockup  
 - boss 5: locomotive wheels erase wrong
-  
 - level 7: missing elevator engine, but loop is active. Maybe louder???
 - level 6: stalactite wrong colors (used to be OK)
-
-- do a OPT_TWO_PLAYER_MODE option, ideally it would rule to have 2 versions of the game
 - level 2 front object (lamp) not displaying (used to work with level 1 objects)
 - level 5: red girls missing frames
 - level 4: punching enemies while kneeling: missing frame? happens on other levels too
@@ -28,6 +23,7 @@
   => control word for multiplexed after lamp is not working but other sprites are also destroyed!
 - level 2: climbers on the right "blink" (frame/grouping? wrong clipping?)
 - end sequence should use scrolling sprites for credits: allocate huge 2x high sprite buffers
+- end sequence: double buffering screen trash???
 
 - difficulty level what does it do? maybe using "easy" would reduce number of enemies
   and make game smoother?? boss energy is lower on low difficulty (which the port gets
@@ -39,10 +35,10 @@
 - knife sound has blow+man scream (hack not working there... maybe we could see if player
   has weapon... not working in 2P mode though)
  
+- do a OPT_TWO_PLAYER_MODE option, ideally it would rule to have 2 versions of the game
 - drop 2 player mode, use rightmost OSD sprite for real parallax in levels 4 and 6
   see if we can blit the score afterwards if 2P mode is reinstated, anyway 2P mode is
   a problem as it uses 4 more colors and it degrades sprite palette even further.
-
 
 - general sprite position / scroll problem
   - truck 2: sprites & truck shifted in the end??? also happens on level 5 train, linked to general scroll shift issue

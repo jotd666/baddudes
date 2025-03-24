@@ -34,14 +34,14 @@ _config
 	dc.b	"C1:X:infinite lives:1;"
 	dc.b	"C1:X:cheat keys:4;"
 	dc.b    "C2:L:frameskip:auto,none,one,two;"
-	dc.b    "C4:L:start level:city,truck,sewer,forest,train,cave,boss base;"
-	dc.b    "C5:L:start lives:default,1,2,3,5;"
 	IFD		DEV_MODE
 	; none: allows double buffering, chip starts at $200, exe in fast
 	; simple: no double buffering, chip starts at $60000, exe in 0
 	; reloc: no double buffering, chip starts at $60000, exe in fast
 	dc.b	"C3:L:debug mode:none,simple,reloc;"
 	ENDC
+	dc.b    "C4:L:start level:city,truck,sewer,forest,train,cave,boss base;"
+	dc.b    "C5:L:difficulty:easy,normal,hard,hardest;"
 	dc.b	0
 
 	IFD BARFLY

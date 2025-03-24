@@ -405,15 +405,13 @@ _user:
 	jbsr		bcpl_string_to_int
 	move.l	d0,dip_switch_start_level
 2:
-	move.l	(A0)+,D0	| STARTLIVES/S
-	beq.b	2f
+	move.l	(A0)+,D0	| SKILL/S
+	beq.b	3f
 	jbsr		bcpl_string_to_int
 	subq.b	#1,d0
-	bmi.b	2f
-	move.l	d0,dip_switch_start_lives
-	bra.b	3f
-2:
-	move.l	#2,dip_switch_start_lives		| 3 lives default
+	bmi.b	3f
+	move.l	d0,dip_switch_difficulty_level
+
 3:
 
 
@@ -491,20 +489,15 @@ _user:
 	move.b	d0,graphics_update_counter_start
 	move.b	d0,graphics_update_counter
 
-* ALL DIP SWITCHES ARE WRONG ATM
+
 
 	move.l	dip_switch_start_level,d0
 	move.b	d0,start_level
 	
-	moveq	#0,d1
-	move.b	dip_switch_start_lives+3,d1
-	bne.b	1f
-	moveq	#3,d1	| 3 lives is default
-1:
-	* DSW 0 = 2 lives
-*	move.b	(a0,d1.w),d0
-*	not.b	d0
-*	move.b	d0,dip_switches_1
+	move.l	dip_switch_difficulty_level,d0
+	lsl.b	#4,d0
+	or.b	#0x1,d0		| 2 = 1 life, 1 = 3 lives at start, 3 or 0 = 2 lives
+	move.b	d0,dip_switches_1
 	
 	.ifdef	RELEASE
 	moveq	#0,d1
@@ -1855,8 +1848,8 @@ addr_30c0xx_table_op:
 	.long	addr_30c0xx_op   | 0x01
 	.long	addr_30c002_op   | 0x02
 	.long	addr_30c0xx_op   | 0x03
-	.long	addr_30c0xx_op   | 0x04
-	.long	addr_30c0xx_op   | 0x05
+	.long	addr_dsw_30c004_op   | 0x04
+	.long	addr_dsw_30c005_op   | 0x05
 	.long	addr_30c0xx_op   | 0x06
 	.long	addr_30c0xx_op   | 0x07
 	.long	addr_30c0xx_op   | 0x08
@@ -1884,6 +1877,16 @@ addr_30c0xx_table_op:
 	.long	addr_30c0xx_op   | 0x1e
 	.long	addr_30c0xx_op   | 0x1f
 
+addr_dsw_30c004_op:
+	move.b	dip_switches_1,d7
+	lsl.w	#8,d7
+	not.w	d7
+	rts
+	
+addr_dsw_30c005_op:
+	moveq	#0,d7		| coinage 1 coin 1 credit, attract sounds
+	rts
+	
 addr_30c014_op:
 	move.w	d0,-(a7)
 	move.w	d7,d0
@@ -2331,6 +2334,8 @@ write_osd_layer:
 
 	move.w	d7,d6			| tile code+clut
 
+
+
 	cmp.w	#0x78,d2
 	jne		666f
 	cmp.w	#0x0A,d3
@@ -2509,7 +2514,6 @@ lower_osd:
 0:
 	* boss energy on 2 sprites (also "continue" message)
 	
-	TMPWRITE
 	cmp.w	#0xB,d3
 	jcs		10b			| ignore before
 	cmp.w	#0x13,d3	
@@ -2529,7 +2533,7 @@ lower_osd:
 	lea		osd_bottom_right_center_sprite+16-19,a3
 	add.w	d3,a3
 	cmp.w	#0xD8,d2
-	jeq		1f
+	jeq		1b
 	* second row
 	add.w	#NB_BYTES_PER_SPRITE_ROW*2*8,a3
 	jra		1b		| success
@@ -6891,14 +6895,13 @@ install_osd_hardware_sprites:
 	
 	lea		osd_bottom_right_center_sprite+16,a2
 	move.l	(a4)+,a3
-	move.l	a2,a3
 	move.w	#96+32+64+HW_SPRITE_SHIFT,d0
 	move.w	#240,d1
 	jbsr	install_osd_sprite
 	
 	lea		osd_bottom_right_sprite+16,a2
 	move.l	(a4)+,a3
-	move.w	#216+HW_SPRITE_SHIFT,d0
+	move.w	#220+HW_SPRITE_SHIFT,d0
 	move.w	#240,d1
 	jbsr	install_osd_sprite	
 	
@@ -7373,7 +7376,6 @@ cheat_flags:
 		.long	WHDLTAG_CUSTOM2_GET
 frameskip_flag:
 		.long	0
-
 		.long	WHDLTAG_CUSTOM3_GET
 debug_options:
 		.long	0
@@ -7381,7 +7383,7 @@ debug_options:
 dip_switch_start_level:
 		.long	0
 		.long	WHDLTAG_CUSTOM5_GET
-dip_switch_start_lives:
+dip_switch_difficulty_level:
 		.long	0
 	.long	0
 dip_switches_1:

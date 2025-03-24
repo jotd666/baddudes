@@ -259,7 +259,7 @@ add_r(0x14ee,"service mode test")
 add_p("copy_to_palette_007be",comment="copy palette subroutine")
 add_ps(0x01e68,"set_scroll_values","set column scroll")
 add_ps(0x01e78,"set_scroll_values","set column scroll")
-add_nop(0x01652,8)
+add_nop(0x01652,8)  # skip service mode test
 add_b(0x0165a,0x60)
 add_nop(0x0173C,8)
 add_b(0x0173C+8,0x60)
