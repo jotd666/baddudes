@@ -3522,10 +3522,12 @@ really_update_sprites:
 	jbsr	erase_big_machine
 	jbsr	get_current_level
 	cmp.b	#7,d0
-	jne	49f
-	* TEMP
-	move.w	#0,big_machine_x_offset
-	move.w 	#0x100,machine_y_pos
+	jne	49f	
+	TMPWRITE
+	move.w	#0x100,big_machine_x_offset
+	move.w 	y_secondary_scroll_value,machine_y_pos
+	add.w	#0x0,machine_y_pos
+	
 	jbsr	draw_helicopter
 	jra		51f
 49:
@@ -5109,8 +5111,8 @@ scroll_x_24d000_table:
 	.long	nope
 	.long	move_train
 	.long	nope
-	.long	nope
 	.long	move_helicopter
+	.long	nope
 
 	
 scroll_x_24a000_table:
@@ -5526,6 +5528,11 @@ handle_keyboard:
 *
 10:
 	.ifndef	RELEASE
+	cmp.b	#55,d0
+	bne		0f
+	* 'M': turn music off
+	jbsr	osd_music_stop
+0:
 	cmp.b	#24,d0
 	bne		0f
 	* 'O': debug display modes,

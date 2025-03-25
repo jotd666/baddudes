@@ -1,6 +1,5 @@
 - crash on game over (bad jump table?) not always! (from level 5 => OK)
 - game over: credits screen no context load probably
-- boss 7: color change not happening (break OK, colors found...!)
 - on game over, tests test_input_bit_d1 (0x0174c,0x0175c,0x07e66), then goes back to menu but intro screen trashed
 - level 6/7 Y scroll swap optim: don't blit 3x horizontally, use 2x width then 1x width, optimally around the
     displayed screen (as the game will draw the tiles furter than that)
@@ -25,13 +24,9 @@
 - end sequence should use scrolling sprites for credits: allocate huge 2x high sprite buffers
 - end sequence: double buffering screen trash???
 
-- difficulty level what does it do? maybe using "easy" would reduce number of enemies
-  and make game smoother?? boss energy is lower on low difficulty (which the port gets
-  by default!)
 - save/load highscores
 - log & rip missing sounds: breakpoint on sound not found so able to go to mame and rip it
 - leave demo running: level 3 but with status bar trashed (because of 2P life), 2P mode with player 2 invisible
-- demo running: when inserting coin, suddenly needs 2 coins for 1 credit...
 - knife sound has blow+man scream (hack not working there... maybe we could see if player
   has weapon... not working in 2P mode though)
  
@@ -55,6 +50,7 @@
 - level 7-2: sabreman (actually any generic ninja) can happen between devil pole & dragonninja:
   play without invincibility and wait for blows...
 - level 3 demo: game uses 2 players, patch to use only 1 player
+- boss 7: color change not happening (break OK, colors found...!)
 
 
 low priority:
