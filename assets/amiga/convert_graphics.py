@@ -147,9 +147,8 @@ def process_helicopter(global_palette):
 
     color_replacement_dict = bitplanelib.closest_colors_replacement_dict(heli_palette,global_palette)
     color_replacement_dict.pop(transparent)
-    reduced_colors_heli_img.save("1.png")
     bitplanelib.replace_color_from_dict(reduced_colors_heli_img,color_replacement_dict)
-    reduced_colors_heli_img.save("2.png")
+
 
     raw = bitplanelib.palette_image2raw(reduced_colors_heli_img,None,global_palette,forced_nb_planes=forced_nb_planes,
     generate_mask=True,blit_pad=True,mask_color=transparent)

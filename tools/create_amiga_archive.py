@@ -35,6 +35,8 @@ for x in datadir.glob("level_?_24*"):
     os.remove(x)
 for x in datadir.glob("sprite_ram*"):
     os.remove(x)
+for x in datadir.glob("game_ending"):
+    os.remove(x)
 
 dataout = outdir / "data"
 dataout.mkdir(exist_ok=True)
@@ -61,6 +63,7 @@ for sourcefile in datadir.glob("*"):
 
 
 exename = gamename
-subprocess.run(["cranker_windows.exe","-f",str(datadir / exename),"-o",str(dataout / exename)],check=True,stdout=subprocess.DEVNULL)
-
+#subprocess.run(["cranker_windows.exe","-f",str(datadir / exename),"-o",str(dataout / exename)],check=True,stdout=subprocess.DEVNULL)
+# we can't really use cranker now, seems to crash at startup. Never mind!!
+shutil.copy(datadir / exename,dataout / exename)
 subprocess.run(cmd_prefix+["clean"],cwd=os.path.join(progdir,"src"))
