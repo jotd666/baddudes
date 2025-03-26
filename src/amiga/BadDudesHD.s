@@ -32,6 +32,8 @@ _expmem
 _config
 	dc.b	"C1:X:invincibility:0;"
 	dc.b	"C1:X:infinite lives:1;"
+	dc.b	"C1:X:infinite time:2;"
+	dc.b	"C1:X:super blow power:3;"
 	dc.b	"C1:X:cheat keys:4;"
 	dc.b    "C2:L:frameskip:auto,none,one,two;"
 	IFD		DEV_MODE

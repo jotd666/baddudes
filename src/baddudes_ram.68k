@@ -15,6 +15,7 @@
 	.global	invincible_flag
 	.global	infinite_lives_flag
 	.global	infinite_time_flag
+	.global	superpowered_blows_flag
 	.global break_at_startup_flag
 	.global	video_ram_244000
 	.global	video_ram_24a000
@@ -65,6 +66,8 @@ invincible_flag:
 infinite_lives_flag:
 	.byte	0
 infinite_time_flag:
+	.byte	0
+superpowered_blows_flag:
 	.byte	0
 highscore_needs_saving_flag:
 	.byte	0

@@ -140,19 +140,18 @@ def process_helicopter(global_palette):
     changed_transparent = reduced_colors_heli_img.getpixel((reduced_colors_heli_img.size[0]-1,0))
 
     bitplanelib.replace_color(reduced_colors_heli_img,{changed_transparent},transparent)
+
     heli_palette = bitplanelib.palette_extract(reduced_colors_heli_img)
 
     transparent_first(heli_palette,transparent)
 
     color_replacement_dict = bitplanelib.closest_colors_replacement_dict(heli_palette,global_palette)
     color_replacement_dict.pop(transparent)
+    reduced_colors_heli_img.save("1.png")
     bitplanelib.replace_color_from_dict(reduced_colors_heli_img,color_replacement_dict)
-    reduced_colors_heli_img.save(dump_dir/f"helicopter_reduced.png")
+    reduced_colors_heli_img.save("2.png")
 
-    reduced_palette = bitplanelib.palette_extract(reduced_colors_heli_img)
-    if len(reduced_palette) < reduced_nb_colors:
-        reduced_palette += [impossible_color]*(len(reduced_palette) - reduced_nb_colors)
-    raw = bitplanelib.palette_image2raw(reduced_colors_heli_img,None,reduced_palette,forced_nb_planes=forced_nb_planes,
+    raw = bitplanelib.palette_image2raw(reduced_colors_heli_img,None,global_palette,forced_nb_planes=forced_nb_planes,
     generate_mask=True,blit_pad=True,mask_color=transparent)
 
     nb_planes = forced_nb_planes+1
@@ -922,7 +921,7 @@ generate_for_levels = [False]*9
 ##generate_for_levels[5] = True
 ##generate_for_levels[6] = True
 generate_for_levels[7] = True
-generate_for_levels[8] = True
+#generate_for_levels[8] = True
 
 
 # set to "False" for faster operation when working on game sprite/tiles
@@ -988,7 +987,13 @@ if generate_for_levels[7]:
     process_tile_context("level_7_24a000",level_7_tile_24a000_sheet_dict,16,first_pass=False)
     process_tile_context("game_level_7",sprite_sheet_dict,48,is_bob=True,shift_palette_count=16,reuse_colors_from="level_7_24a000")
     bobs_level_8 = process_tile_context("game_level_8",sprite_sheet_dict,48,is_bob=True,shift_palette_count=16,reuse_colors_from="level_7_24a000")
-    process_helicopter(palette_dict["game_level_8"]["palette"])
+
+    # rebuild full game palette (tiles+bobs) in 1 color array
+    heli_palette = palette_dict["level_7_24a000"]["palette"]
+    heli_palette += palette_dict["game_level_8"]["palette"][len(heli_palette):]
+
+    process_helicopter(heli_palette)
+
 if generate_for_levels[8]:
     # game ending
     process_tile_context("ending_1_24a000",ending_tile_24a000_sheet_dict,64,first_pass=False)

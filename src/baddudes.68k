@@ -54,6 +54,13 @@ baddudes_reset:
 	add.l	#0x15fd6,a1
 	move.b	#0x60,(a1)		| turn off collision detection player 2
 0:
+	tst.b	superpowered_blows_flag
+	jeq		0f
+	move.l	rom_base,a1
+	add.l	#0x16a82,a1
+	move.l	#0x4E714EB9,(a1)+
+	move.l	#make_superpowered,(a1)
+0:
 	move.b	start_level,d0
 	jeq		0f
 	addq	#1,d0
@@ -419,6 +426,13 @@ do_plear:
 ***** manual patches *****
 **************************
 
+make_superpowered:
+    * more than enough to kill boss with 1 or 2 blows
+	* and mid-stage boss with 1 blow
+	MOVE.W	#0x1000,D0
+	ADD.W	D0,36(A0)  |  set blow power to mega power!!
+	rts
+	
 	.ifdef	__amiga__
 amiga_specific_patchlist:
 	PL_START

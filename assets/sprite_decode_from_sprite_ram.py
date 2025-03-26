@@ -40,4 +40,4 @@ def doit(filename):
     for code,attrs in d.items():
         if len(attrs)>1:
             print("multi: {:x}, attrs={}".format(code,[hex(x) for x in attrs]))
-doit("sprite_ram")
+doit("boss_7")

@@ -5,15 +5,12 @@
     displayed screen (as the game will draw the tiles furter than that)
   could probably be optimized to only restore the buffers partially, not the whole width
 - easy: identify devil pole spin sound id
-- helicopter color not even close to the original colors...
-- level 7 display helicopter! if 24C010 != 400 display it!
-  main scroll = x 0x31, y 0x100
-  24C010=D3, 24C012=172 heli rotor almost visible, heli very high
-  24C010=125, 24C012=172 heli very high and to the left
-  24C010=187, 24C012=131 heli just above player and to the hard left
+- helicopter color not even close to the original colors... when the colors exist in global palette...
+- optimize erase helicopter (2 parts)
+- fix president/door colors / boss 7: bad color change
+
 - cycle exact / auto frameskip: level 4 strange lockup  
 - boss 5: locomotive wheels erase wrong
-- level 7: missing elevator engine, but loop is active. Maybe louder???
 - level 6: stalactite wrong colors (used to be OK)
 - level 2 front object (lamp) not displaying (used to work with level 1 objects)
 - level 5: red girls missing frames
@@ -50,7 +47,6 @@
 - level 7-2: sabreman (actually any generic ninja) can happen between devil pole & dragonninja:
   play without invincibility and wait for blows...
 - level 3 demo: game uses 2 players, patch to use only 1 player
-- boss 7: color change not happening (break OK, colors found...!)
 
 
 low priority:
