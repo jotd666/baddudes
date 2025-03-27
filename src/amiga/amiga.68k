@@ -820,8 +820,6 @@ _vblank:
 	* has to be copper
 	* is level 1 interrupt set? that would mean that mid-screen interrupt
 	* is the source of the interrupt
-	btst	#2,d0
-	sne		mid_screen_interrupt
 
 	* we're going to ack copper & software interrupt now
 	* do it twice (040/pistorm bug)
@@ -833,7 +831,9 @@ _vblank:
 	btst	#2,d0
 	beq.b	2f
 
-
+	* mid-screen interrupt: do something once out of 5 times (simulate 60Hz
+	* in a way that lets the non-interrupt CPU task work a bit, because calling
+	* the interrupt twice can lead to timing issues, like seen in Moon Patrol)
 	tst.b	pause_flag
 	.ifdef	RELEASE
 	* release: pause pauses blitting
@@ -920,6 +920,14 @@ _vblank:
 	* double buffering only in-game
 	jbsr		switch_screen_buffers
 23:
+	move.w	(intreqr,a5),d0
+	btst	#4,d0
+	jeq		24f
+	* copper interrupt happened again when we were updating sprites:
+	* skip a frame next time (else game will crawl even more)
+	addq.b	#1,graphics_update_counter
+24:
+
 	.ifndef		RELEASE
 	tst.b	debug_truck_control
 	jeq		1f
