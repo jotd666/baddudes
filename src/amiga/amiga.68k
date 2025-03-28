@@ -765,6 +765,57 @@ _nmi:
 	move.w	#0x7FFF,_custom+intreq
 	move.w	#0x7FFF,_custom+intreq
 	rts
+
+* < D0: intreq
+* > D0: 0: do blits, 1: do not
+
+game_logic:
+	tst.b	pause_flag
+	jne	10f
+	* set base for RAM
+	GET_RAM_START_IN_A6
+	btst	#2,d0
+	beq.b	2f
+
+	* mid-screen interrupt: do something once out of 5 times (simulate 60Hz
+	* in a way that lets the non-interrupt CPU task work a bit, because calling
+	* the interrupt twice can lead to timing issues, like seen in Moon Patrol)
+
+
+	* mid-screen copper interrupt, must occur once every 5 times
+	* to simulate ~60 Hz on 50 Hz display
+	move.b	mid_screen_interrupt_count,d0
+	addq.b	#1,d0
+	cmp.b	#5,d0
+	bne.b	1f
+	
+
+	* declare that we're in interrupt mode so osd_disable_interrupts/osd_enable_interrupts
+	* also set SR accordingly
+	st.b	interrupt_mode
+	jbsr		baddudes_irq
+	clr.b	interrupt_mode	
+	clr.b	d0
+1:
+	move.b	d0,mid_screen_interrupt_count
+10:
+	moveq	#1,d0
+	rts
+2:
+
+	
+		
+	* declare that we're in interrupt mode so osd_disable_interrupts/osd_enable_interrupts
+	* also set SR accordingly
+
+
+
+	st.b	interrupt_mode
+	jbsr		baddudes_irq
+	clr.b	interrupt_mode
+10:
+	moveq	#0,d0
+	rts
 	
 _vblank:
     movem.l d0-d7/a0-a6,-(a7)
@@ -826,59 +877,10 @@ _vblank:
 	move.w	#0x14,(intreq,a5)
 	move.w	#0x14,(intreq,a5)
 
-	* set base for RAM
-	GET_RAM_START_IN_A6
-	btst	#2,d0
-	beq.b	2f
-
-	* mid-screen interrupt: do something once out of 5 times (simulate 60Hz
-	* in a way that lets the non-interrupt CPU task work a bit, because calling
-	* the interrupt twice can lead to timing issues, like seen in Moon Patrol)
-	tst.b	pause_flag
-	.ifdef	RELEASE
-	* release: pause pauses blitting
-	jne	23f
-	.else
-	* debug: pause just skips irq
-	jne	2f
-	.endif
-
-	* mid-screen copper interrupt, must occur once every 5 times
-	* to simulate ~60 Hz on 50 Hz display
-	move.b	mid_screen_interrupt_count,d0
-	addq.b	#1,d0
-	cmp.b	#5,d0
-	bne.b	1f
+	jbsr	game_logic
+	tst.b	d0
+	jne		3f
 	
-
-	* declare that we're in interrupt mode so osd_disable_interrupts/osd_enable_interrupts
-	* also set SR accordingly
-	st.b	interrupt_mode
-	jbsr		baddudes_irq
-	clr.b	interrupt_mode	
-	clr.b	d0
-1:
-	move.b	d0,mid_screen_interrupt_count
-	jra		3f
-2:
-
-	
-		
-	* declare that we're in interrupt mode so osd_disable_interrupts/osd_enable_interrupts
-	* also set SR accordingly
-
-	.ifndef	RELEASE
-	* debug: pause just skips irq
-	tst.b	pause_flag
-	jne	0f
-	.endif
-
-	st.b	interrupt_mode
-	jbsr		baddudes_irq
-	clr.b	interrupt_mode
-0:
-
-
 	subq.b	#1,graphics_update_counter
 	jne		23f
 
@@ -917,6 +919,7 @@ _vblank:
 	* double buffering only in-game
 	jbsr		switch_screen_buffers
 23:
+	lea		_custom,a5
 	move.w	(intreqr,a5),d0
 	btst	#4,d0
 	jeq		24f
