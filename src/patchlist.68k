@@ -1106,7 +1106,7 @@ ram_relocs:
 	.long	0x00bf0c+4	| ext_00ffa24c
 	.long	0x00c3fe+2	| ext_00ffa88a
 	.long	0x00c42e+2	| ext_00ffa88a
-	.long	0x00c442+2	| ext_00ffa87a
+	.long	0x00c442+2	| y_primary_delta_scroll_command_00ffa87a
 	.long	0x00c44e+2	| ext_00ffa87e
 	.long	0x00c45a+2	| ext_00ffa882
 	.long	0x00c466+2	| ext_00ffa886
@@ -1156,7 +1156,7 @@ ram_relocs:
 	.long	0x00cce4+2	| ext_00ffa856
 	.long	0x00ccea+2	| ext_00ffa866
 	.long	0x00ccf0+2	| ext_00ffa86e
-	.long	0x00ccf6+2	| ext_00ffa87a
+	.long	0x00ccf6+2	| y_primary_delta_scroll_command_00ffa87a
 	.long	0x00ccfc+2	| ext_00ffa87e
 	.long	0x00cd02+2	| ext_00ffa882
 	.long	0x00cd08+2	| ext_00ffa886
@@ -1207,7 +1207,7 @@ ram_relocs:
 	.long	0x00d1b6+2	| y_secondary_delta_scroll_00ff8168
 	.long	0x00d1bc+2	| ext_00ff815c
 	.long	0x00d1d4+2	| ext_00ff8164
-	.long	0x00d1e4+2	| ext_00ffa87a
+	.long	0x00d1e4+2	| y_primary_delta_scroll_command_00ffa87a
 	.long	0x00d1ea+2	| y_primary_delta_scroll_00ff8160
 	.long	0x00d1f2+2	| ext_00ffa87e
 	.long	0x00d1f8+2	| ext_00ff815c
@@ -1215,11 +1215,11 @@ ram_relocs:
 	.long	0x00d212+2	| y_secondary_delta_scroll_00ff8168
 	.long	0x00d21a+2	| ext_00ffa886
 	.long	0x00d220+2	| ext_00ff8164
-	.long	0x00d22e+2	| ext_00ffa87a
+	.long	0x00d22e+2	| y_primary_delta_scroll_command_00ffa87a
 	.long	0x00d22e+6	| y_primary_delta_scroll_00ff8160
 	.long	0x00d238+2	| ext_00ffa87e
 	.long	0x00d238+6	| ext_00ff815c
-	.long	0x00d24a+2	| ext_00ffa87a
+	.long	0x00d24a+2	| y_primary_delta_scroll_command_00ffa87a
 	.long	0x00d250+2	| ext_00ffa852
 	.long	0x00d25a+2	| ext_00ffa86a
 	.long	0x00d25a+6	| ext_00ffa852
@@ -1233,13 +1233,13 @@ ram_relocs:
 	.long	0x00d29a+2	| ext_00ffa852
 	.long	0x00d2a0+2	| ext_00ffa886
 	.long	0x00d2a6+2	| ext_00ffa856
-	.long	0x00d2b4+2	| ext_00ffa87a
+	.long	0x00d2b4+2	| y_primary_delta_scroll_command_00ffa87a
 	.long	0x00d2b4+6	| y_primary_delta_scroll_00ff8160
 	.long	0x00d2be+2	| ext_00ffa87e
 	.long	0x00d2be+6	| ext_00ff815c
 	.long	0x00d2c8+2	| ext_00ffa88a
 	.long	0x00d2c8+6	| ext_00ff816c
-	.long	0x00d2da+2	| ext_00ffa87a
+	.long	0x00d2da+2	| y_primary_delta_scroll_command_00ffa87a
 	.long	0x00d2e0+2	| ext_00ffa852
 	.long	0x00d2e6+2	| ext_00ffa87e
 	.long	0x00d2ec+2	| ext_00ffa856
@@ -1305,7 +1305,7 @@ ram_relocs:
 	.long	0x00d5c4+2	| ext_00ffa856
 	.long	0x00d5ca+2	| layer_24dxxx_scroll_values_ff813c
 	.long	0x00d5d0+4	| ext_00ffa850
-	.long	0x00d64e+2	| ext_00ffa87a
+	.long	0x00d64e+2	| y_primary_delta_scroll_command_00ffa87a
 	.long	0x00d654+2	| ext_00ffa87e
 	.long	0x00d65a+4	| ext_00ffa850
 	.long	0x00d662+4	| ext_00ffa8a2
@@ -1351,12 +1351,12 @@ ram_relocs:
 	.long	0x00d98a+4	| ext_00ffa8a2
 	.long	0x00d992+6	| ext_00ffa86a
 	.long	0x00d99c+2	| ext_00ffa8a0
-	.long	0x00d9a8+6	| ext_00ffa87a
-	.long	0x00d9b2+6	| ext_00ffa87a
+	.long	0x00d9a8+6	| y_primary_delta_scroll_command_00ffa87a
+	.long	0x00d9b2+6	| y_primary_delta_scroll_command_00ffa87a
 	.long	0x00d9be+2	| ext_00ffa8a0
 	.long	0x00d9c6+6	| y_primary_scroll_value_00ff812c
 	.long	0x00d9d2+2	| ext_00ffa8a0
-	.long	0x00d9de+6	| ext_00ffa87a
+	.long	0x00d9de+6	| y_primary_delta_scroll_command_00ffa87a
 	.long	0x00d9ea+2	| ext_00ffa8a0
 	.long	0x00d9f6+4	| ext_00ffa843
 	.long	0x00da04+2	| ext_00ffa852
@@ -1399,7 +1399,7 @@ ram_relocs:
 	.long	0x00db36+6	| ext_00ffa8a6
 	.long	0x00db40+4	| ext_00ffa850
 	.long	0x00db48+2	| ext_00ffa8a0
-	.long	0x00db7a+2	| ext_00ffa87a
+	.long	0x00db7a+2	| y_primary_delta_scroll_command_00ffa87a
 	.long	0x00db80+2	| ext_00ffa87e
 	.long	0x00db86+2	| ext_00ffa84e
 	.long	0x00db86+6	| ext_00ffa850
@@ -1414,23 +1414,23 @@ ram_relocs:
 	.long	0x00dbdc+2	| ext_00ffa856
 	.long	0x00dbe8+2	| ext_00ffa86e
 	.long	0x00dbee+2	| ext_00ffa8a0
-	.long	0x00dc04+2	| ext_00ffa87a
+	.long	0x00dc04+2	| y_primary_delta_scroll_command_00ffa87a
 	.long	0x00dc0a+2	| ext_00ffa882
 	.long	0x00dc16+2	| ext_00ffa87e
 	.long	0x00dc1c+2	| ext_00ffa886
-	.long	0x00dc28+2	| ext_00ffa87a
+	.long	0x00dc28+2	| y_primary_delta_scroll_command_00ffa87a
 	.long	0x00dc2e+2	| ext_00ffa87e
 	.long	0x00dc34+2	| ext_00ffa882
 	.long	0x00dc3a+2	| ext_00ffa886
 	.long	0x00dc4c+4	| ext_00ffa850
-	.long	0x00dc54+6	| ext_00ffa87a
+	.long	0x00dc54+6	| y_primary_delta_scroll_command_00ffa87a
 	.long	0x00dc5e+6	| ext_00ffa87e
-	.long	0x00dc6c+2	| ext_00ffa87a
+	.long	0x00dc6c+2	| y_primary_delta_scroll_command_00ffa87a
 	.long	0x00dc72+2	| ext_00ffa87e
 	.long	0x00dc84+4	| ext_00ffa850
-	.long	0x00dc8c+6	| ext_00ffa87a
+	.long	0x00dc8c+6	| y_primary_delta_scroll_command_00ffa87a
 	.long	0x00dc96+6	| ext_00ffa87e
-	.long	0x00dca4+2	| ext_00ffa87a
+	.long	0x00dca4+2	| y_primary_delta_scroll_command_00ffa87a
 	.long	0x00dcaa+2	| ext_00ffa87e
 	.long	0x00dcb4+2	| ext_00ffa856
 	.long	0x00dcc0+2	| is_actual_game_played_00ff8215
@@ -2126,6 +2126,7 @@ patchlist:
 	PL_PSR	0x00036c,0x1efa
 	PL_P	0x000372,osd_enable_interrupts	| mcu shit and enable interrupts
 	PL_PS	0x000378,read_word_0030c008_to_D0
+	PL_P	0x00037e,set_sr_0037e
 	PL_PS	0x000394,write_word_D0_to_0030c012
 	PL_PSR	0x00039a,0x6196
 	PL_S	0x0003d0,0x03dc-0x03d0-2	| skip unneeded vblank wait
@@ -2168,6 +2169,7 @@ patchlist:
 	PL_PSR	0x001470,0x14ee
 	PL_PS	0x001476,enable_interrupts_01476
 	PL_S	0x00147c,0x148e-0x147c-2	| skip hw control stuff
+	PL_PSS	0x001482,set_sr_01482,6
 	PL_PSS	0x001486,write_word_imm_0000_to_0030c01e,2
 	PL_PR	0x00148e,0x19a6
 	PL_W	0x001494,20033

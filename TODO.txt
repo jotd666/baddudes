@@ -1,15 +1,16 @@
+- group erase: not good enough: make a table to macro objects
+  and their size. Only issue: re-figure out the X/Y display coords. Major advantage:
+  group erase works horizontally/vertically without any other computation:
+  test on level 1 first with just the player at start...
+- level 5 game logic: horrible slowdowns: count how many level 5/copper ints
 - crash on game over (bad jump table?) not always! (from level 5 => OK)
 - game over: credits screen no context load probably
 - on game over, tests test_input_bit_d1 (0x0174c,0x0175c,0x07e66), then goes back to menu but intro screen trashed
-- level 6/7 Y scroll swap optim: don't blit 3x horizontally, use 2x width then 1x width, optimally around the
-    displayed screen (as the game will draw the tiles furter than that)
-  could probably be optimized to only restore the buffers partially, not the whole width
 - easy: identify devil pole spin sound id
 - helicopter color not even close to the original colors... when the colors exist in global palette...
 - optimize erase helicopter (2 parts)
 - fix president/door colors / boss 7: bad color change
 
-- cycle exact / auto frameskip: level 4 strange lockup  
 - boss 5: locomotive wheels erase wrong
 - level 6: stalactite wrong colors (used to be OK)
 - level 2 front object (lamp) not displaying (used to work with level 1 objects)
@@ -22,7 +23,6 @@
 - end sequence: double buffering screen trash???
 
 - save/load highscores
-- log & rip missing sounds: breakpoint on sound not found so able to go to mame and rip it
 - leave demo running: level 3 but with status bar trashed (because of 2P life), 2P mode with player 2 invisible
 - knife sound has blow+man scream (hack not working there... maybe we could see if player
   has weapon... not working in 2P mode though)
@@ -36,14 +36,10 @@
   - truck 2: sprites & truck shifted in the end??? also happens on level 5 train, linked to general scroll shift issue
   - level 1 when ninjas arrive on truck, truck & ninjas on it drift
   - when autoscrolling in Y (level 6 and 7), can be shifted too
-  - this is not 100% reproducible with cpu/cycle exact on level 6
-    not happening on immediate blitter, needs to debug autoscroll in original code
+  - not happening on immediate blitter, needs to debug autoscroll in original code
 	and adapt it (check_if_must_autoscroll_0dcb2,autoscroll_control_down_right_0dc42)
+	but is not going to fix the lateral issues
 
-- group erase: not good enough: make a table to macro objects
-  and their size. Only issue: re-figure out the X/Y display coords. Major advantage:
-  group erase works horizontally/vertically without any other computation:
-  test on level 1 first with just the player at start...
 - level 7-2: sabreman (actually any generic ninja) can happen between devil pole & dragonninja:
   play without invincibility and wait for blows...
 - level 3 demo: game uses 2 players, patch to use only 1 player
@@ -51,6 +47,7 @@
 
 low priority:
 
+- log & rip missing sounds: breakpoint on sound not found so able to go to mame and rip it
 - mutant karnov black color issue: conflict between truck tires and mutant karnov on palette 9
   BUT fixing karnov steals too many colors and now character trousers are not all white...
 - level 7: missing heli sound but would steal 1 music channel...
@@ -63,11 +60,6 @@ low priority:
 - still not restored black color ex: tile 4ae/02 (sword level 5)
 - bosses 2, 5, 6: rework sheets to change white by some other color that doesn't
   conflict with main character (0xEEE => ????) so dynamic color change works fully
-- restore buffer memory size optimize:
-RESTORE_SCREEN_PLANE_SIZE = NB_BYTES_PER_SCREEN_ROW*3*NB_PLAYFIELD_LINES*2
-could be
-RESTORE_SCREEN_PLANE_SIZE = NB_BYTES_PER_SCREEN_ROW*2*NB_PLAYFIELD_LINES*2
-
 - level 3: put water scroll in some other buffer (allocate one?) so changing plans automatically
   clips the sprites without any other side effect
 - level 4: maybe remove foreground trees if possible

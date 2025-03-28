@@ -863,9 +863,6 @@ _vblank:
 2:
 
 	
-
-	
-	subq.w	#1,delay_timer
 		
 	* declare that we're in interrupt mode so osd_disable_interrupts/osd_enable_interrupts
 	* also set SR accordingly
@@ -3207,43 +3204,6 @@ osd_break:
 1002: .asciz    "AKS_ENTERDEBUGGER 1"
 1003:
         .align	2
-
-
-
-* < D0: number of 1/60Hz ticks
-* can work with interrupts enabled or disabled
-osd_wait:
-	move.w	d0,delay_timer
-	**jbsr	osd_is_vblank_interrupt_enabled
-	tst.w	d0
-	jne		2f
-	* interrupts are disabled: timer isn't going to change
-	* wait using vertical blank interrupt request (we don't need it!)
-	clr.w	one_out_of_five
-0:
-	move.w	#0x20,_custom+intreq
-	move.w	#0x20,_custom+intreq
-1:
-	move.w	_custom+intreqr,d0
-	btst	#5,d0
-	beq.b	1b
-	addq.w	#1,one_out_of_five
-	cmp.w	#5,one_out_of_five
-	bne.b	5f
-	subq.w	#1,delay_timer	
-	clr.w	one_out_of_five
-5:
-	subq.w	#1,delay_timer
-	beq.b	4f
-	bpl.b	0b
-4:
-	rts
-	
-2:
-	tst.w	delay_timer
-	bne.b	2b
-	rts
-
 
 
 
@@ -7467,10 +7427,7 @@ _gfxbase:
 _dosbase:
 	.long	0
 
-delay_timer:
-	.word	0
-one_out_of_five:
-	.word	0
+
 fg_screen_data_1:
 	.long	0
 fg_screen_data_2:

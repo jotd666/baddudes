@@ -725,6 +725,13 @@ test_mcu_reply:
     nop
     rts
 
+* not sure when it happens...
+set_sr_01482:
+set_sr_00596:
+set_sr_0037e:
+	move.w	#0x2300,SR
+	rts
+	
 * copy angry baddudes + title pic to layer when credit is inserted
 copy_tiles_099f0:
 	STORE_REGS
