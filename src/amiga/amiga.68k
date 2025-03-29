@@ -3500,7 +3500,7 @@ really_update_sprites:
 	dbf		d7,1b
 12:	
 
-	tst.l big_machine_planes
+	tst.l	big_machine_planes
 	jeq		555f
 	jbsr	erase_big_machine
 	jbsr	get_current_level
@@ -3518,6 +3518,7 @@ really_update_sprites:
 49:
 	cmp.b	#1,d0
 	jne		50f
+
 	jbsr	draw_truck_level_1
 	jra		51f
 50:
@@ -6344,6 +6345,7 @@ specific_level_load_table:
 load_big_machine_less_planes:
 	* optimize: don't render all planes
 	* as the object has as many planes (or less) as the tiles
+	jbsr	load_big_machine
 	move.w	nb_tile_planes_24da,big_machine_nb_planes
 	rts
 	

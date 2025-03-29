@@ -14,6 +14,8 @@
 	rts
 	.endm
 	
+* period to resync 2 values of X/Y scrolling
+* to avoid drifting that happens on amiga
 RESYNC_COUNT = 50	
 	
 baddudes_reset:
@@ -138,17 +140,15 @@ handle_any_scroll_06284:
 	addq.b	#1,d2
 	cmp.b	#RESYNC_COUNT,d2
 	jne		1f
+	move.l	a5,-(a7)
 	move.l	a6,-(a7)
 	move.l	ram_base,a6
+	move.w	#0,d3
 	move.b 	(0x021d,a6),d3		| current stage
-	cmp.b	#3,d3
-	jeq		0f
-	move.w	(0x2852,a6),d3		| Y scroll value
-	move.w	d3,(0x12C,a6)		| trailing scroll value... patch: make values equal!
-	move.w	(0x2856,a6),d3		| X scroll value
-	move.w	d3,(0x128,a6)		| trailing scroll value... patch: make values equal!
-0:
+	lea		sync_scroll_table(pc),a5
+	jsr		([a5,d3.w*4])
 	move.l	(a7)+,a6
+	move.l	(a7)+,a5
 	moveq	#0,d2
 1:
 	move.b	d2,scrolling_resync_counter
@@ -161,6 +161,32 @@ handle_any_scroll_06284:
 	MOVE.W	(A0),D3
 	rts
 		
+sync_scroll_table:
+	.long	nope				| not reached
+	.long	sync_scroll_8_way   | level 1
+	.long	sync_scroll_secondary_x   | level 2
+	.long	sync_scroll_secondary_x   | level 3
+	.long	sync_scroll_8_way	| level 4
+	.long	sync_scroll_secondary_x   | level 5
+	.long	sync_scroll_8_way	| level 6
+	.long	sync_scroll_8_way	| level 7
+
+* level 2: avoids that wheels are shifted
+* level 5: avoids that train is shifted (to test?)
+sync_scroll_secondary_x:
+	move.w	(0x2856,a6),d3		| X scroll value
+	move.w	d3,(0x13C,a6)		| trailing scroll value... patch: make values equal!
+	rts
+	
+nope:
+	rts
+sync_scroll_8_way:
+	move.w	(0x2852,a6),d3		| Y scroll value
+	move.w	d3,(0x12C,a6)		| trailing scroll value... patch: make values equal!
+	move.w	(0x2856,a6),d3		| X scroll value
+	move.w	d3,(0x128,a6)		| trailing scroll value... patch: make values equal!
+	rts
+	
 	.endif
 	
 * emulate JSR from trap. Tricky, specially with reentrancy constraint
