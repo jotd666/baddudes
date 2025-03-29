@@ -1,6 +1,9 @@
 import os,pathlib,re
 import ira_asm_tools
 
+# to generate a trace:
+# trace mame.tr,,,{tracelog "D0=%08X,D1=%08X,D2=%08X,D3=%08X,D4=%08X,D5=%08X,D6=%08X,D7=%08X,A0=%08X,A1=%08X,A2=%08X,A3=%08X,A4=%08X,A5=%08X,A6=%08X: ",D0,D1,D2,D3,D4,D5,D6,D7,A0,A1,A2,A3,A4,A5,A6}
+
 this_dir = pathlib.Path(os.path.abspath(__file__)).parent
 src_dir = this_dir / os.pardir / "src"
 

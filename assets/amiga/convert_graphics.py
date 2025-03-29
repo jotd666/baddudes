@@ -142,6 +142,7 @@ def process_helicopter(global_palette):
     bitplanelib.replace_color(reduced_colors_heli_img,{changed_transparent},transparent)
 
     heli_palette = bitplanelib.palette_extract(reduced_colors_heli_img)
+    bitplanelib.palette_dump(heli_palette,"pal.png",pformat=bitplanelib.PALETTE_FORMAT_PNG)
 
     transparent_first(heli_palette,transparent)
 
@@ -152,6 +153,7 @@ def process_helicopter(global_palette):
 
     raw = bitplanelib.palette_image2raw(reduced_colors_heli_img,None,global_palette,forced_nb_planes=forced_nb_planes,
     generate_mask=True,blit_pad=True,mask_color=transparent)
+
 
     nb_planes = forced_nb_planes+1
     real_width,height = reduced_colors_heli_img.size
@@ -918,8 +920,8 @@ generate_for_levels = [False]*9
 #generate_for_levels[3] = True
 #generate_for_levels[4] = True
 ##generate_for_levels[5] = True
-generate_for_levels[6] = True
-#generate_for_levels[7] = True
+#generate_for_levels[6] = True
+generate_for_levels[7] = True
 #generate_for_levels[8] = True
 
 

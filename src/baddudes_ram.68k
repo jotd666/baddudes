@@ -21,6 +21,7 @@
 	.global	video_ram_24a000
 	.global	video_ram_24d000
 	.global	previous_sr
+	.global	scrolling_resync_counter
 	.global	jsr_address
 	
 	.global	highscore_needs_saving_flag
@@ -53,12 +54,13 @@ rom_base:
 	.long	0
 ram_base:
 	.long	0
-
 previous_sr:
 	.word	0
 jsr_address:
 	.long	0
 	
+scrolling_resync_counter:
+	.byte 	0
 start_level:
 	.byte	0
 invincible_flag:

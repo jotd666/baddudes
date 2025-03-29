@@ -772,6 +772,7 @@ _nmi:
 game_logic:
 	tst.b	pause_flag
 	jne	10f
+	
 	* set base for RAM
 	GET_RAM_START_IN_A6
 	btst	#2,d0
@@ -822,7 +823,8 @@ _vblank:
 	lea		_custom,a5
 	move.w	(intreqr,a5),d0
 	btst	#5,d0
-	beq.b		1f
+	jeq		1f
+	
 	
 	move.l	_joypad_state,d1
 	moveq	#1,d0
@@ -1628,7 +1630,7 @@ do_truck_draw:
 	move.l 	fg_drawed_screen_ptr,a1
 	* now big optim: no need to cookie cut/draw all planes!!
 	* so avoid last blit or even 2 last blits (if background is 16 colors)
-	move.w	nb_tile_planes_24da,d3
+	move.w	big_machine_nb_planes,d3
 	jbsr	blit_planes_any_internal_cookie_cut
 	
 
@@ -1640,7 +1642,6 @@ do_truck_draw:
 	jcc		2f
 	neg		d0
 	move.w	big_machine_extra_pic_width,d2
-	add.w	#MIN_TRAIN_X_TOP_DRAW-80,d0
 
 	
 	move.l	d1,a0
@@ -1650,7 +1651,7 @@ do_truck_draw:
 	move.l	(4*NB_PLAYFIELD_PLANES,a0),a3	| mask
 	add.w	x_background_scroll_value,d0
 	move.l 	fg_drawed_screen_ptr,a1
-	move.w	nb_tile_planes_24da,d3
+	move.w	big_machine_nb_planes,d3
 	moveq	#0,d5
 	moveq	#0,d6
 	jbsr	blit_planes_any_internal_cookie_cut
@@ -1818,11 +1819,14 @@ addr_30c000_op:
 	
 * system (start/coin and also vblank - which is stubbed)
 addr_30c002_op:
+	.ifndef	RELEASE
 	tst.b	D1
 	jne		0f
+	.endif
 	jbsr	read_system_inputs
-	move.b	d0,d7		| make sure sync flag set (bit 7 cleared)
-	
+	| sync flag set (bit 7 cleared, as this routine is only called during
+	| irq anyway, so sync is already OK)
+	move.b	d0,d7
 	rts
 0:
 	BREAKPOINT	"unexpected write to 30c002"
@@ -6337,6 +6341,12 @@ specific_level_load_table:
 	.long	level_6_load
 	.long	level_7_load
 	
+load_big_machine_less_planes:
+	* optimize: don't render all planes
+	* as the object has as many planes (or less) as the tiles
+	move.w	nb_tile_planes_24da,big_machine_nb_planes
+	rts
+	
 * return D0: planes, D1: extra planes (or 0)
 load_big_machine:
 	jbsr	allocate_and_load_chip_mem_file
@@ -6551,8 +6561,7 @@ level_1_load:
 	jbsr	load_front_objects_file
 	* load & relocate truck pics
 	lea		truck_1_pic_file,a0
-	jbsr	load_big_machine
-
+	jbsr	load_big_machine_less_planes
 	
 	* testing front objects!!!
 	*move	#55,D0
@@ -6577,7 +6586,7 @@ level_2_load:
 
 	* load & relocate truck pics
 	lea		truck_2_pic_file,a0
-	jbsr	load_big_machine
+	jbsr	load_big_machine_less_planes
 
 	
 	move.b	#0xB,road_y_pos
@@ -6654,7 +6663,7 @@ level_5_load:
 
 	* load & relocate truck pics
 	lea		train_pic_file,a0
-	jbsr	load_big_machine
+	jbsr	load_big_machine_less_planes
 
 	* seems not to follow the offset shit
 	sub.w	#512,big_machine_x_offset
@@ -7409,6 +7418,8 @@ keyboard_table:
 
 	
 interrupt_mode:
+	.byte	0
+vblank_hit:
 	.byte	0
 	.align	2
 	

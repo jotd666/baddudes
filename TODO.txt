@@ -1,17 +1,22 @@
+- adding heli made all other machines invisible!!!!!
+- general sprite position / scroll problem: PROBABLY FIXED NOW !!!!!!!!!!!
+  - truck 2: sprites & truck shifted in the end??? also happens on level 5 train, linked to general scroll shift issue
+  - level 1 when ninjas arrive on truck, truck & ninjas on it drift
+  - helicopter at the end: president sprites & door horribly shifted (cycle exact)  
+- end sequence: double buffering screen trash???
 - group erase: not good enough: make a table to macro objects
   and their size. Only issue: re-figure out the X/Y display coords. Major advantage:
   group erase works horizontally/vertically without any other computation:
   test on level 1 first with just the player at start...
-- level 5 game logic: horrible slowdowns: count how many level 5/copper ints
 - crash on game over (bad jump table?) not always! (from level 5 => OK)
 - game over: credits screen no context load probably
 - on game over, tests test_input_bit_d1 (0x0174c,0x0175c,0x07e66), then goes back to menu but intro screen trashed
 - easy: identify devil pole spin sound id
-- helicopter color not even close to the original colors... when the colors exist in global palette...
-- optimize erase helicopter (2 parts)
+- fix & optimize erase helicopter (2 parts)
 - fix president/door colors / boss 7: bad color change
-
 - boss 5: locomotive wheels erase wrong
+
+
 - level 6: stalactite wrong colors (used to be OK)
 - level 2 front object (lamp) not displaying (used to work with level 1 objects)
 - level 5: red girls missing frames
@@ -20,7 +25,6 @@
   => control word for multiplexed after lamp is not working but other sprites are also destroyed!
 - level 2: climbers on the right "blink" (frame/grouping? wrong clipping?)
 - end sequence should use scrolling sprites for credits: allocate huge 2x high sprite buffers
-- end sequence: double buffering screen trash???
 
 - save/load highscores
 - leave demo running: level 3 but with status bar trashed (because of 2P life), 2P mode with player 2 invisible
@@ -31,14 +35,6 @@
 - drop 2 player mode, use rightmost OSD sprite for real parallax in levels 4 and 6
   see if we can blit the score afterwards if 2P mode is reinstated, anyway 2P mode is
   a problem as it uses 4 more colors and it degrades sprite palette even further.
-
-- general sprite position / scroll problem
-  - truck 2: sprites & truck shifted in the end??? also happens on level 5 train, linked to general scroll shift issue
-  - level 1 when ninjas arrive on truck, truck & ninjas on it drift
-  - when autoscrolling in Y (level 6 and 7), can be shifted too
-  - not happening on immediate blitter, needs to debug autoscroll in original code
-	and adapt it (check_if_must_autoscroll_0dcb2,autoscroll_control_down_right_0dc42)
-	but is not going to fix the lateral issues
 
 - level 7-2: sabreman (actually any generic ninja) can happen between devil pole & dragonninja:
   play without invincibility and wait for blows...

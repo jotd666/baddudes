@@ -14,7 +14,7 @@
 	rts
 	.endm
 	
-	
+RESYNC_COUNT = 50	
 	
 baddudes_reset:
 	move.l	rom_base,a0
@@ -115,6 +115,52 @@ display_object_hook_028c6:
 	* the ideal code would have 2 modes: if small object (height < 16)
 	* then use normal erase, else use block erase
 	jbra	osd_object_displayed
+	
+
+handle_any_scroll_06284:
+	* this is still a mystery, but on amiga, if
+	* irq takes too much time, then scenery & sprites 
+	* slowly drift apart. Syncing those 2 different X & Y
+	* scroll values do the trick.
+	* it must not be done at level 3 though, as else water is
+	* in sync with scenery...
+	*
+	* also if systematically done, it makes the scrolling
+	* jerky, so it's better to sync it only once in a while
+	*
+	* when doing ports for other machines, don't hesitate
+	* to integrate this fix too. I think that on NeoGeo or Genesis
+	* this wouldn't be needed, but if ported to a blitter-oriented
+	* machine like the Atari-STE it will probably be required.
+	
+	* we can use D2.L/D3.W as scratch registers
+	move.b	scrolling_resync_counter(pc),d2
+	addq.b	#1,d2
+	cmp.b	#RESYNC_COUNT,d2
+	jne		1f
+	move.l	a6,-(a7)
+	move.l	ram_base,a6
+	move.b 	(0x021d,a6),d3		| current stage
+	cmp.b	#3,d3
+	jeq		0f
+	move.w	(0x2852,a6),d3		| Y scroll value
+	move.w	d3,(0x12C,a6)		| trailing scroll value... patch: make values equal!
+	move.w	(0x2856,a6),d3		| X scroll value
+	move.w	d3,(0x128,a6)		| trailing scroll value... patch: make values equal!
+0:
+	move.l	(a7)+,a6
+	moveq	#0,d2
+1:
+	move.b	d2,scrolling_resync_counter
+	
+	* original code
+	* D0 contains fine scroll value
+	* 0: no autoscroll change
+	MOVEQ	#0,D6	
+	MOVE.L	(A0),D2	
+	MOVE.W	(A0),D3
+	rts
+		
 	.endif
 	
 * emulate JSR from trap. Tricky, specially with reentrancy constraint
@@ -437,6 +483,7 @@ make_superpowered:
 amiga_specific_patchlist:
 	PL_START
 	PL_PS	0x28C6,display_object_hook_028c6
+	PL_PS	0x6284,handle_any_scroll_06284
 	PL_END
 	.endif
 	
@@ -451,6 +498,7 @@ debug_patchlist:
 	.ifne	OPT_SKIP_RONNIE_THANKS
 	PL_B	0x1b3e8,0x60
 	.endif
+	
 	PL_END
 	.endif
 
@@ -463,7 +511,7 @@ debug_patchlist:
 	jbsr	osd_write_long
 	addq	#4,a6
 	.endm
-	
+
 videoram_write_062ae:
 	STORE_REGS
 	exg		a6,a1
