@@ -3771,19 +3771,24 @@ store_bob_previous_position:
 	* now compute curX-prevX
 	move.w	d0,d2
 	sub.w	(-8,a6),d2
-	jmi		1f		| negative: can happen too, handle it
-	* now compute prev width
+	lsr.w	#3,d2		| distance as bytes
+	cmp.w	#2,d2
+	jeq		10f
+	cmp.w	#-2,d2
+	jeq		0f
+	* neither 0x2 or -0x2: not supported
+	jra		0f
+10:
+	TMPWRITE
+	* prev blit on the left
+	* now compute prev width, see if can be merged
 	move.w	(-4,a6),d6	| note down previous width
-	lsl.w	#3,d6		| as pixels
+	subq.w	#2,d6		| minus 2
 	cmp.w	d2,d6
 	jcs		0f			| there's a gap: bail out
 	* we can group both erase blits by adding the current
 	* blit width to the previous blit width and sub 2 if
 	* strictly inferior
-	jeq		2f
-	sub.w	#16,d6				| merge blit padding	
-2:
-	lsr.w	#3,d6		| as bytes again
 	add.w	d5,d6
 	move.w	d6,(-4,a6)			| update previous width
 	rts
