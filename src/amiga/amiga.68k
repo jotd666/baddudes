@@ -1093,47 +1093,6 @@ osd_object_displayed:
 	addq.w	#8,nb_displayed_objects_times_8
 	rts
 	
-osd_object_displayed_:
-	movem.l	D0-d1/D3/D6/A1-A3,-(a7)
-	* we need to fetch the width & height of the composite object
-	* given its code
-	.ifndef	RELEASE
-	cmp.w	#NB_MACRO_OBJECTS*4,d2
-	jcs		0f
-	BREAKPOINT	"macro object index out of range!"
-0:
-	.endif
-	* mask out attributes, correct X/Y
-	jbsr	fix_sprite_coords
-	cmp.w	#Y_MAX,d1
-	jcc		29f		| skip if too high before adding scroll value (some coords look bogus)
-	add.w	y_extra_offset,d1
-	add.w	y_background_scroll_value(pc),d1
-	add.w	x_background_scroll_value(pc),d0
-	
-	lea		object_dimension_table(pc),a1
-	add.w	d2,a1
-	* store X,Y,width,height in the erase table
-	move.l	bob_previous_drawed_sprites,a2
-
-	move.w	nb_displayed_objects_times_8,d3
-	add.w	d3,a2
-
-	move.w	d0,(a2)+     | X
-	move.w	d1,(a2)+     | Y
-	move.w	(a1)+,(a2)+  | width
-	move.w	(a1),(a2)+   | height
-	clr.l	(a2)+
-	* one more object displayed
-	addq.w	#8,nb_displayed_objects_times_8
-29:
-	movem.l	(a7)+,D0-d1/D3/D6/A1-A3
-	rts
-	
-fuckoff:
-	.skip	200
-	.include	"object_dimension_table.68k"
-	
 update_front_objects:
 	rts
 	
@@ -3678,10 +3637,9 @@ draw_bob_loop:
 	* we need to subtract 16, and 48 for a 64-high tile
 	* we cannot rely on sprite height as it could have been cropped to optimize
 	* 
-	* correct X/Y: 240-x
+	* mask, correct X/Y: 240-x & other stuff related to sprite size
 
 	jbsr	fix_sprite_coords
-
 
 	* sprite X coord (without scrolling value added) should be in the screen
 	* or just slightly off screen (avoids redrawing BOBs the visible screen
@@ -3763,12 +3721,8 @@ draw_bob_loop:
 	jcc		29f		| skip if too high before adding scroll value (some coords look bogus)
 	add.w	y_extra_offset,d1
 	add.w	y_background_scroll_value(pc),d1
-	TMPWRITE
-	* note down that this bob will have to be erased
-	move.w	d0,(a6)+			| store current sprite attributes to previous ones
-	move.w	d1,(a6)+			| store current sprite attributes to previous ones
-	move.w	d5,(a6)+			| store width
-	move.w	d4,(a6)+			| store height
+	
+	jbsr	store_bob_previous_position
 	
 	move.w	d5,d2			| width in bytes, 4 for 16 pixels+shift		
 	move.l	d3,d5			| Y-offset in bytes (often 0 but supports Y clip!)
@@ -3786,7 +3740,58 @@ draw_bob_loop:
 	
 	rts
 	
-
+store_bob_previous_position:
+	move.l	bob_previous_drawed_sprites,d6
+	cmp.l	d6,a6
+	jeq	0f		| first store, just store
+	* now couldn't we group the current & previous erase?
+	*
+	* that is a hell of an optimization as:
+	* - it groups several blits into a bigger one
+	* - the total size of the data is smaller
+	* If we group 2 32-bit blits close by 16 bits
+	* then we save 33% of the bandwidth
+	* If we group 3 32-bit blits, we save 50%!
+	*
+	* I used to do that grouping in a pass before erasing
+	* but that's probably simpler/faster to do that here (plus the blitter
+	* is surely at work from a previous blit and we'd have to wait
+	* for it anyway!). The game makes it simple for us by declaring the sprites
+	* from left to right
+	*
+	* we can destroy D2,D3,D6 registers to do so
+	
+	* let's compare heights first
+	cmp.w	(-2,a6),d4
+	jne		0f					| not same heights: skip
+	* same heights: check if same Y
+	cmp.w	(-6,a6),d1
+	jne		0f
+	* same Y & height: we have a good candidate
+	* now compute curX-prevX
+	move.w	d0,d2
+	sub.w	(-8,a6),d2
+	jmi		0f		| negative: irrelevant: bail out
+	* now compute prev width
+	move.w	(-4,a6),d6	| note down previous width
+	lsl.w	#3,d6		| as pixels
+	cmp.w	d2,d6
+	jcs		0f			| there's a gap: bail out
+	* we can group both erase blits by adding the current
+	* blit width to the previous blit width and sub 2
+	lsr.w	#3,d6		| as bytes again
+	add.w	d5,d6
+	subq	#2,d6				| merge blit padding
+	move.w	d6,(-4,a6)			| update previous width
+	rts
+0:
+	* note down that this bob will have to be erased
+	move.w	d0,(a6)+			| store current sprite attributes to previous ones
+	move.w	d1,(a6)+			| store current sprite attributes to previous ones
+	move.w	d5,(a6)+			| store width
+	move.w	d4,(a6)+			| store height
+	rts
+	
 fix_sprite_coords:
 	move.w	d1,d6		| Y coord + attributes
 	move.w	d6,d2		| copy full attributes in D2
