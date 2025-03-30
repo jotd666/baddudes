@@ -3771,7 +3771,24 @@ store_bob_previous_position:
 	* now compute curX-prevX
 	move.w	d0,d2
 	sub.w	(-8,a6),d2
-	jmi		0f		| negative: irrelevant: bail out
+	jmi		1f		| negative: can happen too, handle it
+	* now compute prev width
+	move.w	(-4,a6),d6	| note down previous width
+	lsl.w	#3,d6		| as pixels
+	cmp.w	d2,d6
+	jcs		0f			| there's a gap: bail out
+	* we can group both erase blits by adding the current
+	* blit width to the previous blit width and sub 2 if
+	* strictly inferior
+	jeq		2f
+	sub.w	#16,d6				| merge blit padding	
+2:
+	lsr.w	#3,d6		| as bytes again
+	add.w	d5,d6
+	move.w	d6,(-4,a6)			| update previous width
+	rts
+1:
+	neg.w	d2			| make width positive again
 	* now compute prev width
 	move.w	(-4,a6),d6	| note down previous width
 	lsl.w	#3,d6		| as pixels
@@ -3779,11 +3796,14 @@ store_bob_previous_position:
 	jcs		0f			| there's a gap: bail out
 	* we can group both erase blits by adding the current
 	* blit width to the previous blit width and sub 2
-	lsr.w	#3,d6		| as bytes again
-	add.w	d5,d6
-	subq	#2,d6				| merge blit padding
-	move.w	d6,(-4,a6)			| update previous width
-	rts
+	jeq		3f
+	sub.w	#16,d6				| merge blit padding
+3:
+	* substitute new X into old X
+	move.w	d0,(-8,a6)
+	* and proceed like the other case
+	jra		2b
+
 0:
 	* note down that this bob will have to be erased
 	move.w	d0,(a6)+			| store current sprite attributes to previous ones
