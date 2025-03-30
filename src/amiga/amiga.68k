@@ -1454,6 +1454,7 @@ display_title_dudes:
 	cmp.w	current_dudes_pic,d0
 	jeq		0f
 	movem.l	d0-a6,-(a7)
+	lea		_custom,a5
 	move.w	d0,current_dudes_pic
 	cmp.w	#1,d0
 	jeq		1101f
@@ -1480,7 +1481,6 @@ display_title_dudes:
 	addq.w	#NB_PLAYFIELD_PLANES,d3
 	moveq	#0,d0
 	moveq	#0,d1
-	lea		_custom,a5
 	jbsr	clear_fg_planes_any_blitter_internal
 	move.w	(a7)+,d0
 1101:
@@ -8117,10 +8117,12 @@ osd_lower_sprites:
 
 	DECL_COLOR_BANK	2
 	
-	* restore from yellow color for time seconds
+	* restore from yellow color for time seconds for middle status text
 	DECL_COLOR_BANK	2
 	.word	color+2*3+32,0xEEE
 	.word	color+2*2+32,0xB29
+	.word	color+2*3+8,0xEEE
+
 	
 	.word	color+2*2,0xEBB		| flesh pink
 	.word	color+2*3,0xE9A		| flesh pink #2

@@ -1,4 +1,4 @@
-- level 3 demo: game uses 2 players, patch to use only 1 player
+- after demo has player, nothing works
 - end sequence: double buffering screen trash???
 - group erase: not good enough: make a table to macro objects
   and their size. Only issue: re-figure out the X/Y display coords. Major advantage:

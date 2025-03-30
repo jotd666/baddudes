@@ -510,6 +510,10 @@ amiga_specific_patchlist:
 	PL_START
 	PL_PS	0x28C6,display_object_hook_028c6
 	PL_PS	0x6284,handle_any_scroll_06284
+	.ifne	OPT_NO_SECOND_PLAYER
+	PL_B	0x1a69,1		| 1 player in demo only
+	PL_R	0x9c9e			| avoid "push button"/"insert_coin" in 2P
+	.endif
 	PL_END
 	.endif
 	
