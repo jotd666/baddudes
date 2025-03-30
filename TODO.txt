@@ -12,7 +12,8 @@
   also?? tests test_input_bit_d1 (0x0174c,0x0175c,0x07e66), then goes back to menu but intro screen trashed
 
 
-
+- when elevator is rising, maybe scroll up command is not necessary all the time
+  (would save some slowdowns)
 - easy: identify devil pole spin sound id
 - level 1 when ninjas arrive on truck, truck & ninjas on it drift
 - still true? helicopter at the end: president sprites & door horribly shifted (cycle exact)  

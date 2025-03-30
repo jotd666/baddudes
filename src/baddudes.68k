@@ -105,19 +105,27 @@ baddudes_reset:
 	
 	
 	.ifdef	__amiga__
-display_object_hook_028c6:
+display_object_hook_02924:
 	* original code
-	MOVEQ	#0,D4
-	MOVE.W	6(A0),D4	| composite sprite type * 4
-	* now decode A0 sprite structure to tell the amiga part that
+	ADD.W	D5,D4			| 02924: d845
+	MOVE.W	D4,(A1)+		| 02926: 32c4     sprite X
+	MOVE.W	(A3)+,(A1)+		| 02928: 32db     ??
+	
+	movem.w	d0-d2,-(a7)
+	move.w	d4,d0			| sprite X & attributes
+	move.w	(-8,a1),d1		| sprite Y & attributes
+	move.w	(6,a0),d2		| sprite code times 4
+	
+	* now tell the amiga part that
 	* the displayed sprite is at coords X,Y with width and height,
 	* so erasing the sprite is way easier and also much faster
 	* (well not for all objects, as small objects like ninja stars and
 	* nails or also flat horizontal objects don't need 16x16 erase)
 	* the ideal code would have 2 modes: if small object (height < 16)
 	* then use normal erase, else use block erase
-	jbra	osd_object_displayed
-	
+	jbsr	osd_object_displayed
+	movem.w	(a7)+,d0-d2
+	rts
 
 handle_any_scroll_06284:
 	* this is still a mystery, but on amiga, if
@@ -508,7 +516,7 @@ make_superpowered:
 	.ifdef	__amiga__
 amiga_specific_patchlist:
 	PL_START
-	PL_PS	0x28C6,display_object_hook_028c6
+	PL_PS	0x2924,display_object_hook_02924
 	PL_PS	0x6284,handle_any_scroll_06284
 	.ifne	OPT_NO_SECOND_PLAYER
 	PL_B	0x1a69,1		| 1 player in demo only

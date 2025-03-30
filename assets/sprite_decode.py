@@ -90,7 +90,7 @@ with open(r"K:\jff\AmigaHD\PROJETS\GameRelocs\BadDudes\bad_dudes_ref","rb") as f
 table_address = 0x5219c
 table_address_end = 0x52f54
 
-assembled_sprites = {struct.unpack_from(">I",prog,offset)[0] for offset in range(table_address,table_address_end,4)}
+assembled_sprites = [struct.unpack_from(">I",prog,offset)[0] for offset in range(table_address,table_address_end,4)]
 
 sprite_info = {
  0x52f54: {'name':'player'},
@@ -736,22 +736,32 @@ def decode_sprite(offset):
             sprite_image.paste(img,(x,y))
 
 
+    # to get the full width/height of the image, we use the dimensions of autocrop
+    # it's hacky, but works because of "transparency" blocks that align the image
+    _,sprite_image = bitplanelib.autocrop_x(bitplanelib.autocrop_y(sprite_image)[1])
+    dims = sprite_image.size
+
+    subdir = "unknown" if 'unknown' in sprite_name else "known"
     if dump_images:
         sprite_image = ImageOps.scale(sprite_image,5,resample=Image.Resampling.NEAREST)
-
-        subdir = "unknown" if 'unknown' in sprite_name else "known"
-        _,sprite_image = bitplanelib.autocrop_x(bitplanelib.autocrop_y(sprite_image)[1])
         sprite_image.save(os.path.join(dump_dir,subdir,f"{sprite_name}_{offset:x}.png"))
 
-    return sprite_codes,sprite_used_by_entry
+    return sprite_codes,sprite_used_by_entry,dims
 
 if True:
     sprite_name_code = {}
     sprite_used_by_entry = {}
-    for offset in assembled_sprites:
-        sprite_codes,sue = decode_sprite(offset)
+    macro_sprite_code_dimensions = []
+    for offset in assembled_sprites:  # there are duplicates in that list but we need the order
+        sprite_codes,sue,dims = decode_sprite(offset)
+        macro_sprite_code_dimensions.append(list(dims))
         sprite_name_code.update(sprite_codes)
         sprite_used_by_entry.update(sue)
+
+    # we generate that table once and for all, it is then git-tracked in the "amiga" subdir
+    # so we don't need to run this script when building the project
+    with open(os.path.join(this_dir,"amiga","macro_sprite_sizes.json"),"w") as f:
+        json.dump(macro_sprite_code_dimensions,f,indent=2)
 
     with open(os.path.join(this_dir,"sprite_code_names.json"),"w") as f:
         json.dump({"codes_names":sprite_name_code,"sprite_used_by_entry":sprite_used_by_entry},f,indent=2)

@@ -773,6 +773,12 @@ game_logic:
 	tst.b	pause_flag
 	jne	10f
 	
+	.ifndef 	RELEASE 
+	move.w		nb_displayed_objects_times_8,d1
+	lsr.w	#3,d1
+	move.w	d1,nb_logged_displayed_objects
+	.endif
+	
 	* set base for RAM
 	GET_RAM_START_IN_A6
 	btst	#2,d0
@@ -793,9 +799,7 @@ game_logic:
 
 	* declare that we're in interrupt mode so osd_disable_interrupts/osd_enable_interrupts
 	* also set SR accordingly
-	st.b	interrupt_mode
-	jbsr		baddudes_irq
-	clr.b	interrupt_mode	
+	jbsr	game_tick
 	clr.b	d0
 1:
 	move.b	d0,mid_screen_interrupt_count
@@ -810,12 +814,17 @@ game_logic:
 	* also set SR accordingly
 
 
-
+	jbsr	game_tick
+10:
+	moveq	#0,d0
+	rts
+	
+game_tick:
+	* reset the number of displayed objects
+	clr.w	nb_displayed_objects_times_8
 	st.b	interrupt_mode
 	jbsr		baddudes_irq
 	clr.b	interrupt_mode
-10:
-	moveq	#0,d0
 	rts
 	
 _vblank:
@@ -1006,7 +1015,7 @@ fn_debug_nb_objects_frameskip:
 	
 	lea		debug_nb_objects_message(pc),a0
 	moveq	#0,d0
-	move.w	nb_displayed_objects,d0
+	move.w	nb_logged_displayed_objects,d0
 	jeq		0f		| don't display if 0
 	jbsr	encode_debug_message
 	jbsr	osd_write_right_debug_message
@@ -1029,9 +1038,6 @@ debug_display_table:
 	.endif
 
 3:
- 	.ifndef	RELEASE
-	clr.w	nb_displayed_objects
-	.endif
     movem.l (a7)+,d0-d7/a0-a6
     rte
 
@@ -1078,15 +1084,55 @@ hex_table:
 	.byte	0x45
 	.byte	0x46
 	.endif
-	
-* < A0: object structure
-*   +6.W: sprite code
 
+* < D0: X coordinate	
+* < D1: Y coordinate
+* < D2: sprite code times 4
 osd_object_displayed:
-	.ifndef	RELEASE
-	addq.w	#1,nb_displayed_objects
-	.endif
+	* one more object displayed
+	addq.w	#8,nb_displayed_objects_times_8
 	rts
+	
+osd_object_displayed_:
+	movem.l	D0-d1/D3/D6/A1-A3,-(a7)
+	* we need to fetch the width & height of the composite object
+	* given its code
+	.ifndef	RELEASE
+	cmp.w	#NB_MACRO_OBJECTS*4,d2
+	jcs		0f
+	BREAKPOINT	"macro object index out of range!"
+0:
+	.endif
+	* mask out attributes, correct X/Y
+	jbsr	fix_sprite_coords
+	cmp.w	#Y_MAX,d1
+	jcc		29f		| skip if too high before adding scroll value (some coords look bogus)
+	add.w	y_extra_offset,d1
+	add.w	y_background_scroll_value(pc),d1
+	add.w	x_background_scroll_value(pc),d0
+	
+	lea		object_dimension_table(pc),a1
+	add.w	d2,a1
+	* store X,Y,width,height in the erase table
+	move.l	bob_previous_drawed_sprites,a2
+
+	move.w	nb_displayed_objects_times_8,d3
+	add.w	d3,a2
+
+	move.w	d0,(a2)+     | X
+	move.w	d1,(a2)+     | Y
+	move.w	(a1)+,(a2)+  | width
+	move.w	(a1),(a2)+   | height
+	clr.l	(a2)+
+	* one more object displayed
+	addq.w	#8,nb_displayed_objects_times_8
+29:
+	movem.l	(a7)+,D0-d1/D3/D6/A1-A3
+	rts
+	
+fuckoff:
+	.skip	200
+	.include	"object_dimension_table.68k"
 	
 update_front_objects:
 	rts
@@ -3341,61 +3387,6 @@ really_update_sprites:
 10:
 	.endif
 	
-	.ifndef		RELEASE
-	tst.b	group_erase
-	jeq		12f
-	.endif
-	
-	move.l	bob_previous_drawed_sprites,a4
-	move.w	(a4),d2		| init prev X with first val
-	add.w	#16,d2			| previous += 16
-	move.w	(2,a4),d3	| init prev Y with first val
-	* erase optimization pre-processing
-	* scan previous positions to group the consecutive ones
-	*
-	* actually, lots of BOBs are 16-wide stripes grouped
-	* 2 by 2 to create a big 32 bit wide character. Grouping
-	* the erases saves a lot of bandwidth by not erasing the same
-	* location twice
-	* When erasing 2 bobs close by 16 pixels and on same Y
-	* without optimization, it costs 64 bits clear per row
-	* with optimization, it only costs 48 bits clear per row
-	* in twice as less blits! (so less blitwaits, less computation)
-	
-	move.w	#NB_TARGET_SPRITES-2,d7
-0:
-	addq	#8,a4			| next entry
-	move.w	(2,a4),d1		| Y
-	beq.b	12f				| Y=0: inactive and end of list (let's hope it works!)
-	move.w	(a4),d0
-	cmp.w	d1,d3
-	jne		1f				| different Y: out
-	cmp.w	d2,d0
-	jne		1f				| prev X + 16 != X: out
-	* 2 consecutive 16 bit erase (composite sprite):
-	* group them to save a lot of blitting
-	move.w	(4,a4),d2
-	subq	#2,d2			| no need to add, there's already a 16 bit margin
-	add.w	d2,(-4,a4)		| merge widths instead (less bandwidth)
-	* issue: propagate higher height value (which can waste bandwidth
-	* but it's still better to do twice as less bigger clear blits
-	move.w	(6,a4),d2
-	cmp.w	(-2,a4),d2
-	jcs		10f
-	* previous blit erase is smaller: merge with bigger
-	move.w	d2,(-2,a4)
-10:
-	clr.w	(4,a4)			| this width (means: cancel that erase slot)
-	* do not store previous, as we don't support multi-grouping (yet)
-	dbf		d7,0b
-1:
-	move.w	d1,d3			| y => prev y
-	move.w	d0,d2			| store previous
-	add.w	#16,d2			| previous += 16
-	dbf		d7,0b
-12:
-
-
 	
 	lea		_custom,a5
 	* clear previous positions
@@ -3680,10 +3671,6 @@ draw_bob_loop:
 	tst.b	flashing_flip_flop
 	jne		30f			| skip to create flash effect
 777:
-	move.w	d1,d6		| Y coord + attributes
-	move.w	d6,d2		| copy full attributes in D2
-	rol.w	#5,d6		| data0 height properly times 16
-	and.w	#0x3,d6
 
 	* this game sprite system uses 16,32 and 64 (1,2,4x) heights
 	* there's also a 8x possible but not there. when displaying
@@ -3693,30 +3680,8 @@ draw_bob_loop:
 	* 
 	* correct X/Y: 240-x
 
-	FIX_COORD	d0
-	FIX_COORD	d1
+	jbsr	fix_sprite_coords
 
-	tst		d0
-	jmi		0f
-	* another kludge: if X > 0x200-64 it should be negative
-	* (allows to display cars fully on the left at level 2)
-	cmp.w	#0x200-CLIPPED_WIDTH_MARGIN,d0
-	jcs		0f
-	sub.w	#0x200,d0
-0:
-	
-	
-	tst.b	d6			| single sprite: skip Y correction
-	jeq		0f
-	lea		y_correction_table(pc),a3
-	sub.w	(a3,d6.w*2),d1
-0:
-	.ifne	SPRITE_Y_CORRECTION
-	add.w	#SPRITE_Y_CORRECTION,d1
-	.endif
-	.ifne	SPRITE_X_CORRECTION
-	add.w	#SPRITE_X_CORRECTION,d0
-	.endif
 
 	* sprite X coord (without scrolling value added) should be in the screen
 	* or just slightly off screen (avoids redrawing BOBs the visible screen
@@ -3798,6 +3763,7 @@ draw_bob_loop:
 	jcc		29f		| skip if too high before adding scroll value (some coords look bogus)
 	add.w	y_extra_offset,d1
 	add.w	y_background_scroll_value(pc),d1
+	TMPWRITE
 	* note down that this bob will have to be erased
 	move.w	d0,(a6)+			| store current sprite attributes to previous ones
 	move.w	d1,(a6)+			| store current sprite attributes to previous ones
@@ -3819,7 +3785,39 @@ draw_bob_loop:
 	clr.l	(a6)
 	
 	rts
+	
 
+fix_sprite_coords:
+	move.w	d1,d6		| Y coord + attributes
+	move.w	d6,d2		| copy full attributes in D2
+	rol.w	#5,d6		| data0 height properly times 16
+	and.w	#0x3,d6
+
+	FIX_COORD	d0
+	FIX_COORD	d1
+
+	tst		d0
+	jmi		0f
+	* another kludge: if X > 0x200-64 it should be negative
+	* (allows to display cars fully on the left at level 2)
+	cmp.w	#0x200-CLIPPED_WIDTH_MARGIN,d0
+	jcs		0f
+	sub.w	#0x200,d0
+0:
+	tst.b	d6			| single sprite: skip Y correction
+	jeq		0f
+	lea		y_correction_table(pc),a3
+	sub.w	(a3,d6.w*2),d1
+0:
+	.ifne	SPRITE_Y_CORRECTION
+	add.w	#SPRITE_Y_CORRECTION,d1
+	.endif
+	.ifne	SPRITE_X_CORRECTION
+	add.w	#SPRITE_X_CORRECTION,d0
+	.endif
+
+	rts
+	
 * < A0: plane list
 * < D4: height
 * < D5: width (bytes)
@@ -4329,6 +4327,7 @@ restore_background:
 	* adjust offset X: X//8 even rounded
 	tst		d0
 	jpl		0f
+	* we should reduce the size in that case
 	moveq	#0,d0		| clip to 0 if X < 0
 0:
 	tst		d1
@@ -7479,8 +7478,10 @@ multi_dual_sprite_tiles_table:
 
 	.include	"sound_entries.68k"
 
-update_tile_function:
-	.long	0
+
+nb_displayed_objects_times_8:
+	.word	0
+
 _keyexit:
 	.byte	0x45	| ESC by default unless whdload overwrites it
 
@@ -7502,7 +7503,7 @@ ticks_count:
 group_erase:
 	.byte	0
 	.align	2
-nb_displayed_objects:
+nb_logged_displayed_objects:
 	.word	0
 debug_truck_move:
 	.word	0
