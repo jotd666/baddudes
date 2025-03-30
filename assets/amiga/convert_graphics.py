@@ -495,9 +495,11 @@ ending_tile_24a000_sheet_dict = {i:sheets_path / "tiles_24a000" / "ending" / f"p
 ending_tile_24d000_sheet_dict = {i:sheets_path / "tiles_24d000" / "ending" / f"pal_{i:02x}.png" for i in range(0,6)}
 ending_sprite_sheet_dict = {i:sheets_path / "ending_sprites" / f"pal_{i:02x}.png" for i in range(0,3)}
 
-def load_contexted_tileset(tile_sheet_dict,context,nb_colors,is_bob,postload_callback=None,forced_palette=set()):
+def load_contexted_tileset(tile_sheet_dict,context,nb_colors,is_bob,postload_callback=None,forced_palette=set(),reused_colors=None):
+
     tile_palette = set()
     tile_24a000_set_list = []
+
 
     context_dir = pathlib.Path("sprites" if is_bob else "tiles") / context
     used_cluts_dict = used_sprite_cluts if is_bob else used_tile_cluts
@@ -764,8 +766,12 @@ def process_tile_context(context_name,tile_sheet_dict,nb_colors,is_bob=False,shi
                             first_colors=None,postload_callback=None,forced_palette=set(),reuse_colors_from=None):
     # reuse_colors_from not leveraged ATM, should be done in load_contexted_tileset
 
+    reused_colors = []
+    if reuse_colors_from:
+        reused_colors = palette_dict[reuse_colors_from]["palette"]
+
     tile_24a000_set_list,bg_palette,nb_used_colors = load_contexted_tileset(tile_sheet_dict,context_name,nb_colors,is_bob,
-    postload_callback=postload_callback,forced_palette=forced_palette)
+    postload_callback=postload_callback,forced_palette=forced_palette,reused_colors=reused_colors)
     tile_24a000_cache = {}
 
     if shift_palette_count:
@@ -930,11 +936,11 @@ generate_for_levels = [False]*9
 #generate_for_levels[0] = True
 #generate_for_levels[1] = True
 #generate_for_levels[2] = True
-generate_for_levels[3] = True
+#generate_for_levels[3] = True
 #generate_for_levels[4] = True
 ##generate_for_levels[5] = True
 #generate_for_levels[6] = True
-#generate_for_levels[7] = True
+generate_for_levels[7] = True
 #generate_for_levels[8] = True
 
 

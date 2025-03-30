@@ -927,6 +927,7 @@ _vblank:
 	* don't blit, but update hw sprites as it doesn't cost a lot
 	cmp.w	#CTX_GAME,global_context
 	jcs		23f
+
 	* double buffering only in-game
 	jbsr		switch_screen_buffers
 23:
@@ -1222,6 +1223,7 @@ level_7_erase_helicopter:
 	moveq	#0,d1
 	move.w	big_machine_width,d2
 	move.w	big_machine_height,d4
+	add.w	#1,d4			| so erase also works when going up!
 	lea		_custom,a5
 	jbsr	clear_fg_planes_any_blitter_internal
 	* now restore bottom part, but no need to restore bottom left
@@ -5828,7 +5830,7 @@ osd_set_context:
 	dbf		D0,0b
 	
 	* clear screens
-	move.l	fg_displayed_screen_ptr,a1
+	move.l	fg_screen_data_1,a1
 	move.w	#SCREEN_SIZE/16-1,d0
 0:
 	clr.l	(a1)+
@@ -5836,7 +5838,7 @@ osd_set_context:
 	clr.l	(a1)+
 	clr.l	(a1)+
 	dbf	d0,0b
-	move.l	fg_drawed_screen_ptr,a1
+	move.l	fg_screen_data_2,a1
 	move.w	#SCREEN_SIZE/16-1,d0
 0:
 	clr.l	(a1)+
@@ -5851,7 +5853,8 @@ osd_set_context:
 	jbsr	remove_optional_sounds
 	* double buffering disabled
 	move.l	fg_drawed_screen_ptr,fg_displayed_screen_ptr
-	
+	jbsr		set_playfield_bitplanes
+
 	move	(a7)+,d0		| restore state
 	
 	* by default, no double buffering on non-game parts
