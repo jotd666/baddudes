@@ -1,21 +1,19 @@
-- after demo has player, nothing works
 - end sequence: double buffering screen trash???
 - group erase: not good enough: make a table to macro objects
   and their size. Only issue: re-figure out the X/Y display coords. Major advantage:
   group erase works horizontally/vertically without any other computation:
   test on level 1 first with just the player at start...
-- crash on game over (bad jump table?) not always! (from level 5 => OK)
-- game over: credits screen no context load probably
-- on game over, tests test_input_bit_d1 (0x0174c,0x0175c,0x07e66), then goes back to menu but intro screen trashed
-- easy: identify devil pole spin sound id
-- fix & optimize erase helicopter (2 parts)
 - fix president/door colors / boss 7: bad color change
 - boss 5: locomotive wheels erase wrong
 - truck wheels level 2 are transparent again!  mutant karnov black color issue: conflict between truck tires and mutant karnov on palette 9
   BUT fixing karnov steals too many colors and now character trousers are not all white...
+- game over: check if music plays
+- game over: credits screen corruption, high score corruption at the end of demo too
+  also?? tests test_input_bit_d1 (0x0174c,0x0175c,0x07e66), then goes back to menu but intro screen trashed
 
 
 
+- easy: identify devil pole spin sound id
 - level 1 when ninjas arrive on truck, truck & ninjas on it drift
 - still true? helicopter at the end: president sprites & door horribly shifted (cycle exact)  
 - level 6: stalactite wrong colors (used to be OK)
@@ -42,14 +40,14 @@
 
 low priority:
 
+- flashing "insert coin": missing first "I" which corrupts bottom left OSDs
 - log & rip missing sounds: breakpoint on sound not found so able to go to mame and rip it
 - mutant karnov black color issue: conflict between truck tires and mutant karnov on palette 9
   BUT fixing karnov steals too many colors and now character trousers are not all white...
 - level 7: missing heli sound but would steal 1 music channel...
-- invincibility: still hit when falling on road (level 2): 
+- invincibility: still hit when falling on road; pits (level 2): 
   game must not change p1_state_flags_00ffa386 must remain to 0x10
 - compare US & japan ROMS see what are the differences: there are A LOT!
-- middle lower OSD missing timeout char on "CONTINUE"
 - if TOTAL_CHIP_MEMORY_SIZE = 1250000, train level loads but background is trashed
   and memory manager doesn't detect any issue...
 - still not restored black color ex: tile 4ae/02 (sword level 5)

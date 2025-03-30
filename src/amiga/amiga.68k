@@ -1200,17 +1200,18 @@ specific_big_machine_restore:
 	.long	nope
 		
 level_7_erase_helicopter:
-	* most brutal erase!
+	* 2-parts less brutal buffer restore
 	move.w	big_machine_width,d2
-	move.w	big_machine_height,d4
-	lea		prev_machine_params,a1
-	move.w	(a1)+,d0
+	*move.w	big_machine_height,d4
+	move.w	#64,d4
+	move.w	prev_machine_params,d0
 	move.w	machine_y_pos,d1
 	move.l	fg_drawed_screen_ptr,a1
-	move.l		background_restore_buffer,a0
+	move.l	background_restore_buffer,a0
 	jbsr	restore_background
 	* now restore extra planes too
-	moveq	#1,d3
+	move.w	#NB_PLAYFIELD_PLANES,d3
+	sub.w	nb_tile_planes_24da,d3
 	lea		(SCREEN_PLANE_SIZE,a1),a1
 	moveq	#0,d0
 	moveq	#0,d1
@@ -1218,6 +1219,19 @@ level_7_erase_helicopter:
 	move.w	big_machine_height,d4
 	lea		_custom,a5
 	jbsr	clear_fg_planes_any_blitter_internal
+	* now restore bottom part, but no need to restore bottom left
+	* as there are no graphics there
+	move.w	big_machine_width,d2
+	sub.w	#16,d2
+	move.w	big_machine_height,d4
+	sub.w	#64,d4
+	move.w	prev_machine_params,d0
+	add.w	#128,d0
+	move.w	machine_y_pos,d1
+	add.w	#64,d1
+	move.l	fg_drawed_screen_ptr,a1
+	move.l	background_restore_buffer,a0
+	jbsr	restore_background	
 	rts
 	
 	
