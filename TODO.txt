@@ -1,6 +1,5 @@
-- level 5 knife while kneeling: missing frame
-- quantize with background tile colors, then ignore if they have changed but at least no dupes
-=> hopefully will fix pink trousers and will improve other levels: in load_contexted_tileset line 500
+- level 5 bad ground scroll & upper tiles trashed!!!
+- level 3 bad borderblank in sewer water and right tiles scroll visible (in the end??)
 - train: boss wagon roof shifted
 - end sequence: double buffering screen trash???
 - heli: debug: add up & down
@@ -8,7 +7,6 @@
 - fix president/door colors / boss 7: bad color change
 - boss 5: locomotive wheels erase wrong
 - truck wheels level 2 are transparent again!  mutant karnov black color issue: conflict between truck tires and mutant karnov on palette 9
-  BUT fixing karnov steals too many colors and now character trousers are not all white...
 - game over: check if music plays
 - game over: credits screen corruption, high score corruption at the end of demo too
   also?? tests test_input_bit_d1 (0x0174c,0x0175c,0x07e66), then goes back to menu but intro screen trashed
@@ -20,17 +18,15 @@
   (would save some slowdowns)
 - easy: identify devil pole spin sound id
 - level 1 when ninjas arrive on truck, truck & ninjas on it slightly drift
-- still true? helicopter at the end: president sprites & door horribly shifted (cycle exact)  
+- helicopter at the end: president sprites & door shifted (cycle exact)  
 - level 6: stalactite wrong colors (used to be OK)
 - level 2 front object (lamp) not displaying (used to work with level 1 objects)
 - level 5: red girls missing frames
-- level 4: punching enemies while kneeling: missing frame? happens on other levels too
 - level 1 repair front objects (status bar showing but destroyed, debug this)
   => control word for multiplexed after lamp is not working but other sprites are also destroyed!
 - level 2: climbers on the right "blink" (frame/grouping? wrong clipping?)
 - end sequence should use scrolling sprites for credits: allocate huge 2x high sprite buffers
 - save/load highscores
-- leave demo running: level 3 but with status bar trashed (because of 2P life), 2P mode with player 2 invisible
 - knife sound has blow+man scream (hack not working there... maybe we could see if player
   has weapon... not working in 2P mode though)
  

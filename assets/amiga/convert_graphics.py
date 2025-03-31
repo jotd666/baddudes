@@ -779,13 +779,15 @@ def dump_tiles(file_radix,palette,tile_table,tile_plane_cache,add_dimension_info
 
 def process_tile_context(context_name,tile_sheet_dict,nb_colors,is_bob=False,shift_palette_count=0,first_pass=False,
                             first_colors=None,postload_callback=None,forced_palette=set(),reuse_colors_from=None):
-    # reuse_colors_from not leveraged ATM, should be done in load_contexted_tileset
 
-
+    """ process tile or sprite layer with a lot of palette hacks
+    this is an absolute nightmare to maintain with all the palette shifts & reuse cases
+    """
 
     reused_colors = []
     if reuse_colors_from:
-        reused_colors = palette_dict[reuse_colors_from]["palette"]
+        reused_colors = palette_dict[reuse_colors_from]["palette"][:palette_dict[reuse_colors_from]["nb_used_colors"]]
+
         if first_colors:
             raise Exception("reusing colors naturally shifts palette! can't use nonzero shift_palette_count or first_colors")
         if shift_palette_count != len(reused_colors):
@@ -831,6 +833,7 @@ def process_tile_context(context_name,tile_sheet_dict,nb_colors,is_bob=False,shi
 ##            print(f"{context_name}: could reuse {nb_saved_colors} colors from {reuse_colors_from}")
 ##            bg_palette = new_bg_palette
 
+    bg_palette_no_padding = bg_palette.copy()
     if len(bg_palette)<nb_colors:
         # pad (is it usedful?)
         bg_palette += [impossible_color]*(nb_colors-len(bg_palette))
@@ -962,7 +965,7 @@ generate_for_levels = [False]*9
 #generate_for_levels[2] = True
 #generate_for_levels[3] = True
 #generate_for_levels[4] = True
-##generate_for_levels[5] = True
+#generate_for_levels[5] = True
 #generate_for_levels[6] = True
 generate_for_levels[7] = True
 #generate_for_levels[8] = True
@@ -985,7 +988,7 @@ if generate_for_levels[1]:
     truck_used_colors = convert_truck_pics.doit_truck_1(palette_dict["level_1_24a000"]["palette"],truck_nb_planes)
     process_tile_context("level_1_24a000",level_1_tile_24a000_sheet_dict,32,first_pass=False,first_colors=truck_used_colors)
     convert_front_objects.doit_level_1(dump_it=dump_it)
-    process_tile_context("game_level_1",sprite_sheet_dict,32,is_bob=True,shift_palette_count=32,reuse_colors_from="game_level_1")
+    process_tile_context("game_level_1",sprite_sheet_dict,32,is_bob=True,shift_palette_count=32,reuse_colors_from="level_1_24a000")
 
 if generate_for_levels[2]:
     truck_nb_planes = 3
