@@ -23,8 +23,8 @@ def convert():
 
 
 
-    hq_sample_rate = 12000  #{"aga":18004,"ecs":12000,"ocs":11025}[mode]
-    vhq_sample_rate = 22050  # if we can afford it! (in optional packs!)
+    hq_sample_rate = 11000  #{"aga":18004,"ecs":12000,"ocs":11025}[mode]
+    vhq_sample_rate = 18000  # if we can afford it! (in optional packs!)
     lq_sample_rate = hq_sample_rate//2 # if aga_mode else 8000
 
 

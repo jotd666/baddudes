@@ -514,10 +514,11 @@ def load_contexted_tileset(tile_sheet_dict,context,nb_colors,is_bob,postload_cal
         else:
             tile_24a000_set_list.append(None)
 
-    if (0,0,0) not in tile_palette:
-        tile_palette.add((0,0,0))
+##    if (0,0,0) not in tile_palette:
+##        tile_palette.add((0,0,0))
 
     tile_palette.update(forced_palette)
+
 
     # convert to rgb4
     # subtract the colors contained in "reuse_colors"
@@ -525,7 +526,6 @@ def load_contexted_tileset(tile_sheet_dict,context,nb_colors,is_bob,postload_cal
     # demote to rgb4 to avoid quantization
     # tile_palette = {bitplanelib.rgb4_to_rgb_triplet(bitplanelib.to_rgb4_color(x)) for x in tile_palette}
     bg_palette = sorted(tile_palette)
-
 
     lfp = len(bg_palette)
     if lfp==1:
@@ -540,6 +540,21 @@ def load_contexted_tileset(tile_sheet_dict,context,nb_colors,is_bob,postload_cal
             quantized = quantize_palette(bg_palette,context,nb_colors_to_try)
 
             qc = set(quantized.values())
+
+            if reused_colors:
+                # we have some first colors that could be identical (after quantization)
+                #
+                # if we match the colors exactly (which happens a lot)
+                # then keep them and avoid duplicate colors in palette
+                #
+                # after that, len of quantized colors can be less than the target
+                # in which case we try to lose colors by quantizing with more colors
+                # until we finally overshoot
+                #
+                # this allows almost perfect colors in level 7. Without that, we have
+                # visible color quantize and it's ugly (goodbye pink trousers)
+                qc.difference_update(reused_colors)
+
             if len(qc) < nb_colors:
                 #print(f"retry: {len(qc)} < {nb_colors}, try with {nb_colors_to_try}")
                 nb_colors_to_try += 1
@@ -766,17 +781,26 @@ def process_tile_context(context_name,tile_sheet_dict,nb_colors,is_bob=False,shi
                             first_colors=None,postload_callback=None,forced_palette=set(),reuse_colors_from=None):
     # reuse_colors_from not leveraged ATM, should be done in load_contexted_tileset
 
+
+
     reused_colors = []
     if reuse_colors_from:
         reused_colors = palette_dict[reuse_colors_from]["palette"]
+        if first_colors:
+            raise Exception("reusing colors naturally shifts palette! can't use nonzero shift_palette_count or first_colors")
+        if shift_palette_count != len(reused_colors):
+            raise Exception(f"shift palette count {shift_palette_count} is different than reused_colors length {len(reused_colors)}")
 
     tile_24a000_set_list,bg_palette,nb_used_colors = load_contexted_tileset(tile_sheet_dict,context_name,nb_colors,is_bob,
     postload_callback=postload_callback,forced_palette=forced_palette,reused_colors=reused_colors)
     tile_24a000_cache = {}
 
     if shift_palette_count:
-        # temp: just fill with as many dummy colors as in reuse_colors
-        bg_palette = [impossible_color]*shift_palette_count + bg_palette
+        if reused_colors:
+            bg_palette = reused_colors + bg_palette
+        else:
+            # temp: just fill with as many dummy colors as in reuse_colors
+            bg_palette = [impossible_color]*shift_palette_count + bg_palette
 
     elif first_colors:
         # imposed first colors, that HAVE to be in the palette
