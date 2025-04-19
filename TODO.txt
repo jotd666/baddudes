@@ -1,16 +1,26 @@
+LEVEL 2:
+- truck wheels level 2 are transparent again!  mutant karnov black color issue: conflict between truck tires and mutant karnov on palette 9
+
+LEVEL 3:
+- level 3 bad borderblank in sewer water and right tiles scroll visible (in the end??)
+
+LEVEL 5:
 - level 5 upper sky tiles trashed!!! ok with previous data file (wierd memory issue??)
   block high tiles display to check if this is related?
-- level 3 bad borderblank in sewer water and right tiles scroll visible (in the end??)
+- boss 5: locomotive wheels erase wrong
 - train: boss wagon roof shifted
+
+LEVEL 7:
 - heli: debug: add up & down
 - heli: erase seems to destroy more stuff
 - fix president/door colors / boss 7: bad color change
-- boss 5: locomotive wheels erase wrong
-- truck wheels level 2 are transparent again!  mutant karnov black color issue: conflict between truck tires and mutant karnov on palette 9
-- game over: check if music plays
+
+OTHER:
 - game over: credits screen corruption, high score corruption at the end of demo too
   also?? tests test_input_bit_d1 (0x0174c,0x0175c,0x07e66), then goes back to menu but intro screen trashed
 
+LOWER PRIORITY:
+- game over: check if music plays
 - level 3: missing splash sounds
 - level 1: generate 16 shifted grid plane masks to apply to a fastmem copy of the truck mask
   that we'd use dynamically when the truck appears

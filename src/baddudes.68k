@@ -1007,6 +1007,17 @@ write_244xxx_layer_0819c:
 	RESTORE_REGS
 	rts
 	
+write_8x8_tiles_1b77a:
+	STORE_REGS
+	move.l	a1,a6
+0:
+	MOVE.W	(A2)+,d7
+	WRITE_WORD_AND_PLUS
+	SUBQ.B	#1,D0		
+	BNE.S	0b	
+	RESTORE_REGS
+	RTS				   
+
 intro_context_01a24:
 	move.w	#CTX_INTRO,d0
 	jbsr 	osd_set_context
