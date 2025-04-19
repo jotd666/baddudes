@@ -5269,7 +5269,7 @@ enable_bottom_scroll:
 	move.w	#bplcon0,(4,a0)	
 	move.w	nb_tile_planes_24da,d1
 	ror.w	#4,d1
-	or.w	#0x200,d1
+	or.w	#0x200+BORDERBLANK,d1
 	move.w	d1,(6,a0)
 	
 	* also change colors of the road
