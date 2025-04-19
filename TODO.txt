@@ -1,7 +1,7 @@
-- level 5 bad ground scroll & upper tiles trashed!!!
+- level 5 upper sky tiles trashed!!! ok with previous data file (wierd memory issue??)
+  block high tiles display to check if this is related?
 - level 3 bad borderblank in sewer water and right tiles scroll visible (in the end??)
 - train: boss wagon roof shifted
-- end sequence: double buffering screen trash???
 - heli: debug: add up & down
 - heli: erase seems to destroy more stuff
 - fix president/door colors / boss 7: bad color change

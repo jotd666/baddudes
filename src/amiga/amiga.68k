@@ -925,9 +925,9 @@ _vblank:
 	jbsr	really_update_sprites
 1:
 	* don't blit, but update hw sprites as it doesn't cost a lot
-	cmp.w	#CTX_GAME,global_context
-	jcs		23f
-
+	tst.b	double_buffering_enabled
+	jeq		23f
+	
 	* double buffering only in-game
 	jbsr		switch_screen_buffers
 23:
@@ -5767,6 +5767,7 @@ osd_set_context:
 	* remove pointer on truck planes, this will disable any remaining truck
 	* draw, and also front objects
 	clr.w	current_dudes_pic
+	clr.b	double_buffering_enabled
 	clr.l	sprite_table_base
 	clr.l	big_machine_planes
 	clr.l	big_machine_extra_planes
@@ -6033,7 +6034,6 @@ set_ending_1_context:
 	jbsr	load_tiles_palette_244000
 	
 	
-	jbsr	activate_double_buffering
 	rts
 	
 set_ending_2_context:
@@ -6293,6 +6293,7 @@ set_game_context:
 	rts
 
 activate_double_buffering:
+	st.b	double_buffering_enabled
 	move.l	fg_screen_data_1,fg_drawed_screen_ptr
 	move.l	fg_screen_data_2,fg_displayed_screen_ptr
 	rts
@@ -7891,6 +7892,8 @@ truck_wheels_height:
 prev_machine_params:
 	.skip	8
 machine_previously_drawn:
+	.byte	0
+double_buffering_enabled:
 	.byte	0
 	.align	2
 	
