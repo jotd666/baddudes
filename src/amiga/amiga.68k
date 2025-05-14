@@ -943,10 +943,15 @@ _vblank:
 	.ifndef		RELEASE
 	tst.b	debug_truck_control
 	jeq		1f
-	move.w	debug_truck_move,d0
+	move.w	debug_machine_x_move,d0
 	jeq		0f
 	add.w	d0,x_secondary_scroll_value
-	clr.w	debug_truck_move
+	clr.w	debug_machine_x_move
+0:
+	move.w	debug_machine_y_move,d0
+	jeq		0f
+	add.w	d0,y_secondary_scroll_value
+	clr.w	debug_machine_y_move
 0:
 	and.w	#0x3FF,x_secondary_scroll_value
 	
@@ -5561,6 +5566,16 @@ handle_keyboard:
 	* 'M': turn music off
 	jbsr	osd_music_stop
 0:
+	cmp.b	#0x69,d0
+	jne		0f
+	* 'I': move heli up 1 pixel
+	move	#-1,debug_machine_y_move
+0:
+	cmp.b	#0x6A,d0
+	jne		0f
+	* 'J': move heli down
+	move	#1,debug_machine_y_move
+0:
 	cmp.b	#24,d0
 	bne		0f
 	* 'O': debug display modes,
@@ -5595,22 +5610,22 @@ handle_keyboard:
 	cmp.b	#32,d0
 	bne		0f
 	* 'A': move truck by 1 pixel left
-	move	#-1,debug_truck_move
+	move	#-1,debug_machine_x_move
 0:
 	cmp.b	#33,d0
 	bne		0f
 	* 'S': move truck by 1 pixel right
-	move	#1,debug_truck_move
+	move	#1,debug_machine_x_move
 0:
 	cmp.b	#16,d0
 	bne		0f
 	* 'Q': move truck by 10 pixels left
-	move	#-0x10,debug_truck_move
+	move	#-0x10,debug_machine_x_move
 0:
 	cmp.b	#17,d0
 	bne		0f
 	* 'W': move truck by 10 pixels right
-	move	#0x10,debug_truck_move
+	move	#0x10,debug_machine_x_move
 0:
 	cmp.b	#36,d0
 	bne		0f
@@ -7536,7 +7551,9 @@ group_erase:
 	.align	2
 nb_logged_displayed_objects:
 	.word	0
-debug_truck_move:
+debug_machine_x_move:
+	.word	0
+debug_machine_y_move:   | for heli
 	.word	0
 last_nb_blitted_words_per_second:
 	.long	0
