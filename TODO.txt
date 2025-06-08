@@ -3,13 +3,10 @@ LEVEL 2:
 
 LEVEL 5:
 - karnov palette? also karnov lateral kick not logged for this level
-- level 5 upper sky tiles trashed!!! ok with previous data file (wierd memory issue??)
-  block high tiles display to check if this is related?
 - boss 5: locomotive wheels erase wrong
 - train: boss wagon roof shifted
 
 LEVEL 7:
-- heli: debug: add up & down: to test
 - heli: erase seems to destroy more stuff (upper left)
 - fix president/door colors / boss 7: bad color change
 

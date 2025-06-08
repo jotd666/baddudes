@@ -35,10 +35,8 @@ AFB_68020 = 1
 	.endif
 	
 TOTAL_PUBLIC_MEMORY_SIZE = 150000
-* this is the minimum memory required for level 5 (because of train)
-* if memory is lower than that, it loads, no memory issues detected but
-* the background is trashed...
-TOTAL_CHIP_MEMORY_SIZE = 1350000	
+* this is the minimum memory required for level 5
+TOTAL_CHIP_MEMORY_SIZE = 1355000	
 
 PREVIOUS_SPRITE_SIZE = 8
 BORDERBLANK = 1
@@ -286,6 +284,7 @@ w\@:
 * this must be the first entry of the source file
 start:
 	move.l	a7,old_stack
+	move.l	#chip_memory_block_end,0x204
 	bra	_user
     
 	.ifndef	RELEASE
@@ -348,121 +347,19 @@ _user:
 	lea	(_tag,pc),a0
 	jsr	(resload_Control,a2)
 	
-	
 	.ifndef	RELEASE
 	* install quit handler 
 	move.l	#quit_to_os,0x4	
 	.endif
 
-	
 
-   jra		.no_forbid
+   jra		0f
 .standard:
-	
-    * open dos library, graphics library
-    move.l  0x4.W,a6
-    lea dosname,a1
-    moveq.l #0,d0
-    jsr _LVOOpenLibrary(a6)
-    move.l  d0,_dosbase
+	* not supported
+	moveq	#-1,d0
+	rts
 
-	lea	read_args_string,a0
-	lea	program_args,a1
-	move.l	#program_args_end,d0
-	sub.l	a1,d0
-	*move.l	#program_args_end-program_args,d0
-	lsr.l	#2,d0		| number of longs
-	
-
-	jbsr	get_args_BCPL
-
-0:	
-	lea		program_args,a0
-
-	move.l	(A0)+,D0	| INVINCIBLE/S
-	beq.b	1f
-	or.l	#1,cheat_flags
-	st.b	cheat_used
-1:
-	move.l	(A0)+,D0	| INFLIVES/S
-	beq.b	2f
-	or.l	#2,cheat_flags
-	st.b	cheat_used
-2:
-	move.l	(A0)+,D0	| SECTORSELECT/S
-	beq.b	2f
-	or.l	#8,cheat_flags
-	st.b	cheat_used
-2:
-	move.l	(A0)+,D0	| CHEATKEYS/S
-	beq.b	2f
-	* cheat isn't used as long as no cheat key is used
-	or.l	#0x10,cheat_flags
-2:
-
-	move.l	(A0)+,D0	| STARTLEVEL/K/N
-	beq.b	2f
-	jbsr		bcpl_string_to_int
-	move.l	d0,dip_switch_start_level
-2:
-	move.l	(A0)+,D0	| SKILL/S
-	beq.b	3f
-	jbsr		bcpl_string_to_int
-	subq.b	#1,d0
-	bmi.b	3f
-	move.l	d0,dip_switch_difficulty_level
-
-3:
-
-
-	lea		_custom,a5
-	lea		debug_copperlist,a0
-	move.l	a0,cop1lc(a5)
-
-* no multitask
-	
-	move.l	4.W,A6
-	lea graphicsname,a1
-    moveq.l #0,d0
-    jsr _LVOOpenLibrary(a6)
-    move.l  d0,_gfxbase
-    move.l	d0,a6
-	move.l	38(a6),old_syscoplist
-	move.l	34(A6),old_actiview		| gb_ActiView
-
-	sub.l	a1,a1
-	jsr	_LVOLoadView(a6)
-	jsr	_LVOWaitTOF(a6)
-	jsr	_LVOWaitTOF(a6)
-	
-	jbsr		load_highscores
-    * check if "floppy" file is here
-    move.l  _dosbase,a6
-    move.l   #floppy_file,d1
-    move.l  #1005,d2   | MODE_OLDFILE
-    jsr     _LVOOpen(a6)
-    move.l  d0,d1
-    beq.b   .no_floppy
-    * "floppy" file found
-    jsr     _LVOClose(a6)
-    * wait 2 seconds for floppy drive to switch off
-    move.l  #100,d1
-    jsr     _LVODelay(a6)
-.no_floppy:
-
-* no multitask
-	
-    move.l  4,a6
-    jsr _LVOForbid(a6)
-
-    
-	sub.l	A1,A1
-	jsr	_LVOFindTask(a6)		| find ourselves
-	move.l	D0,A0
-	move.l	#-1,184(A0)	| pr_WindowPtr: no more system requesters (insert volume, write protected...)
-
-.no_forbid:
-
+0:
 	* init tables for sprites with some used heights
 	jbsr		init_sprite_y_table_table
 	
@@ -2705,7 +2602,6 @@ addr_246xxx_op:
 addr_24Axxx_tile_layer_op:
 	and.w	#0x7FF,d2
 
-
 	cmp.b	#2,d0
 	jne		0f
 	swap	d7	
@@ -2839,7 +2735,7 @@ preprocess_16x16_tile:
 27:
 	.endif
 	add.l	d5,a4			| screen dest address on restore playfield
-	
+
 	* now make up for shifted Y scroll (levels 6 and 7) on screen
 	tst.w	y_extra_offset
 	jeq		25f
@@ -2882,7 +2778,7 @@ write_16x16_tile:
 	move.l	a0,a3			| base ptr
 0:
 	move.l	(a0)+,d2
-	jeq		2f		| erase plane
+	jeq		20f		| erase plane
 
 	.ifndef	RELEASE
 	cmp.l	#0x00FFFFF,d2
@@ -2933,7 +2829,8 @@ write_16x16_tile:
 	NEXT_PLANES
 	dbf		d6,0b
 	rts
-2:
+20:
+
 	CLR_PLANE
 	tst.b	first_half_flag
 	jeq		1b
@@ -3801,7 +3698,6 @@ store_bob_previous_position:
 	rts
 1:
 	neg.w	d2			| make width positive again
-	TMPWRITE
 	* now compute prev width
 	move.w	(-4,a6),d6	| note down previous width
 	cmp.w	d2,d6
@@ -5126,6 +5022,11 @@ set_scroll_x_24d000_layer:
 	rts
 
 set_scroll_y_24d000_layer:
+	.ifndef	RELEASE
+	* if debug truck/train don't let the program set the value
+	tst.b	debug_truck_control
+	jne		1f
+	.endif
 	move.w	y_secondary_scroll_value,d1
 	cmp.w	d1,d0
 	jne		0f
@@ -5133,6 +5034,7 @@ set_scroll_y_24d000_layer:
 0:
 	
 	move.w	d0,y_secondary_scroll_value
+1:
 	rts
 	
 	* depending on the level, the game uses layers as background or
@@ -5566,16 +5468,6 @@ handle_keyboard:
 	* 'M': turn music off
 	jbsr	osd_music_stop
 0:
-	cmp.b	#0x69,d0
-	jne		0f
-	* 'I': move heli up 1 pixel
-	move	#-1,debug_machine_y_move
-0:
-	cmp.b	#0x6A,d0
-	jne		0f
-	* 'J': move heli down
-	move	#1,debug_machine_y_move
-0:
 	cmp.b	#24,d0
 	bne		0f
 	* 'O': debug display modes,
@@ -5606,6 +5498,16 @@ handle_keyboard:
 	bne		0f
 	* 'H': toggle bobs display
 	eor.b	#1,stop_updating_bobs
+0:
+	cmp.b	#23,d0
+	jne		0f
+	* 'I': move heli up 1 pixel
+	move	#-1,debug_machine_y_move
+0:
+	cmp.b	#38,d0
+	jne		0f
+	* 'J': move heli down
+	move	#1,debug_machine_y_move
 0:
 	cmp.b	#32,d0
 	bne		0f
@@ -6006,6 +5908,7 @@ allocate_background_buffer:
 	* max 5 planes, can be 4 too ATM 6 for convenience (8x8 fonts)
 	move.l	#NB_BYTES_PER_ROW,d1
 	mulu.w	d0,d1
+	move.w	d0,d2
 	* depends on y min/max (allows to save memory ex train level)
 	move.w	y_max,d0
 	sub.w	y_min,d0
@@ -6298,6 +6201,12 @@ set_game_context:
 	subq	#1,d0	
 	lea		specific_level_load_table(pc),a0
 	jsr		([a0,d0.w*4])
+	
+	* there's a buffer restore copy bug that overtakes
+	* buffer memory (can be seen on train level).
+	* Allocating the background buffer last
+	* allows to workaround the issue
+	* it's not very good but I'm sick of this bug
 	
 	move.w	nb_tile_planes_24da,d0
 	jbsr	allocate_background_buffer	
@@ -6694,6 +6603,8 @@ level_3_load:
 	move.w	(a1)+,(a0)+
 	addq	#2,d1		| next color
 	dbf		d0,0b
+
+	move.w	#0x100,y_max
 	rts
 	
 * forest level
@@ -7861,6 +7772,8 @@ current_dudes_pic:
 	.word	0
 background_restore_buffer:
 	.long	0
+background_restore_buffer_end:
+	.long	0
 nb_tile_colors_24a000:
 	.word	0
 nb_tile_colors_24d000:
@@ -8246,9 +8159,6 @@ osd_\name\()_next_cw:
 	RESERVE_SPRITE	center_right
 	
 
-
-chip_memory_block:
-	.skip	TOTAL_CHIP_MEMORY_SIZE
 	
 fg_screen_buffer_2:
 	.ifne  OPT_ENABLE_DOUBLE_BUFFERING
@@ -8256,17 +8166,20 @@ fg_screen_buffer_2:
 	.skip	ONE_FULL_16_BIT_ROW
 	.endr
 	.skip	SCREEN_SIZE
-
 	.endif	
 fg_screen_buffer_1:
 	.rept	CLIPPED_WIDTH_MARGIN/16
 	.skip	ONE_FULL_16_BIT_ROW
 	.endr
 	.skip	SCREEN_SIZE
-
-
-
 	.skip	8
+	
+chip_memory_block:
+	.skip	TOTAL_CHIP_MEMORY_SIZE
+chip_memory_block_end:
+	.skip	8
+
+
 	
 
 
