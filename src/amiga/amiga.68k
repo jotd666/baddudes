@@ -1475,7 +1475,7 @@ draw_truck_level_1:
 	
 draw_big_machine:
 	move.w	x_secondary_scroll_value,d0
-	move.w	big_machine_width,d6	| full truck size
+	move.w	big_machine_width,d6	| full machine size
 	lsl.w	#3,d6			| in pixels
 	
 	* required to start displaying truck outside the screen: we have to compute
@@ -1563,15 +1563,16 @@ do_truck_draw:
 	cmp.w	#MIN_TRAIN_X_TOP_DRAW,d0
 	jcc		2f
 	neg		d0
+	add.w	#0xF0,d0
 	move.w	big_machine_extra_pic_width,d2
 
-	
 	move.l	d1,a0
 	move.w	machine_y_pos,d1		| Y-pos: fixed
 	move.w	big_machine_extra_pic_height,d4
 	sub.w	d4,d1
 	move.l	(4*NB_PLAYFIELD_PLANES,a0),a3	| mask
 	add.w	x_background_scroll_value,d0
+
 	move.l 	fg_drawed_screen_ptr,a1
 	move.w	big_machine_nb_planes,d3
 	moveq	#0,d5
@@ -6319,6 +6320,7 @@ load_big_machine:
 	move.l	d0,big_machine_pic
 	move.l	d0,a0
 	move.w	(a0)+,big_machine_nb_planes
+	subq.w	#1,big_machine_nb_planes		| remove mask plane from count
 	move.w	(a0)+,big_machine_width
 	move.w	(a0)+,big_machine_height
 	move.w	(a0)+,machine_y_pos

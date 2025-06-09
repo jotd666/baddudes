@@ -1,12 +1,12 @@
 LEVEL 2:
-- truck wheels level 2 are transparent again!  mutant karnov black color issue: conflict between truck tires and mutant karnov on palette 9
+- (if regenerated) truck wheels level 2 are transparent again!  mutant karnov black color issue: conflict between truck tires and mutant karnov on palette 9
 
 LEVEL 5:
 - boss 5: locomotive wheels erase wrong
-- train: boss wagon roof shifted
 
 LEVEL 7:
-- heli: erase seems to destroy more stuff (upper left)
+- heli: vertical erase doesn't work
+- crash on level completed screen (level 7)
 - fix president/door colors / boss 7: bad color change
 
 OTHER:
