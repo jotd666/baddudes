@@ -146,7 +146,6 @@ NB_PLAYFIELD_LINES = 256
 * the screen plane size is pretty huge, so the offset can go beyond 0x8000 and
 * the word add on address registers won't work
 SCREEN_PLANE_SIZE = NB_BYTES_PER_ROW*NB_PLAYFIELD_LINES*2
-RESTORE_SCREEN_PLANE_SIZE = NB_BYTES_PER_ROW*NB_PLAYFIELD_LINES*2
 SCREEN_SIZE =  SCREEN_PLANE_SIZE*NB_PLAYFIELD_PLANES
 
 
@@ -2064,7 +2063,7 @@ addr_244xxx_tile_layer_op:
 	subq	#8,a4
 1:
 	lea		(SCREEN_PLANE_SIZE,a1),a1
-	lea		(RESTORE_SCREEN_PLANE_SIZE,a5),a5
+	add.l	background_plane_size,a5
 	dbf		d6,0b
 	* plain copy loop on the planes without background (if any!)
 	move.w	#NB_PLAYFIELD_PLANES,d6
@@ -2160,7 +2159,7 @@ erase_tile_8:
 	.set	offset,offset+NB_BYTES_PER_ROW
 	.endr
 	lea		(SCREEN_PLANE_SIZE,a1),a1
-	lea		(RESTORE_SCREEN_PLANE_SIZE,a5),a5
+	add.l	background_plane_size,a5
 	dbf		d6,0b
 	
 	move.w	#NB_PLAYFIELD_PLANES,d6
@@ -2568,7 +2567,7 @@ addr_246xxx_op:
 	
 	.macro	NEXT_PLANES
 	lea		(SCREEN_PLANE_SIZE,a1),a1
-	lea		(RESTORE_SCREEN_PLANE_SIZE,a4),a4	
+	add.l	background_plane_size,a4	
 	.ifne	OPT_ENABLE_DOUBLE_BUFFERING
 	lea		(SCREEN_PLANE_SIZE,a5),a5
 	.endif	
@@ -2727,13 +2726,6 @@ preprocess_16x16_tile:
 	moveq	#0,d5
 	move.w	(a2,d4.w*2),d5
 	add.l	d3,d5
-	.ifndef	RELEASE
-	* check if not already too high
-	cmp.w	#RESTORE_SCREEN_PLANE_SIZE-(16*NB_BYTES_PER_SCREEN_ROW*3),d5
-	jcs		27f
-	BREAKPOINT	"restore buffer out of bounds, D4=Y"
-27:
-	.endif
 	add.l	d5,a4			| screen dest address on restore playfield
 
 	* now make up for shifted Y scroll (levels 6 and 7) on screen
@@ -2830,7 +2822,6 @@ write_16x16_tile:
 	dbf		d6,0b
 	rts
 20:
-
 	CLR_PLANE
 	tst.b	first_half_flag
 	jeq		1b
@@ -4338,7 +4329,7 @@ restore_background:
 
 
 2:
-	lea	(RESTORE_SCREEN_PLANE_SIZE,a0),a0
+	add.l	background_plane_size,a0
 	lea	(SCREEN_PLANE_SIZE,a1),a1
 	cmp.w	#4,d2
 	jcc		0f
@@ -5918,6 +5909,17 @@ allocate_background_buffer:
 	moveq	#1,d1
 	jbsr	allocate_memory		| chip
 	move.l	d0,background_restore_buffer
+	
+	* compute plane size given y min and y max
+	* fortunately, not all levels are 8 way. Train level
+	* eats a lot of memory because the train is one big
+	* BOB (lazy me) but since it only scrolls horizontally
+	* we have enough memory as long as background_plane_size
+	* is small enough (0x6000)
+	move.w	y_max,d0
+	sub.w	y_min,d0
+	mulu	#NB_BYTES_PER_ROW,d0
+	move.l	d0,background_plane_size
 	rts
 	
 ************************
@@ -6201,13 +6203,7 @@ set_game_context:
 	subq	#1,d0	
 	lea		specific_level_load_table(pc),a0
 	jsr		([a0,d0.w*4])
-	
-	* there's a buffer restore copy bug that overtakes
-	* buffer memory (can be seen on train level).
-	* Allocating the background buffer last
-	* allows to workaround the issue
-	* it's not very good but I'm sick of this bug
-	
+		
 	move.w	nb_tile_planes_24da,d0
 	jbsr	allocate_background_buffer	
 
@@ -7770,6 +7766,8 @@ nb_tile_planes_24da:
 	.word	0
 current_dudes_pic:
 	.word	0
+background_plane_size:
+	.long	0
 background_restore_buffer:
 	.long	0
 background_restore_buffer_end:

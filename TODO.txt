@@ -2,7 +2,6 @@ LEVEL 2:
 - truck wheels level 2 are transparent again!  mutant karnov black color issue: conflict between truck tires and mutant karnov on palette 9
 
 LEVEL 5:
-- karnov palette? also karnov lateral kick not logged for this level
 - boss 5: locomotive wheels erase wrong
 - train: boss wagon roof shifted
 
