@@ -1110,7 +1110,7 @@ level_7_erase_helicopter:
 	* 2-parts less brutal buffer restore
 	move.w	big_machine_width,d2
 	*move.w	big_machine_height,d4
-	move.w	#64,d4
+	move.w	#66,d4		| so erase also works when going up!
 	move.w	prev_machine_params,d0
 	move.w	machine_y_pos,d1
 	move.l	fg_drawed_screen_ptr,a1
@@ -1124,7 +1124,7 @@ level_7_erase_helicopter:
 	moveq	#0,d1
 	move.w	big_machine_width,d2
 	move.w	big_machine_height,d4
-	add.w	#1,d4			| so erase also works when going up!
+			
 	lea		_custom,a5
 	jbsr	clear_fg_planes_any_blitter_internal
 	* now restore bottom part, but no need to restore bottom left
@@ -1132,9 +1132,9 @@ level_7_erase_helicopter:
 	move.w	big_machine_width,d2
 	sub.w	#16,d2
 	move.w	big_machine_height,d4
-	sub.w	#64,d4
+	sub.w	#62,d4
 	move.w	prev_machine_params,d0
-	add.w	#128,d0
+	add.w	#144,d0
 	move.w	machine_y_pos,d1
 	add.w	#64,d1
 	move.l	fg_drawed_screen_ptr,a1

@@ -1,15 +1,11 @@
-LEVEL 2:
-- (if regenerated) truck wheels level 2 are transparent again!  mutant karnov black color issue: conflict between truck tires and mutant karnov on palette 9
-
-LEVEL 5:
-- boss 5: locomotive wheels erase wrong
-
-LEVEL 7:
 - heli: vertical erase doesn't work
 - crash on level completed screen (level 7)
-- fix president/door colors / boss 7: bad color change
 
-OTHER:
+
+MEDIUM PRIORITY:
+- level 2: (if regenerated) truck wheels level 2 are transparent again!  mutant karnov black color issue: conflict between truck tires and mutant karnov on palette 9
+- boss 5: locomotive wheels erase wrong
+- level 7: fix president/door colors / boss 7: bad color change
 - game over: credits screen corruption, high score corruption at the end of demo too
   also?? tests test_input_bit_d1 (0x0174c,0x0175c,0x07e66), then goes back to menu but intro screen trashed
 
