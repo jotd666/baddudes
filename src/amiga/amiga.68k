@@ -5954,6 +5954,8 @@ set_ending_1_context:
 	* so we're good!)
 	jbsr	load_tiles_palette_244000
 	
+	move.w	nb_tile_planes_24da,d0
+	jbsr	allocate_background_buffer	
 	
 	rts
 	
@@ -5987,6 +5989,8 @@ set_ending_2_context:
 	* white house last tile screen is contained on second set of tiles
 	move.l	#addr_24Dxxx_tile_layer_op_level_3,addr_24Dxxx_tile_layer_op_address
 
+	move.w	nb_tile_planes_24da,d0
+	jbsr	allocate_background_buffer	
 
 	jbsr	activate_double_buffering
 	rts

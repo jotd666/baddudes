@@ -1,5 +1,4 @@
 - heli: vertical erase doesn't work
-- crash on level completed screen (level 7)
 
 
 MEDIUM PRIORITY:
