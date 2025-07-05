@@ -178,11 +178,14 @@ NB_BYTES_PER_SPRITE_ROW = 8   | fmode=3: 64 pixels wide sprites!
 	BREAKPOINT	"custom not loaded in A5!"
 custom_ok\@:
 	.endif
-	move.w	#0x8400,(dmacon,a5)		| blitter high priority
+	* no blitter high priority: first, game needs fastmem so it
+	* doesn't adds any speed second it can make the music fail
+	* on big blits
+	*move.w	#0x8400,(dmacon,a5)		| blitter high priority
 wait\@:
 	BTST	#6,(dmaconr,a5)
 	BNE.S	wait\@
-	move.w	#0x0400,(dmacon,a5)		| blitter normal priority
+	*move.w	#0x0400,(dmacon,a5)		| blitter normal priority
 	.endm
 
 	.macro	DO_BLIT
@@ -1108,9 +1111,10 @@ specific_big_machine_restore:
 		
 level_7_erase_helicopter:
 	* 2-parts less brutal buffer restore
+	* first, restore background for tail + top of heli
 	move.w	big_machine_width,d2
 	*move.w	big_machine_height,d4
-	move.w	#66,d4		| so erase also works when going up!
+	move.w	#70,d4		| so erase also works when going up!
 	move.w	prev_machine_params,d0
 	move.w	machine_y_pos,d1
 	move.l	fg_drawed_screen_ptr,a1
@@ -1120,10 +1124,12 @@ level_7_erase_helicopter:
 	move.w	#NB_PLAYFIELD_PLANES,d3
 	sub.w	nb_tile_planes_24da,d3
 	lea		(SCREEN_PLANE_SIZE,a1),a1
+	* reuse the screen pointer, clear the 6th plane (background is 5 planes)
 	moveq	#0,d0
 	moveq	#0,d1
 	move.w	big_machine_width,d2
 	move.w	big_machine_height,d4
+	add.w	#8,d4		| so erase also works when going up!
 			
 	lea		_custom,a5
 	jbsr	clear_fg_planes_any_blitter_internal
@@ -1132,7 +1138,7 @@ level_7_erase_helicopter:
 	move.w	big_machine_width,d2
 	sub.w	#16,d2
 	move.w	big_machine_height,d4
-	sub.w	#62,d4
+	sub.w	#58,d4
 	move.w	prev_machine_params,d0
 	add.w	#144,d0
 	move.w	machine_y_pos,d1

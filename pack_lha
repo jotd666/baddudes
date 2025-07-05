@@ -1,0 +1,13 @@
+.key nope
+set game baddudes
+
+
+set arc ${game}_HD.lha
+if exists ${arc}
+    echo deleting ${arc}...
+    delete ${arc}
+endif
+
+; also archive with lha
+lha a -r $arc ${game}_HD
+

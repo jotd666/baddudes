@@ -7,6 +7,9 @@ MEDIUM PRIORITY:
 - level 7: fix president/door colors / boss 7: bad color change
 - game over: credits screen corruption, high score corruption at the end of demo too
   also?? tests test_input_bit_d1 (0x0174c,0x0175c,0x07e66), then goes back to menu but intro screen trashed
+- level 1 repair front objects (status bar showing but destroyed, debug this)
+  => control word for multiplexed after lamp is not working but other sprites are also destroyed!
+- level 2 front object (lamp) not displaying (used to work with level 1 objects)
 
 LOWER PRIORITY:
 - game over: check if music plays
@@ -19,10 +22,7 @@ LOWER PRIORITY:
 - level 1 when ninjas arrive on truck, truck & ninjas on it slightly drift
 - helicopter at the end: president sprites & door shifted (cycle exact)  
 - level 6: stalactite wrong colors (used to be OK)
-- level 2 front object (lamp) not displaying (used to work with level 1 objects)
 - level 5: red girls missing frames
-- level 1 repair front objects (status bar showing but destroyed, debug this)
-  => control word for multiplexed after lamp is not working but other sprites are also destroyed!
 - level 2: climbers on the right "blink" (frame/grouping? wrong clipping?)
 - end sequence should use scrolling sprites for credits: allocate huge 2x high sprite buffers
 - save/load highscores
