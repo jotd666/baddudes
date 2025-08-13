@@ -53,7 +53,7 @@ _config
 
 
 DECL_VERSION:MACRO
-	dc.b	"1.0"
+	dc.b	"1.1"
 	IFD BARFLY
 		dc.b	" "
 		INCBIN	"T:date"
@@ -84,6 +84,12 @@ start:
 	MOVE.L	A0,(A1)
 	move.l	a0,a2
 
+
+	;setup cache: max cache everywhere
+	move.l	#WCPUF_Base_WT|WCPUF_Exp_CB|WCPUF_Slave_CB|WCPUF_IC|WCPUF_DC|WCPUF_BC|WCPUF_SS|WCPUF_SB,d0
+	move.l	#WCPUF_All,d1
+	jsr	(resload_SetCPU,a2)
+	
 	lea	(_tag,pc),a0
 	jsr	(resload_Control,a2)
     
