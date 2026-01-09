@@ -1,7 +1,7 @@
 - jump on long or double joystick press? It would help playing with a one button joystick.
 - level 2: climbers on the right "blink" (frame/grouping?)
 - level 5 completely shifted tiles on real HW??
-
+- infinite lives cheat doesn't work
 
 MEDIUM PRIORITY:
 - level 2: (if regenerated) truck wheels level 2 are transparent again!  mutant karnov black color issue: conflict between truck tires and mutant karnov on palette 9

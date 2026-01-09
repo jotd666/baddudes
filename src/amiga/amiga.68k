@@ -3745,12 +3745,13 @@ fix_sprite_coords:
 	rts
 	
 * < A0: plane list
+* < D3: required orientation
 * < D4: height
 * < D5: width (bytes)
 * trashes: only unused registers :)
 
 mirror_sprite_planes:
-	movem.l	d0-d2/d5/a0,-(a7)
+	movem.l	d0-d2/a0,-(a7)
 	* bitplanes aren't pre-computed: check bitplanes current orientation and swap
 	* if required. This is slow but saves memory
 	lea		mirror_table,a1
@@ -3773,7 +3774,7 @@ mirror_sprite_planes:
 	* next bitplane
 1:
 	dbf		d6,0b
-	movem.l	(a7)+,d0-d2/d5/a0
+	movem.l	(a7)+,d0-d2/a0
 	rts
 	
 mirror_16_bit_wide:
@@ -4830,9 +4831,7 @@ get_file_size:
 	rts
 0:
 	* unsupported
-	illegal
-	illegal
-	illegal
+	BREAKPOINT	"non-whdload mode unsupported"
 	rts
 	
 * < D0: required size
