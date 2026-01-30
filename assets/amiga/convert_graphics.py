@@ -154,13 +154,13 @@ def process_helicopter(global_palette):
 
 
     raw = bitplanelib.palette_image2raw(reduced_colors_heli_img,None,global_palette,forced_nb_planes=forced_nb_planes,
-    generate_mask=True,blit_pad=True,mask_color=transparent)
+    generate_mask=True,blit_pad=bitplanelib.BLIT_NO_PAD,mask_color=transparent)
 
 
     nb_planes = forced_nb_planes+1
     real_width,height = reduced_colors_heli_img.size
 
-    width = (real_width // 8) + 2
+    width = (real_width // 8)
 
     plane_size = len(raw)//nb_planes # mask included
 
@@ -653,7 +653,8 @@ def read_tileset(context,img_set_list,palette,cache,is_bob,generate_mask):
                             if width % 2:
                                 width += 1   # not sure it will solve anything, rather make it differenly trashed...
 
-                            bitplane_data = bitplanelib.palette_image2raw(wtile,None,palette,generate_mask=generate_mask,blit_pad=is_bob,mask_color=transparent)
+                            bitplane_data = bitplanelib.palette_image2raw(wtile,None,palette,generate_mask=generate_mask,
+                                                blit_pad=bitplanelib.BLIT_NO_PAD,mask_color=transparent)
                             if generate_mask:
                                 actual_nb_planes += 1
                             plane_size = len(bitplane_data) // actual_nb_planes
@@ -960,12 +961,12 @@ with open(src_dir / "special_2x_4x_dual_table.68k","w") as f:
 generate_for_levels = [False]*9
 
 
-#generate_for_levels[0] = True
+generate_for_levels[0] = True
 #generate_for_levels[1] = True
 #generate_for_levels[2] = True
 #generate_for_levels[3] = True
 #generate_for_levels[4] = True
-generate_for_levels[5] = True
+#generate_for_levels[5] = True
 #generate_for_levels[6] = True
 #generate_for_levels[7] = True
 #generate_for_levels[8] = True
@@ -981,6 +982,7 @@ if generate_for_levels[0]:  # title/intro & game fonts
     process_tile_context("title_24a000",title_tile_24a000_sheet_dict,16)
     process_tile_context("game_intro_24a000",game_intro_tile_24a000_sheet_dict,32)
     process_tile_context("highs_24a000",title_tile_24a000_sheet_dict,16)
+    process_tile_context("game_intro",sprite_sheet_dict,32,is_bob=True,shift_palette_count=32)
 
 if generate_for_levels[1]:
     truck_nb_planes = 4

@@ -1,10 +1,12 @@
+- palette of intro guy is wrong: check original sheets
 - jump on long or double joystick press? It would help playing with a one button joystick.
 - level 2: climbers on the right "blink" (frame/grouping?)
-- level 5 completely shifted tiles on real HW??
 - infinite lives cheat doesn't work
+- level 2: truck wheels level 2 are transparent again!  mutant karnov black color issue: conflict between truck tires and mutant karnov on palette 9
+- maybe we can add 2 player mode now that memory dropped drastically
+- check parallax with new technique
 
 MEDIUM PRIORITY:
-- level 2: (if regenerated) truck wheels level 2 are transparent again!  mutant karnov black color issue: conflict between truck tires and mutant karnov on palette 9
 - boss 5: locomotive wheels erase wrong
 - level 7: fix president/door colors / boss 7: bad color change
 - game over: credits screen corruption, high score corruption at the end of demo too
@@ -12,6 +14,7 @@ MEDIUM PRIORITY:
 - level 1 repair front objects (status bar showing but destroyed, debug this)
   => control word for multiplexed after lamp is not working but other sprites are also destroyed!
 - level 2 front object (lamp) not displaying (used to work with level 1 objects)
+- sword ninja has transparent parts should be black
 
 LOWER PRIORITY:
 - game over: check if music plays

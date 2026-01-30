@@ -1423,6 +1423,7 @@ display_title_dudes:
 	move.w	(a2)+,d1			| Y
 	move.w	(a2)+,d2			| width
 	lsr.w	#3,d2				| divide by 8 to get len in bytes
+	addq	#2,d2				| bltamod is -2 in routines, no shifting => must add 2
 	move.w	#4,d3				| 4 bitplanes in cookie cut mode
 	move.w	(a2)+,d4			| height
 	moveq	#0,d5				| no clipping
@@ -1433,7 +1434,7 @@ display_title_dudes:
 	jbsr	blit_planes_any_internal_cookie_cut
 	movem.l	(a7)+,D0-D5/A1/A2
 	lea		(0x50,a2),a0			| pic remaining planes
-	move.w	#2,d3				| 4 bitplanes in non cookie cut mode
+	move.w	#2,d3				| 2 bitplanes in non cookie cut mode
 	lea		(SCREEN_PLANE_SIZE*4,a1),a1
 	jbsr	blit_planes_any_internal_no_cookie_cut
 	
@@ -1556,6 +1557,7 @@ do_truck_draw:
 	move.l 	fg_drawed_screen_ptr,a1
 	* now big optim: no need to cookie cut/draw all planes!!
 	* so avoid last blit or even 2 last blits (if background is 16 colors)
+	addq	#2,d2		| with shifting
 	move.w	big_machine_nb_planes,d3
 	jbsr	blit_planes_any_internal_cookie_cut
 	
@@ -1579,6 +1581,7 @@ do_truck_draw:
 
 	move.l 	fg_drawed_screen_ptr,a1
 	move.w	big_machine_nb_planes,d3
+	addq	#2,d2		| with shifting
 	moveq	#0,d5
 	moveq	#0,d6
 	jbsr	blit_planes_any_internal_cookie_cut
@@ -2602,7 +2605,7 @@ addr_246xxx_op:
 	.endr
 	.endm
 	
-* 16x16 tile layer
+* 16x16 tile layer for most backgrounds
 addr_24Axxx_tile_layer_op:
 	and.w	#0x7FF,d2
 
@@ -2967,7 +2970,6 @@ addr_24Dxxx_tile_layer_op_level_3:
 	jcc		0f
 	lea		tile_log_table_24d000,a2
 	move.l 	#video_ram_24d000,0x1C
-	move.l	a2,0x28		| store address in zero page
 	move.w	d6,-(a7)
 	lsl.w	#4,d6		| 16 cluts
 	add.w	d5,d6		| clut offset
@@ -3624,11 +3626,11 @@ draw_bob_loop:
 	
 	jbsr	store_bob_previous_position
 	
-	move.w	d5,d2			| width in bytes, 4 for 16 pixels+shift		
+	move.w	d5,d2			| width in bytes, 4 for 16 pixels+shift	
 	move.l	d3,d5			| Y-offset in bytes (often 0 but supports Y clip!)
 	moveq	#0,d6			| X-offset
 	moveq	#NB_PLAYFIELD_PLANES,d3
-	jbsr		blit_planes_any_internal_cookie_cut
+	jbsr	blit_planes_any_internal_cookie_cut
 29:
 	move.l	(a7)+,a0
 30:
@@ -3782,7 +3784,6 @@ mirror_16_bit_wide:
 	jeq		14f					| zero: optim
 	move.w	(a1,d2.l*2),(-2,a2)
 14:
-	addq	#2,a2					    | skip zero pad
 	dbf		d1,mirror_16_bit_wide		| next
 	rts
 
@@ -3793,7 +3794,7 @@ mirror_32_bit_wide:
 	move.w	(a2),d0	
 	move.w	(a1,d2.l*2),(a2)		| get mirror value
 	move.w	(a1,d0.l*2),-(a2)		| get mirror value
-	addq	#6,a2					| skip row
+	addq	#4,a2					| skip row
 	dbf		d1,10b
 	rts
 
@@ -3809,7 +3810,7 @@ mirror_48_bit_wide:
 	* center
 	move.w	(a2),d2
 	move.w	(a1,d2.l*2),(a2)
-	addq	#6,a2					| skip row
+	addq	#4,a2					| skip row
 	dbf		d1,10b
 	rts
 
@@ -3828,7 +3829,7 @@ mirror_64_bit_wide:
 	move.w	(a2),d0
 	move.w	(a1,d2.l*2),(a2)
 	move.w	(a1,d0.l*2),-(a2)
-	addq	#8,a2					| skip row
+	addq	#6,a2					| skip row
 	dbf		d1,10b
 	rts
 
@@ -4131,6 +4132,7 @@ blit_planes_any_internal_cookie_cut:
 	* instead of full object width
 	* D2 is still full object width (needed for source modulo)
 	sub.w	d5,d2		| change source modulo from full width to partial width
+	subq	#2,d2
     sub.w   d5,d0       | reduce blit width
     lsr.w   #1,d5		| now in 16 bit words
     add.w   d5,d4       | blit height
@@ -4139,14 +4141,14 @@ blit_planes_any_internal_cookie_cut:
     sub.w   d2,d0       | blit width
     lsr.w   #1,d2
     add.w   d2,d4       | blit height
-	moveq	#0,d2		| no data skip in source (no source modulo)
+	moveq	#-2,d2		| no data skip in source (no source modulo), no padding
 52:
 	* restore d5 register to get byte offset of data start
 	swap	d5
 
 	add.w	d5,a3			| apply xy offset to mask too
 	
-	
+	clr.w	d1		| so the -2 modulo trick works
 	
     * now just wait for blitter ready to write all registers
 	WAIT_BLIT
@@ -4459,7 +4461,7 @@ blit_planes_any_internal_no_cookie_cut:
     lsr.w   #1,d2
     add.w   d2,d4       | blit height
     * always the same settings (ATM)
-	moveq	#0,d2
+	moveq	#-2,d2
 	
     * now just wait for blitter ready to write all registers
 	WAIT_BLIT

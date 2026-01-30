@@ -57,15 +57,16 @@ def doit(global_palette,name,y_start,level_1_bar,exhaust_height,width,height,whe
             reduced_colors_truck1_img,extra_pic = pic_rework_callback(reduced_colors_truck1_img)
 
         raw = bitplanelib.palette_image2raw(reduced_colors_truck1_img,None,reduced_palette,forced_nb_planes=forced_nb_planes,
-        generate_mask=True,blit_pad=True,mask_color=transparent)
+        generate_mask=True,blit_pad=bitplanelib.BLIT_ALIGN_PAD,mask_color=transparent)
         if extra_pic:
             extra_raw = bitplanelib.palette_image2raw(extra_pic,None,reduced_palette,forced_nb_planes=forced_nb_planes,
-            generate_mask=True,blit_pad=True,mask_color=transparent)
+            generate_mask=True,blit_pad=bitplanelib.BLIT_ALIGN_PAD,mask_color=transparent)
 
         nb_planes = forced_nb_planes+1
         real_width,height = reduced_colors_truck1_img.size
-        # width in even bytes, plus 16 bit shift
-        width = real_width//8 + 2
+
+        # width in even bytes
+        width = real_width//8
         if width % 2:
             width += 1
 

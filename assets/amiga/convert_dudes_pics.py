@@ -40,7 +40,7 @@ def doit(force=False):
                 # tile base colors
                 palette_64 = (32*[pad_value]) + p
 
-                raw = bitplanelib.palette_image2raw(rval,None,palette_64,generate_mask=True,mask_color=transparent)
+                raw = bitplanelib.palette_image2raw(rval,None,palette_64,blit_pad=bitplanelib.BLIT_ALIGN_PAD,generate_mask=True,mask_color=transparent)
                 plane_size = len(raw)//nb_planes # mask included
                 f.write(f"; bpldata (plane size = {plane_size})\n")
                 offset = 0
