@@ -1,10 +1,15 @@
-- palette of intro guy is wrong: check original sheets
+- quantize shifts for bosses: not correct anymore for level 3 boss at least
+- karnov level 6 and 7: wrong colors, palette probably changes slightly between levels
+  maybe a per-level dump would fix the issue
 - jump on long or double joystick press? It would help playing with a one button joystick.
 - level 2: climbers on the right "blink" (frame/grouping?)
 - infinite lives cheat doesn't work
-- level 2: truck wheels level 2 are transparent again!  mutant karnov black color issue: conflict between truck tires and mutant karnov on palette 9
+- level 4 player is transparent when black??? other levels OK, black must have been
+  merged with color 0 in palette generation compare asm of gfx
 - maybe we can add 2 player mode now that memory dropped drastically
-- check parallax with new technique
+- check parallax with new technique ; Sprite Configuration (SSCAN2 (bit 15), 64-bit AGA Sprites)
+SPRITE_MODE     EQU          (1<<15)+(%1100) so position the trees on the left
+first see that there's a gap then set the sprite mode
 
 MEDIUM PRIORITY:
 - boss 5: locomotive wheels erase wrong
@@ -14,7 +19,6 @@ MEDIUM PRIORITY:
 - level 1 repair front objects (status bar showing but destroyed, debug this)
   => control word for multiplexed after lamp is not working but other sprites are also destroyed!
 - level 2 front object (lamp) not displaying (used to work with level 1 objects)
-- sword ninja has transparent parts should be black
 
 LOWER PRIORITY:
 - game over: check if music plays

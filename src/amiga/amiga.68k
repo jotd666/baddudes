@@ -3616,7 +3616,9 @@ draw_bob_loop:
 	jeq		29f
 	neg.w	d1
 	move.w	d1,d3	| Y-clip
+	subq	#2,d5	| offset should not take mask (not eluded) into account
 	mulu.w	d5,d3	| is computed in bytes offset of source
+	addq	#2,d5
 	moveq	#0,d1
 32:
 	cmp.w	#Y_MAX,d1
