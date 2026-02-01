@@ -5,7 +5,6 @@ import json
 shared_sprite_codes={int(x,16) for x in """009
 00a
 00c
-00c
 00d
 00e
 010

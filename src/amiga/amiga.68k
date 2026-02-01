@@ -731,11 +731,14 @@ _vblank:
 	btst	#5,d0
 	jeq		1f
 	
+	moveq	#0,d0
+	jsr	_read_joystick
+	move.l	d0,_joypad_port_2_state
 	
-	move.l	_joypad_state,d1
+	move.l	_joypad_port_1_state,d1
 	moveq	#1,d0
 	jsr	_read_joystick
-	move.l	d0,_joypad_state
+	move.l	d0,_joypad_port_1_state
 	
 	.ifndef	RELEASE
 	move.b	ticks_count,d0
@@ -5264,17 +5267,17 @@ read_system_inputs:
 	beq.b	0f
 	bclr	#BIT_START_1P,d0
 0:
-*	tst.b	(2,a0)		| "2" key like in MAME
-*	beq.b	0f
-*	bclr	#BIT_START_2P,d0
-*0:	
+	tst.b	(2,a0)		| "2" key like in MAME
+	beq.b	0f
+	bclr	#BIT_START_2P,d0
+0:	
 
 	jbsr		is_game_playing
 	bne.b	2f
 
 	* if game not playing, or within "continue" loop
 	* consider "fire" as insert coin
-	move.l	_joypad_state,d1
+	move.l	_joypad_port_1_state,d1
 	* save prev state as game loops within vblank
 	* pushing fire would either lockup the game
 	* or insert a lot of credits simulatenously
@@ -5284,12 +5287,12 @@ read_system_inputs:
 	beq.b	0f
 	bclr	#BIT_START_1P,d0
 0:
-*	* game not in play, accept start 2P game with "down"
-*	* temp: disabled ATM, 2P mode is buggy!
-*	btst	#JPB_BTN_DOWN,d1
-*	beq.b	0f
-*	bclr	#BIT_START_2P,d0
-*0:
+	* game not in play, accept start 2P game with "down"
+	* temp: disabled ATM, 2P mode is buggy!
+	btst	#JPB_BTN_DOWN,d1
+	beq.b	0f
+	bclr	#BIT_START_2P,d0
+0:
 	btst	#JPB_BTN_RED,d1
 	beq.b	1f
 	* game not in play, accept insert coin with fire
@@ -5340,7 +5343,18 @@ read_controls:
 
 
 	* directions + fire
-	move.l	_joypad_state,d1
+	ror.w	#8,d0
+	move.l	_joypad_port_2_state,d1
+	jbsr	read_joy_controls
+	ror.w	#8,d0
+	
+	move.l	_joypad_port_1_state,d1
+	jbsr	read_joy_controls
+
+	movem.l	(a7)+,a0/d1
+	rts
+
+read_joy_controls:
 	btst	#JPB_BTN_UP,d1
 	beq.b	0f
 	bclr	#BIT_UP,d0
@@ -5365,11 +5379,7 @@ read_controls:
 	beq.b	0f
 	bclr	#BIT_FIRE2,d0
 0:
-
-	movem.l	(a7)+,a0/d1
 	rts
-
-
 	
 osd_read_dsw1:
 	* actual dipswitches
@@ -7449,10 +7459,12 @@ vbl_counter:
 	.word	0
 _resload:
 	.long	0
-_joypad_state:
+_joypad_port_1_state:
 	.long	0
-_previous_joypad_state:
+
+_joypad_port_2_state:
 	.long	0
+
 _gfxbase:
 	.long	0
 _dosbase:

@@ -1,7 +1,12 @@
-- debug parallax: mark 0,1,2,3 on sprite strips to test
+- second player: some missing frames
+  compare new "player" frames list to the original one, original
+  probably missing cases as we didn't go further with p2
 - quantize shifts for bosses: not correct anymore for level 3 boss at least
 - karnov level 6 and 7: wrong colors, palette probably changes slightly between levels
   maybe a per-level dump would fix the issue
+  (old:  mutant karnov black color issue: conflict between truck tires and mutant karnov on palette 9
+  BUT fixing karnov steals too many colors and now character trousers are not all white...)
+
 - jump on long or double joystick press? It would help playing with a one button joystick.
 - level 2: climbers on the right "blink" (frame/grouping?)
 - infinite lives cheat doesn't work
@@ -50,16 +55,10 @@ LOWER PRIORITY:
 
 low priority:
 
-- do a OPT_TWO_PLAYER_MODE option, ideally it would rule to have 2 versions of the game
-- drop 2 player mode, use rightmost OSD sprite for real parallax in levels 4 and 6
-  see if we can blit the score afterwards if 2P mode is reinstated, anyway 2P mode is
-  a problem as it uses 4 more colors and it degrades sprite palette even further.
-- but 2nd player could be rendered with top = first player top tiles and bottom: tiles with
+- 2nd player could be rendered with top = first player top tiles and bottom: tiles with
   changed plane order (trial and error to get acceptable colors) to save memory
 - flashing "insert coin": missing first "I" which corrupts bottom left OSDs
 - log & rip missing sounds: breakpoint on sound not found so able to go to mame and rip it
-- mutant karnov black color issue: conflict between truck tires and mutant karnov on palette 9
-  BUT fixing karnov steals too many colors and now character trousers are not all white...
 - level 7: missing heli sound but would steal 1 music channel...
 - invincibility: still hit when falling on road; pits (level 2): 
   game must not change p1_state_flags_00ffa386 must remain to 0x10

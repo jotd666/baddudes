@@ -95,9 +95,10 @@ def doit():
         player_moves = json.load(f)
         # to do the second player, duplicate entries with clut 1
         # not activated, as it uses too many palette entries
-##        for k,v in player_moves.items():
-##            if (0 <= int(k) < 0x200) or (0x800 < int(k) < 0x825):
-##                v["cluts"].append(1)
+        for k,v in player_moves.items():
+            k = int(k)%0x1000  # else it misses dual tiles (which can be simple or multi)
+            if (0 <= k < 0x200) or (0x800 < k < 0x825):
+                v["cluts"].append(1)
 
     for k,v in used_dict.items():
         if k.startswith("game_level_"):

@@ -17,6 +17,8 @@ convert_dudes_pics.doit()
 sprite_names = dict()
 palette_dict = dict()
 
+sprite_name_dict = get_sprite_name_dict()
+
 ninja_range = range(0x200,0x348)
 dog_range = range(0xAc0,0xAF5)
 spidey_range = range(0x840,0x86B)
@@ -33,10 +35,14 @@ pre_mirrored_sprites_dict = {
 "game_level_2":[{k:{3,4} for k in ninja_range},{k:{2} for k in spidey_range},{k:{2} for k in range(0x724,0x735)}],
 # level 3: boss ninjas (green) and also red ninja
 "game_level_3":[{k:{0xf,4} for k in ninja_range}],
-# level 4: too short in memory
-# level 5: too short in memory
+# level 4: was too short in memory now it's possible
+"game_level_4":[{k:{3,4} for k in ninja_range},{k:{8} for k in dog_range}],
+# level 5: was too short in memory now it's possible
+"game_level_4":[{k:{3,4} for k in ninja_range}],
+# level 6
 "game_level_6":[{k:{3,4} for k in ninja_range},{k:{2} for k in spidey_range}],
-
+# level 7: maybe add sword guys
+"game_level_7":[{k:{3,4} for k in ninja_range}],
 }
 
 def load_pre_mirrored_sprites(context):
@@ -76,6 +82,13 @@ with open(used_tile_cluts_file) as f:
 with open(used_sprite_cluts_file) as f:
     # set proper types
     used_sprite_cluts = reformat_dict(json.load(f))
+# add 2nd player is done in "extract_used_sprites.py"
+##for k,level_used in used_sprite_cluts.items():
+##    for sprite_id,data in level_used.items():
+##        if sprite_id in player_frames:
+##            data["cluts"].add(1)  # second player colors
+##            if sprite_id==0xC:
+##                print(k,sprite_id,data)
 
 
 dump_it = True
@@ -199,7 +212,6 @@ def process_multi_tiled_sprite(tile_number,full_tileset,h,w,height,width):
     if side_group:
         # sprite has a manually set lateral/side tile grouping
         # allows to save 1 blit and 25% chip bandwidth on sprites that are only used together (wheel parts, body parts)
-        # also saves a lot of memory
 
         group_tiles = [tile_number]+side_group
         img = Image.new("RGB",(width*len(group_tiles),height))
@@ -212,8 +224,8 @@ def process_multi_tiled_sprite(tile_number,full_tileset,h,w,height,width):
         vert_group = vert_grouped_dict.get(tile_number)
         if vert_group:
             # sprite has a manually set vertical tile grouping
-            # allows to save 1 blit and 25% chip bandwidth on sprites that are only used together (wheel parts, body parts)
-            # also saves a lot of memory
+            # allows to save 1 blit on sprites that are only used together (wheel parts, body parts), but not as interesting
+            # as side grouping
             group_tiles = [tile_number]+vert_group
             img = Image.new("RGB",(width,height*len(group_tiles)))
             # rebuild bigger pic from unique tile columns
@@ -509,7 +521,7 @@ def load_contexted_tileset(tile_sheet_dict,context,nb_colors,is_bob,
         tsd = tile_sheet_dict.get(i)
         if tsd:
             tp,tile_set = load_tileset(tsd,i,16,context_dir,cluts=used_cluts_dict[context],is_bob=is_bob,
-            postload_callback=postload_callback)
+            postload_callback=postload_callback,name_dict=sprite_name_dict if is_bob else None)
             tile_24a000_set_list.append(tile_set)
             tile_palette.update(tp)
         else:
