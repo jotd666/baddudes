@@ -82,13 +82,16 @@ with open(used_tile_cluts_file) as f:
 with open(used_sprite_cluts_file) as f:
     # set proper types
     used_sprite_cluts = reformat_dict(json.load(f))
-# add 2nd player is done in "extract_used_sprites.py"
-##for k,level_used in used_sprite_cluts.items():
-##    for sprite_id,data in level_used.items():
-##        if sprite_id in player_frames:
-##            data["cluts"].add(1)  # second player colors
-##            if sprite_id==0xC:
-##                print(k,sprite_id,data)
+# add 2nd player now that the hell in extract_used_sprites is done
+# basically get all player frames and add clut 1: second player with green trousers
+# becomes active
+for k,level_used in used_sprite_cluts.items():
+    for sprite_id,data in level_used.items():
+        # modulus allows to reach multi-tiles, the tiles that can be displayed as single
+        # (when flip is active) or multiple (2x, 4x sometimes both)
+        if sprite_id%0x1000 in player_frames:
+            data["cluts"].add(1)  # second player colors
+
 
 
 dump_it = True
