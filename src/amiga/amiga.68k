@@ -837,6 +837,12 @@ _vblank:
 	addq.b	#1,graphics_update_counter
 24:
 
+	move.w	x_background_scroll_value,d0
+	lsr.w	#1,d0
+	not.w	d0
+	and.w	#0xFF,d0
+	jbsr	update_background_sprite_shift
+
 	.ifndef		RELEASE
 	tst.b	debug_truck_control
 	jeq		1f
@@ -2260,7 +2266,7 @@ install_center_sprites:
 	lea		osd_top_left_center_next_cw,a3
 	jbsr	install_osd_sprite
 	
-	* connect the bottom osd sprites FUCK
+	* connect the bottom osd sprites
 	
 	lea		osd_center_left_next_cw,a0
 	move.w	d6,(8,a0)
@@ -4687,7 +4693,7 @@ platform_init:
 	* restrict borders: we don't see bobs on the borders!
 	* try to hide color 0 on the border (except on OCS)
 
-    move.w #(SPRITE_FMODE<<2)+BITPLANE_FMODE,fmode(a5)	| 32 bit bitplane fetch, 64 bit wide sprites
+    move.w #(1<<15)+(SPRITE_FMODE<<2)+BITPLANE_FMODE,fmode(a5)	| 32 bit bitplane fetch, 64 bit wide sprites
 
 	move.w	#0,bplcon1(a5)
 	.ifeq	BITPLANE_FMODE-3
@@ -6920,13 +6926,12 @@ install_osd_hardware_sprites:
 	moveq	#32+HW_SPRITE_SHIFT,d0
 	moveq	#0,d1
 	moveq	#3,d7
+	lea		HW_SpriteYTable_240,a1
 0:
 	movem.w	d0-d1,-(a7)
-	lea		HW_SpriteYTable_240,a1
 	move.l	(a4),a3
 	move.l	a3,a2
 	jbsr	install_any_sprite
-	addq	#8,a1		| next sprite
 	movem.w	(a7)+,d0-d1
 	addq	#8,A4
 	add		#64,d0		| next X
@@ -6936,6 +6941,37 @@ install_osd_hardware_sprites:
 10:	
 	rts
 
+* < D0: shift 0-$FF
+update_background_sprite_shift:
+	move.l	background_sprite_table,d1
+	jeq		10f
+	move.l	d1,a4
+	lea		HW_SpriteYTable_240,a1
+	moveq	#0,d1
+	moveq	#3,d7
+	move.w	d0,d3
+	neg.w	d3
+	and.w	#0xFF,d3
+	lsr.w	#6,d3			| /64 to get starting sprite 0-3
+	lsl.w	#6,d3			| *64 again
+	add.w	d3,d0			| to be able to correct offset & select start sprite
+	lsr.w	#3,d3			| *8 for offset in table
+0:	
+	move.l	(a4,d3.w),a0	| get proper sprites (vs shift)
+	move.w	d0,d2
+	jbsr	store_sprite_pos
+	move.w	d0,8(a0)
+	swap	d0
+	move.w	d0,(a0)
+	move.l	d2,d0
+	addq	#8,d3
+	and.w	#0x1F,d3	| wrap pointer
+	add		#64,d0		| next X
+	and.w	#0xFF,d0	| wrap!
+	dbf		d7,0b
+10:
+	rts
+	
 	
 * < A2: sprite start
 * < A3: sprite control word (can be A2 or other for multiplexing)
@@ -7705,7 +7741,7 @@ HW_SpriteXTable:
 	.rept 320
 	.set	x,reptn+0x80
 	.set reptn,reptn+1
-    .byte  0,x>>1,0,x&1
+    .byte  0,(x>>1)&0x7F,0,x&1
   .endr
 
 	.macro DEF_HW_SPRITE_Y_TABLE	height

@@ -1,17 +1,18 @@
+- debug parallax: mark 0,1,2,3 on sprite strips to test
 - quantize shifts for bosses: not correct anymore for level 3 boss at least
 - karnov level 6 and 7: wrong colors, palette probably changes slightly between levels
   maybe a per-level dump would fix the issue
 - jump on long or double joystick press? It would help playing with a one button joystick.
 - level 2: climbers on the right "blink" (frame/grouping?)
 - infinite lives cheat doesn't work
-- level 4 player is transparent when black??? other levels OK, black must have been
-  merged with color 0 in palette generation compare asm of gfx
 - maybe we can add 2 player mode now that memory dropped drastically
 - check parallax with new technique ; Sprite Configuration (SSCAN2 (bit 15), 64-bit AGA Sprites)
 SPRITE_MODE     EQU          (1<<15)+(%1100) so position the trees on the left
 first see that there's a gap then set the sprite mode
 
 MEDIUM PRIORITY:
+- is there enough memory to mirror all sprites? in which case blitter chain interrupt
+  would maybe enhance the game speed
 - boss 5: locomotive wheels erase wrong
 - level 7: fix president/door colors / boss 7: bad color change
 - game over: credits screen corruption, high score corruption at the end of demo too
@@ -19,7 +20,10 @@ MEDIUM PRIORITY:
 - level 1 repair front objects (status bar showing but destroyed, debug this)
   => control word for multiplexed after lamp is not working but other sprites are also destroyed!
 - level 2 front object (lamp) not displaying (used to work with level 1 objects)
-
+- isolate tree at level 4 detect when player/enemies is in that zone (absolute X/Y coords maybe)
+  and blit the tree over the player/enemies (there are 2 locations). Maybe it can be done
+  with the grass too.
+  
 LOWER PRIORITY:
 - game over: check if music plays
 - level 3: missing splash sounds
