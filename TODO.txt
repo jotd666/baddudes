@@ -1,6 +1,5 @@
-- second player: some missing frames
-  compare new "player" frames list to the original one, original
-  probably missing cases as we didn't go further with p2
+- when reverting to title screen after the demo, the music is still playing
+  but memory must have been cleared so it plays trash
 - quantize shifts for bosses: not correct anymore for level 3 boss at least
 - karnov level 6 and 7: wrong colors, palette probably changes slightly between levels
   maybe a per-level dump would fix the issue

@@ -731,9 +731,11 @@ _vblank:
 	btst	#5,d0
 	jeq		1f
 	
+	.ifeq	OPT_NO_SECOND_PLAYER
 	moveq	#0,d0
 	jsr	_read_joystick
 	move.l	d0,_joypad_port_2_state
+	.endif
 	
 	move.l	_joypad_port_1_state,d1
 	moveq	#1,d0
@@ -5267,11 +5269,13 @@ read_system_inputs:
 	beq.b	0f
 	bclr	#BIT_START_1P,d0
 0:
+	.ifeq	OPT_NO_SECOND_PLAYER
 	tst.b	(2,a0)		| "2" key like in MAME
 	beq.b	0f
 	bclr	#BIT_START_2P,d0
 0:	
-
+	.endif
+	
 	jbsr		is_game_playing
 	bne.b	2f
 
@@ -5288,11 +5292,12 @@ read_system_inputs:
 	bclr	#BIT_START_1P,d0
 0:
 	* game not in play, accept start 2P game with "down"
-	* temp: disabled ATM, 2P mode is buggy!
+	.ifeq	OPT_NO_SECOND_PLAYER
 	btst	#JPB_BTN_DOWN,d1
 	beq.b	0f
 	bclr	#BIT_START_2P,d0
 0:
+	.endif
 	btst	#JPB_BTN_RED,d1
 	beq.b	1f
 	* game not in play, accept insert coin with fire
@@ -5341,12 +5346,13 @@ read_controls:
 	bclr	#BIT_FIRE2,d0
 0:
 
-
+	.ifeq	OPT_NO_SECOND_PLAYER
 	* directions + fire
 	ror.w	#8,d0
 	move.l	_joypad_port_2_state,d1
 	jbsr	read_joy_controls
 	ror.w	#8,d0
+	.endif
 	
 	move.l	_joypad_port_1_state,d1
 	jbsr	read_joy_controls
