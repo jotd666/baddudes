@@ -6,12 +6,14 @@
 * music modules by no9
 
 
+OPT_BLITTER_MODE = 0
 
 .include "custom.i"
 .include "exec_lvos.i"
 .include "dos_lvos.i"
 .include "graphics_lvos.i"
 .include "baddudes.inc"
+.include "blitter_macros.inc"
 .include "sounds.inc"
 
 AttnFlags = 0x128
@@ -171,25 +173,10 @@ NB_BYTES_PER_SPRITE_ROW = 8   | fmode=3: 64 pixels wide sprites!
 	.endif
 	.endm
 	
-	.macro	WAIT_BLIT
-	.ifndef	RELEASE
-	cmp.l	#_custom,a5
-	jeq		custom_ok\@
-	BREAKPOINT	"custom not loaded in A5!"
-custom_ok\@:
-	.endif
-	* no blitter high priority: first, game needs fastmem so it
-	* doesn't adds any speed second it can make the music fail
-	* on big blits
-	*move.w	#0x8400,(dmacon,a5)		| blitter high priority
-wait\@:
-	BTST	#6,(dmaconr,a5)
-	BNE.S	wait\@
-	*move.w	#0x0400,(dmacon,a5)		| blitter normal priority
-	.endm
+
 
 	.macro	DO_BLIT
-	move.w  d4,bltsize(a5)
+	WRITE_BLITTER_REG_SIZE  d4
 	.ifndef	RELEASE
 	jbsr	log_blit
 	.endif
@@ -4178,7 +4165,7 @@ blit_planes_any_internal_cookie_cut:
     move.w  d0,bltdmod(a5)	|D modulo
 					
 	subq	#1,d3
-	beq.b	7f
+	jeq	7f
 	subq	#1,d3
 6:
 	move.l a3,bltapt(a5)	|source graphic top left corner (mask)
@@ -4486,7 +4473,7 @@ blit_planes_any_internal_no_cookie_cut:
     move.w  d0,bltdmod(a5)	|D modulo
 					
 	subq	#1,d3
-	beq.b	7f
+	jeq	7f
 	subq	#1,d3
 6:
 	jbsr	start_process_1_plane_nocc

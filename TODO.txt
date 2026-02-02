@@ -1,3 +1,4 @@
+- bad palette for 2-life player cyan
 - when reverting to title screen after the demo, the music is still playing
   but memory must have been cleared so it plays trash
 - quantize shifts for bosses: not correct anymore for level 3 boss at least
@@ -9,14 +10,8 @@
 - jump on long or double joystick press? It would help playing with a one button joystick.
 - level 2: climbers on the right "blink" (frame/grouping?)
 - infinite lives cheat doesn't work
-- maybe we can add 2 player mode now that memory dropped drastically
-- check parallax with new technique ; Sprite Configuration (SSCAN2 (bit 15), 64-bit AGA Sprites)
-SPRITE_MODE     EQU          (1<<15)+(%1100) so position the trees on the left
-first see that there's a gap then set the sprite mode
 
 MEDIUM PRIORITY:
-- is there enough memory to mirror all sprites? in which case blitter chain interrupt
-  would maybe enhance the game speed
 - boss 5: locomotive wheels erase wrong
 - level 7: fix president/door colors / boss 7: bad color change
 - game over: credits screen corruption, high score corruption at the end of demo too
