@@ -752,16 +752,6 @@ _vblank:
 	bne.b	0f
 	jbsr		toggle_pause
 0:
-	* here music doesn't loop. We have to stop it when it ends
-	move.w	music_tick,d1
-	beq.b	13f
-	
-	subq	#1,d1
-
-	move.w	d1,music_tick
-	bne.b	13f
-	jbsr		osd_music_stop
-13:
 	
 	* ack vbl twice (040/pistorm bug)
 	.rept	2
@@ -7180,9 +7170,6 @@ osd_sound_start:
 	* as long as it's not zero)
 
 
-	* here we allow music to override another looping music
-	*tst.w	music_tick
-	*bne.b	10b
 	* play the proper module pattern
 	* load up the countdown if loop
 	
