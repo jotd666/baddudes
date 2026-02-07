@@ -1,13 +1,15 @@
+- level 1 truck front missing part (bltafwm hack probably caused this)
 - bad palette for 2-life player cyan
+- disable cpu erase if blitter chain
 - when reverting to title screen after the demo, the music is still playing
   but memory must have been cleared so it plays trash
-- quantize shifts for bosses: not correct anymore for level 3 boss at least
+- quantize shifts for bosses: not correct anymore for level 3 boss at least: use the OPT_BOSS_MOCKUP to re-tune
+  add karnov mid-level to boss mockups
 - karnov level 6 and 7: wrong colors, palette probably changes slightly between levels
   maybe a per-level dump would fix the issue
   (old:  mutant karnov black color issue: conflict between truck tires and mutant karnov on palette 9
   BUT fixing karnov steals too many colors and now character trousers are not all white...)
 
-- jump on long or double joystick press? It would help playing with a one button joystick.
 - level 2: climbers on the right "blink" (frame/grouping?)
 - infinite lives cheat doesn't work
 
@@ -45,6 +47,8 @@ LOWER PRIORITY:
 
 - level 7-2: sabreman (actually any generic ninja) can happen between devil pole & dragonninja:
   play without invincibility and wait for blows...
+- jump on long or double joystick press? It would help playing with a one button joystick: yes but how to differentiate between jump attack
+  and jump to change floors?
 
 
 low priority:

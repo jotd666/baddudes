@@ -717,7 +717,7 @@ _vblank:
 	move.w	(intreqr,a5),d0
 	btst	#5,d0
 	jeq		1f
-	
+		
 	.ifeq	OPT_NO_SECOND_PLAYER
 	moveq	#0,d0
 	jsr	_read_joystick
@@ -3951,15 +3951,15 @@ clear_fg_planes_any_blitter_internal:
 	WAIT_BLIT
     
 	
-	move.l	d5,bltcon0(a5)	
-    move.w  d0,bltdmod(a5)	|D modulo
+	WRITE_BLITTER_REG_LONG	d5,bltcon0	
+	WRITE_BLITTER_REG_WORD	d0,bltdmod	|D modulo
 	
 	subq	#1,d3
 3:
 	BTST	#6,(dmaconr,a5)
 	jne		5f
 4:
-	move.l a1,bltdpt(a5)	|destination top left corner
+	WRITE_BLITTER_REG_LONG	a1,bltdpt	|destination top left corner
 	DO_BLIT					|rectangle size, starts blit
 	lea		(SCREEN_PLANE_SIZE,a1),a1
 	dbf		d3,3b	
@@ -4155,33 +4155,33 @@ blit_planes_any_internal_cookie_cut:
     
     * blitter registers set
 	* set mask to possibly non-zero because truck/train use it to hide start
-    move.l  d1,bltafwm(a5)
+	WRITE_BLITTER_REG_LONG	d1,bltafwm
 
-	move.w d2,bltamod(a5)		|A modulo=bytes to skip between lines
-	move.w d2,bltbmod(a5)		|B modulo=bytes to skip between lines
-	move.l d7,bltcon0(a5)	| sets con0 and con1: full cookie cut 2 sources & 1 mask
+	WRITE_BLITTER_REG_WORD	d2,bltamod		|A modulo=bytes to skip between lines
+	WRITE_BLITTER_REG_WORD	d2,bltbmod		|B modulo=bytes to skip between lines
+	WRITE_BLITTER_REG_LONG	d7,bltcon0	| sets con0 and con1: full cookie cut 2 sources & 1 mask
 	
-    move.w  d0,bltcmod(a5)	|C modulo
-    move.w  d0,bltdmod(a5)	|D modulo
+	WRITE_BLITTER_REG_WORD	d0,bltcmod	|C modulo
+	WRITE_BLITTER_REG_WORD	d0,bltdmod	|D modulo
 					
 	subq	#1,d3
 	jeq	7f
 	subq	#1,d3
 6:
-	move.l a3,bltapt(a5)	|source graphic top left corner (mask)
+	WRITE_BLITTER_REG_LONG	a3,bltapt	|source graphic top left corner (mask)
 	jbsr	start_process_1_plane
 	
-	move.l	a1,bltcpt(a5)	|pristine background top (bottom) left corner
-	move.l	a1,bltdpt(a5)	|destination top (bottom) left corner
+	WRITE_BLITTER_REG_LONG	a1,bltcpt	|pristine background top (bottom) left corner
+	WRITE_BLITTER_REG_LONG	a1,bltdpt	|destination top (bottom) left corner
 	DO_BLIT	|rectangle size, starts blit
 	lea		(SCREEN_PLANE_SIZE,a1),a1
 	WAIT_BLIT
 	dbf		d3,6b
 7:
-	move.l a3,bltapt(a5)	|source graphic top left corner (mask)
+	WRITE_BLITTER_REG_LONG	a3,bltapt	|source graphic top left corner (mask)
 	jbsr	start_process_1_plane
-	move.l	a1,bltcpt(a5)	|pristine background top (bottom) left corner
-	move.l	a1,bltdpt(a5)	|destination top (bottom) left corner
+	WRITE_BLITTER_REG_LONG	a1,bltcpt	|pristine background top (bottom) left corner
+	WRITE_BLITTER_REG_LONG	a1,bltdpt	|destination top (bottom) left corner
 	DO_BLIT	|rectangle size, starts blit
 10:
     movem.l (a7)+,d0-d7/a4
@@ -4193,14 +4193,14 @@ start_process_1_plane:
 	move.l	d0,a4
 	add.w	d5,a4		| add XY offset
 	* non-zero: set data source & bltcon
-	move.l	d7,bltcon0(a5)	| sets con0 and con1: C-A+B->D cookie cut full
-	move.l	a4,bltbpt(a5)	|source graphic top left corner
+	WRITE_BLITTER_REG_LONG	d7,bltcon0	| sets con0 and con1: C-A+B->D cookie cut full
+	WRITE_BLITTER_REG_LONG	a4,bltbpt	|source graphic top left corner
 	rts
 
 60:
 	* source is 0: just apply mask (less bandwidth lost) and change bltcon
-	move.l	d6,bltcon0(a5)	| sets con0 and con1: C-A->D cookie cut, B fixed
- 	move.w	d0,bltbdat(a5)	|B word is zero (re-use the fact that d0 = 0)
+	WRITE_BLITTER_REG_LONG	d6,bltcon0	| sets con0 and con1: C-A->D cookie cut, B fixed
+	WRITE_BLITTER_REG_WORD	d0,bltbdat	|B word is zero (re-use the fact that d0 = 0)
 	rts
 
 
@@ -4319,17 +4319,17 @@ restore_background:
 
     * now just wait for blitter ready to write all registers
 	WAIT_BLIT
-    move.l  #-1,bltafwm(a5)
+	WRITE_BLITTER_REG_LONG	#-1,bltafwm
     
     * blitter registers set
 
-	move.l d3,bltcon0(a5)	| sets con0 and con1
+	WRITE_BLITTER_REG_LONG	d3,bltcon0	| sets con0 and con1
 
-    move.w  d1,bltamod(a5)	|A modulo
-    move.w  d1,bltdmod(a5)	|D modulo
+	WRITE_BLITTER_REG_WORD	d1,bltamod	|A modulo
+	WRITE_BLITTER_REG_WORD	d1,bltdmod	|D modulo
 							
-	move.l a0,bltapt(a5)	|source graphic top left corner
-	move.l a1,bltdpt(a5)	|destination top (bottom) left corner
+	WRITE_BLITTER_REG_LONG	a0,bltapt	|source graphic top left corner
+	WRITE_BLITTER_REG_LONG	a1,bltdpt	|destination top (bottom) left corner
 	DO_BLIT	|rectangle size, starts blit
 	
 	move.w	nb_tile_planes_24da,d0
@@ -4359,8 +4359,8 @@ restore_background:
 	jra		1f
 0:
 	WAIT_BLIT
-	move.l a0,bltapt(a5)	|source graphic top left corner
-	move.l a1,bltdpt(a5)	|destination top (bottom) left corner
+	WRITE_BLITTER_REG_LONG	a0,bltapt	|source graphic top left corner
+	WRITE_BLITTER_REG_LONG	a1,bltdpt	|destination top (bottom) left corner
 	DO_BLIT	|rectangle size, starts blit
 	dbf		D0,2b
 1:
@@ -4468,9 +4468,9 @@ blit_planes_any_internal_no_cookie_cut:
     
     * blitter registers set
 
-	move.w d2,bltamod(a5)		|A modulo=bytes to skip between lines
+	WRITE_BLITTER_REG_WORD	d2,bltamod		|A modulo=bytes to skip between lines
 	
-    move.w  d0,bltdmod(a5)	|D modulo
+	WRITE_BLITTER_REG_WORD	d0,bltdmod	|D modulo
 					
 	subq	#1,d3
 	jeq	7f
@@ -4478,14 +4478,14 @@ blit_planes_any_internal_no_cookie_cut:
 6:
 	jbsr	start_process_1_plane_nocc
 	
-	move.l	a1,bltdpt(a5)	|destination top (bottom) left corner
+	WRITE_BLITTER_REG_LONG	a1,bltdpt	|destination top (bottom) left corner
 	DO_BLIT	|rectangle size, starts blit
 	lea		(SCREEN_PLANE_SIZE,a1),a1
 	WAIT_BLIT
 	dbf		d3,6b
 7:
 	jbsr	start_process_1_plane_nocc
-	move.l	a1,bltdpt(a5)	|destination top (bottom) left corner
+	WRITE_BLITTER_REG_LONG	a1,bltdpt	|destination top (bottom) left corner
 	DO_BLIT	|rectangle size, starts blit
     
     movem.l (a7)+,d0-d7/a4
@@ -4496,13 +4496,13 @@ start_process_1_plane_nocc:
 	bne.b	61f
 
 	* source is 0: just clear (less bandwidth lost) and change bltcon
-	move.l	#0x01000000,bltcon0(a5)	| sets con0 and con1: clear
+	WRITE_BLITTER_REG_LONG	#0x01000000,bltcon0	| sets con0 and con1: clear
 
 	rts
 61:
 	* non-zero: set data source & bltcon
-	move.l	d7,bltcon0(a5)	| sets con0 and con1: C-A+B->D cookie cut full
-	move.l d0,bltapt(a5)	| source graphic top left corner
+	WRITE_BLITTER_REG_LONG	d7,bltcon0	| sets con0 and con1: C-A+B->D cookie cut full
+	WRITE_BLITTER_REG_LONG	d0,bltapt	| source graphic top left corner
 	rts
 
 	
@@ -4666,7 +4666,7 @@ platform_init:
 	move.w	#0x7FFF,dmacon(a5)
 	move.w	#0x7FFF,intena(a5)
 	* set blitter parameters once and for all
-    move.l  #-1,bltafwm(a5)
+	WRITE_BLITTER_REG_LONG	#-1,bltafwm
 	
 *	move.l	monitor,d0
 *	cmp.l	#NTSC_MONITOR_ID,D0
@@ -6161,7 +6161,7 @@ load_sprite_file:
 	move.w	#15,d6			| number of cluts
 	move.l	d2,a1
 10:
-	move.l	(a1)+,d3
+	move.l	(a1)+,d3		| get a pointer on a clut
 	jeq		2f
 	add.l	d2,d3			| add to displacement: pointer becomes absolute
 	move.l	d3,(-4,a1)		| store
@@ -7273,8 +7273,6 @@ sprite_log_name_index:
 	.endif
 
 	
-
-	
 music_playing:
 	.byte	0
 looped_sound_enabled:
@@ -7289,6 +7287,7 @@ music_pattern:
 	.word	0
 music_tick:
 	.word	0
+
 
 music_duration:
 	.word	0	
