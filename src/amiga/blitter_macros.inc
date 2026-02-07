@@ -1,9 +1,8 @@
 	.include "custom.i"
 
-	
 * how to use in double buffering mode with a "drawn" and a "displayed" buffer
 *
-* - set OPT_BLITTER_MODE to 0 or 1: 0 classic blit+waitblit, 1 blit in interrupts
+* - set OPT_BLIT_CHAIN_MODE to 0 or 1: 0 classic blit+waitblit, 1 blit in interrupts
 * - replace all blit writes by WRITE_BLITTER_REG_xxx macros. When writing bltsize
 *   use WRITE_BLITTER_REG_SIZE instead of WRITE_BLITTER_REG_WORD
 *
@@ -25,18 +24,16 @@
 *   - call PROCESS_BLITS to process the previous blits
 *   - call the routine to perform the "blits" (fake blits now, fills filled_blitter_list instead)
 *   - call COMMIT_BLITLIST to end the list (by setting -2 in it)
-* - on level 3 (blitter) interrupt:
-*   - ack blitter interrupt
-*   - call PROCESS_ONE_BLIT to process next blit
 *
 *   that's it. PROCESS_BLITS started the chain reaction, and there are not blitwaits
 *   anymore in the code
 *
-*   this can be used only if there isn't in-place mirroring. The code has been developed
-*   for a test on US Champ VBall but cannot apply here else there isn't enough memory
-*   to store all static frames, so we use in-place mirroring, which only works with
-*   option 0. If used anyway, there will be strange artifacts because of concurrent
-*   mirroring with CPU & blitting at times.
+*   In most games, for memory considerations, we use in-place mirroring, so no problem with
+*   option 0. But option 1 needs more work. So we introduce a new virtual blitter command if OPT_VBLIT_MIRROR_MODE=1
+*   in the WRITE_VIRTUAL_MIRROR_COMMAND, mirror_function expects the bitplane data in A2 and the height minus 1 in D1
+*
+*   Game that scroll and that can't use dual playfield for sprites also need a command to store the current scroll value
+*   else if the screen moves a lot, the scroll offset added to the bobs doesn't match the current scroll offset
 *
 *   it's however ideal on games that need a lot of blitting and exclusively use
 *   static source data. Interleaved mode would trigger less interrupts too.
@@ -49,6 +46,8 @@
 ******************
 * blitter macros *
 ******************
+
+*DEBUG_BLIT_WAIT = 1
 
 	.macro	CHECK_A5_IS_CUSTOM
 	.ifndef	RELEASE
@@ -73,7 +72,7 @@ wait\@:
 * classic handling *
 ********************
 
-	.if		OPT_BLITTER_MODE==0
+	.if		OPT_BLIT_CHAIN_MODE==0
 	.macro	WAIT_BLIT
 	REALLY_WAIT_BLIT
 	.endm
@@ -85,6 +84,9 @@ wait\@:
 	.endm
 	
 	.macro	PROCESS_BLITS
+	.endm
+	
+	.macro	FORCE_PROCESS_BLITS
 	.endm
 	
 	.macro	COMMIT_BLITLIST
@@ -102,6 +104,23 @@ wait\@:
 	WRITE_BLITTER_REG_WORD	\value,bltsize
 	.endm
 	
+	.if		OPT_VBLIT_MIRROR_MODE==1
+	.macro	WRITE_BLITTER_VIRTUAL_MIRROR	height,mirror_function,bitplane
+	move.w	\height,d1		| height
+	subq	#1,d1		| minus one for dbf
+	jsr		(\mirror_function)	  | in: A2 bitplane (parameter is ignored it is already a2), D1: height-1
+	.endm
+	.endif
+	
+	.if		OPT_VBLIT_SCROLL_MODE==1
+	.macro	WRITE_BLITTER_SCROLL_VALUES	scroll_x,scroll_y
+	* the blits are synchronous, the scrolling is updated at the same time
+	move.l	\scroll_x,blitter_scroll_x
+	move.w	\scroll_y,blitter_scroll_y
+	.endm
+	.endif
+	
+	* no blitlists, empty
 	.macro	DECL_BLITLISTS	size
 	.endm
 	
@@ -111,33 +130,40 @@ wait\@:
 * queue handling *
 ******************
 
-	.if		OPT_BLITTER_MODE==1
+	.if		OPT_BLIT_CHAIN_MODE==1
 	.macro	WAIT_BLIT
 	* do nothing!
 	.endm
 	
 	.macro	NEW_BLITLIST
+	lea		blitter_list_1,a0
+	lea		blitter_list_2,a1
+	.ifdef	DEBUG_BLIT_WAIT
 sw\@:
 	* if blitter isn't finished, then we wait
 	* this is called from level 1 interrupt so
 	* blitter interrupts can interrupt
-	lea		blitter_list_1,a0
-	lea		blitter_list_2,a1
-
-
+	tst.b	blitter_chain_running
+	jeq		snw\@
+	COLOR0_FLASH	0xF00
+	jra		sw\@
+snw\@:
+	.else
+sw\@:
+	* if blitter isn't finished, then we wait
+	* this is called from level 1 interrupt so
+	* blitter interrupts can interrupt
 	tst.b	blitter_chain_running
 	jne		sw\@
-
-
+	.endif
+	
 	* blitter chain has completed: we can switch lists
-	cmp.l	drawn_blitter_list_start,a0
-	jeq		s0\@
-	move.l	a0,drawn_blitter_list_start
+	eor.b	#1,blitter_list_toggle
+	jne		s0\@
 	move.l	a0,drawn_blitter_list_ptr
 	move.l	a1,filled_blitter_list_ptr
 	jra		s1\@
 s0\@:
-	move.l	a1,drawn_blitter_list_start
 	move.l	a1,drawn_blitter_list_ptr
 	move.l	a0,filled_blitter_list_ptr
 s1\@:
@@ -156,9 +182,22 @@ s\@:
 	clr.b	size_command_issued
 	.endm
 
+	* we know that size_command_issued is set
+	.macro	FORCE_PROCESS_BLITS
+	* signal that the blitter chain is now running
+	st.b	blitter_chain_running
+	* start first blit from outside the blitter interrupt to
+	* start the chain reaction reading from drawn_blitter_list_ptr
+	PROCESS_ONE_BLIT
+	* clear size command issued for next blitlist creation
+	clr.b	size_command_issued
+	.endm
+
 	.macro	DECL_BLITLISTS	size
-drawn_blitter_list_start:	
+blitter_scroll_x:
 	.long	0
+blitter_scroll_y:
+	.word	0
 drawn_blitter_list_ptr:
 	.long	0
 filled_blitter_list_ptr:
@@ -168,15 +207,20 @@ blitter_list_1:
 	.skip	\size
 	.long	0xdeaddead
 	.long	0xdeaddead
+	.long	0xdeaddead
 blitter_list_2:
 	.word	-2
 	.skip	\size
+	.long	0xdeaddead
 	.long	0xdeaddead
 	.long	0xdeaddead
 blitter_chain_running:
 	.byte	0
 size_command_issued:
 	.byte	0
+blitter_list_toggle:	
+	.byte	0
+	.align	2
 	.endm
 	
 	.macro	COMMIT_BLITLIST
@@ -198,14 +242,48 @@ b0\@:
 
 	bclr	#14,d0
 	jne		b2\@
-
+	* word or virtual mirror command
+	.if	OPT_VBLIT_MIRROR_MODE==1
+	cmp.w	#deniseid,d0
+	jne		nv0\@
+	* mirror command
+	movem.l	d0-d2/a0-a2,-(a7)
+	lea		mirror_table,a1
+	move.w	(a0)+,d1
+	subq	#1,d1			| height minus one
+	.ifndef	RELEASE
+	jpl		pos\@
+	BREAKPOINT	"zero height for mirror"
+pos\@:
+	.endif
+	move.l	(a0)+,a2
+	.ifndef	MC68020
+	move.l	(a0),a0
+	jsr		(a0)
+	.else
+	jsr		([a0])
+	.endif
+	movem.l	(a7)+,d0-d2/a0-a2
+	add.w	#10,a0		| advance to next command
+	jra		b0\@		| not size: continue parsing list
+nv0\@:
+	.endif
+	.if		OPT_VBLIT_SCROLL_MODE==1
+	cmp.w	#dsksync,d0
+	jne		nv1\@
+	* store scrolling command
+	move.l	(a0)+,blitter_scroll_x
+	move.w	(a0)+,blitter_scroll_y
+	jra		b0\@		| not size: continue parsing list
+nv1\@:
+	.endif
+	* word command, check bounds
 	.ifndef	RELEASE
 	cmp.w	#bltcon0,d0		| sanity check for commands!
 	jcc		f1\@
 f0\@:
 	lea		(-2,a0),a1
-	move.l		drawn_blitter_list_start,a2
-	BREAKPOINT	"word command: not a blitter register (in A1), start in A2!!"
+	BREAKPOINT	"word command: not a blitter register (in A1)"
 	illegal
 f1\@:
 	cmp.w	#deniseid,d0
@@ -218,6 +296,7 @@ f1\@:
 	
 	move.w	d1,(a5,d0.w)
 	jra		b0\@		| not size: continue parsing list
+	* long write command
 b2\@:
 	.ifndef	RELEASE
 	cmp.w	#bltcon0,d0		| sanity check for commands!
@@ -260,12 +339,37 @@ c0\@:
 	move.l	a5,filled_blitter_list_ptr
 	.endm
 	
+	.if		OPT_VBLIT_MIRROR_MODE==1
+	.macro	WRITE_BLITTER_VIRTUAL_MIRROR	height,mirror_function,bitplane
+	move.l	a5,-(a7)
+	LOAD_FILLED_LIST
+	move.w	#deniseid,(a5)+		| fake custom reg,(a5)+
+	move.w	\height,(a5)+
+	move.l	\bitplane,(a5)+
+	move.l	\mirror_function,(a5)+
+	STORE_FILLED_LIST
+	move.l	(a7)+,a5
+	.endm
+	.endif
+
+	.if		OPT_VBLIT_SCROLL_MODE==1
+	.macro	WRITE_BLITTER_SCROLL_VALUES	scroll_x,scroll_y
+	move.l	a5,-(a7)
+	LOAD_FILLED_LIST
+	move.w	#dsksync,(a5)+		| fake custom reg,(a5)+
+	move.l	\scroll_x,(a5)+		| here we adapted to long for convenience (HI/LO)
+	move.w	\scroll_y,(a5)+
+	STORE_FILLED_LIST
+	move.l	(a7)+,a5
+	.endm
+	.endif
+
 	.macro	WRITE_BLITTER_REG_LONG	value,offset
 	move.l	a5,-(a7)
 	move.w	d6,-(a7)
 	LOAD_FILLED_LIST
 	move.w	#\offset,d6
-	bset	#14,d6
+	bset	#14,d6		| bit set to tell it's a long command
 	move.w 	d6,(a5)+
 	move.l	\value,(a5)+
 	STORE_FILLED_LIST

@@ -6,7 +6,7 @@
 * music modules by no9
 
 
-OPT_BLITTER_MODE = 0
+OPT_BLIT_CHAIN_MODE = 0
 
 .include "custom.i"
 .include "exec_lvos.i"
@@ -665,10 +665,10 @@ game_logic:
 	
 	* set base for RAM
 	GET_RAM_START_IN_A6
-	btst	#2,d0
+	btst	#4,d0
 	beq.b	2f
 
-	* mid-screen interrupt: do something once out of 5 times (simulate 60Hz
+	* mid-screen copper interrupt: do something once out of 5 times (simulate 60Hz
 	* in a way that lets the non-interrupt CPU task work a bit, because calling
 	* the interrupt twice can lead to timing issues, like seen in Moon Patrol)
 
@@ -764,18 +764,33 @@ _vblank:
 13:
 	
 	* ack vbl twice (040/pistorm bug)
+	.rept	2
 	move.w	#0x20,(intreq,a5)
-	move.w	#0x20,(intreq,a5)	
+	.endr	
 	jra	3f
 1:
-	* has to be copper
+	* has to be blitter
 	* is level 1 interrupt set? that would mean that mid-screen interrupt
 	* is the source of the interrupt
+	.rept	2
+	move.w	#0x40,(intreq,a5)	
+	.endr
 
-	* we're going to ack copper & software interrupt now
+	* process next blit
+	
+	* quit
+	jra	3f
+	
+level1_interrupt:
+    movem.l d0-d7/a0-a6,-(a7)
+	lea		_custom,a5
+	move.w	(intreqr,a5),d0		| leave this, we need it for "game_logic"
+	* we're going to ack copper & software level 1 interrupt now
 	* do it twice (040/pistorm bug)
+	.rept	2
 	move.w	#0x14,(intreq,a5)
-	move.w	#0x14,(intreq,a5)
+	.endr
+
 
 	jbsr	game_logic
 	tst.b	d0
@@ -822,7 +837,7 @@ _vblank:
 23:
 	lea		_custom,a5
 	move.w	(intreqr,a5),d0
-	btst	#4,d0
+	btst	#1,d0
 	jeq		24f
 	* copper interrupt happened again when we were updating sprites:
 	* skip a frame next time (else game will crawl even more)
@@ -3956,14 +3971,19 @@ clear_fg_planes_any_blitter_internal:
 	
 	subq	#1,d3
 3:
+	.if		OPT_BLIT_CHAIN_MODE==0
 	BTST	#6,(dmaconr,a5)
 	jne		5f
+	.endif
 4:
 	WRITE_BLITTER_REG_LONG	a1,bltdpt	|destination top left corner
 	DO_BLIT					|rectangle size, starts blit
 	lea		(SCREEN_PLANE_SIZE,a1),a1
 	dbf		d3,3b	
     rts
+
+
+	.if		OPT_BLIT_CHAIN_MODE==0
 5:
 	* blitter is busy erasing data on previous plane: do the other one with CPU
 	cmp.w	#5,d2
@@ -4018,6 +4038,7 @@ cpu_erase_64_bits:
 	lea		(SCREEN_PLANE_SIZE,a3),a1
 	dbf		d3,3b	
     rts	
+	.endif
 	
 * < A5: custom
 * < D0.W,D1.W: x,y
@@ -4339,6 +4360,9 @@ restore_background:
 2:
 	add.l	background_plane_size,a0
 	lea	(SCREEN_PLANE_SIZE,a1),a1
+	
+	* cpu-driven erase only works on synchronous blitter
+	.if		OPT_BLIT_CHAIN_MODE==0
 	cmp.w	#4,d2
 	jcc		0f
 
@@ -4358,6 +4382,7 @@ restore_background:
 	dbf		D0,2b	
 	jra		1f
 0:
+	.endif
 	WAIT_BLIT
 	WRITE_BLITTER_REG_LONG	a0,bltapt	|source graphic top left corner
 	WRITE_BLITTER_REG_LONG	a1,bltdpt	|destination top (bottom) left corner
@@ -4368,6 +4393,7 @@ restore_background:
 	movem.l	(a7)+,d2-d6/a0/a2-a5
 	rts
 
+	.if		OPT_BLIT_CHAIN_MODE==0
 cpu_copy_table:
 	.long	nope
 	.long	copy_1_word_row
@@ -4406,7 +4432,7 @@ copy_3_word_row:
 	add.w	d1,a1
 	dbf		d6,11b
 	rts
-	
+	.endif
 	
 * < A5: custom
 * < D0.W,D1.W: x,y, no shifting
@@ -4576,6 +4602,7 @@ store_system:
 	move.w	dmaconr(a6),old_dmacon
 	lea		old_sysvectors,a0
 	move.l	system_vbr,a1
+	move.l	(0x64,a1),(a0)+
 	move.l	(0x68,a1),(a0)+
 	move.l	(0x6c,a1),(a0)+
 	move.l	(0x70,a1),(a0)+
@@ -4592,6 +4619,7 @@ restore_system:
 	move.w	#0x4000,intena(a6)	| ints off
 	lea		old_sysvectors,a0
 	move.l	system_vbr,a1
+	move.l	(a0)+,(0x64,a1)
 	move.l	(a0)+,(0x68,a1)
 	move.l	(a0)+,(0x6c,a1)
 	move.l	(a0)+,(0x70,a1)
@@ -4718,6 +4746,8 @@ platform_init:
  
 	* install keyboard and vblank/copper handler
 	move.l	system_vbr,a1
+	pea		level1_interrupt
+	move.l	(a7)+,(0x64,a1)
 	pea		level2_interrupt
 	move.l	(a7)+,(0x68,a1)
 	pea		_vblank
@@ -4925,7 +4955,13 @@ osd_enable_interrupts:
 	* works from the game (which calls enable interrupts from interrupt)
 	move.w	#0x2000,SR
 0:
-	move.w	#0xC038,_custom+intena
+	.if		OPT_BLIT_CHAIN_MODE==1
+	* enable blitter, vblank & software level 1
+	move.w	#0xC06C,_custom+intena
+	.else
+	* enable vblank & software level 1 only
+	move.w	#0xC02C,_custom+intena
+	.endif
 	rts
 	
 osd_disable_interrupts:
@@ -4934,7 +4970,12 @@ osd_disable_interrupts:
 	* if interrupts are disabled again from interrupt, re-set SR
 	move.w	#0x2700,SR
 0:
-	move.w	#0x0030,_custom+intena
+	.if		OPT_BLIT_CHAIN_MODE==1
+	* leave keyboard
+	move.w	#0x0064,_custom+intena
+	.else
+	move.w	#0x0024,_custom+intena
+	.endif
 	rts
 
 
@@ -8114,7 +8155,7 @@ default_copperlist_resume:
 intro_intreq_block:
 	* now wait some lines until we're sure bitmap only contains
 	* non-black: we can set color 0 to light blue now
-	.word	 intreq,0x8014  | call copper interrupt in the middle of a frame, also flag so copper interrupt knows that we're going to call copper int
+	.word	 intreq,0x8014  | call level 1 interrupt in the middle of a frame, also flag with copper bit so interrupt knows it's middle frame
 
 	* pal limit
     COPPER_WAIT  0xFFDF       | PAL wait
@@ -8142,7 +8183,7 @@ osd_lower_sprites:
 	COPPER_WAIT	0x0C01
 	* re-set palette for non-attached sprites
 	.word	bplcon4,BASE_BPLCON4_VALUE
-	.word	 intreq,0x8010	| no bobs from now on
+	.word	 intreq,0x8004	| no bobs from now on
 
 	DECL_COLOR_BANK	2
 	
