@@ -58,6 +58,14 @@ s0\@:
 	.endif		
 	.endm
 
+
+
+********************
+* classic handling *
+********************
+
+	.if		OPT_BLIT_CHAIN_MODE==0
+	
 	.macro	REALLY_WAIT_BLIT
 	CHECK_A5_IS_CUSTOM
 	move.w	#0x8400,(dmacon,a5)		| blitter high priority
@@ -66,13 +74,7 @@ wait\@:
 	BNE.S	wait\@
 	move.w	#0x0400,(dmacon,a5)		| blitter normal priority
 	.endm
-
-
-********************
-* classic handling *
-********************
-
-	.if		OPT_BLIT_CHAIN_MODE==0
+	
 	.macro	WAIT_BLIT
 	REALLY_WAIT_BLIT
 	.endm
@@ -135,9 +137,7 @@ wait\@:
 	* do nothing!
 	.endm
 	
-	.macro	NEW_BLITLIST
-	lea		blitter_list_1,a0
-	lea		blitter_list_2,a1
+	.macro	REALLY_WAIT_BLIT
 	.ifdef	DEBUG_BLIT_WAIT
 sw\@:
 	* if blitter isn't finished, then we wait
@@ -154,8 +154,14 @@ sw\@:
 	* this is called from level 1 interrupt so
 	* blitter interrupts can interrupt
 	tst.b	blitter_chain_running
-	jne		sw\@
+	jne		sw\@	
 	.endif
+	.endm
+	
+	.macro	NEW_BLITLIST
+	lea		blitter_list_1,a0
+	lea		blitter_list_2,a1
+	REALLY_WAIT_BLIT
 	
 	* blitter chain has completed: we can switch lists
 	eor.b	#1,blitter_list_toggle
@@ -332,6 +338,10 @@ b3\@:
 	jne		c0\@
 	BREAKPOINT	"Blitter list overflow"
 c0\@:
+	cmp.l	#0,a5
+	jne		c1\@
+	BREAKPOINT	"null pointer on blitter list"
+c1\@:
 	.endif
 	.endm
 	

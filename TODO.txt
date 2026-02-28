@@ -1,6 +1,5 @@
 - level 1 truck front missing part (bltafwm hack probably caused this)
 - bad palette for 2-life player cyan
-- disable cpu erase if blitter chain
 - when reverting to title screen after the demo, the music is still playing
   but memory must have been cleared so it plays trash
 - quantize shifts for bosses: not correct anymore for level 3 & 4 boss (OK in boss rush at level 7): use the OPT_BOSS_MOCKUP to re-tune
@@ -66,13 +65,12 @@ low priority:
   game must not change p1_state_flags_00ffa386 must remain to 0x10
 - compare US & japan ROMS see what are the differences: there are A LOT!
 - if TOTAL_CHIP_MEMORY_SIZE = 1250000, train level loads but background is trashed
-  and memory manager doesn't detect any issue...
-- still not restored black color ex: tile 4ae/02 (sword level 5)
+  and memory manager doesn't detect any issue... fortunately game doesn't need as much mem now
 - level 3: put water scroll in some other buffer (allocate one?) so changing plans automatically
   clips the sprites without any other side effect
 - level 4: maybe remove foreground trees if possible
 - level 6: same
-- level 5: map tiles & fix the buggy inverted tiles
+- level 5: map tiles & fix the buggy inverted tilesb (original bug)
 - restore buffer uses 3 horizontal playfields, they should use only 2 plus a few tiles
   to restore bobs that "wrap"
   alternative: if bob X + width wrap, clip it and perform 2 restores (but 2x as blits!)

@@ -1,7 +1,7 @@
 *
 *	Amiga-specific portions of Bad Dudes vs Dragonninja (AGA version)
 *
-* (c) JOTD 2025 (hopefully not 2026 as well but it's taking really too long already!)
+* (c) JOTD 2025-2026
 *
 * music modules by no9
 
@@ -357,7 +357,7 @@ _user:
 	lea		fg_screen_buffer_1,a0
 	jbsr		align_for_fmode
 	move.l	a0,fg_screen_data_1
-	move.l	a0,fg_drawed_screen_ptr
+	move.l	a0,fg_drawn_screen_ptr
 	move.l	a0,fg_displayed_screen_ptr
 	
 	
@@ -768,6 +768,7 @@ _vblank:
 	.endr
 
 	* process next blit
+	move.b	#0,0x110
 	PROCESS_ONE_BLIT
 	* quit
 	jra	3f
@@ -1130,7 +1131,7 @@ level_7_erase_helicopter:
 	move.w	#70,d4		| so erase also works when going up!
 	move.w	prev_machine_params,d0
 	move.w	machine_y_pos,d1
-	move.l	fg_drawed_screen_ptr,a1
+	move.l	fg_drawn_screen_ptr,a1
 	move.l	background_restore_buffer,a0
 	jbsr	restore_background
 	* now restore extra planes too
@@ -1156,7 +1157,7 @@ level_7_erase_helicopter:
 	add.w	#144,d0
 	move.w	machine_y_pos,d1
 	add.w	#64,d1
-	move.l	fg_drawed_screen_ptr,a1
+	move.l	fg_drawn_screen_ptr,a1
 	move.l	background_restore_buffer,a0
 	jbsr	restore_background	
 	rts
@@ -1246,7 +1247,7 @@ erase_truck_bottom_part:
 	move.w	(a1)+,d2	| real width
 
 	move.w	#NB_BYTES_PER_SCREEN_ROW,d2		| full screen
-	move.l	fg_drawed_screen_ptr,a1
+	move.l	fg_drawn_screen_ptr,a1
 	move.w  big_machine_height,d4
 	* clip to bottom of truck (wheels)
 	sub.w	d3,d4
@@ -1305,7 +1306,7 @@ level_5_erase_train:
 	move.w	big_machine_extra_pic_height,d4
 	sub.w	d4,d1
 	add.w	x_background_scroll_value,d0
-	move.l 	fg_drawed_screen_ptr,a1
+	move.l 	fg_drawn_screen_ptr,a1
 	move.l	background_restore_buffer,a0
 	moveq	#4,d2	| no need to restore a lot
 	jbsr	restore_background
@@ -1343,7 +1344,7 @@ restore_wheel_background:
 	add.w	big_machine_height,d1
 	sub.w	#16,d1
 	move.l	background_restore_buffer,a0
-	move.l	fg_drawed_screen_ptr,a1
+	move.l	fg_drawn_screen_ptr,a1
 
 	.ifne	OPT_DEBUG_GAP_ERASE
 	sub.w	#10,d1	| slightly up that was to see where areas are restored
@@ -1378,7 +1379,7 @@ restore_gap:
 4:
 	move.w	machine_y_pos,d1	| displayY
 	move.l	background_restore_buffer,a0
-	move.l	fg_drawed_screen_ptr,a1
+	move.l	fg_drawn_screen_ptr,a1
 
 	.ifne	OPT_DEBUG_GAP_ERASE
 	sub.w	#10,d1	| slightly up that was to see where areas are restored
@@ -1408,7 +1409,7 @@ display_title_dudes:
 	move.l	(a2),a2		| first dude struct data
 
 
-	move.l	fg_drawed_screen_ptr,a1
+	move.l	fg_drawn_screen_ptr,a1
 	move.l	background_restore_buffer,a0
 	move.w	(a2)+,d0			| X
 	move.w	(a2)+,d1			| Y
@@ -1437,7 +1438,7 @@ display_title_dudes:
 	jbsr	load_palette
 
 	
-	move.l	fg_drawed_screen_ptr,a1
+	move.l	fg_drawn_screen_ptr,a1
 	move.w	(a2)+,d0			| X
 	move.w	(a2)+,d1			| Y
 	move.w	(a2)+,d2			| width
@@ -1461,9 +1462,10 @@ display_title_dudes:
 	NEW_BLITLIST
 	PROCESS_BLITS
 	
+	
 	* we have to wait for blitter, as 8x8 font engine uses cpu only
 	lea		_custom,a5
-	WAIT_BLIT
+	REALLY_WAIT_BLIT
 
 	movem.l	(a7)+,d0-a6
 0:
@@ -1577,7 +1579,7 @@ do_truck_draw:
 	move.w	d0,(a1)+	| X
 	move.w	d6,(a1)+	| real width
 	move.w	x_secondary_scroll_value,(a1)	| note truck position
-	move.l 	fg_drawed_screen_ptr,a1
+	move.l 	fg_drawn_screen_ptr,a1
 	* now big optim: no need to cookie cut/draw all planes!!
 	* so avoid last blit or even 2 last blits (if background is 16 colors)
 	addq	#2,d2		| with shifting
@@ -1602,7 +1604,7 @@ do_truck_draw:
 	move.l	(4*NB_PLAYFIELD_PLANES,a0),a3	| mask
 	add.w	x_background_scroll_value,d0
 
-	move.l 	fg_drawed_screen_ptr,a1
+	move.l 	fg_drawn_screen_ptr,a1
 	move.w	big_machine_nb_planes,d3
 	addq	#2,d2		| with shifting
 	moveq	#0,d5
@@ -2050,7 +2052,7 @@ addr_244xxx_tile_layer_op:
 	jeq		write_osd_layer
 
 	
-	move.l	fg_drawed_screen_ptr,a1
+	move.l	fg_drawn_screen_ptr,a1
 	move.l	background_restore_buffer,a5
 	lea		mulNB_BYTES_PER_ROW_table,a2
 	add.w	(a2,d2.w*2),d3
@@ -2748,7 +2750,7 @@ preprocess_16x16_tile:
 	jcc		30f
 
 
-	move.l	fg_drawed_screen_ptr,a1
+	move.l	fg_drawn_screen_ptr,a1
 	.ifne	OPT_ENABLE_DOUBLE_BUFFERING
 	move.l	fg_displayed_screen_ptr,a5
 	.endif
@@ -3204,7 +3206,7 @@ do_scroll_done:
 
 do_scroll_down:
 	* just refresh the screen fully
-	move.l	fg_drawed_screen_ptr,a1	| destination: first half of screen
+	move.l	fg_drawn_screen_ptr,a1	| destination: first half of screen
 	move.l	background_restore_buffer,a0
 	move	#0,d1
 	moveq	#0,d0
@@ -3224,13 +3226,13 @@ do_scroll_up:
 	* done twice (because of double buffering)
 
 	
-	move.l	fg_drawed_screen_ptr,a1	| destination: first half of screen
+	move.l	fg_drawn_screen_ptr,a1	| destination: first half of screen
 	add.l	#SCREEN_PLANE_SIZE/2,a1		| add 0x100 Y offset
 	move.l	background_restore_buffer,a0
 	moveq	#0,d1
 	jbsr	copy_background
 
-	move.l	fg_drawed_screen_ptr,a1	| destination: first half of screen
+	move.l	fg_drawn_screen_ptr,a1	| destination: first half of screen
 	sub.l	#SCREEN_PLANE_SIZE/2,a1		| make up for 0x100 Y offset
 	move.l	background_restore_buffer,a0
 	move.w	#0x100,d1
@@ -3305,7 +3307,7 @@ really_update_sprites:
 	and.w	#0x3F0,d0		| align on 16 lower bound (there are potentially 3 screens!)
 	* clear area where the sprite was
 
-	move.l	fg_drawed_screen_ptr,a1
+	move.l	fg_drawn_screen_ptr,a1
 	move.w	(4,a4),d2			| width in bytes (16 pixels: 4 bytes)
 	jeq		111f	|  zero width: skip this entry
 
@@ -3363,7 +3365,7 @@ really_update_sprites:
 	add.w	#0x100,d1
 	sub.w	d1,d4
 	jeq		111f		| sometimes exact 0!
-	move.l	fg_drawed_screen_ptr,a1
+	move.l	fg_drawn_screen_ptr,a1
 	sub.w	#SCREEN_PLANE_SIZE/2,a0
 	move.w	#0x100,d1
 	jbsr	restore_background
@@ -3625,7 +3627,7 @@ draw_bob_loop:
 	* y flip: happens when characters perform sommersault (bad dudes, karnov..)
 	neg		d4
 0:
-	move.l		fg_drawed_screen_ptr,a1
+	move.l		fg_drawn_screen_ptr,a1
 	* D0 and D1 are already set
 	move.l	(NB_PLAYFIELD_PLANES*4,a0),d2
 	beq.b	29f		| mask is zero: blank tile => skip
@@ -4532,7 +4534,7 @@ blit_planes_any_internal_no_cookie_cut:
 	
 start_process_1_plane_nocc:
 	move.l (a0)+,d0
-	bne.b	61f
+	jne	61f
 
 	* source is 0: just clear (less bandwidth lost) and change bltcon
 	WRITE_BLITTER_REG_LONG	#0x01000000,bltcon0	| sets con0 and con1: clear
@@ -4570,7 +4572,7 @@ switch_screen_buffers:
 	* toggle fg planes (double buffering)
 	* also toggle previous sprite positions
 	
-	lea		fg_drawed_screen_ptr,a0
+	lea		fg_drawn_screen_ptr,a0
 	lea		bob_previous_positions_1,a2
 	lea		bob_previous_positions_2,a3
 	move.l	fg_screen_data_1,a1
@@ -4707,7 +4709,7 @@ platform_init:
 	move.w	#0x7FFF,dmacon(a5)
 	move.w	#0x7FFF,intena(a5)
 	* set blitter parameters once and for all
-	WRITE_BLITTER_REG_LONG	#-1,bltafwm
+	move.l	#-1,bltafwm
 	
 *	move.l	monitor,d0
 *	cmp.l	#NTSC_MONITOR_ID,D0
@@ -4985,7 +4987,7 @@ osd_disable_interrupts:
 0:
 	.if		OPT_BLIT_CHAIN_MODE==1
 	* leave keyboard
-	move.w	#0x0064,_custom+intena
+	move.w	#0x0024,_custom+intena
 	.else
 	move.w	#0x0024,_custom+intena
 	.endif
@@ -5832,7 +5834,7 @@ osd_set_context:
 	* remove optional sounds
 	jbsr	remove_optional_sounds
 	* double buffering disabled
-	move.l	fg_drawed_screen_ptr,fg_displayed_screen_ptr
+	move.l	fg_drawn_screen_ptr,fg_displayed_screen_ptr
 	jbsr		set_playfield_bitplanes
 
 	move	(a7)+,d0		| restore state
@@ -6289,7 +6291,7 @@ set_game_context:
 
 activate_double_buffering:
 	st.b	double_buffering_enabled
-	move.l	fg_screen_data_1,fg_drawed_screen_ptr
+	move.l	fg_screen_data_1,fg_drawn_screen_ptr
 	move.l	fg_screen_data_2,fg_displayed_screen_ptr
 	rts
 	
@@ -7084,13 +7086,15 @@ remove_dudes:
 * trashes D0-D6
 * > A1: even address where blit was done
 	lea	_custom,a5
+	NEW_BLITLIST
+	
 	moveq	#0,d0
 	move.w  #120,d1
 	move.w	#256,d4
 	sub.w	d1,d4
 	move.w	#NB_BYTES_PER_ROW,d2
 	move.w	#NB_PLAYFIELD_PLANES,d3		| all planes
-	move.l	fg_drawed_screen_ptr,a1
+	move.l	fg_drawn_screen_ptr,a1
 	jbsr	clear_fg_planes_any_blitter_internal
 	
 	moveq	#0,d0
@@ -7099,12 +7103,15 @@ remove_dudes:
 	sub.w	d1,d4
 	move.w	#NB_BYTES_PER_ROW,d2
 	move.w	#NB_PLAYFIELD_PLANES,d3
-	move.l	fg_drawed_screen_ptr,a1
+	move.l	fg_drawn_screen_ptr,a1
 	jbsr	clear_fg_planes_any_blitter_internal
 	
-
+	COMMIT_BLITLIST
+	NEW_BLITLIST
+	PROCESS_BLITS
 	
-	WAIT_BLIT
+	lea	_custom,a5
+	REALLY_WAIT_BLIT
 	rts	
 	
 * < D0: numbers of vertical positions to wait
@@ -7524,7 +7531,7 @@ fg_screen_data_2:
 	.long	0
 	
 
-fg_drawed_screen_ptr:
+fg_drawn_screen_ptr:
 	.long	0
 fg_displayed_screen_ptr:
 	.long	0
