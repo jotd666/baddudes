@@ -3,8 +3,12 @@
 - disable cpu erase if blitter chain
 - when reverting to title screen after the demo, the music is still playing
   but memory must have been cleared so it plays trash
-- quantize shifts for bosses: not correct anymore for level 3 boss at least: use the OPT_BOSS_MOCKUP to re-tune
+- quantize shifts for bosses: not correct anymore for level 3 & 4 boss (OK in boss rush at level 7): use the OPT_BOSS_MOCKUP to re-tune
   add karnov mid-level to boss mockups
+- add second player sprites for end screen
+- head wagon top draw fails modulus
+- call to debug in the end (after title)
+- do a 128 color version?
 - karnov level 6 and 7: wrong colors, palette probably changes slightly between levels
   maybe a per-level dump would fix the issue
   (old:  mutant karnov black color issue: conflict between truck tires and mutant karnov on palette 9
