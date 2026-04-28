@@ -1,3 +1,4 @@
+- snapshot system to install in mainloop for easy debug
 - level 1 truck front missing part (bltafwm hack probably caused this)
 - bad palette for 2-life player cyan
 - when reverting to title screen after the demo, the music is still playing
