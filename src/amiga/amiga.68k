@@ -331,9 +331,14 @@ _user:
     cmp.l   #0x05748444c,D0	| WHDL
     bne.b   .standard
 	move.b	d1,_keyexit
-    move.l a0,_resload
+    move.l (a0)+,a2
+	move.l	a2,_resload
+	.ifndef	RELEASE
+	move.l	(a0)+,loadgame_function
+	move.l	(a0)+,savegame_function
+	.endif
 
-	move.l	a0,a2
+	move.l	_resload,a2
 	lea	(_tag,pc),a0
 	jsr	(resload_Control,a2)
 	
@@ -7513,6 +7518,13 @@ vbl_counter:
 	.word	0
 _resload:
 	.long	0
+	.ifndef	RELEASE
+loadgame_function:
+	.long	0
+savegame_function:
+	.long	0
+	.endif
+	
 _joypad_port_1_state:
 	.long	0
 

@@ -7,6 +7,17 @@ DEV_MODE
 
 FASTMEMSIZE = $1A0000
 
+
+	IFD	DEV_MODE
+SAVEGAME_SIZE = $0
+	ELSE
+SAVEGAME_SIZE = $2800    ; size needed for savegame code, not save game data itself
+	ENDC
+
+BASE_CHIP = $200
+SAVEGAME_FILE_SIZE = $3808   ; wrong
+START_CHIP = BASE_CHIP+SAVEGAME_SIZE
+
 _base	SLAVE_HEADER					; ws_security + ws_id
 	dc.w	17					; ws_version (was 10)
 	dc.w	WHDLF_NoError|WHDLF_EmulTrap|WHDLF_ReqAGA|WHDLF_Req68020
@@ -53,7 +64,7 @@ _config
 
 
 DECL_VERSION:MACRO
-	dc.b	"1.1"
+	dc.b	"1.2"
 	IFD BARFLY
 		dc.b	" "
 		INCBIN	"T:date"
@@ -104,11 +115,17 @@ start:
 	jsr	(resload_LoadFileDecrunch,a2)
 	move.l  progstart(pc),a0
     bsr   _Relocate
-	move.l	_resload(pc),a0
+	lea		_resload(pc),a0		; note: address of pointer on resload+_savegame_func+_loadgame_func
     move.l  #'WHDL',d0
     move.b  _keyexit(pc),d1
 	move.l  progstart(pc),-(a7)
-    
+   	IFD	DEV_MODE
+	lea	loadgame(pc),a1
+	move.l	a1,(4,a0)
+	lea	savegame(pc),a1
+	move.l	a1,(8,a0)
+	ENDC
+ 
     lea  _custom,a1
     move.w  #$1200,bplcon0(a1)
     move.w  #$0024,bplcon2(a1)
@@ -118,7 +135,7 @@ _Relocate	movem.l	d0-d1/a0-a2,-(sp)
         clr.l   -(a7)                   ;TAG_DONE
 ;        pea     -1                      ;true
 ;        pea     WHDLTAG_LOADSEG
-		move.l	#$200,d1		| start of program chipmem
+		move.l	#START_CHIP,d1		| start of program chipmem
 		IFD		DEV_MODE
 		move.l  debug_mode(pc),d0
 		cmp.b	#0,d0
@@ -143,6 +160,42 @@ _Relocate	movem.l	d0-d1/a0-a2,-(sp)
         movem.l	(sp)+,d0-d1/a0-a2
 		rts
 
+	IFD	DEV_MODE
+; < A0: game RAM
+loadgame
+    movem.l a0/a2,-(a7)
+	move.l	#SAVEGAME_FILE_SIZE,d0	; size of RAM
+	lea	BASE_CHIP,a1
+	bsr	_sg_load
+    movem.l (a7)+,a0/a2
+	; D0 success
+	rts
+
+
+; < A0: game ram
+savegame
+    movem.l a2,-(a7)
+;	move.l	trainer(PC),d0
+;	bne.s	.skip		;no save on trainer
+	lea	BASE_CHIP,a1
+	move.l	#SAVEGAME_FILE_SIZE,d0	; size of RAM
+	bsr	_sg_save
+.skip
+    movem.l (a7)+,a2
+	rts
+	
+	
+_exit:
+	pea	TDREASON_OK
+	move.l	_resload(pc),-(a7)
+	addq.l	#resload_Abort,(a7)
+	rts
+	
+	include	savegame.s
+
+	ENDC
+	
+	
 _resload:
 	dc.l	0
 progstart
