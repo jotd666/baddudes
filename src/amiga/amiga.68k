@@ -7,6 +7,7 @@
 
 
 OPT_BLIT_CHAIN_MODE = 1
+OPT_VBLIT_MIRROR_MODE = 1		| we need to mirror sprites on the fly, just before blitting them if needed
 
 .include "custom.i"
 .include "exec_lvos.i"
@@ -19,6 +20,9 @@ OPT_BLIT_CHAIN_MODE = 1
 AttnFlags = 0x128
 AFB_68010 = 0
 AFB_68020 = 1
+
+* fixed 68020 right now
+MC68020 = 1
 
 	.ifdef	RELEASE
 	.macro	TMPBREAK
@@ -717,7 +721,7 @@ game_tick:
 	clr.b	interrupt_mode
 	rts
 	
-_vblank:
+level3_interrupt:
     movem.l d0-d7/a0-a6,-(a7)
 	lea		_custom,a5
 	move.w	(intreqr,a5),d0
@@ -773,7 +777,7 @@ _vblank:
 	.endr
 
 	* process next blit
-	move.b	#0,0x110
+
 	PROCESS_ONE_BLIT
 	* quit
 	jra	3f
@@ -3785,12 +3789,22 @@ fix_sprite_coords:
 * trashes: only unused registers :)
 
 mirror_sprite_planes:
+
 	movem.l	d0-d2/a0,-(a7)
 	* bitplanes aren't pre-computed: check bitplanes current orientation and swap
 	* if required. This is slow but saves memory
+	.if		OPT_BLIT_CHAIN_MODE==0
 	lea		mirror_table,a1
-	moveq	#0,d2
+	.endif
 	moveq	#NB_PLAYFIELD_PLANES+1-1,d6
+	lea		mirror_function_table(pc),a3
+	.ifndef	MC68020
+	move.w	d5,d0       | number of byte values (4: 16 bits + shifting)
+	add.w	d0,d0
+	move.l	(a3,d0.w),a3
+	.else
+	move.l	(a3,d5.w*2),a3		| compute mirror function once and for all
+	.endif
 0:
 	move.l	(a0)+,d1		| current plane data
 	jeq		1f				| no data: skip
@@ -3799,61 +3813,135 @@ mirror_sprite_planes:
 	jeq		1f
 	* not the proper orientation: change it
 	move.b	d3,(-2,a2)
-	move.w	d4,d1		| height
-	subq	#1,d1		| minus one for dbf
-11:
-	move.w	d5,d0       | number of byte values (4: 16 bits + shifting)
-	lea		mirror_function_table(pc),a3
-	jsr		([a3,d0.w*2])
+	* perform or queue the mirroring
+	WRITE_BLITTER_VIRTUAL_MIRROR	d4,a3,a2
+
 	* next bitplane
 1:
 	dbf		d6,0b
 	movem.l	(a7)+,d0-d2/a0
 	rts
+
 	
 mirror_16_bit_wide:
+	.ifdef	MC68020
+	moveq	#0,d2
+	.endif
+10:
+	.ifndef	MC68020
+	* we have to do that each time as we must add offsets as long (table is 128k long)
+	moveq	#0,d2
+	.endif
 	move.w	(a2)+,d2
 	jeq		14f					| zero: optim
+	.ifndef	MC68020
+	add.l	d2,d2
+	move.w	(a1,d2.l),(-2,a2)   | use .l as d2.w may be > 0x7FFF
+	.else
 	move.w	(a1,d2.l*2),(-2,a2)
+	.endif
 14:
-	dbf		d1,mirror_16_bit_wide		| next
+	dbf		d1,10b		| next
 	rts
 
-mirror_32_bit_wide:	
+mirror_32_bit_wide:
+	.ifdef	MC68020
 	moveq	#0,d0
+	.endif
 10:
-	move.w	(a2)+,d2
-	move.w	(a2),d0	
-	move.w	(a1,d2.l*2),(a2)		| get mirror value
+	.ifndef	MC68020
+	* we have to do that each time as we must add offsets as long (table is 128k long)
+	moveq	#0,d0
+	.endif
+	move.l	(a2)+,d2
+	jeq		14f		| if line is blank, no need to mirror
+	move.w	d2,d0
+	clr.w	d2
+	swap	d2
+	.ifndef	MC68020
+	add.l	d2,d2
+	add.l	d0,d0
+	move.w	(a1,d2.l),-(a2)		| get mirror value
+	move.w	(a1,d0.l),-(a2)		| get mirror value
+	.else
+	move.w	(a1,d2.l*2),-(a2)		| get mirror value
 	move.w	(a1,d0.l*2),-(a2)		| get mirror value
+	.endif
 	addq	#4,a2					| skip row
+14:
 	dbf		d1,10b
 	rts
 
 mirror_48_bit_wide:
-
+	.ifdef	MC68020
 	moveq	#0,d0
+	moveq	#0,d2
+	.endif
 10:
+	.ifndef	MC68020
+	* we have to do that each time as we must add offsets as long (table is 128k long)
+	moveq	#0,d0
+	moveq	#0,d2
+	.endif
 	move.w	(a2),d2
 	move.w	(4,a2),d0
 	* edges
+	.ifndef	MC68020
+	add.l	d2,d2
+	add.l	d0,d0
+	move.w	(a1,d2.l),(4,a2)		| get mirror value
+	move.w	(a1,d0.l),(a2)+		| get mirror value
+	.else
 	move.w	(a1,d2.l*2),(4,a2)		| get mirror value
 	move.w	(a1,d0.l*2),(a2)+		| get mirror value
+	.endif
 	* center
+	.ifndef	MC68020
+	* we have to do that each time as we must add offsets as long (table is 128k long)
+	moveq	#0,d2
+	.endif
 	move.w	(a2),d2
+	.ifndef	MC68020
+	add.l	d2,d2
+	move.w	(a1,d2.l),(a2)
+	.else
 	move.w	(a1,d2.l*2),(a2)
+	.endif
 	addq	#4,a2					| skip row
 	dbf		d1,10b
 	rts
-
-* this is !untested!
-mirror_64_bit_wide:
 	
+
+mirror_64_bit_wide:
+	.ifdef	MC68020
 	moveq	#0,d0
+	moveq	#0,d2
+	.endif
 10:
+	.ifndef	MC68020
+	moveq	#0,d0
+	moveq	#0,d2
+	.endif
+	
 	move.w	(a2),d2
 	move.w	(6,a2),d0
 	* swap edges
+	.ifndef	MC68020
+	add.l	d2,d2
+	add.l	d0,d0
+	move.w	(a1,d2.l),(6,a2)		| get mirror value
+	move.w	(a1,d0.l),(a2)+		| get mirror value
+	* swap center words
+	moveq	#0,d0
+	moveq	#0,d2
+	move.w	(a2)+,d2
+	move.w	(a2),d0
+	add.l	d2,d2
+	add.l	d0,d0
+	move.w	(a1,d2.l),(a2)
+	move.w	(a1,d0.l),-(a2)
+	.else
+	* 68020+ is handy here as scaling doesn't corrupt MSW
 	move.w	(a1,d2.l*2),(6,a2)		| get mirror value
 	move.w	(a1,d0.l*2),(a2)+		| get mirror value
 	* swap center words
@@ -3861,9 +3949,11 @@ mirror_64_bit_wide:
 	move.w	(a2),d0
 	move.w	(a1,d2.l*2),(a2)
 	move.w	(a1,d0.l*2),-(a2)
+	.endif
 	addq	#6,a2					| skip row
 	dbf		d1,10b
 	rts
+
 
 	
 mirror_function_table:
@@ -4770,7 +4860,7 @@ platform_init:
 	move.l	(a7)+,(0x64,a1)
 	pea		level2_interrupt
 	move.l	(a7)+,(0x68,a1)
-	pea		_vblank
+	pea		level3_interrupt
 	move.l	(a7)+,(0x6C,a1)
 	pea		_nmi
 	move.l	(a7)+,(0x7C,a1)
@@ -4960,7 +5050,7 @@ load_palette:
 
 	
 
-osd_is_vblank_interrupt_enabled:
+osd_islevel3_interrupt_interrupt_enabled:
 	move.w	_custom+intenar,d0
 	btst	#5,d0			| check vblank interrupt
 	rts
