@@ -833,12 +833,26 @@ level1_interrupt:
 	* wait for blits to complete (via soft flag that last blitter command
 	* sets when reaching the end of the list) and reset list pointers
 	NEW_BLITLIST
+	
+	.if		OPT_BLIT_CHAIN_MODE==1
+	* don't blit, but update hw sprites as it doesn't cost a lot
+	tst.b	double_buffering_enabled
+	jeq		23f
+	
+	* double buffering only in-game
+	jbsr		switch_screen_buffers
+	lea		_custom,a5
+
+23:
+	.endif
+
 	PROCESS_BLITS
 
 	jbsr	really_update_sprites
 	COMMIT_BLITLIST
 
 1:
+	.if		OPT_BLIT_CHAIN_MODE==0
 	* don't blit, but update hw sprites as it doesn't cost a lot
 	tst.b	double_buffering_enabled
 	jeq		23f
@@ -846,6 +860,7 @@ level1_interrupt:
 	* double buffering only in-game
 	jbsr		switch_screen_buffers
 23:
+	.endif
 
 	lea		_custom,a5
 	move.w	(intreqr,a5),d0
@@ -3295,7 +3310,7 @@ really_update_sprites:
 	
 	clr.b	nb_erased_objects	| to count erased objects
 	
-	move.l	bob_previous_drawed_sprites,a4
+	move.l	bob_previous_drawn_sprites,a4
 1:
 	move.l	(a4),d0
 	jeq		12f				| X=0 & Y=0: inactive and end of list (let's hope it works!)
@@ -3463,7 +3478,7 @@ draw_sprites:
 600:
 	.endif
     lea _custom,A5
-	move.l	bob_previous_drawed_sprites,a6
+	move.l	bob_previous_drawn_sprites,a6
 	move.l		sprite_table_base,a4
 	*add.w	#(NB_TARGET_SPRITES-1)*4,a0		| start by the end (drawing priority)
 	move.w	#NB_TARGET_SPRITES-1,d7
@@ -3679,7 +3694,7 @@ draw_bob_loop:
 	rts
 	
 store_bob_previous_position:
-	move.l	bob_previous_drawed_sprites,d6
+	move.l	bob_previous_drawn_sprites,d6
 	cmp.l	d6,a6
 	jeq	0f		| first store, just store
 	* now couldn't we group the current & previous erase?
@@ -4211,9 +4226,7 @@ blit_planes_any_internal_cookie_cut:
 	swap	d1
 	clr.w	d1
 	swap	d1
-	swap	d0
-	clr.w	d0
-	swap	d0
+
 
 	lea		cookie_cut_blit_table,a4
 	
@@ -4329,7 +4342,7 @@ start_process_1_plane:
 60:
 	* source is 0: just apply mask (less bandwidth lost) and change bltcon
 	WRITE_BLITTER_REG_LONG	d6,bltcon0	| sets con0 and con1: C-A->D cookie cut, B fixed
-	WRITE_BLITTER_REG_WORD	d0,bltbdat	|B word is zero (re-use the fact that d0 = 0)
+	WRITE_BLITTER_REG_WORD	d0,bltbdat	| B word is zero (re-use the fact that d0 = 0)
 	rts
 
 
@@ -4644,7 +4657,7 @@ start_process_1_plane_nocc:
 	
 bob_previous_positions_1:
 	ds.b	NB_TARGET_SPRITES*PREVIOUS_SPRITE_SIZE
-bob_previous_drawed_sprites:
+bob_previous_drawn_sprites:
 	.long	bob_previous_positions_1
 bob_previous_displayed_sprites:
 	.ifeq	OPT_ENABLE_DOUBLE_BUFFERING
@@ -4682,7 +4695,8 @@ switch_screen_buffers:
 2:
 	move.l	a1,(a0)
 	move.l	a5,fg_displayed_screen_ptr
-	move.l	a2,bob_previous_drawed_sprites
+	move.l	a2,bob_previous_drawn_sprites
+	move.l	a3,bob_previous_displayed_sprites
 	.endif
 
 	jbsr		set_playfield_bitplanes
