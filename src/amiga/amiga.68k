@@ -774,7 +774,8 @@ level3_interrupt:
 	jne		2f
 	BREAKPOINT	"unexpected level 3 interrupt"
 2:
-
+	.endif
+	
 	* has to be blitter
 	* is level 1 interrupt set? that would mean that mid-screen interrupt
 	* is the source of the interrupt
@@ -805,7 +806,7 @@ level1_interrupt:
 	jne		3f
 	
 	subq.b	#1,graphics_update_counter
-	jne		23f
+	jne		skip_draw
 
 	eor.b	#1,flashing_flip_flop
 
@@ -850,19 +851,20 @@ level1_interrupt:
 	* double buffering only in-game
 	
 	jbsr		switch_screen_buffers
-	lea		_custom,a5
+	lea		_custom,a5		| reload custom
 
 23:
 	.endif
 
-	PROCESS_BLITS
+	PROCESS_BLITS		| start chain reaction from recorded blits
 
-	jbsr	really_update_sprites
+	jbsr	really_update_sprites	| record new blits in the meantime
 	* terminate the blitter command list
 	COMMIT_BLITLIST
 
 1:
 	.if		OPT_BLIT_CHAIN_MODE==0
+	jbsr	screen_pointer_update
 	* don't blit, but update hw sprites as it doesn't cost a lot
 	tst.b	double_buffering_enabled
 	jeq		23f
@@ -874,6 +876,7 @@ level1_interrupt:
 
 	.endif
 
+skip_draw:
 	lea		_custom,a5
 	move.w	(intreqr,a5),d0
 	btst	#2,d0
@@ -4282,7 +4285,7 @@ blit_planes_any_internal_cookie_cut:
 	swap 	d5
 	tst		d5
 	jeq		51f
-	* D6 param non-zero. Means that we will use a custom width
+	* D5 param non-zero. Means that we will use a custom width
 	* instead of full object width
 	* D2 is still full object width (needed for source modulo)
 	sub.w	d5,d2		| change source modulo from full width to partial width

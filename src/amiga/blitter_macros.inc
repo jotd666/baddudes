@@ -176,28 +176,52 @@ s1\@:
 	.endm
 	
 	.macro	PROCESS_BLITS
+	.ifndef	RELEASE
+	tst.b	blitter_chain_running
+	jeq		nob\@
+	BREAKPOINT	"PROCESS_BLITS called while blitter chain is running"
+nob\@:
+	.endif
 	tst.b	size_command_issued
 	jeq		s\@		| empty list or no bltsize command in the current command list: skip
 	* signal that the blitter chain is now running
 	st.b	blitter_chain_running
 	* start first blit from outside the blitter interrupt to
 	* start the chain reaction reading from drawn_blitter_list_ptr
-	PROCESS_ONE_BLIT
-s\@:
 	* clear size command issued for next blitlist creation
 	clr.b	size_command_issued
+	.ifndef	RELEASE
+	* cheap sanity check
+	move.l	drawn_blitter_list_ptr,a0
+	tst.w	(a0)
+	jne		okay\@
+	BREAKPOINT	"zero in drawn blitter list when starting blits" 
+okay\@:
+	.endif
+	* turn off blitter interrupts to make sure that the first
+	* blit is atomic and not interrupted by the blitter interrupt!
+	move.w	#0x0040,(intena,a5)
+	PROCESS_ONE_BLIT
+	* turn on blitter interrupts again
+	move.w	#0x8040,(intena,a5)
+s\@:
 	.endm
 
-	* we know that size_command_issued is set
-	.macro	FORCE_PROCESS_BLITS
-	* signal that the blitter chain is now running
-	st.b	blitter_chain_running
-	* start first blit from outside the blitter interrupt to
-	* start the chain reaction reading from drawn_blitter_list_ptr
-	PROCESS_ONE_BLIT
-	* clear size command issued for next blitlist creation
-	clr.b	size_command_issued
-	.endm
+*	* we know that size_command_issued is set
+*	.macro	FORCE_PROCESS_BLITS
+*	* signal that the blitter chain is now running
+*	st.b	blitter_chain_running
+*	* start first blit from outside the blitter interrupt to
+*	* start the chain reaction reading from drawn_blitter_list_ptr
+*	* turn off blitter interrupts to make sure that the first
+*	* blit is atomic and not interrupted by the blitter interrupt!
+*	move.w	#0x0040,(intena,a5)
+*	PROCESS_ONE_BLIT
+*	* turn on blitter interrupts again
+*	move.w	#0x8040,(intena,a5)
+*	* clear size command issued for next blitlist creation
+*	clr.b	size_command_issued
+*	.endm
 
 	.macro	DECL_BLITLISTS	size
 blitter_scroll_x:
@@ -289,7 +313,9 @@ nv1\@:
 	jcc		f1\@
 f0\@:
 	lea		(-2,a0),a1
+	move.b	size_command_issued,d1
 	BREAKPOINT	"word command: not a blitter register (in A1)"
+	move.b	blitter_chain_running,d2
 	illegal
 f1\@:
 	cmp.w	#deniseid,d0
@@ -299,8 +325,7 @@ f1\@:
 	* bit not set: word command
 	move.w	(a0)+,d1		| word value
 	
-	
-	move.w	d1,(a5,d0.w)
+	move.w	d1,(a5,d0.w)	| word blitter command
 	jra		b0\@		| not size: continue parsing list
 	* long write command
 b2\@:
@@ -320,9 +345,10 @@ g1\@:
 	move.l	(a0)+,d1		| long value
 
 	
-	move.l	d1,(a5,d0.w)
+	move.l	d1,(a5,d0.w)	| long blitter command
 	jra		b0\@		| not size: continue parsing list
 b1\@:
+	* negative: can be -1 or -2
 	cmp.w	d2,d0
 	jeq		b3\@		| -1: end of command
 	* -2: end of list: nothing to do, we're done for that frame
@@ -391,6 +417,9 @@ c1\@:
 	move.l	a5,-(a7)
 	move.w	d6,-(a7)
 	LOAD_FILLED_LIST
+	.if	\offset==bltsize
+	.error  "WRITE_BLITTER_REG_WORD doesn't accept bltsize arg, use WRITE_BLITTER_REG_SIZE"
+	.endif
 	move.w	#\offset,d6
 	move.w 	d6,(a5)+
 	move.w	\value,(a5)+
@@ -406,7 +435,15 @@ c1\@:
 	move.w	#bltsize,d6
 	move.w 	d6,(a5)+
 	move.w	\value,(a5)+
+	.ifndef  RELEASE
+	cmp.b	#0xFF,size_command_issued
+	jeq		noti\@
+	* count how many size commands we have (debug)
+	addq.b	#1,size_command_issued
+noti\@:
+	.else
 	st.b	size_command_issued
+	.endif
 	move.w	#-1,(a5)+		| end of command
 	STORE_FILLED_LIST
 	move.w	(a7)+,d6

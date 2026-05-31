@@ -51,7 +51,7 @@ patchlist.68k: $(GENPATCHES_PY)
 	
 $(PROGNAME).o: $(PROGNAME).68k $(PROGNAME)_relocs.68k patchlist.68k $(PROGNAME)_ram.68k $(PROGNAME).inc
 	$(ASM) $(PROGNAME).68k -o $(PROGNAME).o 
-amiga.o: $(AMIGASRC)/amiga.68k $(AMIGASRC)/ReadJoyPad.i $(PROGNAME).inc
+amiga.o: $(AMIGASRC)/amiga.68k $(AMIGASRC)/ReadJoyPad.i $(PROGNAME).inc $(AMIGASRC)/blitter_macros.inc
 	$(ASM) -Iamiga $(AMIGASRC)/amiga.68k -o amiga.o
 vbr.o: $(AMIGASRC)/vbr.68k
 	$(ASM_020) -Iamiga $(AMIGASRC)/vbr.68k -o vbr.o
