@@ -769,6 +769,12 @@ level3_interrupt:
 	.endr	
 	jra	3f
 1:
+	.ifndef	RELEASE
+	btst	#6,d0
+	jne		2f
+	BREAKPOINT	"unexpected level 3 interrupt"
+2:
+
 	* has to be blitter
 	* is level 1 interrupt set? that would mean that mid-screen interrupt
 	* is the source of the interrupt
@@ -779,8 +785,9 @@ level3_interrupt:
 	* process next blit
 
 	PROCESS_ONE_BLIT
-	* quit
-	jra	3f
+	
+    movem.l (a7)+,d0-d7/a0-a6
+    rte
 	
 level1_interrupt:
     movem.l d0-d7/a0-a6,-(a7)
@@ -836,10 +843,12 @@ level1_interrupt:
 	
 	.if		OPT_BLIT_CHAIN_MODE==1
 	* don't blit, but update hw sprites as it doesn't cost a lot
+	jbsr		set_playfield_bitplanes
 	tst.b	double_buffering_enabled
 	jeq		23f
 	
 	* double buffering only in-game
+	
 	jbsr		switch_screen_buffers
 	lea		_custom,a5
 
@@ -849,6 +858,7 @@ level1_interrupt:
 	PROCESS_BLITS
 
 	jbsr	really_update_sprites
+	* terminate the blitter command list
 	COMMIT_BLITLIST
 
 1:
@@ -860,11 +870,13 @@ level1_interrupt:
 	* double buffering only in-game
 	jbsr		switch_screen_buffers
 23:
+	jbsr		set_playfield_bitplanes
+
 	.endif
 
 	lea		_custom,a5
 	move.w	(intreqr,a5),d0
-	btst	#1,d0
+	btst	#2,d0
 	jeq		24f
 	* copper interrupt happened again when we were updating sprites:
 	* skip a frame next time (else game will crawl even more)
@@ -4699,7 +4711,6 @@ switch_screen_buffers:
 	move.l	a3,bob_previous_displayed_sprites
 	.endif
 
-	jbsr		set_playfield_bitplanes
 	
 	rts
 	
