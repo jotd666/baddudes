@@ -138,7 +138,7 @@ wait\@:
 	.endm
 	
 	.macro	REALLY_WAIT_BLIT
-	.ifdef	DEBUG_BLIT_WAIT
+	.if	OPT_BLIT_WAIT_DEBUG
 sw\@:
 	* if blitter isn't finished, then we wait
 	* this is called from level 1 interrupt so
@@ -166,12 +166,12 @@ sw\@:
 	* blitter chain has completed: we can switch lists
 	eor.b	#1,blitter_list_toggle
 	jne		s0\@
-	move.l	a0,drawn_blitter_list_ptr
-	move.l	a1,filled_blitter_list_ptr
-	jra		s1\@
-s0\@:
 	move.l	a1,drawn_blitter_list_ptr
 	move.l	a0,filled_blitter_list_ptr
+	jra		s1\@
+s0\@:
+	move.l	a0,drawn_blitter_list_ptr
+	move.l	a1,filled_blitter_list_ptr
 s1\@:
 	.endm
 	
@@ -265,7 +265,7 @@ blitter_list_toggle:
 	CHECK_A5_IS_CUSTOM
 	move.l	drawn_blitter_list_ptr,a0
 
-	move.w	#-1,d2
+	moveq	#-1,d2
 b0\@:
 	move.w	(a0)+,d0		| blitter register
 	jmi		b1\@			| end of command or end of list

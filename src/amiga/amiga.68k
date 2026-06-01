@@ -6,8 +6,9 @@
 * music modules by no9
 
 
-OPT_BLIT_CHAIN_MODE = 0
+OPT_BLIT_CHAIN_MODE = 1
 OPT_VBLIT_MIRROR_MODE = 1		| we need to mirror sprites on the fly, just before blitting them if needed
+OPT_BLIT_WAIT_DEBUG = 0
 
 .include "custom.i"
 .include "exec_lvos.i"
@@ -812,6 +813,7 @@ level1_interrupt:
 	subq.b	#1,graphics_update_counter
 	jne		skip_draw
 
+	* for the flashing attribute
 	eor.b	#1,flashing_flip_flop
 
 	move.b	graphics_update_counter_start,graphics_update_counter
@@ -861,7 +863,6 @@ level1_interrupt:
 	.endif
 
 	PROCESS_BLITS		| start chain reaction from recorded blits
-
 	jbsr	really_update_sprites	| record new blits in the meantime
 	* terminate the blitter command list
 	COMMIT_BLITLIST
@@ -4696,9 +4697,9 @@ sprite_registers:
 	
 	
 
+	.ifne	OPT_ENABLE_DOUBLE_BUFFERING
 switch_screen_buffers:
 
-	.ifne	OPT_ENABLE_DOUBLE_BUFFERING
 	* let's switch screen buffers, background (chars)
 	* toggle fg planes (double buffering)
 	* also toggle previous sprite positions
@@ -4718,12 +4719,11 @@ switch_screen_buffers:
 2:
 	move.l	a1,(a0)
 	move.l	a5,fg_displayed_screen_ptr
-	move.l	a2,bob_previous_drawn_sprites
 	move.l	a3,bob_previous_displayed_sprites
-	.endif
-
+	move.l	a2,bob_previous_drawn_sprites
 	
 	rts
+	.endif
 	
 store_system:
 	tst.l	_resload

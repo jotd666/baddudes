@@ -1,7 +1,8 @@
-- blitter chain: 0 value read after FFFF FFFE: something does a commit / starts with nothing
-  drawn?
+- level 2: climbers on the right "blink" (frame/grouping?)
+  maybe we can omit to erase them because truck is drawn first at least if
+  y is low enough
 - snapshot system to install in mainloop for easy debug
-- level 1 truck front missing part (bltafwm hack probably caused this)
+- level 1/2 truck front missing part (bltafwm hack probably caused this)
 - bad palette for 2-life player cyan
 - when reverting to title screen after the demo, the music is still playing
   but memory must have been cleared so it plays trash
@@ -16,7 +17,6 @@
   (old:  mutant karnov black color issue: conflict between truck tires and mutant karnov on palette 9
   BUT fixing karnov steals too many colors and now character trousers are not all white...)
 
-- level 2: climbers on the right "blink" (frame/grouping?)
 - infinite lives cheat doesn't work
 
 MEDIUM PRIORITY:
