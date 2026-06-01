@@ -313,9 +313,7 @@ nv1\@:
 	jcc		f1\@
 f0\@:
 	lea		(-2,a0),a1
-	move.b	size_command_issued,d1
 	BREAKPOINT	"word command: not a blitter register (in A1)"
-	move.b	blitter_chain_running,d2
 	illegal
 f1\@:
 	cmp.w	#deniseid,d0
@@ -324,7 +322,6 @@ f1\@:
 	
 	* bit not set: word command
 	move.w	(a0)+,d1		| word value
-	
 	move.w	d1,(a5,d0.w)	| word blitter command
 	jra		b0\@		| not size: continue parsing list
 	* long write command
@@ -407,46 +404,32 @@ c1\@:
 	move.w	#\offset,d6
 	bset	#14,d6		| bit set to tell it's a long command
 	move.w 	d6,(a5)+
+	move.w	(a7)+,d6
 	move.l	\value,(a5)+
 	STORE_FILLED_LIST
-	move.w	(a7)+,d6
 	move.l	(a7)+,a5
 	.endm
 	
 	.macro	WRITE_BLITTER_REG_WORD	value,offset
 	move.l	a5,-(a7)
-	move.w	d6,-(a7)
 	LOAD_FILLED_LIST
 	.if	\offset==bltsize
 	.error  "WRITE_BLITTER_REG_WORD doesn't accept bltsize arg, use WRITE_BLITTER_REG_SIZE"
 	.endif
-	move.w	#\offset,d6
-	move.w 	d6,(a5)+
+	move.w	#\offset,(a5)+
 	move.w	\value,(a5)+
 	STORE_FILLED_LIST
-	move.w	(a7)+,d6
 	move.l	(a7)+,a5
 	.endm
 	
 	.macro	WRITE_BLITTER_REG_SIZE	value
 	move.l	a5,-(a7)
-	move.w	d6,-(a7)
 	LOAD_FILLED_LIST
-	move.w	#bltsize,d6
-	move.w 	d6,(a5)+
+	move.w	#bltsize,(a5)+
 	move.w	\value,(a5)+
-	.ifndef  RELEASE
-	cmp.b	#0xFF,size_command_issued
-	jeq		noti\@
-	* count how many size commands we have (debug)
-	addq.b	#1,size_command_issued
-noti\@:
-	.else
 	st.b	size_command_issued
-	.endif
 	move.w	#-1,(a5)+		| end of command
 	STORE_FILLED_LIST
-	move.w	(a7)+,d6
 	move.l	(a7)+,a5
 	.endm
 	.endif

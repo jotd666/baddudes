@@ -6,7 +6,7 @@
 * music modules by no9
 
 
-OPT_BLIT_CHAIN_MODE = 1
+OPT_BLIT_CHAIN_MODE = 0
 OPT_VBLIT_MIRROR_MODE = 1		| we need to mirror sprites on the fly, just before blitting them if needed
 
 .include "custom.i"
@@ -170,7 +170,7 @@ SPRITE_SIZEOF = 4
 
 NB_BYTES_PER_SPRITE_ROW = 8   | fmode=3: 64 pixels wide sprites!
 
-.macro	GET_RAM_START_IN_A6	
+	.macro	GET_RAM_START_IN_A6	
 	.ifdef	RELEASE
 	lea		ram_buffer,a6
 	.else
@@ -178,6 +178,10 @@ NB_BYTES_PER_SPRITE_ROW = 8   | fmode=3: 64 pixels wide sprites!
 	.endif
 	.endm
 	
+	.macro	COLOR0_FLASH	v
+	move.w	#(BORDERBLANK<<5),_custom+bplcon3
+	move.w	#\v,_custom+color	
+	.endm
 
 
 	.macro	DO_BLIT
@@ -864,7 +868,6 @@ level1_interrupt:
 
 1:
 	.if		OPT_BLIT_CHAIN_MODE==0
-	jbsr	screen_pointer_update
 	* don't blit, but update hw sprites as it doesn't cost a lot
 	tst.b	double_buffering_enabled
 	jeq		23f
@@ -4355,6 +4358,11 @@ start_process_1_plane:
 	rts
 
 60:
+*	lea		blank_sprite,a4
+*	WRITE_BLITTER_REG_LONG	d7,bltcon0	| sets con0 and con1: C-A+B->D cookie cut full
+*	WRITE_BLITTER_REG_LONG	a4,bltbpt	|source graphic top left corner
+*	rts
+
 	* source is 0: just apply mask (less bandwidth lost) and change bltcon
 	WRITE_BLITTER_REG_LONG	d6,bltcon0	| sets con0 and con1: C-A->D cookie cut, B fixed
 	WRITE_BLITTER_REG_WORD	d0,bltbdat	| B word is zero (re-use the fact that d0 = 0)
@@ -8193,6 +8201,7 @@ blank_sound:
 	
 blank_sprite:
 	.skip	16+16*16+16
+blank_sprite_end:
 	
 debug_copperlist:
 	dc.w	bplcon0,0x200
