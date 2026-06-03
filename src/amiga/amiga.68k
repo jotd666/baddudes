@@ -733,6 +733,8 @@ level3_interrupt:
 	btst	#5,d0
 	jeq		1f
 		
+	addq.b	#1,vblank_counter
+	
 	.ifeq	OPT_NO_SECOND_PLAYER
 	moveq	#0,d0
 	jsr	_read_joystick
@@ -791,9 +793,26 @@ level3_interrupt:
 	* process next blit
 
 	PROCESS_ONE_BLIT
-	
+	SW_BLITTER_ACTIVE_TEST	0f
+
+	move.b	graphics_update_counter_start,d0
+*   we can detect the overrun but it's too late to fix it	
+*	cmp.b	vblank_counter,d0
+*	jcc		no_overrun
+*	* try to make it up
+*	nop
+*no_overrun:
+	jbsr		set_playfield_bitplanes
+	tst.b	double_buffering_enabled
+	jeq		23f
+	* double buffering only in-game
+	jbsr		switch_screen_buffers
+23:
+
+0:
     movem.l (a7)+,d0-d7/a0-a6
     rte
+	
 	
 level1_interrupt:
     movem.l d0-d7/a0-a6,-(a7)
@@ -848,20 +867,7 @@ level1_interrupt:
 	* sets when reaching the end of the list) and reset list pointers
 	NEW_BLITLIST
 	
-	.if		OPT_BLIT_CHAIN_MODE==1
-	* don't blit, but update hw sprites as it doesn't cost a lot
-	jbsr		set_playfield_bitplanes
-	tst.b	double_buffering_enabled
-	jeq		23f
-	
-	* double buffering only in-game
-	
-	jbsr		switch_screen_buffers
-	lea		_custom,a5		| reload custom
-
-23:
-	.endif
-
+	clr.b	vblank_counter
 	PROCESS_BLITS		| start chain reaction from recorded blits
 	jbsr	really_update_sprites	| record new blits in the meantime
 	* terminate the blitter command list
@@ -1137,8 +1143,8 @@ erase_big_machine:
 	tst.b	machine_previously_drawn
 	jeq		0f
 
-	* truck: amounts to roughly 12 objects ?
-	add.b	#12,nb_erased_objects
+	* truck: amounts to roughly 16 objects ?
+	add.b	#16,nb_erased_objects
 
 	* we cannot just restore the whole truck background, it's
 	* inefficient and makes the game crawl. Just restore parts
@@ -3472,7 +3478,7 @@ draw_sprites:
 	jne		558f
 	* auto frameskip
 	move.b	nb_erased_objects,d0
-	lsr.b	#3,d0
+	lsr.b	#2,d0		| divide by 4 (completely empiric!!)
 	jne		556f
 	* zero: 1
 	moveq	#1,d0
@@ -5312,6 +5318,7 @@ set_playfield_bitplanes:
 set_bitplanes:
     moveq #NB_PLAYFIELD_PLANES,d1
 set_any_bitplanes:
+
 	subq	#1,d1
 	move.l	#SCREEN_PLANE_SIZE,d2
 0:
@@ -7461,7 +7468,8 @@ sprite_log_name_index:
 	.align	2
 	.endif
 
-	
+vblank_counter:
+	.byte	0
 music_playing:
 	.byte	0
 looped_sound_enabled:
@@ -8240,6 +8248,7 @@ sprites_palette_even:
 sprites_palette_odd:
 	DECL_COLORS	16,16
 
+	COPPER_WAIT	0x0C01
 bitplanes_intro:
 	DECL_BITPLANES	0,NB_PLAYFIELD_PLANES
 

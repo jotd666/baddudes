@@ -43,6 +43,14 @@
 *   only the screen switch order and location changes (in double buffered mode, if
 *   you race the beam, there's nothing to do)
 *
+*
+* the 4 variables to configure, here or in your main code
+* values 0/1
+*
+*OPT_BLIT_CHAIN_MODE = 0
+*OPT_VBLIT_SCROLL_MODE = 0
+*OPT_VBLIT_MIRROR_MODE = 0
+*OPT_BLIT_WAIT_DEBUG = 0
 ******************
 * blitter macros *
 ******************
@@ -66,12 +74,15 @@ s0\@:
 
 	.if		OPT_BLIT_CHAIN_MODE==0
 	
+	.macro	HW_BLITTER_ACTIVE_TEST	label
+	BTST	#6,(dmaconr,a5)
+	BNE.S	\label
+	.endm
 	.macro	REALLY_WAIT_BLIT
 	CHECK_A5_IS_CUSTOM
 	move.w	#0x8400,(dmacon,a5)		| blitter high priority
 wait\@:
-	BTST	#6,(dmaconr,a5)
-	BNE.S	wait\@
+	HW_BLITTER_ACTIVE_TEST	wait\@
 	move.w	#0x0400,(dmacon,a5)		| blitter normal priority
 	.endm
 	
@@ -125,6 +136,10 @@ wait\@:
 	* no blitlists, empty
 	.macro	DECL_BLITLISTS	size
 	.endm
+	.macro	SW_BLITTER_ACTIVE_TEST	label
+	.endm
+	.macro	SW_BLITTER_INACTIVE_SET
+	.endm
 	
 	.endif
 	
@@ -135,6 +150,13 @@ wait\@:
 	.if		OPT_BLIT_CHAIN_MODE==1
 	.macro	WAIT_BLIT
 	* do nothing!
+	.endm
+	.macro	SW_BLITTER_ACTIVE_TEST	label
+	tst.b	blitter_chain_running
+	jne		\label
+	.endm
+	.macro	SW_BLITTER_INACTIVE_SET
+	clr.b	blitter_chain_running
 	.endm
 	
 	.macro	REALLY_WAIT_BLIT
@@ -153,8 +175,7 @@ sw\@:
 	* if blitter isn't finished, then we wait
 	* this is called from level 1 interrupt so
 	* blitter interrupts can interrupt
-	tst.b	blitter_chain_running
-	jne		sw\@	
+	SW_BLITTER_ACTIVE_TEST	sw\@
 	.endif
 	.endm
 	
@@ -253,6 +274,14 @@ blitter_list_toggle:
 	.align	2
 	.endm
 	
+	.macro	CHECK_BLITTER_IDLE
+	.ifndef RELEASE
+	BTST	#6,(dmaconr,a5)
+	jeq		idle\@
+	BREAKPOINT	"PROCESS_ONE_BLIT called while blitter is busy!"
+idle\@:
+	.endif
+	.endm
 	.macro	COMMIT_BLITLIST
 	* complete filled list
 	move.l	filled_blitter_list_ptr,a0
@@ -322,6 +351,7 @@ f1\@:
 	
 	* bit not set: word command
 	move.w	(a0)+,d1		| word value
+	CHECK_BLITTER_IDLE
 	move.w	d1,(a5,d0.w)	| word blitter command
 	jra		b0\@		| not size: continue parsing list
 	* long write command
@@ -341,7 +371,7 @@ g1\@:
 	* bit 14 set: long command
 	move.l	(a0)+,d1		| long value
 
-	
+	CHECK_BLITTER_IDLE
 	move.l	d1,(a5,d0.w)	| long blitter command
 	jra		b0\@		| not size: continue parsing list
 b1\@:
@@ -350,8 +380,10 @@ b1\@:
 	jeq		b3\@		| -1: end of command
 	* -2: end of list: nothing to do, we're done for that frame
 	clr.b	blitter_chain_running
+	jra		b4\@		| no need to update pointer, the list is done
 b3\@:
 	move.l	a0,drawn_blitter_list_ptr
+b4\@:
 	.endm
 	
 	.macro	LOAD_FILLED_LIST
