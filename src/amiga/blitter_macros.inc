@@ -229,20 +229,20 @@ s\@:
 	.endm
 
 *	* we know that size_command_issued is set
-*	.macro	FORCE_PROCESS_BLITS
-*	* signal that the blitter chain is now running
-*	st.b	blitter_chain_running
-*	* start first blit from outside the blitter interrupt to
-*	* start the chain reaction reading from drawn_blitter_list_ptr
-*	* turn off blitter interrupts to make sure that the first
-*	* blit is atomic and not interrupted by the blitter interrupt!
-*	move.w	#0x0040,(intena,a5)
-*	PROCESS_ONE_BLIT
-*	* turn on blitter interrupts again
-*	move.w	#0x8040,(intena,a5)
-*	* clear size command issued for next blitlist creation
-*	clr.b	size_command_issued
-*	.endm
+	.macro	FORCE_PROCESS_BLITS
+	* signal that the blitter chain is now running
+	st.b	blitter_chain_running
+	* start first blit from outside the blitter interrupt to
+	* start the chain reaction reading from drawn_blitter_list_ptr
+	* turn off blitter interrupts to make sure that the first
+	* blit is atomic and not interrupted by the blitter interrupt!
+	move.w	#0x0040,(intena,a5)
+	PROCESS_ONE_BLIT
+	* turn on blitter interrupts again
+	move.w	#0x8040,(intena,a5)
+	* clear size command issued for next blitlist creation
+	clr.b	size_command_issued
+	.endm
 
 	.macro	DECL_BLITLISTS	size
 blitter_scroll_x:

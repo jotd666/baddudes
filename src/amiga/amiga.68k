@@ -8,6 +8,7 @@
 
 OPT_BLIT_CHAIN_MODE = 1
 OPT_VBLIT_MIRROR_MODE = 1		| we need to mirror sprites on the fly, just before blitting them if needed
+OPT_VBLIT_SCROLL_MODE = 0		| we need to store scrolling values else BOBs can shake
 OPT_BLIT_WAIT_DEBUG = 0
 
 .include "custom.i"
@@ -3478,7 +3479,7 @@ draw_sprites:
 	jne		558f
 	* auto frameskip
 	move.b	nb_erased_objects,d0
-	lsr.b	#2,d0		| divide by 4 (completely empiric!!)
+	lsr.b	#3,d0		| divide by 8 (completely empiric!!)
 	jne		556f
 	* zero: 1
 	moveq	#1,d0
