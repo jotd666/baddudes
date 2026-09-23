@@ -13,12 +13,13 @@ subprocess.check_call(cmd_prefix+["clean"],cwd=progdir / "src")
 subprocess.check_call(cmd_prefix+["RELEASE_BUILD=1"],cwd=progdir / "src")
 # create archive
 
-outdir = progdir / f"{gamename}_HD"
+outdir = progdir / "dist" / f"{gamename}_HD"
+
 
 if os.path.exists(outdir):
     shutil.rmtree(outdir)
 
-outdir.mkdir(exist_ok=True)
+outdir.mkdir(exist_ok=True,parents=True)
 
 for file in ["readme.md",f"{gamename}.slave"]:
     shutil.copy(progdir / file,outdir)
@@ -67,3 +68,10 @@ exename = gamename
 # we can't really use cranker now, seems to crash at startup. Never mind!!
 shutil.copy(datadir / exename,dataout / exename)
 subprocess.run(cmd_prefix+["clean"],cwd=os.path.join(progdir,"src"))
+
+# create archive using Paraj lha port
+arcname = progdir / f"BadDudes_HD.lha"
+arcname.unlink(missing_ok=True)
+cmd = ["lha","-r","a",arcname,"*"]
+
+subprocess.run(cmd,cwd=outdir.parent,check=True)

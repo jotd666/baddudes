@@ -519,6 +519,10 @@ def load_contexted_tileset(tile_sheet_dict,context,nb_colors,is_bob,
 
     context_dir = pathlib.Path("sprites" if is_bob else "tiles") / context
     used_cluts_dict = used_sprite_cluts if is_bob else used_tile_cluts
+##    if is_bob and context=="game_ending":
+##        # manually add another clut for 2nd player. For some reason I cannot log that
+##        for x in [0x7C0,0x7C4,0x7C8,0x7CA,0x7CC,0x07CD,0x7CE,0x7D0]:
+##            used_cluts_dict[context][x]["cluts"].add(1)
 
     for i in range(16):
         tsd = tile_sheet_dict.get(i)
@@ -1000,14 +1004,14 @@ generate_for_levels = [False]*9
 
 
 #generate_for_levels[0] = True
-generate_for_levels[1] = True
+#generate_for_levels[1] = True
 #generate_for_levels[2] = True
 #generate_for_levels[3] = True
 #generate_for_levels[4] = True
 #generate_for_levels[5] = True
 #generate_for_levels[6] = True
 #generate_for_levels[7] = True
-#generate_for_levels[8] = True
+generate_for_levels[8] = True
 
 
 # set to "False" for faster operation when working on game sprite/tiles

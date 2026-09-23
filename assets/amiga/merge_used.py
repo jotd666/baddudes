@@ -3,7 +3,7 @@ import os,pathlib,shutil,json
 from shared import *
 
 
-used_name = "game_level_1"
+used_name = "game_level_8"
 
 merged_path_file = this_dir / "used_graphics" / "sprites"
 reference_for_bad_dudes = merged_path_file / "game_level_1"
@@ -41,8 +41,9 @@ if old_used.exists():
 else:
     old_contents = bytes(65536)
 
-contents = bytes([a|b for a,b in zip(new_contents,old_contents)])
+contents = bytearray([a|b for a,b in zip(new_contents,old_contents)])
 
+# propagate hero clut 0 to clut 1 in the end
 if old_contents == contents:
     print("Nothing new")
 else:

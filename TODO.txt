@@ -1,7 +1,4 @@
-- the big flickering comes from scrolling that resets from 0x1FF to 0x0, at least on the 
-  truck stage because scrolling is too "fresh" we should buffer it like in us v champ
-  see if it's not the case on level 1 too.
-  
+ 
 - level 2: climbers on the right "blink" (frame/grouping?)
   maybe we can omit to erase them because truck is drawn first at least if
   y is low enough
@@ -13,7 +10,8 @@
 - quantize shifts for bosses: not correct anymore for level 3 & 4 boss (OK in boss rush at level 7): use the OPT_BOSS_MOCKUP to re-tune
   add karnov mid-level to boss mockups: maybe copy the proper tiles with proper palette
   values using tile copy tool and screw it
-- add second player sprites for end screen
+- add second player sprites for end screen: attempted but then 1) body of player 2 is still
+  not displayed and 2) magenta corrupts the sprites (commented out in convert_graphics.py)
 - head wagon top draw fails modulus
 - call to debug in the end (after title): maybe it's the crash Denis was talking about
 - karnov level 6 and 7: wrong colors, palette probably changes slightly between levels

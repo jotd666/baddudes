@@ -8,7 +8,7 @@
 
 OPT_BLIT_CHAIN_MODE = 1
 OPT_VBLIT_MIRROR_MODE = 1		| we need to mirror sprites on the fly, just before blitting them if needed
-OPT_VBLIT_SCROLL_MODE = 0		| we need to store scrolling values else BOBs can shake
+OPT_VBLIT_SCROLL_MODE = 1		| we need to store scrolling values else BOBs can shake
 OPT_BLIT_WAIT_DEBUG = 0
 
 .include "custom.i"
@@ -867,6 +867,8 @@ level1_interrupt:
 	* wait for blits to complete (via soft flag that last blitter command
 	* sets when reaching the end of the list) and reset list pointers
 	NEW_BLITLIST
+	* latch the scroll values this list is being built against
+	WRITE_BLITTER_SCROLL_VALUES	x_background_scroll_value,y_extra_offset
 	
 	clr.b	vblank_counter
 	PROCESS_BLITS		| start chain reaction from recorded blits
@@ -5273,12 +5275,20 @@ scroll_background_x:
 set_playfield_bitplanes:
 	* set bitplanes
 	moveq	#0,d0
+	.if	OPT_BLIT_CHAIN_MODE==1
+	* scroll as it was when these blits were recorded, not as it is now
+	move.l	blitter_scroll_x,d2		| high word: X, low word: Y
+	move.w	d2,d0
+	add.w	blitter_scroll_y,d0		| latched y_extra_offset
+	swap	d2						| d2.w = latched X
+	.else	
 	move.w	y_background_scroll_value,d0
 	add.w	y_extra_offset,d0
-
+	move.w	x_background_scroll_value,d2	
+	.endif
+	
 	lea		mulNB_BYTES_PER_ROW_table,a2
 	move.w	(a2,d0.w*2),d0		| compute Y offset
-	move.w	x_background_scroll_value,d2	
 
 	lea		scroll_table,a2
 	move.w	(a2,d2.w*4),fine_x_scroll_value
@@ -5898,7 +5908,11 @@ osd_set_context:
 	* x/y scroll off
 	clr.w	x_background_scroll_value
 	clr.w	y_background_scroll_value
-
+	.if	OPT_BLIT_CHAIN_MODE==1
+	clr.l	blitter_scroll_x
+	clr.w	blitter_scroll_y
+	.endif
+	
 	* clear scroll swap shit
 	clr.b	nb_scroll_swaps
 	* each level starts on Y scroll < 0x100
@@ -7550,6 +7564,10 @@ x_background_scroll_value:
 	.word	0
 y_background_scroll_value:
 	.word	0
+	
+	.ifne	(y_background_scroll_value-x_background_scroll_value)-2
+	.error	"x/y_background_scroll_value must stay adjacent for the scroll latch"
+	.endif
 y_extra_offset:
 	.word	0
 y_max:
