@@ -1,4 +1,12 @@
- 
+- The rest of the levels besides 1 & 2 have various palette corruptions, 
+ especially levels 3, 4 and the last one. The end boss of 3 is all wrong colours
+ (and in last level as well), ditto for the very final boss. 
+  Also, after you defeat the game, the president appears to come out of the door of
+  the heli with wrong colours and basically the game freezes there, before he totally comes out, no end sequence. 
+  Another glitch is that Karnov (level 1 end boss), when he appears at later levels, 
+ his colours are all wrong as well , but he's ok in level 1.
+- level 4 locks when you arrive to end level boss. 
+- please switch the sound effects played during the Karnov boss fight from channel 3 to channel 4 so they don't interrupt the lead instrument in the music. Thanks! 
 - level 2: climbers on the right "blink" (frame/grouping?)
   maybe we can omit to erase them because truck is drawn first at least if
   y is low enough
