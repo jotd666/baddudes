@@ -312,6 +312,8 @@ log_blit:
 	.global		_resload
 	.global		_dosbase
 	.global		cheat_used
+	.global     sync_loop_counter
+
 * osd layer		
 	.global		osd_object_displayed
 	.global		osd_flush_caches
@@ -326,7 +328,7 @@ log_blit:
 	.global		osd_write_long
 	.global		osd_enable_interrupts
 	.global		osd_set_context
-	
+	.global		osd_load_save_hook
 	.include	"ReadJoypad.i"
 	.include	"whdload_funcs.i"
 		.text
@@ -666,13 +668,96 @@ _nmi:
 	move.w	#0x7FFF,_custom+intreq
 	rts
 
+
+restore_custom_registers:
+	lea	_custom,a5
+	jbsr	set_screen_params
+	move.w	#0x8080,(dmacon,a5)
+	rts	
+	
+prepare_custom_registers:
+	lea	_custom,a5
+	move.w	#0x80,(dmacon,a5)
+	clr.w	(bplcon3,a5)
+	move.w	#0x30A0,(diwstrt,a5)
+	move.w	#0xd0,(ddfstop,a5)	
+	move.w	#0x0,(bplcon2,a5)	
+
+	move.l	#0x6000,d0
+	move.l	a6,a0			| RAM
+	lea		savegame_file,a2
+	rts
+	
+	.ifndef	RELEASE
+osd_load_save_hook:
+	tst.l	_resload
+	jeq		10f
+	tst.b	save_state_requested
+	jeq		5f
+	clr.b	save_state_requested
+	movem.l	d0-d7/a0-a6,-(a7)
+	
+	* add context
+	lea		video_ram_244000,a6
+	move.w	global_context,(0x7000,a6)
+	* copy ram so save block is contiguous
+	move.l	ram_start_ff8000,a0
+	lea		video_ram_244000+0x3000,a1
+	move.w	#0xFFF,d0
+0:
+	move.l	(a0)+,(a1)+
+	dbf		d0,0b
+
+	move.l	savegame_function,a1
+	jbsr	prepare_custom_registers
+	
+	jbsr	(a1)
+	jbsr	restore_custom_registers
+	movem.l	(a7)+,d0-d7/a0-a6
+	jra		10f
+5:
+	tst.b	load_state_requested
+	jeq		10f
+	clr.b	load_state_requested
+	movem.l	d0-d7/a0-a6,-(a7)
+	move.l	loadgame_function,a1
+	jbsr	prepare_custom_registers
+	jbsr	(a1)
+	lea		video_ram_244000,a6
+	move.w	(0x7000,a6),d2		| save previous context that we loaded
+	jbsr	restore_custom_registers
+	swap	d0		| returncode seems broken! if escaped MSW is zero
+	tst.w	d0
+	jeq		9f
+	* transfer RAM back
+	move.l	ram_start_ff8000,a0
+	lea		video_ram_244000+0x3000,a1
+	move.w	#0xFFF,d0
+0:
+	move.l	(a1)+,(a0)+
+	dbf		d0,0b
+	
+	moveq	#0,d0
+	move.w	d2,d0
+	* now we should load the context
+	jbsr	osd_set_context
+	
+9:
+	movem.l	(a7)+,d0-d7/a0-a6
+	
+10:
+	rts
+	.endif
+
 * < D0: intreq
 * > D0: 0: do blits, 1: do not
 
 game_logic:
 	tst.b	pause_flag
 	jne	10f
+
 	
+
 	.ifndef 	RELEASE 
 	move.w		nb_displayed_objects_times_8,d1
 	lsr.w	#3,d1
@@ -825,7 +910,7 @@ level1_interrupt:
 	move.w	#0x14,(intreq,a5)
 	.endr
 
-
+	
 	jbsr	game_logic
 	tst.b	d0
 	jne		3f
@@ -897,6 +982,13 @@ skip_draw:
 	* copper interrupt happened again when we were updating sprites:
 	* skip a frame next time (else game will crawl even more)
 	addq.b	#1,graphics_update_counter
+	* note that we have to wait once more for sync in the free running loop
+	* The game performs originally
+	* one sync test but we actually need to perform several ones if interrupts
+	* fires again during the same interrupt (the drift issue that I workarounded
+	* for the scrolling by adding a resync, but it's not the best fix)
+	addq.b	#1,sync_loop_counter
+	
 24:
 
 	move.w	x_background_scroll_value,d0
@@ -4839,26 +4931,7 @@ quit_to_os:
 
 
 
-
-	
-platform_init:
-	jbsr		store_system
-	
-
-	lea		_custom,a5
-	move.w	#0x7FFF,dmacon(a5)
-	move.w	#0x7FFF,intena(a5)
-	* set blitter parameters once and for all
-	move.l	#-1,bltafwm
-	
-*	move.l	monitor,d0
-*	cmp.l	#NTSC_MONITOR_ID,D0
-*	bne		0f
-*	* disable extra mid-screen interrupt, as it would be too fast (NTSC)
-*	move.w	#0x1FE,intreq_block
-*	move.w	#0x1FE,intreq_block+4
-*0:
-
+set_screen_params:
  	*         VVHH
     move.w #0x2CA0+HW_SPRITE_SHIFT,diwstrt(a5)
     move.w #0x24A0+HW_SPRITE_SHIFT,diwstop(a5)
@@ -4878,7 +4951,28 @@ platform_init:
 	.endif
     move.w d0,bpl1mod(a5)
     move.w d0,bpl2mod(a5)
+	rts
+	
+	
+platform_init:
+	jbsr		store_system
+	
 
+	lea		_custom,a5
+	move.w	#0x7FFF,dmacon(a5)
+	move.w	#0x7FFF,intena(a5)
+	* set blitter parameters once and for all
+	move.l	#-1,bltafwm
+	
+*	move.l	monitor,d0
+*	cmp.l	#NTSC_MONITOR_ID,D0
+*	bne		0f
+*	* disable extra mid-screen interrupt, as it would be too fast (NTSC)
+*	move.w	#0x1FE,intreq_block
+*	move.w	#0x1FE,intreq_block+4
+*0:
+
+	jbsr	set_screen_params
 	
 
 	
@@ -5760,6 +5854,17 @@ handle_keyboard:
 	cmp.b	#0x58,d0	| F9 key crashes game (restarts whdload)
 	bne.b	0f
 	illegal
+
+0:
+	cmp.b	#33,d0	| "S"
+	jne		0f
+	st.b	save_state_requested
+0:
+	cmp.b	#40,d0	| "L"
+	jne		0f
+	st.b	load_state_requested
+0:
+
 	.endif
 0:
 
@@ -7647,7 +7752,8 @@ graphics_update_counter_start:
 	.byte	0
 graphics_update_counter:
 	.byte	0
-truck_flip_flop:
+sync_loop_counter:
+	.byte	0
 	.align	2
 
 host_sprites:
@@ -8018,6 +8124,8 @@ chip_memory_before_sprites_ptr:
 	.long	0
 ending_1_chipmem_start:
 	.long	0
+
+
 	
 	* format of the file is first palette (32 bytes)
 	* then main tile table that points to tile cluts, .. and
@@ -8213,8 +8321,10 @@ tile_log_table_end:
 	.endif
 	.endif
 
-
-
+	.ifndef	RELEASE
+savegame_file:
+	.asciz	"savegame"
+	.endif
 	
 	.section	.datachip
 
@@ -8398,6 +8508,11 @@ osd_lower_sprites:
 
 	.section	.bsspublic
 
+save_state_requested:
+	.byte	0
+load_state_requested:
+	.byte	0
+	
 sprite_y_table_table:
 	.skip	Y_MAX*4
 

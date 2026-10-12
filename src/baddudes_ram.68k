@@ -35,6 +35,10 @@
 * so ".skip" instruction provides zero-initialized buffer
 * when porting into another 68k machine, make sure it is zeroed too
 * as not all OSes do that with their bss
+	* reserve a few bytes to store context information for savegame
+	.ifndef	RELEASE
+	.skip	4
+	.endif
 ram_buffer:
 	.ifdef	RELEASE
 	.skip	0xC800-0x8000	| size includes sprites memory (last 0x800 bytes in FFC000)
@@ -50,6 +54,11 @@ video_ram_24a000:
 	.skip	0x800
 video_ram_24d000:
 	.skip	0x800
+	.ifndef	RELEASE
+ram_ff8000_save:
+	.skip	0x4000
+	.skip	4		| for context
+	.endif
 rom_base:
 	.long	0
 ram_base:

@@ -15,7 +15,7 @@ SAVEGAME_SIZE = $2800    ; size needed for savegame code, not save game data its
 	ENDC
 
 BASE_CHIP = $200
-SAVEGAME_FILE_SIZE = $3808   ; wrong
+SAVEGAME_FILE_SIZE = $7004 
 START_CHIP = BASE_CHIP+SAVEGAME_SIZE
 
 _base	SLAVE_HEADER					; ws_security + ws_id

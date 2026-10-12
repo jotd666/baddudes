@@ -2220,6 +2220,7 @@ patchlist:
 	PL_PSR	0x001ae8,0x1bf4
 	PL_PSR	0x001aee,0x1f12
 	PL_W	0x001b38,20032
+	PL_PS	0x001b3c,multi_sync_1b3c
 	PL_W	0x001b42,20032
 	PL_PSR	0x001ba6,0x1f32
 	PL_PS	0x001bac,before_end_sequence_01bac

@@ -517,6 +517,7 @@ make_superpowered:
 amiga_specific_patchlist:
 	PL_START
 	PL_PS	0x2924,display_object_hook_02924
+	* resync in order to avoid drift, only works for scrolling, not for truck/heli
 	PL_PS	0x6284,handle_any_scroll_06284
 	.ifne	OPT_NO_SECOND_PLAYER
 	PL_B	0x1a69,1		| 1 player in demo only
@@ -737,8 +738,8 @@ set_scroll_values:
 	rts
 	
 enable_interrupts_01476:
-	jbsr	osd_enable_interrupts
-	rts
+	jbra	osd_enable_interrupts
+	
 	
 set_palette_a2:
 	STORE_REGS
@@ -799,6 +800,26 @@ lb_08380:
 	RESTORE_REGS
 	RTS
 	
+multi_sync_1b3c:
+	.ifndef	RELEASE
+	jbsr	osd_load_save_hook
+	.endif
+	tst.b	sync_loop_counter
+	jeq		0f
+	* interruption took too long: we have to wait: go back
+	subq.b	#1,sync_loop_counter
+	sub.l	#4+6,(a7)		| back to call sync again
+	* rearm
+	move.l	a0,-(a7)
+	move.l	ram_base,a0
+	bclr	#0,(0x217,a0)	| reset sync flag
+	move.l	(a7)+,a0
+	rts
+0:
+	* ATM just call original JSR
+	move.l	rom_base,-(a7)
+	add.l	#0xe31c,(a7)
+	rts
 
 clear_sound:
     *;01502: 'address': 5378, 'size': 6, 'instruction': 'CLR.W', 'arguments': ['sound_0030c010']

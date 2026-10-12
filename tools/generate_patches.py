@@ -221,6 +221,7 @@ add_i(0x31c,"infinite loop")
 add_r(0x003ee,"turn RTE to RTS in irq")
 add_s(0x013e4,0x01422,"skip ram test")
 
+add_ps("multi_sync_1b3c")
 add_ps(0xcd3e,"write_word_a0plus_to_0030c010","manual")
 add_ps(0x01502,"clear_sound")
 add_ps(0x0979a,"test_mcu_reply")
