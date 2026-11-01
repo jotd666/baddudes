@@ -108,6 +108,8 @@ start:
     move.l  _expmem(pc),(a0)
 	move.l	_expmem(pc),$4
 
+	* stack in fast memory, super important especially
+	* with interrupt-driven blits
 	move.l	_expmem(pc),a7
 	add.l	#FASTMEMSIZE-4,a7
 	lea	exe(pc),a0
