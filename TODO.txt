@@ -10,7 +10,6 @@
 - level 2: climbers on the right "blink" (frame/grouping?)
   maybe we can omit to erase them because truck is drawn first at least if
   y is low enough
-- snapshot system to install in mainloop for easy debug
 - level 1/2 truck front missing part (bltafwm hack probably caused this)
 - bad palette for 2-life player cyan
 - when reverting to title screen after the demo, the music is still playing

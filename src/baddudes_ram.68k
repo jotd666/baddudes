@@ -55,7 +55,6 @@ video_ram_24a000:
 video_ram_24d000:
 	.skip	0x800
 	.ifndef	RELEASE
-ram_ff8000_save:
 	.skip	0x4000
 	.skip	4		| for context
 	.endif

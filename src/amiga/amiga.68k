@@ -670,9 +670,11 @@ _nmi:
 
 
 restore_custom_registers:
+	move.l	d0,-(a7)
 	lea	_custom,a5
 	jbsr	set_screen_params
 	move.w	#0x8080,(dmacon,a5)
+	move.l	(a7)+,d0
 	rts	
 	
 prepare_custom_registers:
@@ -683,8 +685,8 @@ prepare_custom_registers:
 	move.w	#0xd0,(ddfstop,a5)	
 	move.w	#0x0,(bplcon2,a5)	
 
-	move.l	#0x6000,d0
-	move.l	a6,a0			| RAM
+	move.l	#0x7000,d0
+	lea		video_ram_244000,a0
 	lea		savegame_file,a2
 	rts
 	
@@ -698,14 +700,12 @@ osd_load_save_hook:
 	movem.l	d0-d7/a0-a6,-(a7)
 	
 	* add context
-	lea		video_ram_244000,a6
-	move.w	global_context,(0x7000,a6)
 	* copy ram so save block is contiguous
-	move.l	ram_start_ff8000,a0
+	GET_RAM_START_IN_A6
 	lea		video_ram_244000+0x3000,a1
 	move.w	#0xFFF,d0
 0:
-	move.l	(a0)+,(a1)+
+	move.l	(a6)+,(a1)+
 	dbf		d0,0b
 
 	move.l	savegame_function,a1
@@ -723,22 +723,21 @@ osd_load_save_hook:
 	move.l	loadgame_function,a1
 	jbsr	prepare_custom_registers
 	jbsr	(a1)
-	lea		video_ram_244000,a6
-	move.w	(0x7000,a6),d2		| save previous context that we loaded
+
 	jbsr	restore_custom_registers
 	swap	d0		| returncode seems broken! if escaped MSW is zero
 	tst.w	d0
-	jeq		9f
+	*jeq		9f
 	* transfer RAM back
-	move.l	ram_start_ff8000,a0
+	GET_RAM_START_IN_A6
 	lea		video_ram_244000+0x3000,a1
 	move.w	#0xFFF,d0
 0:
-	move.l	(a1)+,(a0)+
+	move.l	(a1)+,(a6)+
 	dbf		d0,0b
 	
 	moveq	#0,d0
-	move.w	d2,d0
+	move.w	#CTX_GAME,d0
 	* now we should load the context
 	jbsr	osd_set_context
 	
@@ -6093,7 +6092,7 @@ osd_set_context:
 	jbsr	remove_optional_sounds
 	* double buffering disabled
 	move.l	fg_drawn_screen_ptr,fg_displayed_screen_ptr
-	jbsr		set_playfield_bitplanes
+	jbsr	set_playfield_bitplanes
 
 	move	(a7)+,d0		| restore state
 	
@@ -6106,7 +6105,6 @@ osd_set_context:
 	jbsr	clear_log_memory
 	clr.l	tile_data_24a000
 	clr.l	tile_data_244000
-	
 	lea		game_context_table,a0
 	jsr		([a0,d0.w*4])
 1:
@@ -6535,7 +6533,12 @@ set_game_context:
 	clr.l	background_sprite_table
 	
 	jbsr	get_current_level
-	subq	#1,d0	
+	subq	#1,d0
+	.ifndef	RELEASE
+	jpl		0f
+	BREAKPOINT	"zero context??"
+0:
+	.endif
 	lea		specific_level_load_table(pc),a0
 	jsr		([a0,d0.w*4])
 		

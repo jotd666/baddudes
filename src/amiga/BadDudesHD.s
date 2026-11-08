@@ -12,7 +12,7 @@ FASTMEMSIZE = $1A0000
 SAVEGAME_SIZE = $2800    ; size needed for savegame code, not save game data itself
 
 BASE_CHIP = $200
-SAVEGAME_FILE_SIZE = $7004 
+SAVEGAME_FILE_SIZE = $7000 
 START_CHIP = BASE_CHIP
 
 _base	SLAVE_HEADER					; ws_security + ws_id
@@ -161,20 +161,20 @@ _Relocate	movem.l	d0-d1/a0-a2,-(sp)
 
 	IFD	DEV_MODE
 save_chip:
+	movem.l	a0/a1/d0,-(a7)
 	lea	BASE_CHIP,a0
 	lea	savegame_buffer(pc),a1
-	move.l	#SAVEGAME_SIZE/4-1,d0
-.copy:
-	move.l	(a0)+,(a1)+
-	dbf		d0,.copy
-	rts
+	bra.b	move_chip
 restore_chip:
+	movem.l	a0/a1/d0,-(a7)
 	lea	BASE_CHIP,a1
 	lea	savegame_buffer(pc),a0
+move_chip:
 	move.l	#SAVEGAME_SIZE/4-1,d0
 .copy:
 	move.l	(a0)+,(a1)+
 	dbf		d0,.copy
+	movem.l	(a7)+,a0/a1/d0
 	rts
 	
 ; < A0: game RAM
