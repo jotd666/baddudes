@@ -8,15 +8,12 @@ DEV_MODE
 FASTMEMSIZE = $1A0000
 
 
-	IFD	DEV_MODE
-SAVEGAME_SIZE = $0
-	ELSE
+
 SAVEGAME_SIZE = $2800    ; size needed for savegame code, not save game data itself
-	ENDC
 
 BASE_CHIP = $200
 SAVEGAME_FILE_SIZE = $7004 
-START_CHIP = BASE_CHIP+SAVEGAME_SIZE
+START_CHIP = BASE_CHIP
 
 _base	SLAVE_HEADER					; ws_security + ws_id
 	dc.w	17					; ws_version (was 10)
@@ -163,27 +160,48 @@ _Relocate	movem.l	d0-d1/a0-a2,-(sp)
 		rts
 
 	IFD	DEV_MODE
+save_chip:
+	lea	BASE_CHIP,a0
+	lea	savegame_buffer(pc),a1
+	move.l	#SAVEGAME_SIZE/4-1,d0
+.copy:
+	move.l	(a0)+,(a1)+
+	dbf		d0,.copy
+	rts
+restore_chip:
+	lea	BASE_CHIP,a1
+	lea	savegame_buffer(pc),a0
+	move.l	#SAVEGAME_SIZE/4-1,d0
+.copy:
+	move.l	(a0)+,(a1)+
+	dbf		d0,.copy
+	rts
+	
 ; < A0: game RAM
 loadgame
-    movem.l a0/a2,-(a7)
+    movem.l a0-a2,-(a7)
+	bsr.b	save_chip
 	move.l	#SAVEGAME_FILE_SIZE,d0	; size of RAM
 	lea	BASE_CHIP,a1
 	bsr	_sg_load
-    movem.l (a7)+,a0/a2
+	bsr.b   restore_chip
+    movem.l (a7)+,a0-a2
 	; D0 success
 	rts
 
 
 ; < A0: game ram
 savegame
-    movem.l a2,-(a7)
+    movem.l a0-a2,-(a7)
 ;	move.l	trainer(PC),d0
 ;	bne.s	.skip		;no save on trainer
+	bsr.b	save_chip
 	lea	BASE_CHIP,a1
 	move.l	#SAVEGAME_FILE_SIZE,d0	; size of RAM
 	bsr	_sg_save
-.skip
-    movem.l (a7)+,a2
+	bsr.b   restore_chip
+.skip:
+    movem.l (a7)+,a0-a2
 	rts
 	
 	
@@ -204,4 +222,8 @@ progstart
     dc.l    0
 exe
 	dc.b	"baddudes",0
-	
+	CNOP	0,2
+	IFD	DEV_MODE
+savegame_buffer:
+	ds.b	SAVEGAME_SIZE
+	ENDC
