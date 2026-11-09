@@ -43,7 +43,7 @@ _config
 	dc.b	"C1:X:infinite time:2;"
 	dc.b	"C1:X:super blow power:3;"
 	dc.b	"C1:X:cheat keys:4;"
-	dc.b    "C2:L:frameskip:auto,none,one,two;"
+	dc.b	"C2:L:frame rate:50 Hz,25 Hz;"
 	IFD		DEV_MODE
 	; none: allows double buffering, chip starts at $200, exe in fast
 	; simple: no double buffering, chip starts at $60000, exe in 0

@@ -84,6 +84,11 @@ HW_SPRITE_SHIFT = 0
 	.endif
 	.endif
 	
+* raster line of the "no bobs from now on" copper interrupt (level 1)
+* see end of copperlist: PAL wait then wait 0x0C01. If the copperlist
+* changes, this must be changed too
+BOB_AREA_END_LINE = 0x10C
+
 Y_WATER_MIN = 224
 Y_MAX = 240
 Y_MAX_SPRITE = 256
@@ -386,10 +391,14 @@ _user:
 	
 	
 	
+	* frame rate: 0: 50 Hz, 1: 25 Hz
+	* (if blits are late, a frame is automatically skipped, see level1_interrupt)
 	move.l	frameskip_flag,d0
-	jne		0f
-	moveq	#1,d0		| auto, starts with full fps
+	cmp.l	#1,d0
+	jls		0f
+	moveq	#1,d0		| old configs could have 2 or 3 stored
 0:
+	addq.b	#1,d0		| draw every 1 or 2 level 1 interrupts
 	move.b	d0,graphics_update_counter_start
 	move.b	d0,graphics_update_counter
 
@@ -819,7 +828,10 @@ level3_interrupt:
 	jeq		1f
 		
 	addq.b	#1,vblank_counter
-	
+	* the copper reloads the bitplane pointers at line 0x0C of this frame
+	* so a buffer switch requested before now is going to be effective
+	clr.b	display_swap_pending
+
 	.ifeq	OPT_NO_SECOND_PLAYER
 	moveq	#0,d0
 	jsr	_read_joystick
@@ -840,6 +852,8 @@ level3_interrupt:
 	move.l	nb_blitted_words_per_second,last_nb_blitted_words_per_second
 	move.l	nb_blits_per_second,last_nb_blits_per_second
 	clr.l	nb_blits_per_second
+	move.l	nb_late_frames,last_nb_late_frames
+	clr.l	nb_late_frames
 	clr.l	nb_blitted_words_per_second
 	clr.b	d0
 0:
@@ -861,38 +875,38 @@ level3_interrupt:
 	.endr	
 	jra	3f
 1:
-	.ifndef	RELEASE
+	* don't assume it's the blitter just because it's not the VBL:
+	* on fast CPUs (Vampire, 040/060, PiStorm) the handler can be re-entered
+	* before the ack is effective. A spurious entry processed as a blit end
+	* would start the next blit too early (registers written while blitting,
+	* or one more advance in the list) and, at the end of the list, would
+	* replay the "chain completed" code (formerly an extra buffer switch!)
 	btst	#6,d0
-	jne		2f
-	BREAKPOINT	"unexpected level 3 interrupt"
-2:
-	.endif
+	jeq		0f				| not the blitter: spurious, ignore
 	
-	* has to be blitter
-	* is level 1 interrupt set? that would mean that mid-screen interrupt
-	* is the source of the interrupt
+	* ack blitter twice (040/pistorm bug)
 	.rept	2
 	move.w	#0x40,(intreq,a5)	
 	.endr
 
+	.if		OPT_BLIT_CHAIN_MODE==1
+	* in chain mode, all blits come from the blitter lists, so a blitter
+	* interrupt while no chain is running is a leftover: ignore it
+	SW_BLITTER_INACTIVE_TEST	0f
+	.endif
+	
 	* process next blit
 
 	PROCESS_ONE_BLIT
 	SW_BLITTER_ACTIVE_TEST	0f
 
-	move.b	graphics_update_counter_start,d0
-*   we can detect the overrun but it's too late to fix it	
-*	cmp.b	vblank_counter,d0
-*	jcc		no_overrun
-*	* try to make it up
-*	nop
-*no_overrun:
+	* blit chain just completed: show the buffer it drew into
+	* (fg_displayed_screen_ptr, buffers were switched in level 1 before
+	* the chain started). The copper only uses the new pointers from
+	* line 0x0C of the next frame, so flag the switch as pending
+	* (cleared by the next VBL)
 	jbsr		set_playfield_bitplanes
-	tst.b	double_buffering_enabled
-	jeq		23f
-	* double buffering only in-game
-	jbsr		switch_screen_buffers
-23:
+	st.b	display_swap_pending
 
 0:
     movem.l (a7)+,d0-d7/a0-a6
@@ -917,11 +931,29 @@ level1_interrupt:
 	subq.b	#1,graphics_update_counter
 	jne		skip_draw
 
+	move.b	graphics_update_counter_start,graphics_update_counter
+
+	.if		OPT_BLIT_CHAIN_MODE==1
+	* late check: never wait for the blitter here, skip the frame instead
+	* (waiting then starting the next chain right away draws into the buffer
+	* that the beam is still displaying => blinking bobs)
+	lea		_custom,a5		| game_logic may have changed it
+	SW_BLITTER_ACTIVE_TEST	draw_late		| previous chain still running
+	tst.b	display_swap_pending
+	jeq		20f						| finished buffer is already on screen: OK
+	* chain finished during this frame: the buffer we're about to draw into
+	* is still displayed, unless the beam is already below the bob area
+	move.l	(vposr,a5),d1
+	lsr.l	#8,d1
+	and.w	#0x1FF,d1				| V8-V0
+	cmp.w	#BOB_AREA_END_LINE,d1
+	jcs		draw_late
+20:
+	.endif
+
 	* for the flashing attribute
 	eor.b	#1,flashing_flip_flop
 
-	move.b	graphics_update_counter_start,graphics_update_counter
-	
 
 	tst.b	clear_target_sprites_flag
 	jeq		24f
@@ -948,14 +980,40 @@ level1_interrupt:
 	tst.l	sprite_table_base
 	jeq		1f			| no sprites? don't update
 	
-	* wait for blits to complete (via soft flag that last blitter command
-	* sets when reaching the end of the list) and reset list pointers
+	* switch lists and reset list pointers (in chain mode, the late check
+	* above ensures that the chain is over so it doesn't wait anymore)
 	NEW_BLITLIST
+
+	.if		OPT_BLIT_CHAIN_MODE==1
+	* switch buffers BEFORE starting the chain:
+	* - fg_displayed_screen_ptr becomes the buffer the chain draws into
+	*   (shown by set_playfield_bitplanes when the chain completes, which can
+	*   happen very quickly)
+	* - fg_drawn_screen_ptr becomes the buffer the new list is recorded for,
+	*   and it doesn't change during really_update_sprites anymore (it used
+	*   to be switched from the blitter interrupt, possibly in the middle of
+	*   the recording)
+	tst.b	double_buffering_enabled
+	jeq		21f
+	jbsr	switch_screen_buffers
+	lea		_custom,a5		| trashed by switch_screen_buffers, needed by PROCESS_BLITS
+21:
+	.endif
+
 	* latch the scroll values this list is being built against
 	WRITE_BLITTER_SCROLL_VALUES	x_background_scroll_value,y_extra_offset
-	
+
 	clr.b	vblank_counter
+	.if		OPT_BLIT_CHAIN_MODE==1
+	tst.b	size_command_issued
+	jne		22f
+	* previous list has no blit: no blitter interrupt will end it
+	jbsr	empty_blitlist_done
+	jra		23f
+22:
+	.endif
 	PROCESS_BLITS		| start chain reaction from recorded blits
+23:
 	jbsr	really_update_sprites	| record new blits in the meantime
 	* terminate the blitter command list
 	COMMIT_BLITLIST
@@ -965,12 +1023,23 @@ level1_interrupt:
 	* don't blit, but update hw sprites as it doesn't cost a lot
 	tst.b	double_buffering_enabled
 	jeq		23f
-	
+
 	* double buffering only in-game
 	jbsr		switch_screen_buffers
 23:
 	jbsr		set_playfield_bitplanes
 
+	.endif
+	jra		skip_draw
+
+	.if		OPT_BLIT_CHAIN_MODE==1
+draw_late:
+	* blits not complete/not displayed yet: skip drawing this time
+	* and retry at next level 1 interrupt (even in 25 Hz mode)
+	move.b	#1,graphics_update_counter
+	.ifndef	RELEASE
+	addq.l	#1,nb_late_frames
+	.endif
 	.endif
 
 skip_draw:
@@ -978,9 +1047,12 @@ skip_draw:
 	move.w	(intreqr,a5),d0
 	btst	#2,d0
 	jeq		24f
-	* copper interrupt happened again when we were updating sprites:
+	* copper interrupt happened again when we were updating sprites
+	.if		OPT_BLIT_CHAIN_MODE==0
 	* skip a frame next time (else game will crawl even more)
+	* (in chain mode, the late check handles it)
 	addq.b	#1,graphics_update_counter
+	.endif
 	* note that we have to wait once more for sync in the free running loop
 	* The game performs originally
 	* one sync test but we actually need to perform several ones if interrupts
@@ -1082,8 +1154,8 @@ fn_debug_nb_objects_frameskip:
 	jbsr	encode_debug_message
 	jbsr	osd_write_right_debug_message
 0:
-	moveq	#0,d0
-	move.b 	graphics_update_counter_start,d0
+	* number of frames skipped (late blits) during the last second
+	move.l	last_nb_late_frames,d0
 	lea		debug_frameskip_message(pc),a0
 	jbsr	encode_debug_message
 	jbsr	osd_write_left_debug_message
@@ -1673,11 +1745,14 @@ truck_clipped_left:
 	| of course X is at 0 (except fine shift)
 	and.w	#0xF,d0
 	jeq		11f
-	add.w	#16,d6		| increase length
 	sub.w	#0x10,d0
-	move.l	#0xFFFF0000,bltamask_long_value	| testing
 11:
-	
+	* always add the extra word: the blit routine always sets ALWM to 0
+	* (-2 modulo trick) so the last word of the blit is masked out.
+	* It used to be added only if fine shift was non-zero, so when X was
+	* a multiple of 16 the last 16 pixels of the truck were truncated
+	add.w	#16,d6
+
 	* we have to consider X shift
 	jra		do_truck_draw
 	
@@ -1688,12 +1763,8 @@ truck_not_clipped_left:
 	move.w	#NB_BYTES_PER_SCREEN_ROW*8+16,d6	| truck/train is wider than screen anyway
 	sub.w 	d0,d6
 	
-	* start of truck will "benefit" from the shifted / rotated bits
-	* because end of bitplane data is clipped off. We can use a different bltafwm
-	* to workaround this
-	* to full mask: this is a corner case
-	move.l	#0xFFFF0000,bltamask_long_value
-	
+	* (the +16 above is the extra word masked out by ALWM=0)
+
 do_truck_draw:
 	move.w	#NB_BYTES_PER_SCREEN_ROW*8+32,d2
 	cmp.w	d6,d2
@@ -1707,11 +1778,14 @@ do_truck_draw:
 	move.l	(4*NB_PLAYFIELD_PLANES,a0),a3	| mask
 	
 	* displayed width is positive: okay display something
-	lsr.w	#3,d6	| re-convert width to bytes
+	* convert pixels to bytes, rounded up to the next word
+	* (lsr #3 + carry only rounded up if bit 2 was set, so when
+	* width modulo 16 was 1 to 3, one word was missing and the last
+	* data word was the one masked by ALWM: truncated right part)
+	add.w	#15,d6
+	lsr.w	#4,d6	| in 16-bit words, rounded up
 	jeq		2f		| zero width: don't draw anything
-	jcc		1f
-	addq	#1,D6	| round to highest even
-1:
+	add.w	d6,d6	| back to bytes (even)
 	move.w	machine_y_pos,d1		| Y-pos: fixed for truck but can change for heli
 
 	* we have to take into account primary scroll value as we only have 1 layer
@@ -3567,24 +3641,8 @@ really_update_sprites:
 555:
 
 draw_sprites:
-	* now compute frameskip for next time
-	tst.b	frameskip_flag+3
-	jne		558f
-	* auto frameskip
-	move.b	nb_erased_objects,d0
-	lsr.b	#3,d0		| divide by 8 (completely empiric!!)
-	jne		556f
-	* zero: 1
-	moveq	#1,d0
-556:
-	cmp.b	#4,d0
-	jcs		557f
-	move.b	#3,d0		| min 17 fps
-557:
-	* update graphics counter to 1 (50fps), 2 (25fps), or 3 (17fps)
-	* dynamically
-	move.b	d0,graphics_update_counter_start
-558:
+	* (auto frameskip based on the number of erased objects removed:
+	* frames are now skipped in level1_interrupt when blits are late)
 	GET_RAM_START_IN_A6
 	lea	(0x4000,a6),a0		| sprites
 	
@@ -5365,6 +5423,25 @@ scroll_background_x:
 	move.w	d0,x_background_scroll_value
 	rts
 	
+	.if	OPT_BLIT_CHAIN_MODE==1
+* called from level 1 when the list about to be processed contains
+* no blit (no bltsize command): no blitter interrupt will complete it
+* so do what the end of the chain does, with the scroll values latched
+* in that list (first command, see WRITE_BLITTER_SCROLL_VALUES)
+empty_blitlist_done:
+	.if	OPT_VBLIT_SCROLL_MODE==1
+	move.l	drawn_blitter_list_ptr,a0
+	cmp.w	#dsksync,(a0)+
+	jne		0f
+	move.l	(a0)+,blitter_scroll_x
+	move.w	(a0),blitter_scroll_y
+0:
+	.endif
+	jbsr	set_playfield_bitplanes
+	st.b	display_swap_pending
+	rts
+	.endif
+
 set_playfield_bitplanes:
 	* set bitplanes
 	moveq	#0,d0
@@ -5964,7 +6041,11 @@ clear_all_hardware_sprites:
 	
 wait_vbl:
 	lea	_custom,a5
-	move.w	#0x7FFF,intreq(a5)
+	* only ack VBL: acking everything (0x7FFF) could also ack a pending
+	* blitter interrupt of the running blit chain (e.g. if called with SR
+	* at 0x2700 from interrupt mode). The chain would then never complete
+	* (blitter_chain_running stuck: frozen display, or lockup in NEW_BLITLIST)
+	move.w	#0x20,intreq(a5)
 0:
 	move.w	intreqr(a5),d1
 	btst	#5,d1
@@ -7757,6 +7838,10 @@ graphics_update_counter:
 	.byte	0
 sync_loop_counter:
 	.byte	0
+* set when a blit chain completes (new buffer set in copperlist)
+* cleared on VBL (copper reloads bitplane pointers)
+display_swap_pending:
+	.byte	0
 	.align	2
 
 host_sprites:
@@ -7859,6 +7944,11 @@ last_nb_blits_per_second:
 	.long	0
 nb_blits_per_second:
 	.long	0
+* frames skipped because blits were late
+last_nb_late_frames:
+	.long	0
+nb_late_frames:
+	.long	0
 * in 244758
 
 boss_life:
@@ -7928,7 +8018,7 @@ sprite_ram_mockup:
 debug_nb_objects_message:
 	.asciz	"NBOB 000000"
 debug_frameskip_message:
-	.asciz	"FSKP 000000"
+	.asciz	"LATE 000000"
 	
 debug_truck_message:
 	.asciz	"TPOS 000000"
@@ -8581,4 +8671,4 @@ chip_memory_block_end:
 	
 
 
-		
+		
