@@ -1823,7 +1823,6 @@ do_truck_draw:
 
 	move.l 	fg_drawn_screen_ptr,a1
 	move.w	big_machine_nb_planes,d3
-	addq	#2,d2		| with shifting
 	moveq	#0,d5
 	moveq	#0,d6
 	jbsr	blit_planes_any_internal_cookie_cut
