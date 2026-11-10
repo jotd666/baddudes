@@ -1929,6 +1929,7 @@ palette_and_sprites_ram_op:
 	add.w	#0x117C+2,a0		| a1 is post-incremented
 	cmp.l	a0,a1
 	jne		0f
+	jra 	10f
 	* writing to palette with 117C as source: boss 2 colors
 	* (reds => purples)
 	lea		level_2_boss_color_change(pc),a0
@@ -1940,6 +1941,14 @@ palette_and_sprites_ram_op:
 	cmp.l	a0,a1
 	jne		0f
 	lea		level_3_boss_color_change(pc),a0
+	jbsr	change_palette
+	jra		10f
+0:
+	move.l	rom_base,a0
+	add.w	#0x11BE+2,a0		| a1 is post-incremented
+	cmp.l	a0,a1
+	jne		0f
+	lea		level_4_boss_color_change(pc),a0
 	jbsr	change_palette
 	jra		10f
 0:
@@ -2115,8 +2124,9 @@ addr_242xxx_op:
 level_2_boss_color_change:
 	.word	0x500,0x306 | purple #3, slightly conflicts with bad dudes but doesn't matter
 	.word	0x700,0x408 | purple #2: careful!! hit color
-	.word	0xd00,0x62b	| purple #1
+	.word	0xc00,0x62b	| purple #1
 	.word	0x400,0x204
+	*.word	0xEEE,0x60C | inside helmet color
 	.long	-1		| end
 	
 level_3_boss_color_change:
@@ -2127,12 +2137,21 @@ level_3_boss_color_change:
 	.word	0x500,0x131
 	.long	-1		| end
 
+level_4_boss_color_change:
+	.word	0x800,0x644
+	.word	0x700,0x988
+	.word	0xc00,0x832
+	.word	0x500,0x766
+	.long	-1		| end
+
 level_5_boss_color_change:
 	.word	0xD00,0x464   | level 7
 	.word	0xB00,0x464
 	.word	0x400,0x121
+	*.word	0x232,0x800  | doesn't work
 	.word	0x500,0x232
 	.word	0x700,0x343
+	*.word	0xEEE,0xB00  | conflicts with player
 	.long	-1		| end
 level_6_boss_color_change:
 	.word	0xD00,0x440   | level 7
@@ -7976,7 +7995,7 @@ mockup_boss_palette_load:
 	lea		level_6_boss_color_change(pc),a0
 	.endif
 	.ifeq		OPT_BOSS_SPRITES_MOCKUP-4
-	jra		0f		| no color change
+	lea		level_4_boss_color_change(pc),a0
 	.endif
 	.ifeq		OPT_BOSS_SPRITES_MOCKUP-1
 	jra		0f		| no color change

@@ -44,7 +44,7 @@ def convert():
     #"HELI_KICK_SND"               :{"index":0x1C,"channel":3,"sample_rate":hq_sample_rate,"priority":40},
     "FIRE_SPIT_SND"               :{"index":0xD,"channel":3,"sample_rate":hq_sample_rate,"priority":40},
     "BOSS_DEAD_SND"               :{"index":0x2F,"channel":3,"sample_rate":hq_sample_rate,"priority":100},
-    "BOSS_HIT_SND"               :{"index":0x3A,"channel":2,"sample_rate":hq_sample_rate,"priority":30},
+    "BOSS_HIT_SND"               :{"index":0x3A,"channel":3,"sample_rate":hq_sample_rate,"priority":30},
     "BLOW_SND"               :{"index":0x27,"channel":3,"sample_rate":hq_sample_rate,"priority":30},
     #"SABRE_SND"               :{"index":0xB,"channel":3,"sample_rate":hq_sample_rate,"priority":30},
     #"PLAYER_LAND_SND"               :{"index":0x11,"channel":3,"sample_rate":hq_sample_rate,"priority":30},

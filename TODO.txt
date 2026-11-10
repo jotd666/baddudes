@@ -1,17 +1,15 @@
-- quantize shifts for bosses: not correct anymore for level 3 & 4 boss (OK in boss rush at level 7): use the OPT_BOSS_MOCKUP to re-tune
-  add karnov mid-level to boss mockups: maybe copy the proper tiles with proper palette
+- add karnov mid-level to boss mockups: maybe copy the proper tiles with proper palette
   values using tile copy tool and screw it
 
 - level 1: ok
-- level 2: boss colors wrong
+- level 2: ok (except helmet)
 - level 3: ok
-- level 4: boss colors wrong
+- level 4: ok but boss black is transparent
 - level 5: karnov colors wrong, boss colors could be better (face)
 - level 6: karnov colors wrong, boss colors could be better (stick)
 - level 7: most bosses colors wrong
 
-- The rest of the levels besides 1 & 2 have various palette corruptions, 
- especially 4 and the last one. The end boss of 3 is all wrong colours
+- The end boss of 3 is all wrong colours
   in last level, ditto for the very final boss. 
   Also, after you defeat the game, the president appears to come out of the door of
   the heli with wrong colours and basically the game freezes there, before he totally comes out, no end sequence. 
