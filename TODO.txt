@@ -1,5 +1,5 @@
-- add karnov mid-level to boss mockups: maybe copy the proper tiles with proper palette
-  values using tile copy tool and screw it
+- copy the proper tiles with proper palette now that karnov is named
+  values using tile copy tool and screw it: copy to sheet 9
 
 - level 1: ok
 - level 2: ok (except helmet)
