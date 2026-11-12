@@ -5,9 +5,11 @@ bosses colors:
 - level 4: ok but boss black is transparent
 - level 5: boss colors could be better (face)
 - level 6: boss colors could be better (stick)
-- level 7: last boss colors wrong, level 2 ninja boss is red (wrong too)
+- level 7: last boss colors wrong, level 2 ninja boss is red (fixed? to test)
 - Also, after you defeat the game, the president appears to come out of the door of
   the heli with wrong colours, heli door also has wrong colors
+- elevator colors are wrong (brown should be gray, copy tiles)
+- sometimes parallax strip disappears??
 
 - level 2: climbers on the right "blink" (frame/grouping?)
   maybe we can omit to erase them because truck is drawn first at least if
@@ -17,7 +19,6 @@ bosses colors:
   but memory must have been cleared so it plays trash
 - add second player sprites for end screen: attempted but then 1) body of player 2 is still
   not displayed and 2) magenta corrupts the sprites (commented out in convert_graphics.py)
-- head wagon top draw fails modulus
 - call to debug in the end (after title): maybe it's the crash Denis was talking about
 - infinite lives cheat doesn't work
 - savegame doesn't work, does it record absolute fast memory resolved addresses

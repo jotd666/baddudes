@@ -38,6 +38,8 @@ for x in datadir.glob("sprite_ram*"):
     os.remove(x)
 for x in datadir.glob("game_ending"):
     os.remove(x)
+for x in datadir.glob("savegame"):
+    os.remove(x)
 
 dataout = outdir / "data"
 dataout.mkdir(exist_ok=True)

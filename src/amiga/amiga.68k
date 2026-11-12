@@ -696,7 +696,9 @@ prepare_custom_registers:
 
 	move.l	#0x7000,d0
 	lea		video_ram_244000,a0
+	.ifndef	RELEASE
 	lea		savegame_file,a2
+	.endif
 	rts
 	
 	.ifndef	RELEASE
