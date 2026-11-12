@@ -1929,7 +1929,6 @@ palette_and_sprites_ram_op:
 	add.w	#0x117C+2,a0		| a1 is post-incremented
 	cmp.l	a0,a1
 	jne		0f
-	jra 	10f
 	* writing to palette with 117C as source: boss 2 colors
 	* (reds => purples)
 	lea		level_2_boss_color_change(pc),a0
@@ -2125,6 +2124,8 @@ level_2_boss_color_change:
 	.word	0x500,0x306 | purple #3, slightly conflicts with bad dudes but doesn't matter
 	.word	0x700,0x408 | purple #2: careful!! hit color
 	.word	0xc00,0x62b	| purple #1
+	.word	0xd00,0x62b	| purple #1 (level 7, red color is brighter)
+	.word	0xe00,0x62b	| purple #1 (level 7, red color is brighter)
 	.word	0x400,0x204
 	*.word	0xEEE,0x60C | inside helmet color
 	.long	-1		| end
@@ -5039,7 +5040,7 @@ platform_init:
 	* set blitter parameters once and for all (well, it changes in-game)
 	move.l	#-1,bltafwm
 	* using fastmem means that we can set bltpri/blthog now
-	move.w	#0x8400,(dmacon,a5)
+	* move.w	#0x8400,(dmacon,a5)
 	
 *	move.l	monitor,d0
 *	cmp.l	#NTSC_MONITOR_ID,D0
@@ -7110,11 +7111,15 @@ level_7_load:
 	jbsr	load_extra_sound_file
 
 	jbsr	load_fist_of_fury
-	lea		tiles_level_7_24a000_file,a0
-	jbsr	load_level_tiles_and_bobs
-	
+	* load the helicopter BEFORE tiles & sprites: level_7_load_second_part
+	* reloads sprites + 3 sound files from chip_memory_before_sprites_ptr.
+	* If the helicopter is loaded just after the sprites, it gets overwritten
+	* (starting with its plane pointer table) as soon as the second part
+	* is bigger than the first sprite file
 	lea		heli_pic_file,a0
 	jbsr	load_big_machine
+	lea		tiles_level_7_24a000_file,a0
+	jbsr	load_level_tiles_and_bobs
 	
 	rts
 	

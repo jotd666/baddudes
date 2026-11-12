@@ -3,7 +3,7 @@ import os,pathlib,shutil,json
 from shared import *
 
 
-used_name = "game_level_5"
+used_name = "game_level_7"
 
 merged_path_file = this_dir / "used_graphics" / "sprites"
 reference_for_bad_dudes = merged_path_file / "game_level_1"
@@ -51,9 +51,9 @@ else:
         f.write(contents)
 
 # move tiles
-for file in data_dir.glob("level_?_24?000"):
-    print(f"importing {file}")
-    dest = merged_path_file / ".." / "tiles" / file.stem
-
-    dest.unlink(missing_ok=True)
-    shutil.move(file,dest)
+##for file in data_dir.glob("level_?_24?000"):
+##    print(f"importing {file}")
+##    dest = merged_path_file / ".." / "tiles" / file.stem
+##
+##    dest.unlink(missing_ok=True)
+##    shutil.move(file,dest)

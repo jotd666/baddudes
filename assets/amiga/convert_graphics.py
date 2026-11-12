@@ -170,7 +170,7 @@ def process_helicopter(global_palette):
 
 
     raw = bitplanelib.palette_image2raw(reduced_colors_heli_img,None,global_palette,forced_nb_planes=forced_nb_planes,
-    generate_mask=True,blit_pad=bitplanelib.BLIT_NO_PAD,mask_color=transparent)
+    generate_mask=True,blit_pad=bitplanelib.BLIT_ALIGN_PAD,mask_color=transparent)
 
 
     nb_planes = forced_nb_planes+1
@@ -1008,9 +1008,9 @@ generate_for_levels = [False]*9
 #generate_for_levels[2] = True
 #generate_for_levels[3] = True
 #generate_for_levels[4] = True
-generate_for_levels[5] = True
+#generate_for_levels[5] = True
 generate_for_levels[6] = True
-generate_for_levels[7] = True
+#generate_for_levels[7] = True
 #generate_for_levels[8] = True
 
 

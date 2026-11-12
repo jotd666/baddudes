@@ -5,12 +5,10 @@ bosses colors:
 - level 4: ok but boss black is transparent
 - level 5: boss colors could be better (face)
 - level 6: boss colors could be better (stick)
-- level 7: most bosses colors wrong
-- level 6: stalactite wrong colors (used to be OK)
+- level 7: last boss colors wrong, level 2 ninja boss is red (wrong too)
+- Also, after you defeat the game, the president appears to come out of the door of
+  the heli with wrong colours, heli door also has wrong colors
 
-- The end boss of 3 is all wrong colours in last level, ditto for the very final boss. 
-  Also, after you defeat the game, the president appears to come out of the door of
-  the heli with wrong colours and basically the game freezes there, before he totally comes out, no end sequence. 
 - level 2: climbers on the right "blink" (frame/grouping?)
   maybe we can omit to erase them because truck is drawn first at least if
   y is low enough
@@ -22,10 +20,11 @@ bosses colors:
 - head wagon top draw fails modulus
 - call to debug in the end (after title): maybe it's the crash Denis was talking about
 - infinite lives cheat doesn't work
-
+- savegame doesn't work, does it record absolute fast memory resolved addresses
+  in game RAM? that would explain it!
+  
 MEDIUM PRIORITY:
 - boss 5: locomotive wheels erase wrong
-- level 7: fix president/door colors / boss 7: bad color change
 - game over: credits screen corruption, high score corruption at the end of demo too
   also?? tests test_input_bit_d1 (0x0174c,0x0175c,0x07e66), then goes back to menu but intro screen trashed
 - level 1 repair front objects (status bar showing but destroyed, debug this)
