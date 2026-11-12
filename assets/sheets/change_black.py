@@ -17,7 +17,7 @@
 # remain black. Dump sheets (F12 in mame gfxsave)
 # then turn black to magenta and magenta (rgb4) to black => the sheets are clean
 
-with open("palette","rb") as f:
+with open("K:/Emulation/MAME/palette","rb") as f:
     contents = bytearray(f.read())
 
 # first part at 310000, then at 314000
@@ -33,7 +33,7 @@ for i in range(0,len(first_part)-1,2):
         first_part[i+1] = 0xF0
         second_part[i+1] = 0xF0
 
-with open("magenta_palette","wb") as f:
+with open("K:/Emulation/MAME/magenta_palette","wb") as f:
     f.write(first_part)
     f.write(bytes(0x3800))
     f.write(second_part)

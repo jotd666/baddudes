@@ -3,7 +3,7 @@ import os,pathlib,shutil,json
 from shared import *
 
 
-used_name = "game_level_8"
+used_name = "game_level_5"
 
 merged_path_file = this_dir / "used_graphics" / "sprites"
 reference_for_bad_dudes = merged_path_file / "game_level_1"

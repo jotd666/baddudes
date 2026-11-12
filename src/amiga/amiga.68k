@@ -5036,8 +5036,10 @@ platform_init:
 	lea		_custom,a5
 	move.w	#0x7FFF,dmacon(a5)
 	move.w	#0x7FFF,intena(a5)
-	* set blitter parameters once and for all
+	* set blitter parameters once and for all (well, it changes in-game)
 	move.l	#-1,bltafwm
+	* using fastmem means that we can set bltpri/blthog now
+	move.w	#0x8400,(dmacon,a5)
 	
 *	move.l	monitor,d0
 *	cmp.l	#NTSC_MONITOR_ID,D0
