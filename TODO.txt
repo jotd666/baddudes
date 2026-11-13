@@ -1,30 +1,31 @@
 bosses colors:
-- level 1: ok
-- level 2: ok (except helmet)
-- level 3: ok
-- level 4: ok but boss black is transparent
-- level 5: boss colors could be better (face)
-- level 6: boss colors could be better (stick)
-- level 7: last boss colors wrong, level 2 ninja boss is red (fixed? to test)
+- level 4: ok but boss black is transparent: re-rip with purple palette change trick
+- level 7: last boss colors wrong, mutant animal colors are wrong too careful
+  not to conflict with real animal
+- level 6: boss wrong colors
 - Also, after you defeat the game, the president appears to come out of the door of
   the heli with wrong colours, heli door also has wrong colors
 - elevator colors are wrong (brown should be gray, copy tiles)
-- sometimes parallax strip disappears??
+- in the end sequence crash after a while
+- recurrent issue that corrupts/shifts the tiles of level 5. Ask claude?
+- heli erase bottom right missing height
 
-- level 2: climbers on the right "blink" (frame/grouping?)
-  maybe we can omit to erase them because truck is drawn first at least if
-  y is low enough
 - bad palette for 2-life player cyan
 - when reverting to title screen after the demo, the music is still playing
   but memory must have been cleared so it plays trash
 - add second player sprites for end screen: attempted but then 1) body of player 2 is still
   not displayed and 2) magenta corrupts the sprites (commented out in convert_graphics.py)
-- call to debug in the end (after title): maybe it's the crash Denis was talking about
 - infinite lives cheat doesn't work
 - savegame doesn't work, does it record absolute fast memory resolved addresses
   in game RAM? that would explain it!
   
 MEDIUM PRIORITY:
+- level 2: climbers on the right "blink" (frame/grouping?)
+  maybe we can omit to erase them because truck is drawn first at least if
+  y is low enough
+- level 2: ok (except helmet)
+- boss level 5: boss colors could be better (face)
+- boss level 6: boss colors could be better (stick)
 - boss 5: locomotive wheels erase wrong
 - game over: credits screen corruption, high score corruption at the end of demo too
   also?? tests test_input_bit_d1 (0x0174c,0x0175c,0x07e66), then goes back to menu but intro screen trashed

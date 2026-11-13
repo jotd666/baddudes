@@ -523,7 +523,83 @@ amiga_specific_patchlist:
 	PL_B	0x1a69,1		| 1 player in demo only
 	PL_R	0x9c9e			| avoid "push button"/"insert_coin" in 2P
 	.endif
+
+	* riders vs truck/heli layer drift: see irq_*_delta & latch_scroll_deltas
+	PL_PSS	0x61e4,irq_primary_delta_061e4,14
+	PL_PSS	0x6234,irq_secondary_delta_06234,14
+	PL_PSS	0x25a4,latch_scroll_deltas_025a4,2
+	
 	PL_END
+	
+* replaces "ff823e = ff815c, ffa8f2 = ff8160" in irq: accumulate
+* instead, as more than one irq can happen per main loop iteration
+irq_primary_delta_061e4:
+	movem.l	d0/a6,-(a7)
+	move.l	ram_base,a6
+	move.l	(0x015c,a6),d0		| X delta about to be applied
+	add.l	d0,acc_primary_x
+	move.l	(0x0160,a6),d0		| Y delta
+	add.l	d0,acc_primary_y
+	st.b	acc_primary_valid
+	movem.l	(a7)+,d0/a6
+	rts
+
+* same for "ff8148 = ff8164, ffa8f6 = ff8168" (truck/heli layer)
+irq_secondary_delta_06234:
+	movem.l	d0/a6,-(a7)
+	move.l	ram_base,a6
+	move.l	(0x0164,a6),d0
+	add.l	d0,acc_secondary_x
+	move.l	(0x0168,a6),d0
+	add.l	d0,acc_secondary_y
+	st.b	acc_secondary_valid
+	movem.l	(a7)+,d0/a6
+	rts
+
+* start of sprite pass (main loop): give the sprites everything
+* the irq applied since the last pass, exactly once
+latch_scroll_deltas_025a4:
+	move.l	a6,-(a7)
+	move.l	ram_base,a6
+	move.w	sr,-(a7)
+	move.w	#0x2700,sr			| no irq during the latch
+	tst.b	acc_primary_valid
+	jeq		0f
+	clr.b	acc_primary_valid
+	move.l	acc_primary_x,(0x023e,a6)	| ff823e
+	move.l	acc_primary_y,(0x28f2,a6)	| ffa8f2
+	clr.l	acc_primary_x
+	clr.l	acc_primary_y
+0:
+	tst.b	acc_secondary_valid
+	jeq		1f
+	clr.b	acc_secondary_valid
+	move.l	acc_secondary_x,(0x0148,a6)	| ff8148
+	move.l	acc_secondary_y,(0x28f6,a6)	| ffa8f6
+	clr.l	acc_secondary_x
+	clr.l	acc_secondary_y
+1:
+	move.w	(a7)+,sr
+	* original code
+	moveq	#0,d2
+	move.w	(0x28f0,a6),d2		| state_00ffa8f0
+	move.l	(a7)+,a6
+	rts
+
+acc_primary_x:
+	.long	0
+acc_primary_y:
+	.long	0
+acc_secondary_x:
+	.long	0
+acc_secondary_y:
+	.long	0
+acc_primary_valid:
+	.byte	0
+acc_secondary_valid:
+	.byte	0
+	.align	2
+
 	.endif
 	
 	.ifndef	RELEASE
