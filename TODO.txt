@@ -1,11 +1,12 @@
+- savegame doesn't work, does it record absolute fast memory resolved addresses
+  in game RAM? that would explain it! debug after load
+
 bosses colors:
-- level 4: ok but boss black is transparent: re-rip with purple palette change trick
-- level 7: last boss colors wrong, mutant animal colors are wrong too careful
-  not to conflict with real animal
-- level 6: boss wrong colors
+- level 7: last boss colors wrong (mockup)
+- level 7: mutant animal colors:  we have to apply color change (mockup) add new hook
+- level 6: boss wrong colors: use mockup
 - Also, after you defeat the game, the president appears to come out of the door of
-  the heli with wrong colours, heli door also has wrong colors
-- elevator colors are wrong (brown should be gray, copy tiles)
+  the heli with wrong colours, heli door also has wrong colors: also mockup this
 - in the end sequence crash after a while
 - recurrent issue that corrupts/shifts the tiles of level 5. Ask claude?
 - heli erase bottom right missing height
@@ -16,8 +17,6 @@ bosses colors:
 - add second player sprites for end screen: attempted but then 1) body of player 2 is still
   not displayed and 2) magenta corrupts the sprites (commented out in convert_graphics.py)
 - infinite lives cheat doesn't work
-- savegame doesn't work, does it record absolute fast memory resolved addresses
-  in game RAM? that would explain it!
   
 MEDIUM PRIORITY:
 - level 2: climbers on the right "blink" (frame/grouping?)

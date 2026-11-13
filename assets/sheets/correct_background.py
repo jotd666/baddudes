@@ -28,4 +28,4 @@ def change(input_img,output_img):
 ##    input_img = pathlib.Path("sprites_mag") / pname
 ##    output_img = sprites_out / pname
 
-change("gfx dev 1 set 0 tiles 16x16 colors 16 pal 09.png","pal_09_new.png")
+change("gfx dev 1 set 0 tiles 16x16 colors 16 pal 0e.png","pal_0e_new.png")

@@ -1962,6 +1962,15 @@ palette_and_sprites_ram_op:
 	jra		10f
 0:
 	move.l	rom_base,a0
+	add.l	#0x51B82+2,a0		| a1 is post-incremented
+	cmp.l	a0,a1
+	jne		0f
+	*lea		level_7_animal_color_change(pc),a0
+	*jbsr	change_palette
+	BREAKPOINT	"mutant animal"
+	jra		10f
+0:
+	move.l	rom_base,a0
 	add.w	#0x123c+2,a0		| a1 is post-incremented
 	cmp.l	a0,a1
 	jne		0f
