@@ -7,6 +7,7 @@
     .bss
 	.endif
 
+	.global stack_top
 	.global	ram_start_ff8000
 	.global	ram_buffer
 	.global	rom_base
@@ -56,8 +57,11 @@ video_ram_24d000:
 	.skip	0x800
 	.ifndef	RELEASE
 	.skip	0x4000
-	.skip	4		| for context
 	.endif
+
+	.skip	0x1000
+stack_top:
+
 rom_base:
 	.long	0
 ram_base:

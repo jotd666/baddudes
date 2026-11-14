@@ -1,5 +1,4 @@
-- savegame doesn't work, does it record absolute fast memory resolved addresses
-  in game RAM? that would explain it! debug after load
+- loadgame crashes at times?? misses part 2 of level 7, tile redraw
 
 bosses colors:
 - level 7: last boss colors wrong (mockup)

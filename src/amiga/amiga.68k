@@ -88,6 +88,8 @@ HW_SPRITE_SHIFT = 0
 * see end of copperlist: PAL wait then wait 0x0C01. If the copperlist
 * changes, this must be changed too
 BOB_AREA_END_LINE = 0x10C
+* number of consecutive late frames after which the blitter chain is considered stuck
+LATE_FRAMES_WATCHDOG = 50
 
 Y_WATER_MIN = 224
 Y_MAX = 240
@@ -738,8 +740,8 @@ osd_load_save_hook:
 	jbsr	restore_custom_registers
 	swap	d0		| returncode seems broken! if escaped MSW is zero
 	tst.w	d0
-	*jeq		9f
-	* transfer RAM back
+	jeq		9f
+	* transfer RAM back, it was contiguous to video ram in savegame
 	GET_RAM_START_IN_A6
 	lea		video_ram_244000+0x3000,a1
 	move.w	#0xFFF,d0
@@ -747,11 +749,12 @@ osd_load_save_hook:
 	move.l	(a1)+,(a6)+
 	dbf		d0,0b
 	
-	moveq	#0,d0
-	move.w	#CTX_GAME,d0
-	* now we should load the context
+	move.l	#CTX_GAME,d0
+	* now we should load the context, using newly loaded
+	* RAM to determine which level it is
 	jbsr	osd_set_context
 	
+	* we should refresh all tiles too
 9:
 	movem.l	(a7)+,d0-d7/a0-a6
 	
@@ -886,6 +889,14 @@ level3_interrupt:
 	btst	#6,d0
 	jeq		0f				| not the blitter: spurious, ignore
 	
+	* blitter interrupt requested but blitter still busy: the request is stale
+	* (previous ack not effective yet when the handler was left) or came early.
+	* Don't touch the blitter and don't ack: either the real "blit done" interrupt
+	* follows, or we come back here immediately until the blit is over.
+	* (on a real chipset the blitter is always idle at this point)
+	tst.b	(dmaconr,a5)
+	btst	#6,(dmaconr,a5)
+	jne		0f
 	* ack blitter twice (040/pistorm bug)
 	.rept	2
 	move.w	#0x40,(intreq,a5)	
@@ -941,6 +952,7 @@ level1_interrupt:
 	* that the beam is still displaying => blinking bobs)
 	lea		_custom,a5		| game_logic may have changed it
 	SW_BLITTER_ACTIVE_TEST	draw_late		| previous chain still running
+	clr.b	late_frames_count
 	tst.b	display_swap_pending
 	jeq		20f						| finished buffer is already on screen: OK
 	* chain finished during this frame: the buffer we're about to draw into
@@ -1013,6 +1025,12 @@ level1_interrupt:
 	jbsr	empty_blitlist_done
 	jra		23f
 22:
+	* chain is over (soft flag) but make sure that the last blit is
+	* really finished before programming the first blit of the new chain
+	tst.b	(dmaconr,a5)
+0:
+	btst	#6,(dmaconr,a5)
+	jne		0b
 	.endif
 	PROCESS_BLITS		| start chain reaction from recorded blits
 23:
@@ -1042,6 +1060,29 @@ draw_late:
 	.ifndef	RELEASE
 	addq.l	#1,nb_late_frames
 	.endif
+	* watchdog: a chain never lasts that long. If it's still flagged as
+	* running after many consecutive late frames, a blitter interrupt was
+	* lost: without this the display would be frozen forever
+	SW_BLITTER_INACTIVE_TEST	skip_draw		| late because of the beam, not the chain
+	addq.b	#1,late_frames_count
+	cmp.b	#LATE_FRAMES_WATCHDOG,late_frames_count
+	jcs		skip_draw
+	clr.b	late_frames_count
+	lea		_custom,a5
+	move.w	#0x0040,(intena,a5)		| no blitter interrupt during the check
+	btst	#6,(intreqr+1,a5)
+	jne		0f						| interrupt is just pending: let it do the job
+	tst.b	(dmaconr,a5)
+	btst	#6,(dmaconr,a5)
+	jne		0f						| blitter is really busy
+	* blitter idle, no interrupt pending, chain not complete: restart it
+	PROCESS_ONE_BLIT
+	SW_BLITTER_ACTIVE_TEST	0f
+	* that was the end of the list: do what the blitter interrupt does
+	jbsr	set_playfield_bitplanes
+	st.b	display_swap_pending
+0:
+	move.w	#0x8040,(intena,a5)
 	.endif
 
 skip_draw:
@@ -7878,6 +7919,9 @@ sync_loop_counter:
 * cleared on VBL (copper reloads bitplane pointers)
 display_swap_pending:
 	.byte	0
+* consecutive frames skipped because the blitter chain was still running
+late_frames_count:
+	.byte	0
 	.align	2
 
 host_sprites:
@@ -8496,6 +8540,23 @@ sky_gradient:
 	
 	* copperlist used for most screens
 default_copperlist:
+	* display registers which were only written once at startup (set_screen_params).
+	* They're write-only, so anything that changes them behind our back (WHDLoad
+	* switching to the OS to load/save a file, RTG/SAGA machines...) trashed the
+	* display for good (wrong modulo/fetch mode: skewed stripes). Set them at
+	* each frame instead. Must match set_screen_params
+	.word	fmode,(1<<15)+(SPRITE_FMODE<<2)+BITPLANE_FMODE
+	.word	ddfstrt,0x0038
+	.word	ddfstop,0x00D0
+	.word	diwstrt,0x2CA0+HW_SPRITE_SHIFT
+	.word	diwstop,0x24A0+HW_SPRITE_SHIFT
+	.ifeq	BITPLANE_FMODE-3
+	.word	bpl1mod,-8+NB_BYTES_PER_ROW-40
+	.word	bpl2mod,-8+NB_BYTES_PER_ROW-40
+	.else
+	.word	bpl1mod,-4+NB_BYTES_PER_ROW-40
+	.word	bpl2mod,-4+NB_BYTES_PER_ROW-40
+	.endif
 	.word	bplcon0,0x6200+BORDERBLANK | 6 bitplanes, borderblank
 	* all sprites have the same palette no need to specify odd or even
 	* on color bank 2 (64-)

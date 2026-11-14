@@ -7,6 +7,14 @@
 	move.w	(a7)+,d7
 	.endm
 
+stack_relocs:
+	.long	0x000000+0	| ext_00ffc000
+	.long	0x001422+2	| ext_00ffc000
+	.long	0x0019a6+2	| ext_00ffc000
+	.long	0x0019b2+2	| ext_00ffc000
+	.long	0x001a70+2	| ext_00ffc000
+	.long	-1
+	
 ram_relocs:
 	.long	0x000000+0	| ext_00ffc000
 	.long	0x000292+4	| ram_ff8000
