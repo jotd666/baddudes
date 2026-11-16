@@ -42,9 +42,9 @@ MC68020 = 1
 	.endm
 	.endif
 	
-TOTAL_PUBLIC_MEMORY_SIZE = 150000
+TOTAL_PUBLIC_MEMORY_SIZE = 300000
 * this is the minimum memory required for level 5
-TOTAL_CHIP_MEMORY_SIZE = 1355000	
+TOTAL_CHIP_MEMORY_SIZE = 1050000	
 
 PREVIOUS_SPRITE_SIZE = 8
 BORDERBLANK = 1
@@ -472,6 +472,11 @@ _user:
 	st		superpowered_blows_flag
 	st		cheat_used
 0:
+	* not a cheat: synchronous blits (Vampire/fast blitters)
+	btst	#5,d0
+	beq.b	0f
+	st		sync_blits_flag
+0:
 
 	
 	jsr	 _detect_controller_types 
@@ -720,7 +725,8 @@ osd_load_save_hook:
 0:
 	move.l	(a6)+,(a1)+
 	dbf		d0,0b
-
+	move.b	level_7_load_second_part_loaded,(a1)+
+	
 	move.l	savegame_function,a1
 	jbsr	prepare_custom_registers
 	
@@ -748,12 +754,17 @@ osd_load_save_hook:
 0:
 	move.l	(a1)+,(a6)+
 	dbf		d0,0b
+	move.b	(a1)+,level_7_load_second_part_flag
 	
 	move.l	#CTX_GAME,d0
 	* now we should load the context, using newly loaded
 	* RAM to determine which level it is
 	jbsr	osd_set_context
 	
+	tst.b	level_7_load_second_part_flag
+	jeq		8f
+	jbsr	level_7_load_second_part
+8:
 	* we should refresh all tiles too
 9:
 	movem.l	(a7)+,d0-d7/a0-a6
@@ -825,6 +836,44 @@ game_tick:
 	clr.b	interrupt_mode
 	rts
 	
+* start blitting the list that NEW_BLITLIST just made current
+* < A5: custom
+* trashes: D0-D2/A0
+start_blit_chain:
+	.if		OPT_BLIT_CHAIN_MODE==1
+	tst.b	sync_blits_flag
+	jne		0f
+	.endif
+	PROCESS_BLITS
+	rts
+	.if		OPT_BLIT_CHAIN_MODE==1
+0:
+	* synchronous mode (option): same lists, but no blitter interrupt involved:
+	* process the whole list here, waiting for the blitter between blits.
+	* On machines where the blitter is (almost) immediate this costs nothing
+	* and nothing depends on when/if the blitter interrupt occurs.
+	* On a real chipset it works too, but level 1 waits for the blits
+	tst.b	size_command_issued
+	jeq		3f
+	clr.b	size_command_issued
+	st.b	blitter_chain_running
+1:
+	PROCESS_ONE_BLIT
+	SW_BLITTER_INACTIVE_TEST	2f		| end of list reached
+	tst.b	(dmaconr,a5)
+4:
+	btst	#6,(dmaconr,a5)
+	jne		4b
+	jra		1b
+2:
+	* same as end of chain in the blitter interrupt (which saves all registers)
+	movem.l	d0-d7/a0-a6,-(a7)
+	jbsr	set_playfield_bitplanes
+	movem.l	(a7)+,d0-d7/a0-a6
+	st.b	display_swap_pending
+3:
+	rts
+	.endif
 level3_interrupt:
     movem.l d0-d7/a0-a6,-(a7)
 	lea		_custom,a5
@@ -888,6 +937,16 @@ level3_interrupt:
 	* replay the "chain completed" code (formerly an extra buffer switch!)
 	btst	#6,d0
 	jeq		0f				| not the blitter: spurious, ignore
+	.if		OPT_BLIT_CHAIN_MODE==1
+	tst.b	sync_blits_flag
+	jeq		4f
+	* synchronous mode: blits are chained by polling in start_blit_chain
+	.rept	2
+	move.w	#0x40,(intreq,a5)
+	.endr
+	jra		0f
+4:
+	.endif
 	
 	* blitter interrupt requested but blitter still busy: the request is stale
 	* (previous ack not effective yet when the handler was left) or came early.
@@ -1032,7 +1091,7 @@ level1_interrupt:
 	btst	#6,(dmaconr,a5)
 	jne		0b
 	.endif
-	PROCESS_BLITS		| start chain reaction from recorded blits
+	jbsr	start_blit_chain		| start chain reaction from recorded blits
 23:
 	jbsr	really_update_sprites	| record new blits in the meantime
 	* terminate the blitter command list
@@ -1718,7 +1777,7 @@ display_title_dudes:
 	
 	COMMIT_BLITLIST
 	NEW_BLITLIST
-	PROCESS_BLITS
+	jbsr	start_blit_chain
 	
 	
 	* we have to wait for blitter, as 8x8 font engine uses cpu only
@@ -5174,6 +5233,7 @@ allocate_and_load_public_mem_file:
 * < A0: filename
 * > D0,D1: file pointer, file size
 allocate_and_load_chip_mem_file:
+	move.l	a1,-(a7)
 	jbsr	get_file_size
 	move.l	D0,-(a7)
 	moveq	#1,d1
@@ -5183,6 +5243,7 @@ allocate_and_load_chip_mem_file:
 	jbsr	load_and_decrunch_file
 	move.l	(a7)+,d0
 	move.l	(a7)+,d1
+	move.l	(a7)+,a1
 	rts
 	
 * < A0: filename
@@ -6460,8 +6521,9 @@ set_ending_2_context:
 	move.l	tiles_palette_24d000,a0		| palette
 	jbsr	identify_and_set_sky_colors
 	
-	lea		sprites_game_ending_file,a0
-	jbsr 	load_sprite_file
+	lea		sprites_game_ending_header_file,a1
+	lea		sprites_game_ending_bitmap_file,a0
+	jbsr 	load_sprite_file_couple
 
 	* re-apply letter colors 56-63 (the sprites in that context only use 24 colors
 	* so we're good!)
@@ -6548,8 +6610,9 @@ set_game_intro_context:
 	
 	* load a few sprites: glasses & talking mouth of the guy
 	
-	lea		sprites_game_intro_file,a0
-	jbsr 	load_sprite_file
+	lea		sprites_game_intro_header_file,a1
+	lea		sprites_game_intro_bitmap_file,a0
+	jbsr 	load_sprite_file_couple
 	
 	* re-apply letter colors 56-63 (the sprites in that context only use 24 colors
 	* so we're good!)
@@ -6596,11 +6659,25 @@ load_level_sprite_file:
 	jbsr	get_current_level
 	add.b	#48,d0
 	add.b	level_7_load_second_part_flag,d0
-	move.b	d0,file_level_index
-	lea		sprites_game_level_file,a0
+	move.b	d0,header_file_level_index
+	lea		sprites_game_level_header_file,a1
+	move.b	d0,binary_file_level_index
+	lea		sprites_game_level_binary_file,a0
 	* continues!!
-load_sprite_file:
+	* < A0: bitmap file
+	* < A1: header file
+load_sprite_file_couple:
 	jbsr	allocate_and_load_chip_mem_file
+	move.l	d0,a0
+	move.l	d0,sprite_bitmap_base
+
+	
+	* load header
+	move.l	a1,a0
+	jbsr	allocate_and_load_public_mem_file
+	move.l	d0,sprite_header_base
+	sub.l	d1,sprite_bitmap_base		| virtual base like if header was before
+
 	move.l	d0,a0
 	move.w	(a0)+,d0	| nb planes (6) ignore
 	moveq	#0,d0
@@ -6633,6 +6710,12 @@ load_sprite_file:
 	move.l	d3,(-4,a1)		| store
 	* now relocate each bitplane
 	move.l	d3,a2
+	* adjust base, as bitplanes live in chipmem now
+	sub.l	sprite_header_base,d3
+	add.l	sprite_bitmap_base,d3
+
+	* bitplane data is separated from headers in order to save chipmem and 
+	* fast header traversal
 	.rept	2
 	move.w	#NB_PLAYFIELD_PLANES+1-1,d5  | standard + mirror (bobs) with mask
 	tst.w	(a2)
@@ -7527,7 +7610,7 @@ remove_dudes:
 	
 	COMMIT_BLITLIST
 	NEW_BLITLIST
-	PROCESS_BLITS
+	jbsr	start_blit_chain
 	
 	lea	_custom,a5
 	REALLY_WAIT_BLIT
@@ -7922,6 +8005,9 @@ display_swap_pending:
 * consecutive frames skipped because the blitter chain was still running
 late_frames_count:
 	.byte	0
+* option: process blitter lists synchronously (no blitter interrupt)
+sync_blits_flag:
+	.byte	0
 	.align	2
 
 host_sprites:
@@ -8151,18 +8237,26 @@ truck_2_pic_file:
 	.asciz	"truck_2.bin"
 train_pic_file:
 	.asciz	"train.bin"
-sprites_game_level_file:
+sprites_game_level_header_file:
 	.ascii	"sprites_game_level_"
-file_level_index:
-	.asciz	"1.bin"
+header_file_level_index:
+	.asciz	"1_header.bin"
+sprites_game_level_binary_file:
+	.ascii	"sprites_game_level_"
+binary_file_level_index:
+	.asciz	"1_bitmap.bin"
 tiles_ending_1_24a000_file:
 	.asciz	"tiles_ending_1_24a000.bin"
 tiles_ending_2_24d000_file:
 	.asciz	"tiles_ending_2_24d000.bin"
-sprites_game_intro_file:
-	.asciz	"sprites_game_intro.bin"
-sprites_game_ending_file:
-	.asciz	"sprites_game_ending.bin"
+sprites_game_intro_header_file:
+	.asciz	"sprites_game_intro_header.bin"
+sprites_game_intro_bitmap_file:
+	.asciz	"sprites_game_intro_bitmap.bin"
+sprites_game_ending_header_file:
+	.asciz	"sprites_game_ending_header.bin"
+sprites_game_ending_bitmap_file:
+	.asciz	"sprites_game_ending_bitmap.bin"
 tiles_title_244000_file:
 	.asciz	"tiles_title_244000.bin"
 tiles_game_intro_244000_file:
@@ -8340,6 +8434,10 @@ nb_tile_colors_24d000:
 tiles_palette_244000:
 	.long	0
 sprite_table_base:
+	.long	0
+sprite_bitmap_base:
+	.long	0
+sprite_header_base:
 	.long	0
 tile_data_24d000:
 	.long	0

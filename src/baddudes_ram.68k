@@ -56,7 +56,7 @@ video_ram_24a000:
 video_ram_24d000:
 	.skip	0x800
 	.ifndef	RELEASE
-	.skip	0x4000
+	.skip	0x4002
 	.endif
 
 	.skip	0x1000

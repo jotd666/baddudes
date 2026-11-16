@@ -3,7 +3,7 @@
 	INCLUDE	whdload.i
 	INCLUDE	whdmacros.i
 
-DEV_MODE
+
 
 FASTMEMSIZE = $1A0000
 
@@ -12,7 +12,7 @@ FASTMEMSIZE = $1A0000
 SAVEGAME_SIZE = $2800    ; size needed for savegame code, not save game data itself
 
 BASE_CHIP = $200
-SAVEGAME_FILE_SIZE = $7000 
+SAVEGAME_FILE_SIZE = $7002 
 START_CHIP = BASE_CHIP
 
 _base	SLAVE_HEADER					; ws_security + ws_id
@@ -43,7 +43,8 @@ _config
 	dc.b	"C1:X:infinite time:2;"
 	dc.b	"C1:X:super blow power:3;"
 	dc.b	"C1:X:cheat keys:4;"
-	dc.b	"C2:L:frame rate:50 Hz,25 Hz;"
+	dc.b	"C1:X:synchronous blits:5;"		
+	dc.b	"C2:L:frame rate:50 Hz,25 Hz;"	
 	IFD		DEV_MODE
 	; none: allows double buffering, chip starts at $200, exe in fast
 	; simple: no double buffering, chip starts at $60000, exe in 0
@@ -61,7 +62,7 @@ _config
 
 
 DECL_VERSION:MACRO
-	dc.b	"1.2"
+	dc.b	"1.3"
 	IFD BARFLY
 		dc.b	" "
 		INCBIN	"T:date"
@@ -72,10 +73,15 @@ DECL_VERSION:MACRO
 	ENDC
 	ENDM
 _data   dc.b    "data",0
-_name	dc.b	'Bad Dudes vs Dragonninja',0
-_copy	dc.b	'2025 JOTD',0
+_name	dc.b	'Bad Dudes vs Dragonninja'
+	IFD	DEV_MODE
+	dc.b	" (dev mode)"
+	ENDC
+	dc.b	0
+_copy	dc.b	'2025-2026 JOTD',0
 _info
-    dc.b    "Music by no9",0
+    dc.b    "Music by no9",10,10
+	dc.b	"Original 1988 Data East",0
 	dc.b	0
 _kickname   dc.b    0
 ;--- version id

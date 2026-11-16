@@ -2897,6 +2897,9 @@ patchlist:
 	PL_PSS	0x01bb3e,switch_to_ending_2_1bb3e,2
 	PL_PS	0x01bb8e,write_to_tile_1bb8e
 	PL_PS	0x01bc78,write_tile_244000_1bc78
+	* level 5 map column wrap: original code adds the map base instead of
+	* subtracting it. Only works if the ROM address is a multiple of 16
+	PL_W	0x6e28,0x9481		| ADD.L D1,D2 => SUB.L D1,D2
 	PL_END
 
 read_byte_0030c003_to_D0:
