@@ -1,17 +1,8 @@
 - loadgame crashes at times?? misses part 2 of level 7, tile redraw
-With 50Hz I get complete freezes. Music keeps playing and I can properly exit via WinUAE quit key. Other times the game just starts crawling. I mean really slow.
-Also 25Hz gets very slow on my emulation setup. At least no freezes.
-
-WinUAE 5.3.1
-CPU+FPU 68020 cycle exact, no MMU/FPU, CPU Frequence 4x(A1200)
-Chipset AGA, Cycle-Exact (Full), Cycle-exact (DMA/Memory accesses), Chipset Extra A1200, Collision SpricesVSplayfield
-Advances Chipset Compatible Settings
-RAM Chip 2MB Slow 1.5 Z3Fast 128MB 
 
 bosses colors:
 - level 7: last boss colors wrong (mockup)
 - level 7: mutant animal colors:  we have to apply color change (mockup) add new hook
-- level 6: boss wrong colors: use mockup
 - Also, after you defeat the game, the president appears to come out of the door of
   the heli with wrong colours, heli door also has wrong colors: also mockup this
 - in the end sequence crash after a while

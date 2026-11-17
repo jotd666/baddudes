@@ -42,7 +42,7 @@ MC68020 = 1
 	.endm
 	.endif
 	
-TOTAL_PUBLIC_MEMORY_SIZE = 300000
+TOTAL_PUBLIC_MEMORY_SIZE = 360000
 * level 5 is the biggest consumer
 TOTAL_CHIP_MEMORY_SIZE = 1100000	
 
@@ -1469,7 +1469,7 @@ level_7_erase_helicopter:
 	move.w	big_machine_width,d2
 	sub.w	#16,d2
 	move.w	big_machine_height,d4
-	sub.w	#58,d4
+	sub.w	#50,d4
 	move.w	prev_machine_params,d0
 	add.w	#144,d0
 	move.w	machine_y_pos,d1
@@ -2065,9 +2065,8 @@ palette_and_sprites_ram_op:
 	add.l	#0x51B82+2,a0		| a1 is post-incremented
 	cmp.l	a0,a1
 	jne		0f
-	*lea		level_7_animal_color_change(pc),a0
-	*jbsr	change_palette
-	BREAKPOINT	"mutant animal"
+	lea		level_7_animal_color_change(pc),a0
+	jbsr	change_palette
 	jra		10f
 0:
 	move.l	rom_base,a0
@@ -2091,7 +2090,7 @@ palette_and_sprites_ram_op:
 	cmp.l	a0,a1
 	jne		0f
 	lea		level_7_boss_color_change(pc),a0
-	jbsr	change_palette
+	*jbsr	change_palette
 	jra		10f
 0:
 	nop
@@ -2234,15 +2233,17 @@ addr_242xxx_op:
 level_2_boss_color_change:
 	.word	0x500,0x306 | purple #3, slightly conflicts with bad dudes but doesn't matter
 	.word	0x700,0x408 | purple #2: careful!! hit color
+	.word	0xa00,0x62b	| purple #1
+	.word	0xb00,0x62b	| purple #1
 	.word	0xc00,0x62b	| purple #1
 	.word	0xd00,0x62b	| purple #1 (level 7, red color is brighter)
 	.word	0xe00,0x62b	| purple #1 (level 7, red color is brighter)
 	.word	0x400,0x204
 	*.word	0xEEE,0x60C | inside helmet color
 	.long	-1		| end
-	
+
+* green ninja
 level_3_boss_color_change:
-	.word	0xD00,0x363   | level 7
 	.word	0xC00,0x363
 	.word	0x700,0x242  | 0x700,0xE00,0x900 used for hit sprite
 	.word	0x400,0x020
@@ -2256,8 +2257,9 @@ level_4_boss_color_change:
 	.word	0x500,0x766
 	.long	-1		| end
 
+* akaikage
 level_5_boss_color_change:
-	.word	0xD00,0x464   | level 7
+	.word	0xC00,0x464   | level 7
 	.word	0xB00,0x464
 	.word	0x400,0x121
 	*.word	0x232,0x800  | doesn't work
@@ -2265,28 +2267,29 @@ level_5_boss_color_change:
 	.word	0x700,0x343
 	*.word	0xEEE,0xB00  | conflicts with player
 	.long	-1		| end
+	
+* devil pole colors
 level_6_boss_color_change:
 	.word	0xD00,0x440   | level 7
+	.word	0xC00,0x440
 	.word	0xB00,0x440
-	.word	0xB00,0x440
+	.word	0xA00,0x440   | level 7
 	.word	0x700,0x330
 	.word	0x400,0X110
 	.word	0x500,0x220
 	.word	0x332,0x444
 	.long	-1		| end
 	
+level_7_animal_color_change:
+	.word	0x800,0x644
+	.word	0x700,0xA82
+	*.word	0x444,0x333   | animal needs 0, but elevator door needs 444!
+	.word	0xb00,0x832
+	.word	0x500,0x640
+	.long	-1		| end
 
 level_7_boss_color_change:
-	.word 	0x731,0x640
-	.word 	0xC86,0xF80
-	.word 	0x444,0x112
-	.word 	0x334,0x777
-	.word 	0xD00,0x111   | president
-	.word 	0x510,0xA64   | president
-	*.word 	0x112,0x810   | president
-	.word 	0x800,0x650   | president
-	.word 	0xb00,0x962   | president hair
-	.word 	0xB75,0xBBC   | heli door
+	*.word	0x731,0x960   | dragonninja hair
 	.long	-1		| end
 	
 * 8x8 tile layer, for osd (not scrolled) but also row scrolled
