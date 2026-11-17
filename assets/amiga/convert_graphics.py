@@ -28,6 +28,9 @@ this_file = pathlib.Path(__file__).name
 # those can be abused as long as there is enough memory. It tells the game to pre-mirror the sprites
 # in order to save in-game sprite mirroring. Can save a lot of CPU if there are several characters drawn
 # in opposite directions at the same time (not worth it for singletons like main player, bosses...)
+
+player_pre_mirrored_sprites_dict = {k:{0,1} for k in player_frames}
+
 pre_mirrored_sprites_dict = {
 # level 1: add gray/red ninja, dogs
 "game_level_1":[{k:{3,4} for k in ninja_range},{k:{8} for k in dog_range}],
@@ -52,8 +55,9 @@ def load_pre_mirrored_sprites(context):
     extras = pre_mirrored_sprites_dict.get(context)
     if extras:
         for extra in extras:
+            extra_merged = {**extra, **player_pre_mirrored_sprites_dict}
             # merge values
-            for k,v in extra.items():
+            for k,v in extra_merged.items():
                 vv = rval.get(k) or set()
                 vv.update(v)
                 rval[k] = vv

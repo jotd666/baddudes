@@ -1,4 +1,3 @@
-- see how much chipmem we'd save by splitting sprite files in fast/chip like RT
 - loadgame crashes at times?? misses part 2 of level 7, tile redraw
 With 50Hz I get complete freezes. Music keeps playing and I can properly exit via WinUAE quit key. Other times the game just starts crawling. I mean really slow.
 Also 25Hz gets very slow on my emulation setup. At least no freezes.
@@ -16,7 +15,6 @@ bosses colors:
 - Also, after you defeat the game, the president appears to come out of the door of
   the heli with wrong colours, heli door also has wrong colors: also mockup this
 - in the end sequence crash after a while
-- recurrent issue that corrupts/shifts the tiles of level 5. Ask claude?
 - heli erase bottom right missing height
 
 - bad palette for 2-life player cyan

@@ -43,8 +43,8 @@ MC68020 = 1
 	.endif
 	
 TOTAL_PUBLIC_MEMORY_SIZE = 300000
-* this is the minimum memory required for level 5
-TOTAL_CHIP_MEMORY_SIZE = 1050000	
+* level 5 is the biggest consumer
+TOTAL_CHIP_MEMORY_SIZE = 1100000	
 
 PREVIOUS_SPRITE_SIZE = 8
 BORDERBLANK = 1
