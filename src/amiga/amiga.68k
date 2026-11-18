@@ -1467,9 +1467,9 @@ level_7_erase_helicopter:
 	* now restore bottom part, but no need to restore bottom left
 	* as there are no graphics there
 	move.w	big_machine_width,d2
-	sub.w	#16,d2
+	add.w	#16,d2
 	move.w	big_machine_height,d4
-	sub.w	#50,d4
+	sub.w	#40,d4
 	move.w	prev_machine_params,d0
 	add.w	#144,d0
 	move.w	machine_y_pos,d1
@@ -2235,6 +2235,7 @@ level_2_boss_color_change:
 	.word	0x700,0x408 | purple #2: careful!! hit color
 	.word	0xa00,0x62b	| purple #1
 	.word	0xb00,0x62b	| purple #1
+	.word	0x900,0x62b	| purple #1
 	.word	0xc00,0x62b	| purple #1
 	.word	0xd00,0x62b	| purple #1 (level 7, red color is brighter)
 	.word	0xe00,0x62b	| purple #1 (level 7, red color is brighter)
@@ -2246,6 +2247,7 @@ level_2_boss_color_change:
 level_3_boss_color_change:
 	.word	0xC00,0x363
 	.word	0x700,0x242  | 0x700,0xE00,0x900 used for hit sprite
+	.word	0x900,0x242  | 0x700,0xE00,0x900 used for hit sprite
 	.word	0x400,0x020
 	.word	0x500,0x131
 	.long	-1		| end
@@ -2273,7 +2275,7 @@ level_6_boss_color_change:
 	.word	0xD00,0x440   | level 7
 	.word	0xC00,0x440
 	.word	0xB00,0x440
-	.word	0xA00,0x440   | level 7
+	.word	0x900,0x440   | level 7
 	.word	0x700,0x330
 	.word	0x400,0X110
 	.word	0x500,0x220
@@ -2289,7 +2291,13 @@ level_7_animal_color_change:
 	.long	-1		| end
 
 level_7_boss_color_change:
-	*.word	0x731,0x960   | dragonninja hair
+	.word	0x232,0x700   | leg red
+	.word	0x121,0x500   | leg red
+	.word	0xC86,0xDB0   | dragonninja hair
+	.word	0xB41,0x960   | dragonninja hair
+	.word	0x443,0x112   | dragonninja armour
+	.word	0x445,0x223   | dragonninja armour
+	.word	0x777,0x334   | dragonninja armour
 	.long	-1		| end
 	
 * 8x8 tile layer, for osd (not scrolled) but also row scrolled

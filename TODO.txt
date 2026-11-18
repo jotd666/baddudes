@@ -1,12 +1,9 @@
 - loadgame crashes at times?? misses part 2 of level 7, tile redraw
 
 bosses colors:
-- level 7: last boss colors wrong (mockup)
-- level 7: mutant animal colors:  we have to apply color change (mockup) add new hook
-- Also, after you defeat the game, the president appears to come out of the door of
-  the heli with wrong colours, heli door also has wrong colors: also mockup this
+- level 7: last boss colors wrong: dragonninja but also others (part 2)
 - in the end sequence crash after a while
-- heli erase bottom right missing height
+- heli erase bottom right missing height: to test
 
 - bad palette for 2-life player cyan
 - when reverting to title screen after the demo, the music is still playing
@@ -59,16 +56,12 @@ LOWER PRIORITY:
 
 low priority:
 
-- 2nd player could be rendered with top = first player top tiles and bottom: tiles with
-  changed plane order (trial and error to get acceptable colors) to save memory
 - flashing "insert coin": missing first "I" which corrupts bottom left OSDs
 - log & rip missing sounds: breakpoint on sound not found so able to go to mame and rip it
 - level 7: missing heli sound but would steal 1 music channel...
 - invincibility: still hit when falling on road; pits (level 2): 
   game must not change p1_state_flags_00ffa386 must remain to 0x10
 - compare US & japan ROMS see what are the differences: there are A LOT!
-- if TOTAL_CHIP_MEMORY_SIZE = 1250000, train level loads but background is trashed
-  and memory manager doesn't detect any issue... fortunately game doesn't need as much mem now
 - level 3: put water scroll in some other buffer (allocate one?) so changing plans automatically
   clips the sprites without any other side effect
 - level 4: maybe remove foreground trees if possible
