@@ -1444,6 +1444,7 @@ level_7_erase_helicopter:
 	* 2-parts less brutal buffer restore
 	* first, restore background for tail + top of heli
 	move.w	big_machine_width,d2
+	add.w	#2,d2		| add so erase works for heli nose
 	*move.w	big_machine_height,d4
 	move.w	#70,d4		| so erase also works when going up!
 	move.w	prev_machine_params,d0
@@ -1467,7 +1468,6 @@ level_7_erase_helicopter:
 	* now restore bottom part, but no need to restore bottom left
 	* as there are no graphics there
 	move.w	big_machine_width,d2
-	add.w	#16,d2
 	move.w	big_machine_height,d4
 	sub.w	#40,d4
 	move.w	prev_machine_params,d0
@@ -2090,7 +2090,7 @@ palette_and_sprites_ram_op:
 	cmp.l	a0,a1
 	jne		0f
 	lea		level_7_boss_color_change(pc),a0
-	*jbsr	change_palette
+	jbsr	change_palette
 	jra		10f
 0:
 	nop
@@ -2263,6 +2263,7 @@ level_4_boss_color_change:
 level_5_boss_color_change:
 	.word	0xC00,0x464   | level 7
 	.word	0xB00,0x464
+	.word	0x900,0x464
 	.word	0x400,0x121
 	*.word	0x232,0x800  | doesn't work
 	.word	0x500,0x232
@@ -6218,6 +6219,7 @@ osd_set_context:
 	jbsr	osd_disable_interrupts
 	jbsr	wait_vbl
 	jbsr	wait_vbl
+	jbsr	osd_music_stop
 	* then we can safely load the new context
 	
 	* we need to make sure that the sprite update interrupt is updating the
