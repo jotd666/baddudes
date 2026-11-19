@@ -8253,23 +8253,23 @@ train_pic_file:
 sprites_game_level_header_file:
 	.ascii	"sprites_game_level_"
 header_file_level_index:
-	.asciz	"1_header.bin"
+	.asciz	"1_h.bin"
 sprites_game_level_binary_file:
 	.ascii	"sprites_game_level_"
 binary_file_level_index:
-	.asciz	"1_bitmap.bin"
+	.asciz	"1_b.bin"
 tiles_ending_1_24a000_file:
 	.asciz	"tiles_ending_1_24a000.bin"
 tiles_ending_2_24d000_file:
 	.asciz	"tiles_ending_2_24d000.bin"
 sprites_game_intro_header_file:
-	.asciz	"sprites_game_intro_header.bin"
+	.asciz	"sprites_game_intro_h.bin"
 sprites_game_intro_bitmap_file:
-	.asciz	"sprites_game_intro_bitmap.bin"
+	.asciz	"sprites_game_intro_b.bin"
 sprites_game_ending_header_file:
-	.asciz	"sprites_game_ending_header.bin"
+	.asciz	"sprites_game_ending_h.bin"
 sprites_game_ending_bitmap_file:
-	.asciz	"sprites_game_ending_bitmap.bin"
+	.asciz	"sprites_game_ending_b.bin"
 tiles_title_244000_file:
 	.asciz	"tiles_title_244000.bin"
 tiles_game_intro_244000_file:

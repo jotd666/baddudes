@@ -103,7 +103,12 @@ baddudes_reset:
 	move.l	rom_base,a1
 	jbsr	apply_patchlist
 	.endif
-	
+	tst.b	infinite_lives_flag
+	jeq		0f
+	lea		trainer_inflives_patchlist,a0
+	move.l	rom_base,a1
+	jbsr	apply_patchlist
+0:
 	* install traps used by short JMP & JSR
 	* allows to relocate the code anywhere in RAM
 	* (including fastmem on amiga)
@@ -526,6 +531,12 @@ make_superpowered:
 	MOVE.W	#0x1000,D0
 	ADD.W	D0,36(A0)  |  set blow power to mega power!!
 	rts
+	
+trainer_inflives_patchlist:
+	PL_START
+	PL_NOP	0xbac2,4
+	PL_B	0xbac6,0x60
+	PL_END
 	
 	.ifdef	__amiga__
 amiga_specific_patchlist:

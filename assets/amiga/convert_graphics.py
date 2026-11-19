@@ -812,8 +812,8 @@ def dump_tiles(file_radix,palette,tile_table,tile_plane_cache,add_dimension_info
             dump_asm_bytes(k,f)
     # now convert the asm file to full binary
     if split_output:
-        tiles_header_bin = data_dir / (tiles_1_src.stem+"_header.bin")
-        tiles_bitmap_bin = data_dir / (tiles_1_src.stem+"_bitmap.bin")
+        tiles_header_bin = data_dir / (tiles_1_src.stem+"_h.bin")
+        tiles_bitmap_bin = data_dir / (tiles_1_src.stem+"_b.bin")
         full_bin = tiles_1_src.parent / (tiles_1_src.stem+"_full.bin")
         asm2bin(tiles_1_src,full_bin)
         # split the generated file
@@ -1025,14 +1025,14 @@ generate_for_levels = [False]*9
 
 
 #generate_for_levels[0] = True
-#generate_for_levels[1] = True
+generate_for_levels[1] = True
 #generate_for_levels[2] = True
 #generate_for_levels[3] = True
 #generate_for_levels[4] = True
 #generate_for_levels[5] = True
 #generate_for_levels[6] = True
-generate_for_levels[7] = True
-generate_for_levels[8] = True
+#generate_for_levels[7] = True
+#generate_for_levels[8] = True
 
 
 # set to "False" for faster operation when working on game sprite/tiles
